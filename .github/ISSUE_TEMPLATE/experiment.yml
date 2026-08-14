@@ -1,0 +1,68 @@
+name: 모델·데이터 실험
+description: AI 모델 또는 데이터 실험의 계획과 성공 기준을 기록합니다.
+title: "[Experiment] "
+labels:
+  - "type:experiment"
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 담당 영역
+      description: 실험 대상 영역을 선택해주세요. Issue 생성 후 해당 area Label도 지정해주세요.
+      options:
+        - "area:repurchase"
+        - "area:recommendation"
+        - "area:review-ai"
+        - "area:platform"
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: 실험 목적 및 가설
+      description: 해결하려는 문제와 검증할 가설을 작성해주세요.
+      placeholder: 어떤 변경이 어떤 지표를 개선할 것으로 예상하는지 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: dataset
+    attributes:
+      label: 데이터셋 및 분할 기준
+      description: 데이터 출처·버전과 학습·검증·테스트 분할 기준을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: baseline
+    attributes:
+      label: 베이스라인
+      description: 비교 기준이 되는 규칙 또는 기존 모델과 현재 성능을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: method
+    attributes:
+      label: 실험 방법
+      description: 사용할 모델, 피처, 주요 파라미터 또는 비교 방법을 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: 평가 지표 및 성공 기준
+      description: 평가 지표와 실험 성공으로 판단할 기준을 작성해주세요.
+      placeholder: 예) MAE가 베이스라인 대비 10% 이상 개선
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproducibility
+    attributes:
+      label: 재현 및 주의사항
+      description: 데이터 누수 점검, 랜덤 시드, 실행 환경 등 필요한 내용을 작성해주세요.
+    validations:
+      required: false
