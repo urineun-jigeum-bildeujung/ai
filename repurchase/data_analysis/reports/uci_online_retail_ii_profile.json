@@ -1,0 +1,143 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "observation": {
+    "start": "2009-12-01T07:45:00",
+    "end": "2011-12-09T12:50:00",
+    "days": 738
+  },
+  "raw": {
+    "line_count": 1067371,
+    "user_count_including_missing": 5943,
+    "order_count": 53628,
+    "product_count": 5305,
+    "category_count": 0
+  },
+  "quality": {
+    "valid_repurchase_candidate_count": 805620,
+    "valid_repurchase_candidate_rate": 0.7547703656929035,
+    "valid_monetary_candidate_count": 805549,
+    "valid_monetary_candidate_rate": 0.7547038471159513,
+    "missing_user_rate": 0.22766872999172733,
+    "explicit_cancellation_rate": 0.018263565339511754,
+    "nonpositive_quantity_rate": 0.021501427338760374,
+    "nonpositive_amount_rate": 0.024077851093949526,
+    "missing_category_rate": 1.0
+  },
+  "orders": {
+    "valid_order_count": 36975,
+    "valid_user_count": 5881,
+    "repeat_order_user_count": 4255,
+    "repeat_order_user_rate": 0.723516408774018,
+    "orders_per_user": {
+      "count": 5881,
+      "mean": 6.2871960550926715,
+      "std": 13.012879059042367,
+      "min": 1.0,
+      "p01": 1.0,
+      "p05": 1.0,
+      "p25": 1.0,
+      "p50": 3.0,
+      "p75": 7.0,
+      "p95": 21.0,
+      "p99": 46.0,
+      "max": 398.0
+    },
+    "line_count_per_order": {
+      "count": 36975,
+      "mean": 21.788235294117648,
+      "std": 24.24329891166254,
+      "min": 1.0,
+      "p01": 1.0,
+      "p05": 1.0,
+      "p25": 7.0,
+      "p50": 15.0,
+      "p75": 28.0,
+      "p95": 65.0,
+      "p99": 113.0,
+      "max": 542.0
+    },
+    "distinct_products_per_order": {
+      "count": 36975,
+      "mean": 20.795807978363758,
+      "std": 22.399384277887414,
+      "min": 1.0,
+      "p01": 1.0,
+      "p05": 1.0,
+      "p25": 6.0,
+      "p50": 15.0,
+      "p75": 27.0,
+      "p95": 61.0,
+      "p99": 101.0,
+      "max": 541.0
+    },
+    "quantity_per_order": {
+      "count": 36975,
+      "mean": 289.95053414469237,
+      "std": 1237.4604059315848,
+      "min": 1.0,
+      "p01": 1.0,
+      "p05": 12.0,
+      "p25": 73.0,
+      "p50": 155.0,
+      "p75": 292.0,
+      "p95": 789.0,
+      "p99": 2331.040000000008,
+      "max": 87167.0
+    },
+    "amount_per_order": {
+      "count": 36969,
+      "mean": 479.9542637885797,
+      "std": 1374.9905731162687,
+      "min": 0.38,
+      "p01": 8.5,
+      "p05": 36.758,
+      "p25": 160.8,
+      "p50": 305.25,
+      "p75": 489.26,
+      "p95": 1253.7799999999997,
+      "p99": 3697.918399999997,
+      "max": 168469.6
+    }
+  },
+  "product_repurchase": {
+    "scope": "product_id",
+    "event_count": 768925,
+    "pair_count": 481947,
+    "repeated_pair_count": 121716,
+    "repeated_pair_rate": 0.2525505916625687,
+    "users_with_repeat_count": 3866,
+    "users_with_repeat_rate": 0.6573711953749363,
+    "observed_interval_count": 286978,
+    "zero_day_interval_rate": 0.0003589125298803393,
+    "positive_interval_days": {
+      "count": 286875,
+      "mean": 97.62759624788187,
+      "std": 109.00797136447792,
+      "min": 0.0006944444444444445,
+      "p01": 0.009027777777777777,
+      "p05": 4.121527777777778,
+      "p25": 22.830555555555556,
+      "p50": 56.03472222222222,
+      "p75": 130.0048611111111,
+      "p95": 345.9034722222222,
+      "p99": 476.91834722222234,
+      "max": 735.6729166666667
+    },
+    "event_level_right_censoring_rate": 0.6267802451474461,
+    "events_per_pair": {
+      "count": 481947,
+      "mean": 1.5954555168929363,
+      "std": 1.7988874561226589,
+      "min": 1.0,
+      "p01": 1.0,
+      "p05": 1.0,
+      "p25": 1.0,
+      "p50": 1.0,
+      "p75": 2.0,
+      "p95": 4.0,
+      "p99": 9.0,
+      "max": 145.0
+    }
+  },
+  "category_repurchase": null
+}

@@ -1,0 +1,44 @@
+# Python 실행 산출물
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Python 가상환경
+.venv/
+venv/
+env/
+
+# 환경변수와 비밀정보
+.env
+.env.*
+!.env.example
+
+# 원본·중간·가공 데이터
+**/data/raw/*
+**/data/interim/*
+**/data/processed/*
+!**/data/raw/.gitkeep
+!**/data/interim/.gitkeep
+!**/data/processed/.gitkeep
+
+# 모델·실험 아티팩트
+*.joblib
+*.onnx
+*.pkl
+*.pt
+*.pth
+*.ckpt
+mlruns/
+artifacts/
+
+# 노트북·개발 도구·운영체제 파일
+.ipynb_checkpoints/
+.idea/
+.vscode/
+.DS_Store
