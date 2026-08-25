@@ -1,0 +1,10 @@
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+*.parquet
+*.feather

@@ -1,0 +1,82 @@
+{
+  "manifest_schema_version": "2.0",
+  "updated_at": "2026-08-24T03:40:16.004614+00:00",
+  "files": [
+    {
+      "source": {
+        "dataset": "uci_online_retail_ii",
+        "original_publisher": "UCI Machine Learning Repository",
+        "original_source_url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+        "distribution_name": "UCI dataset 502",
+        "distribution_version": "doi:10.24432/C5CG6D",
+        "distribution_page_url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+        "license_name": "CC BY 4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_scope": "UCI Online Retail II 데이터셋 배포본",
+        "filename": "online_retail_ii.zip",
+        "url": "https://archive.ics.uci.edu/static/public/502/online+retail+ii.zip",
+        "expected_sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+        "archive_member": "online_retail_II.xlsx"
+      },
+      "local_file": {
+        "bytes": 45622418,
+        "actual_sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+        "verification": [
+          "sha256",
+          "zip_structure"
+        ],
+        "verified_at": "2026-08-24T03:40:16.004196+00:00"
+      }
+    },
+    {
+      "source": {
+        "dataset": "complete_journey",
+        "original_publisher": "84.51°",
+        "original_source_url": "https://www.dunnhumby.com/source-files/",
+        "distribution_name": "completejourney R package",
+        "distribution_version": "1.1.1",
+        "distribution_page_url": "https://cran.r-project.org/package=completejourney",
+        "license_name": "CC0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "license_scope": "completejourney 1.1.1 패키지 배포본",
+        "filename": "products.rda",
+        "url": "https://raw.githubusercontent.com/bradleyboehmke/completejourney/master/data/products.rda",
+        "expected_sha256": "a80c6df33623b4af296ae9f317a6647e369db7e8ce7e7baed0e1bf44b9d979e5",
+        "archive_member": null
+      },
+      "local_file": {
+        "bytes": 869019,
+        "actual_sha256": "a80c6df33623b4af296ae9f317a6647e369db7e8ce7e7baed0e1bf44b9d979e5",
+        "verification": [
+          "sha256"
+        ],
+        "verified_at": "2026-08-24T03:39:49.935018+00:00"
+      }
+    },
+    {
+      "source": {
+        "dataset": "complete_journey",
+        "original_publisher": "84.51°",
+        "original_source_url": "https://www.dunnhumby.com/source-files/",
+        "distribution_name": "completejourney R package",
+        "distribution_version": "1.1.1",
+        "distribution_page_url": "https://cran.r-project.org/package=completejourney",
+        "license_name": "CC0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "license_scope": "completejourney 1.1.1 패키지 배포본",
+        "filename": "transactions.rds",
+        "url": "https://raw.githubusercontent.com/bradleyboehmke/completejourney/master/data/transactions.rds",
+        "expected_sha256": "1fa0700033f1e5d9bb6b09e2be063d8d68474d346e95c50f2833e09d083e0007",
+        "archive_member": null
+      },
+      "local_file": {
+        "bytes": 12775661,
+        "actual_sha256": "1fa0700033f1e5d9bb6b09e2be063d8d68474d346e95c50f2833e09d083e0007",
+        "verification": [
+          "sha256"
+        ],
+        "verified_at": "2026-08-24T03:39:49.934147+00:00"
+      }
+    }
+  ]
+}
