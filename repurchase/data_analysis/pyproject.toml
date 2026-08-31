@@ -3,6 +3,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 
 [tool.ruff]
+# 재구매 파트의 개발·CI·향후 배포 기준인 Python 3.11 문법으로 검사합니다.
 target-version = "py311"
 line-length = 88
 extend-exclude = ["data", "reports"]
