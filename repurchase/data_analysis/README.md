@@ -41,6 +41,10 @@ python -m venv .venv
 .venv/bin/python -m scripts.profile_repurchase
 .venv/bin/python -m scripts.profile_mock_generation --dataset all
 .venv/bin/python -m scripts.visualize_profiles
+.venv/bin/python -m scripts.validate_uci_preprocessing
+.venv/bin/python -m scripts.validate_uci_events
+.venv/bin/python -m scripts.validate_uci_preprocessing_e2e
+.venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
@@ -53,6 +57,7 @@ python -m venv .venv
 - `reports/figures/repurchase_interval_quantiles.png`: 상품·카테고리 재구매 간격 비교
 - `reports/figures/pet_category_repurchase_profile.png`: 반려동물 카테고리별 특성 비교
 - `reports/figures/monthly_order_trends.png`: 월별 주문 및 구매 사용자 추이
+- `reports/figures/uci_purchase_event_duplicate_sensitivity.png`: 구매 사건 중복 후보 영향률과 수량 차이 분위수
 
 ## 목데이터 생성 기준 결과
 
@@ -60,6 +65,12 @@ python -m venv .venv
 - `reports/complete_journey_mock_generation_profile.json`: Complete Journey 전체 행동 분포
 - `reports/complete_journey_pet_mock_generation_profile.json`: 반려동물 카테고리 및 상품 전환 조건부 분포
 - `reports/synthetic_data_generation_guidelines.md`: 관찰값·초기 생성값·도메인 가정값을 구분한 백엔드 전달 가이드
+- `reports/uci_preprocessing_validation.json`: 전처리 행 보존·사유별 건수·불변조건 검증 결과
+- `reports/uci_preprocessing_validation.md`: 사람이 검토하기 위한 UCI 전처리 검증 요약
+- `reports/uci_purchase_event_validation.json`: 구매 사건 집계·중복 민감도·시각 변동 검증 결과
+- `reports/uci_purchase_event_validation.md`: 사람이 검토하기 위한 구매 사건 검증 요약
+- `reports/uci_preprocessing_e2e_validation.json`: 원본 로드부터 재구매·우측검열 라벨까지 단계별 검증 결과
+- `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
 
 ## 파일 관리
 

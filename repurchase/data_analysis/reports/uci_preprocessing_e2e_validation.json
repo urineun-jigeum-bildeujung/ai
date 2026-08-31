@@ -1,0 +1,107 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "label_scope": "same_product",
+  "observation_end_at": "2011-12-09T12:50:00",
+  "cleaning": {
+    "source_rows": 1067371,
+    "classified_rows": 1067371,
+    "accepted_repurchase_rows": 802713,
+    "accepted_repurchase_rate": 0.7520468515633271,
+    "quarantined_rows": 264658,
+    "quarantined_rate": 0.2479531484366729,
+    "accepted_monetary_rows": 802651,
+    "accepted_monetary_rate": 0.7519887649186646,
+    "reason_record_count": 325123,
+    "reason_counts": {
+      "MISSING_USER_ID": 243007,
+      "SUSPECTED_DUPLICATE": 23430,
+      "NONPOSITIVE_QUANTITY": 22950,
+      "EXPLICIT_CANCELLATION": 19494,
+      "NONPOSITIVE_PRICE": 6207,
+      "NON_MERCHANDISE_CODE": 5653,
+      "MISSING_PRODUCT_NAME": 4382
+    },
+    "reason_level_counts": {
+      "EXCLUDE": 291104,
+      "WARNING": 27812,
+      "MONETARY_EXCLUDE": 6207
+    },
+    "rows_with_multiple_reasons": 27550,
+    "maximum_reasons_on_one_row": 4,
+    "invariants": {
+      "row_count_preserved": true,
+      "source_ids_preserved": true,
+      "accepted_plus_quarantined_equals_source": true,
+      "quarantined_equals_exclude_reason_ids": true,
+      "accepted_has_no_exclude_reason": true,
+      "reason_ids_exist_in_source": true
+    }
+  },
+  "purchase_events": {
+    "accepted_source_line_count": 802713,
+    "purchase_event_count": 766150,
+    "duplicate_affected_event_count": 10780,
+    "duplicate_affected_event_rate": 0.01407035175879397,
+    "timestamp_variation_event_count": 8,
+    "max_event_duration_seconds": 60.0,
+    "quantity_raw_total": 10705184.0,
+    "quantity_deduplicated_total": 10670900.0,
+    "quantity_difference_total": 34284.0,
+    "quantity_difference_rate": 0.0032025605538400833,
+    "quantity_difference_quantiles_on_affected_events": {
+      "p50": 1.0,
+      "p75": 2.0,
+      "p90": 6.0,
+      "p95": 12.0,
+      "p99": 24.0,
+      "p100": 1440.0
+    },
+    "line_amount_raw_total": 17434464.747,
+    "line_amount_deduplicated_total": 17376884.857,
+    "line_amount_difference_total": 57579.89,
+    "line_amount_difference_rate": 0.003302647419096014,
+    "invariants": {
+      "one_row_per_event_key": true,
+      "event_key_sets_preserved": true,
+      "raw_lines_conserved": true,
+      "deduplicated_lines_not_greater_than_raw": true,
+      "positive_event_quantity": true,
+      "deduplicated_quantity_not_greater_than_raw": true,
+      "nonnegative_event_duration": true
+    }
+  },
+  "repurchase_labels": {
+    "source_event_count": 766150,
+    "label_count": 766150,
+    "user_product_pair_count": 480996,
+    "observed_repurchase_count": 285154,
+    "observed_repurchase_rate": 0.37219082425112576,
+    "right_censored_count": 480996,
+    "right_censored_rate": 0.6278091757488743,
+    "zero_day_followup_count": 101,
+    "zero_day_followup_rate": 0.0001318279710239509,
+    "observed_duration_days": {
+      "median": 56.06805555555555,
+      "p90": 259.9951388888889,
+      "p95": 345.96458333333334,
+      "p99": 476.95955555555537,
+      "maximum": 735.6729166666667
+    },
+    "invariants": {
+      "one_label_per_event_key": true,
+      "event_key_sets_preserved": true,
+      "one_right_censored_event_per_pair": true,
+      "observed_and_censored_are_complements": true,
+      "observed_events_have_next_purchase": true,
+      "censored_events_have_no_next_purchase": true,
+      "nonnegative_duration": true,
+      "next_purchase_not_after_observation_end": true
+    }
+  },
+  "pipeline_invariants": {
+    "classification_preserves_source_rows": true,
+    "event_input_matches_accepted_rows": true,
+    "one_label_per_purchase_event": true,
+    "all_stage_invariants_passed": true
+  }
+}

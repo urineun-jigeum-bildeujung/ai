@@ -13,11 +13,11 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib import font_manager
 from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter
 
 from .paths import FIGURE_DIR, REPORT_DIR
+from .plotting import configure_korean_font, save_figure
 
 DATASETS = {
     "uci_online_retail_ii": "UCI 전체",
@@ -34,27 +34,6 @@ PET_CATEGORY_LABELS = {
 COLORS = ("#3366CC", "#DC3912", "#109618", "#FF9900", "#990099")
 
 
-def configure_korean_font() -> None:
-    """실행 환경에서 사용할 수 있는 한글 글꼴을 찾아 그래프에 적용합니다."""
-    candidates = (
-        "AppleGothic",
-        "Arial Unicode MS",
-        "NanumGothic",
-        "Noto Sans CJK KR",
-        "Malgun Gothic",
-    )
-    available = {font.name for font in font_manager.fontManager.ttflist}
-    selected = next((font for font in candidates if font in available), "DejaVu Sans")
-    plt.rcParams.update(
-        {
-            "font.family": selected,
-            "axes.unicode_minus": False,
-            "figure.dpi": 120,
-            "savefig.dpi": 180,
-        }
-    )
-
-
 def load_profiles() -> dict[str, dict[str, Any]]:
     """데이터셋별 JSON 프로파일을 읽어 데이터셋 ID 기준으로 반환합니다."""
     profiles: dict[str, dict[str, Any]] = {}
@@ -62,14 +41,6 @@ def load_profiles() -> dict[str, dict[str, Any]]:
         path = REPORT_DIR / f"{dataset}_profile.json"
         profiles[dataset] = json.loads(path.read_text(encoding="utf-8"))
     return profiles
-
-
-def save_figure(figure: plt.Figure, filename: str) -> None:
-    """그래프 여백을 정리해 figures 폴더에 PNG 파일로 저장합니다."""
-    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
-    figure.tight_layout()
-    figure.savefig(FIGURE_DIR / filename, bbox_inches="tight")
-    plt.close(figure)
 
 
 def add_bar_labels(axis: plt.Axes, bars: Any, percent: bool = True) -> None:
