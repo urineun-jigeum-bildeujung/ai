@@ -50,6 +50,7 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_preprocessing
 .venv/bin/python -m scripts.validate_uci_events
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
+.venv/bin/python -m scripts.run_uci_baseline_e2e
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
@@ -101,6 +102,8 @@ python -m pytest
 - `reports/uci_purchase_event_validation.md`: 사람이 검토하기 위한 구매 사건 검증 요약
 - `reports/uci_preprocessing_e2e_validation.json`: 원본 로드부터 재구매·우측검열 라벨까지 단계별 검증 결과
 - `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
+- `reports/uci_baseline_e2e_evaluation.json`: 시간 분할·베이스라인 학습·평가·현재 예측 전체 결과
+- `reports/uci_baseline_e2e_evaluation.md`: 전역·계층형 중앙값 성능과 fallback 사용 비율 검토 요약
 
 ## 파일 관리
 

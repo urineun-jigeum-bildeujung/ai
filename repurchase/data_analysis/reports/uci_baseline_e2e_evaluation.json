@@ -1,0 +1,180 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "prediction_scope": "same_user_same_product",
+  "split": {
+    "start_at": "2009-12-01T07:45:00",
+    "train_end_at": "2011-05-02T01:42:30",
+    "validation_end_at": "2011-08-20T19:16:15",
+    "end_at": "2011-12-09T12:50:00",
+    "train_fraction": 0.7,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.15
+  },
+  "split_summary": {
+    "train": {
+      "sample_count": 494241,
+      "observed_outcome_count": 211075,
+      "matured_outcome_count": 163957,
+      "unmatured_or_censored_count": 330284
+    },
+    "validation": {
+      "sample_count": 97340,
+      "observed_outcome_count": 37497,
+      "matured_outcome_count": 17676,
+      "unmatured_or_censored_count": 79664
+    },
+    "test": {
+      "sample_count": 174569,
+      "observed_outcome_count": 36582,
+      "matured_outcome_count": 36582,
+      "unmatured_or_censored_count": 137987
+    }
+  },
+  "validation_model": {
+    "trained_until": "2011-05-02T01:42:30",
+    "global_median_days": 51.27569444444445,
+    "global_observation_count": 163957,
+    "product_model_count": 3258
+  },
+  "test_model": {
+    "trained_until": "2011-08-20T19:16:15",
+    "global_median_days": 55.897222222222226,
+    "global_observation_count": 209160,
+    "product_model_count": 3523
+  },
+  "validation_evaluation": {
+    "sample_count": 17676,
+    "global_baseline": {
+      "overall": {
+        "sample_count": 17676,
+        "mae_days": 26.050850926240226,
+        "median_absolute_error_days": 26.327083333333334,
+        "within_3_days_rate": 0.05708305046390586,
+        "within_7_days_rate": 0.1223693143245078
+      },
+      "by_prediction_source": {
+        "global_history": {
+          "sample_count": 17676,
+          "mae_days": 26.050850926240226,
+          "median_absolute_error_days": 26.327083333333334,
+          "within_3_days_rate": 0.05708305046390586,
+          "within_7_days_rate": 0.1223693143245078,
+          "sample_rate": 1.0
+        }
+      }
+    },
+    "hierarchical_baseline": {
+      "overall": {
+        "sample_count": 17676,
+        "mae_days": 35.8196875942898,
+        "median_absolute_error_days": 20.413541666666664,
+        "within_3_days_rate": 0.09996605566870333,
+        "within_7_days_rate": 0.2119257750622313
+      },
+      "by_prediction_source": {
+        "global_history": {
+          "sample_count": 1940,
+          "mae_days": 23.565610323596797,
+          "median_absolute_error_days": 22.46805555555555,
+          "within_3_days_rate": 0.08195876288659794,
+          "within_7_days_rate": 0.15309278350515465,
+          "sample_rate": 0.10975333785924417
+        },
+        "product_history": {
+          "sample_count": 3086,
+          "mae_days": 31.486462496399508,
+          "median_absolute_error_days": 26.006423611111106,
+          "within_3_days_rate": 0.06383668178872326,
+          "within_7_days_rate": 0.13804277381723914,
+          "sample_rate": 0.17458701063589047
+        },
+        "user_product_history": {
+          "sample_count": 12650,
+          "mae_days": 38.75607040513834,
+          "median_absolute_error_days": 18.64635416666667,
+          "within_3_days_rate": 0.11154150197628458,
+          "within_7_days_rate": 0.23897233201581028,
+          "sample_rate": 0.7156596515048653
+        }
+      }
+    },
+    "mae_improvement_days": -9.768836668049577,
+    "mae_improvement_rate": -0.37499107786186464
+  },
+  "test_evaluation": {
+    "sample_count": 36582,
+    "global_baseline": {
+      "overall": {
+        "sample_count": 36582,
+        "mae_days": 32.70573177686051,
+        "median_absolute_error_days": 34.97847222222222,
+        "within_3_days_rate": 0.03613799136187196,
+        "within_7_days_rate": 0.08353835219506861
+      },
+      "by_prediction_source": {
+        "global_history": {
+          "sample_count": 36582,
+          "mae_days": 32.70573177686051,
+          "median_absolute_error_days": 34.97847222222222,
+          "within_3_days_rate": 0.03613799136187196,
+          "within_7_days_rate": 0.08353835219506861,
+          "sample_rate": 1.0
+        }
+      }
+    },
+    "hierarchical_baseline": {
+      "overall": {
+        "sample_count": 36582,
+        "mae_days": 39.437280174220476,
+        "median_absolute_error_days": 19.781770833333333,
+        "within_3_days_rate": 0.13093871302826526,
+        "within_7_days_rate": 0.25042370564758626
+      },
+      "by_prediction_source": {
+        "global_history": {
+          "sample_count": 2612,
+          "mae_days": 29.92749569295559,
+          "median_absolute_error_days": 30.934722222222227,
+          "within_3_days_rate": 0.03943338437978561,
+          "within_7_days_rate": 0.0945635528330781,
+          "sample_rate": 0.07140123558034006
+        },
+        "product_history": {
+          "sample_count": 8669,
+          "mae_days": 31.359013799169457,
+          "median_absolute_error_days": 25.00763888888889,
+          "within_3_days_rate": 0.06632829622793864,
+          "within_7_days_rate": 0.15238205098627292,
+          "sample_rate": 0.2369744683177519
+        },
+        "user_product_history": {
+          "sample_count": 25301,
+          "mae_days": 43.1869362459323,
+          "median_absolute_error_days": 16.063194444444445,
+          "within_3_days_rate": 0.16252322042607012,
+          "within_7_days_rate": 0.30010671514959886,
+          "sample_rate": 0.691624296101908
+        }
+      }
+    },
+    "mae_improvement_days": -6.7315483973599655,
+    "mae_improvement_rate": -0.20582167197135073
+  },
+  "current_prediction_example": {
+    "user_id": "12680",
+    "product_id": "23256",
+    "last_purchase_at": "2011-12-09T12:50:00",
+    "predicted_duration_days": 112.87916666666666,
+    "predicted_purchase_at": "2012-03-31T09:56:00",
+    "days_remaining_at_observation_end": 112.87916666666666,
+    "prediction_source": "user_product_history",
+    "prediction_observation_count": 1
+  },
+  "invariants": {
+    "temporal_boundaries_ordered": true,
+    "validation_anchors_after_train": true,
+    "test_anchors_after_validation": true,
+    "validation_outcomes_matured": true,
+    "test_outcomes_matured": true
+  }
+}
