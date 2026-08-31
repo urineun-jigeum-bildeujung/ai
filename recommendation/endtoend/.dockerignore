@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.git/
+.gitignore
+*.md
+.DS_Store
+
+# 학습된 모델 가중치는 이미지에 포함하지 않음 (용량 큼, 볼륨 마운트로 관리)
+models/
+*.pt
+*.bin
+*.safetensors
+
+# HuggingFace 캐시
+.cache/

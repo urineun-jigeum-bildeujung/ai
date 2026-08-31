@@ -42,3 +42,7 @@ artifacts/
 .idea/
 .vscode/
 .DS_Store
+
+recommendation/endtoend/data/amazon/
+recommendation/endtoend/models/
+recommendation/endtoend/.cache/
