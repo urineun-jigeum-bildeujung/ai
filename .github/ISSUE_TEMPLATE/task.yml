@@ -1,0 +1,70 @@
+# 기능·리팩터링·문서·CI 등 일반 작업을 짧게 등록하기 위한 Issue Form입니다.
+name: 일반 작업
+description: 기능 구현, 리팩터링, 문서, CI·환경 설정 작업을 기록합니다.
+title: "[Task] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        생성 후 작업에 맞는 Issue Type, `type:*` Label, `area:*` Label과 Assignee를 설정해주세요.
+
+  - type: dropdown
+    id: work_type
+    attributes:
+      label: 작업 유형
+      description: 선택한 값에 맞는 Issue Type과 type Label을 생성 후 설정해주세요.
+      options:
+        - "새 기능 — Feature / type:feature"
+        - "유지보수·리팩터링·문서·CI — Task / type:maintenance"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 담당 영역
+      description: 선택한 영역의 area Label을 생성 후 지정해주세요. 여러 영역이면 Label을 추가로 지정합니다.
+      options:
+        - "area:repurchase"
+        - "area:recommendation"
+        - "area:nutrition"
+        - "area:platform"
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: 작업 목적
+      description: 무엇을 왜 변경하는지 간단히 작성해주세요.
+      placeholder: 해결하려는 문제와 이 작업이 필요한 이유를 작성해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 작업 범위
+      description: 구현하거나 수정할 내용을 항목으로 작성해주세요.
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: 완료 기준
+      description: 작업 완료 여부를 확인할 수 있는 검증 조건을 작성해주세요.
+      value: |
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 참고 자료
+      description: 관련 문서, 화면, 로그, API 명세 등이 있다면 첨부해주세요.
+    validations:
+      required: false

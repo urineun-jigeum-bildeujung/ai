@@ -1,2 +1,5 @@
 blank_issues_enabled: true
-contact_links: []
+contact_links:
+  - name: Issue 작성 가이드
+    url: https://github.com/urineun-jigeum-bildeujung/ai/blob/develop/.github/ISSUE_GUIDELINES.md
+    about: Issue Type, Label, Assignee, 브랜치와 PR 연결 규칙을 확인합니다.

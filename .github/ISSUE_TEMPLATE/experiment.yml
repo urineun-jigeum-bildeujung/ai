@@ -12,7 +12,7 @@ body:
       options:
         - "area:repurchase"
         - "area:recommendation"
-        - "area:review-ai"
+        - "area:nutrition"
         - "area:platform"
     validations:
       required: true
