@@ -43,6 +43,7 @@ python -m venv .venv
 .venv/bin/python -m scripts.visualize_profiles
 .venv/bin/python -m scripts.validate_uci_preprocessing
 .venv/bin/python -m scripts.validate_uci_events
+.venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
@@ -68,6 +69,8 @@ python -m venv .venv
 - `reports/uci_preprocessing_validation.md`: 사람이 검토하기 위한 UCI 전처리 검증 요약
 - `reports/uci_purchase_event_validation.json`: 구매 사건 집계·중복 민감도·시각 변동 검증 결과
 - `reports/uci_purchase_event_validation.md`: 사람이 검토하기 위한 구매 사건 검증 요약
+- `reports/uci_preprocessing_e2e_validation.json`: 원본 로드부터 재구매·우측검열 라벨까지 단계별 검증 결과
+- `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
 
 ## 파일 관리
 
