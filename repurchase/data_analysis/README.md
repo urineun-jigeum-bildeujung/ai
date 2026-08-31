@@ -31,11 +31,17 @@
 - 백엔드 전달용 목데이터 생성 가이드
 - 목데이터 생성·검증용 데이터셋별 JSON 프로파일
 
+## 개발 환경
+
+- 재구매 예측 파트의 공식 Python 버전은 3.11.15입니다.
+- 이 디렉터리의 `.python-version`은 재구매 파트에만 적용합니다.
+- 추천·영양성분 분석 등 다른 AI 파트의 Python 환경은 각 파트에서 별도로 관리합니다.
+
 ## 실행
 
 ```bash
 cd repurchase/data_analysis
-python -m venv .venv
+python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m scripts.download_datasets
 .venv/bin/python -m scripts.profile_repurchase
@@ -48,6 +54,24 @@ python -m venv .venv
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
+```
+
+## 자동 검증과 전체 데이터 검증의 구분
+
+GitHub Actions는 `repurchase/**`가 변경된 `develop`과 `main` 대상 Pull Request에서 Python 3.11 환경을 새로 만들고 다음 빠른 검사를 자동 실행합니다.
+
+```bash
+python -m ruff check .
+python -m ruff format --check .
+python -m pytest
+```
+
+`pytest`에는 작은 고정 표본으로 전처리 전체 연결을 검사하는 E2E 테스트가 포함됩니다. 이 검사는 외부 네트워크와 로컬 원본 파일에 의존하지 않으므로 모든 PR에서 재현할 수 있습니다.
+
+실제 UCI 전체 ZIP을 사용하는 아래 검증은 대용량 외부 데이터에 의존하므로 PR CI에서는 실행하지 않습니다. 데이터 다운로드·품질 분류·사건 집계·라벨 로직을 변경했을 때 수동으로 실행하고 결과 보고서를 함께 검토합니다.
+
+```bash
+.venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 ```
 
 ## 시각화 결과
