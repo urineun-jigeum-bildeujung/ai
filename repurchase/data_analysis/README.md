@@ -58,7 +58,13 @@ python3.11 -m venv .venv
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
-GitHub Actions는 `repurchase/**`가 변경된 `develop`과 `main` 대상 Pull Request에서 Python 3.11 환경을 새로 만들고 다음 빠른 검사를 자동 실행합니다.
+`repurchase-quality`는 `develop`과 `main` Ruleset의 필수 상태 검사이므로 모든 대상 Pull Request와 push에서 상태를 보고합니다. workflow 수준에서 경로 필터로 실행을 건너뛰면 필수 검사가 Pending으로 남아 병합을 막기 때문에, 먼저 Git diff로 변경 경로를 확인한 뒤 실행할 단계를 결정합니다.
+
+- `repurchase/**` 또는 `.github/workflows/repurchase-ci.yml` 변경: Python 3.11 환경을 만들고 아래 검사를 실행
+- 그 외 변경: Python과 의존성을 설치하지 않고 생략 사유만 출력한 뒤 성공 상태 보고
+- 수동 실행: 변경 경로와 관계없이 전체 재구매 검사 실행
+
+재구매 관련 변경에서는 다음 빠른 검사를 자동 실행합니다.
 
 ```bash
 python -m ruff check .
