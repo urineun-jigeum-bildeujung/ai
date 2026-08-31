@@ -1,0 +1,33 @@
+{
+  "accepted_source_line_count": 802713,
+  "purchase_event_count": 766150,
+  "duplicate_affected_event_count": 10780,
+  "duplicate_affected_event_rate": 0.01407035175879397,
+  "timestamp_variation_event_count": 8,
+  "max_event_duration_seconds": 60.0,
+  "quantity_raw_total": 10705184.0,
+  "quantity_deduplicated_total": 10670900.0,
+  "quantity_difference_total": 34284.0,
+  "quantity_difference_rate": 0.0032025605538400833,
+  "quantity_difference_quantiles_on_affected_events": {
+    "p50": 1.0,
+    "p75": 2.0,
+    "p90": 6.0,
+    "p95": 12.0,
+    "p99": 24.0,
+    "p100": 1440.0
+  },
+  "line_amount_raw_total": 17434464.747,
+  "line_amount_deduplicated_total": 17376884.857,
+  "line_amount_difference_total": 57579.89,
+  "line_amount_difference_rate": 0.003302647419096014,
+  "invariants": {
+    "one_row_per_event_key": true,
+    "event_key_sets_preserved": true,
+    "raw_lines_conserved": true,
+    "deduplicated_lines_not_greater_than_raw": true,
+    "positive_event_quantity": true,
+    "deduplicated_quantity_not_greater_than_raw": true,
+    "nonnegative_event_duration": true
+  }
+}

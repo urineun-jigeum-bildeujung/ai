@@ -1,0 +1,35 @@
+{
+  "source_rows": 1067371,
+  "classified_rows": 1067371,
+  "accepted_repurchase_rows": 802713,
+  "accepted_repurchase_rate": 0.7520468515633271,
+  "quarantined_rows": 264658,
+  "quarantined_rate": 0.2479531484366729,
+  "accepted_monetary_rows": 802651,
+  "accepted_monetary_rate": 0.7519887649186646,
+  "reason_record_count": 325123,
+  "reason_counts": {
+    "MISSING_USER_ID": 243007,
+    "SUSPECTED_DUPLICATE": 23430,
+    "NONPOSITIVE_QUANTITY": 22950,
+    "EXPLICIT_CANCELLATION": 19494,
+    "NONPOSITIVE_PRICE": 6207,
+    "NON_MERCHANDISE_CODE": 5653,
+    "MISSING_PRODUCT_NAME": 4382
+  },
+  "reason_level_counts": {
+    "EXCLUDE": 291104,
+    "WARNING": 27812,
+    "MONETARY_EXCLUDE": 6207
+  },
+  "rows_with_multiple_reasons": 27550,
+  "maximum_reasons_on_one_row": 4,
+  "invariants": {
+    "row_count_preserved": true,
+    "source_ids_preserved": true,
+    "accepted_plus_quarantined_equals_source": true,
+    "quarantined_equals_exclude_reason_ids": true,
+    "accepted_has_no_exclude_reason": true,
+    "reason_ids_exist_in_source": true
+  }
+}
