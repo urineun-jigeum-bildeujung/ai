@@ -31,19 +31,53 @@
 - 백엔드 전달용 목데이터 생성 가이드
 - 목데이터 생성·검증용 데이터셋별 JSON 프로파일
 
+## 개발 환경
+
+- 재구매 예측 파트의 공식 Python 버전은 3.11.15입니다.
+- 이 디렉터리의 `.python-version`은 재구매 파트에만 적용합니다.
+- 추천·영양성분 분석 등 다른 AI 파트의 Python 환경은 각 파트에서 별도로 관리합니다.
+
 ## 실행
 
 ```bash
 cd repurchase/data_analysis
-python -m venv .venv
+python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m scripts.download_datasets
 .venv/bin/python -m scripts.profile_repurchase
 .venv/bin/python -m scripts.profile_mock_generation --dataset all
 .venv/bin/python -m scripts.visualize_profiles
+.venv/bin/python -m scripts.validate_uci_preprocessing
+.venv/bin/python -m scripts.validate_uci_events
+.venv/bin/python -m scripts.validate_uci_preprocessing_e2e
+.venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
+```
+
+## 자동 검증과 전체 데이터 검증의 구분
+
+`repurchase-quality`는 `develop`과 `main` Ruleset의 필수 상태 검사이므로 모든 대상 Pull Request와 push에서 상태를 보고합니다. workflow 수준에서 경로 필터로 실행을 건너뛰면 필수 검사가 Pending으로 남아 병합을 막기 때문에, 먼저 Git diff로 변경 경로를 확인한 뒤 실행할 단계를 결정합니다.
+
+- `repurchase/**` 또는 `.github/workflows/repurchase-ci.yml` 변경: Python 3.11 환경을 만들고 아래 검사를 실행
+- 그 외 변경: Python과 의존성을 설치하지 않고 생략 사유만 출력한 뒤 성공 상태 보고
+- 수동 실행: 변경 경로와 관계없이 전체 재구매 검사 실행
+
+재구매 관련 변경에서는 다음 빠른 검사를 자동 실행합니다.
+
+```bash
+python -m ruff check .
+python -m ruff format --check .
+python -m pytest
+```
+
+`pytest`에는 작은 고정 표본으로 전처리 전체 연결을 검사하는 E2E 테스트가 포함됩니다. 이 검사는 외부 네트워크와 로컬 원본 파일에 의존하지 않으므로 모든 PR에서 재현할 수 있습니다.
+
+실제 UCI 전체 ZIP을 사용하는 아래 검증은 대용량 외부 데이터에 의존하므로 PR CI에서는 실행하지 않습니다. 데이터 다운로드·품질 분류·사건 집계·라벨 로직을 변경했을 때 수동으로 실행하고 결과 보고서를 함께 검토합니다.
+
+```bash
+.venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 ```
 
 ## 시각화 결과
@@ -53,6 +87,7 @@ python -m venv .venv
 - `reports/figures/repurchase_interval_quantiles.png`: 상품·카테고리 재구매 간격 비교
 - `reports/figures/pet_category_repurchase_profile.png`: 반려동물 카테고리별 특성 비교
 - `reports/figures/monthly_order_trends.png`: 월별 주문 및 구매 사용자 추이
+- `reports/figures/uci_purchase_event_duplicate_sensitivity.png`: 구매 사건 중복 후보 영향률과 수량 차이 분위수
 
 ## 목데이터 생성 기준 결과
 
@@ -60,6 +95,12 @@ python -m venv .venv
 - `reports/complete_journey_mock_generation_profile.json`: Complete Journey 전체 행동 분포
 - `reports/complete_journey_pet_mock_generation_profile.json`: 반려동물 카테고리 및 상품 전환 조건부 분포
 - `reports/synthetic_data_generation_guidelines.md`: 관찰값·초기 생성값·도메인 가정값을 구분한 백엔드 전달 가이드
+- `reports/uci_preprocessing_validation.json`: 전처리 행 보존·사유별 건수·불변조건 검증 결과
+- `reports/uci_preprocessing_validation.md`: 사람이 검토하기 위한 UCI 전처리 검증 요약
+- `reports/uci_purchase_event_validation.json`: 구매 사건 집계·중복 민감도·시각 변동 검증 결과
+- `reports/uci_purchase_event_validation.md`: 사람이 검토하기 위한 구매 사건 검증 요약
+- `reports/uci_preprocessing_e2e_validation.json`: 원본 로드부터 재구매·우측검열 라벨까지 단계별 검증 결과
+- `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
 
 ## 파일 관리
 
