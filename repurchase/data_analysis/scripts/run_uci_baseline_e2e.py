@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Final
 
 import pandas as pd
 
@@ -19,7 +19,16 @@ from .modeling.baseline import (
     predict_global_median_baseline,
     predict_hierarchical_median_baseline,
 )
+from .modeling.error_analysis import (
+    summarize_largest_error_tail,
+    summarize_largest_error_tail_by_history_count,
+    summarize_user_product_error_variability,
+    summarize_user_product_errors_by_anchor_month,
+    summarize_user_product_errors_by_history_count,
+    summarize_user_product_errors_by_product,
+)
 from .modeling.evaluation import evaluate_predictions
+from .modeling.model_selection import evaluate_shrinkage_candidates
 from .modeling.samples import (
     assign_temporal_splits,
     build_historical_interval_features,
@@ -33,6 +42,11 @@ from .reporting import write_text_atomically
 
 JSON_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.md"
+TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
+# 1% 결과가 극소수 표본에만 좌우되는지 확인하기 위해 5% 결과도 함께 비교합니다.
+TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
+# 개인 이력 1~2건 구간의 과신을 완화하는 약한~강한 수축 후보를 비교합니다.
+SHRINKAGE_STRENGTH_CANDIDATES: Final[tuple[float, ...]] = (1.0, 2.0, 4.0, 8.0)
 
 
 def _isoformat(timestamp: pd.Timestamp) -> str:
@@ -59,12 +73,63 @@ def _evaluate_stage(
     hierarchical_predictions = predict_hierarchical_median_baseline(model, samples)
     global_evaluation = evaluate_predictions(global_predictions)
     hierarchical_evaluation = evaluate_predictions(hierarchical_predictions)
+    history_count_analysis: list[dict[str, object]] = []
+    variability_analysis: dict[str, float | int | None] | None = None
+    tail_error_analysis: list[dict[str, object]] = []
+    product_analysis: dict[str, object] | None = None
+    monthly_analysis: list[dict[str, object]] = []
+    has_user_product_history = hierarchical_predictions["prediction_source"].eq(
+        "user_product_history"
+    )
+    if has_user_product_history.any():
+        for tail_rate in TAIL_ERROR_RATES:
+            tail_summary: dict[str, object] = summarize_largest_error_tail(
+                hierarchical_predictions,
+                tail_rate=tail_rate,
+            )
+            tail_summary["by_history_count"] = (
+                summarize_largest_error_tail_by_history_count(
+                    hierarchical_predictions,
+                    tail_rate=tail_rate,
+                ).to_dict(orient="records")
+            )
+            tail_error_analysis.append(tail_summary)
+        history_count_analysis = summarize_user_product_errors_by_history_count(
+            hierarchical_predictions
+        ).to_dict(orient="records")
+        product_summary = summarize_user_product_errors_by_product(
+            hierarchical_predictions
+        )
+        top_products = product_summary.head(TOP_ERROR_CONTRIBUTOR_COUNT)
+        product_analysis = {
+            "product_count": int(len(product_summary)),
+            "top_contributors": top_products.to_dict(orient="records"),
+            "top_contributor_error_share": float(
+                top_products["absolute_error_share"].sum()
+            ),
+        }
+        monthly_analysis = summarize_user_product_errors_by_anchor_month(
+            hierarchical_predictions
+        ).to_dict(orient="records")
+    has_variability = (
+        has_user_product_history
+        & hierarchical_predictions["history_relative_mad"].notna()
+    )
+    if has_variability.any():
+        variability_analysis = summarize_user_product_error_variability(
+            hierarchical_predictions
+        )
     global_mae = float(global_evaluation["overall"]["mae_days"])
     hierarchical_mae = float(hierarchical_evaluation["overall"]["mae_days"])
     return {
         "sample_count": int(len(samples)),
         "global_baseline": global_evaluation,
         "hierarchical_baseline": hierarchical_evaluation,
+        "user_product_error_tail": tail_error_analysis,
+        "user_product_error_by_history_count": history_count_analysis,
+        "user_product_variability_analysis": variability_analysis,
+        "user_product_error_by_product": product_analysis,
+        "user_product_error_by_anchor_month": monthly_analysis,
         "mae_improvement_days": global_mae - hierarchical_mae,
         "mae_improvement_rate": (
             None if global_mae == 0 else (global_mae - hierarchical_mae) / global_mae
@@ -154,6 +219,11 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         samples,
         trained_until=split.validation_end_at,
     )
+    validation_shrinkage_candidates = evaluate_shrinkage_candidates(
+        validation_rows,
+        train_model,
+        shrinkage_strengths=SHRINKAGE_STRENGTH_CANDIDATES,
+    )
     observation_end_at = pd.Timestamp(samples["anchor_at"].max())
 
     invariants = {
@@ -194,6 +264,10 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         "split_summary": _split_summary(samples),
         "validation_model": _model_summary(train_model),
         "test_model": _model_summary(test_model),
+        # Test를 보지 않고 선택 근거를 남기기 위해 Validation 결과만 기록합니다.
+        "validation_shrinkage_candidates": validation_shrinkage_candidates.to_dict(
+            orient="records"
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -213,6 +287,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     split = summary["split"]
     validation = summary["validation_evaluation"]
     test = summary["test_evaluation"]
+    shrinkage_candidates = summary["validation_shrinkage_candidates"]
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -258,6 +333,52 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 f"{metrics['within_7_days_rate']:.2%} |"
             )
 
+    if shrinkage_candidates:
+        lines.extend(
+            [
+                "",
+                "## Validation 수축 강도 후보 비교",
+                "",
+                "| k | 평균 개인 가중치 | MAE(일) | 중앙 절대오차(일) | ±7일 | "
+                "상위 5% MAE(일) | 상위 5% 오차 기여율 | 늦은 예측 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for candidate in shrinkage_candidates:
+            lines.append(
+                f"| {candidate['shrinkage_strength']:.0f} | "
+                f"{candidate['mean_personal_history_weight']:.2%} | "
+                f"{candidate['mae_days']:.2f} | "
+                f"{candidate['median_absolute_error_days']:.2f} | "
+                f"{candidate['within_7_days_rate']:.2%} | "
+                f"{candidate['tail_mae_days']:.2f} | "
+                f"{candidate['tail_absolute_error_share']:.2%} | "
+                f"{candidate['tail_late_prediction_rate']:.2%} |"
+            )
+
+        lines.extend(
+            [
+                "",
+                "## Validation 기존 최악 5% 고정 코호트 재평가",
+                "",
+                "| k | 기존 MAE(일) | 후보 MAE(일) | 개선(일) | 개선 표본 | "
+                "악화 표본 | 늦은 예측 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for candidate in shrinkage_candidates:
+            lines.append(
+                f"| {candidate['shrinkage_strength']:.0f} | "
+                f"{candidate['fixed_cohort_reference_mae_days']:.2f} | "
+                f"{candidate['fixed_cohort_candidate_mae_days']:.2f} | "
+                f"{candidate['fixed_cohort_mae_improvement_days']:.2f} | "
+                f"{candidate['fixed_cohort_improved_sample_count']:,}건 "
+                f"({candidate['fixed_cohort_improved_sample_rate']:.2%}) | "
+                f"{candidate['fixed_cohort_worsened_sample_count']:,}건 "
+                f"({candidate['fixed_cohort_worsened_sample_rate']:.2%}) | "
+                f"{candidate['fixed_cohort_late_prediction_rate']:.2%} |"
+            )
+
     test_sources = test["hierarchical_baseline"]["by_prediction_source"]
     lines.extend(
         [
@@ -278,6 +399,110 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"{metrics['median_absolute_error_days']:.2f} | "
             f"{metrics['within_7_days_rate']:.2%} |"
         )
+
+    history_count_analysis = test["user_product_error_by_history_count"]
+    tail_error_analysis = test["user_product_error_tail"]
+    if tail_error_analysis:
+        lines.extend(
+            [
+                "",
+                "## Test 개인 이력 꼬리오차 기여도",
+                "",
+                "| 요청 상위 비율 | 실제 표본 | 실제 비율 | 오차 기여율 | "
+                "늦은 예측 | 빠른 예측 |",
+                "| ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for metrics in tail_error_analysis:
+            lines.append(
+                f"| {metrics['requested_tail_rate']:.0%} | "
+                f"{metrics['tail_sample_count']:,} | "
+                f"{metrics['actual_tail_sample_rate']:.2%} | "
+                f"{metrics['absolute_error_share']:.2%} | "
+                f"{metrics['late_prediction_rate']:.2%} | "
+                f"{metrics['early_prediction_rate']:.2%} |"
+            )
+
+    if history_count_analysis:
+        lines.extend(
+            [
+                "",
+                "## Test 개인 이력 개수별 오차",
+                "",
+                "| 과거 간격 수 | 표본 | MAE(일) | 중앙 절대오차(일) | "
+                "평균 방향 오차(일) |",
+                "| ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for metrics in history_count_analysis:
+            lines.append(
+                f"| {metrics['history_interval_count']:,} | "
+                f"{metrics['sample_count']:,} | {metrics['mae_days']:.2f} | "
+                f"{metrics['median_absolute_error_days']:.2f} | "
+                f"{metrics['mean_prediction_error_days']:+.2f} |"
+            )
+
+    variability_analysis = test["user_product_variability_analysis"]
+    if variability_analysis is not None:
+        spearman = variability_analysis["spearman_relative_mad_absolute_error"]
+        spearman_text = "계산 불가" if spearman is None else f"{spearman:+.4f}"
+        lines.extend(
+            [
+                "",
+                "## Test 개인 이력 변동성과 오차의 관계",
+                "",
+                f"- 분석 표본: **{variability_analysis['sample_count']:,}건**",
+                f"- 상대 MAD 중앙값: "
+                f"**{variability_analysis['median_relative_mad']:.4f}**",
+                f"- 상대 MAD와 절대오차의 Spearman 순위 상관: **{spearman_text}**",
+                "- 이 값은 두 변수의 단조 관계를 나타내며 인과관계를 증명하지 "
+                "않습니다.",
+            ]
+        )
+
+    product_analysis = test["user_product_error_by_product"]
+    if product_analysis is not None:
+        lines.extend(
+            [
+                "",
+                "## Test 개인 이력 오차 기여 상위 상품",
+                "",
+                f"- 분석 상품: **{product_analysis['product_count']:,}개**",
+                f"- 상위 {TOP_ERROR_CONTRIBUTOR_COUNT}개 상품의 전체 오차 기여율: "
+                f"**{product_analysis['top_contributor_error_share']:.2%}**",
+                "",
+                "| 상품 | 표본 | MAE(일) | 총 절대오차(일) | 오차 기여율 |",
+                "| --- | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for metrics in product_analysis["top_contributors"]:
+            lines.append(
+                f"| `{metrics['product_id']}` | {metrics['sample_count']:,} | "
+                f"{metrics['mae_days']:.2f} | "
+                f"{metrics['total_absolute_error_days']:.2f} | "
+                f"{metrics['absolute_error_share']:.2%} |"
+            )
+
+    monthly_analysis = test["user_product_error_by_anchor_month"]
+    if monthly_analysis:
+        lines.extend(
+            [
+                "",
+                "## Test 개인 이력 월별 오차",
+                "",
+                "| 예측 기준 월 | 표본 | MAE(일) | 중앙 절대오차(일) | "
+                "평균 방향 오차(일) | 오차 기여율 |",
+                "| --- | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for metrics in monthly_analysis:
+            lines.append(
+                f"| {metrics['anchor_month']} | {metrics['sample_count']:,} | "
+                f"{metrics['mae_days']:.2f} | "
+                f"{metrics['median_absolute_error_days']:.2f} | "
+                f"{metrics['mean_prediction_error_days']:+.2f} | "
+                f"{metrics['absolute_error_share']:.2%} |"
+            )
 
     global_test = test["global_baseline"]["overall"]
     hierarchical_test = test["hierarchical_baseline"]["overall"]

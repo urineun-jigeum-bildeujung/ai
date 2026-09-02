@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+import numpy as np
 import pandas as pd
 
 
@@ -29,6 +30,19 @@ SAMPLE_REQUIRED_COLUMNS: Final[tuple[str, ...]] = (
 )
 
 SPLIT_NAMES: Final[tuple[str, ...]] = ("train", "validation", "test")
+# 정렬이나 필터링 후에도 하나의 사용자·주문·상품 표본을 다시 찾는 식별 열입니다.
+SAMPLE_ID_COLUMNS: Final[tuple[str, ...]] = (
+    "user_id",
+    "order_id",
+    "product_id",
+)
+
+
+def _median_absolute_deviation(values: np.ndarray) -> float:
+    """여러 구매 간격이 중앙값에서 보통 얼마나 벗어나는지 계산합니다."""
+    # expanding 배열의 앞부분에는 shift로 만든 NaN이 있으므로 계산에서 제외합니다.
+    median = float(np.nanmedian(values))
+    return float(np.nanmedian(np.abs(values - median)))
 
 
 @dataclass(frozen=True)
@@ -64,7 +78,7 @@ def _validate_labels(labels: pd.DataFrame) -> pd.DataFrame:
         raise RepurchaseSampleBuildError("예측 기준 시각에 결측값이 있습니다.")
     if rows["duration_days"].lt(0).any():
         raise RepurchaseSampleBuildError("음수 재구매 기간은 사용할 수 없습니다.")
-    if rows.duplicated(subset=["user_id", "order_id", "product_id"]).any():
+    if rows.duplicated(subset=list(SAMPLE_ID_COLUMNS)).any():
         raise RepurchaseSampleBuildError("중복된 사용자·주문·상품 라벨이 있습니다.")
     return rows
 
@@ -85,11 +99,32 @@ def build_historical_interval_features(labels: pd.DataFrame) -> pd.DataFrame:
 
     # 관측된 현재 정답을 한 행 뒤부터 사용할 수 있도록 먼저 한 칸 이동합니다.
     known_duration = rows["duration_days"].where(rows["event_observed"])
-    rows["history_median_days"] = known_duration.groupby(
+    historical_duration = known_duration.groupby(
         pair_keys,
         observed=True,
         sort=False,
-    ).transform(lambda values: values.shift(1).expanding(min_periods=1).median())
+    ).shift(1)
+    historical_sequence = historical_duration.groupby(
+        pair_keys,
+        observed=True,
+        sort=False,
+    )
+    rows["history_median_days"] = historical_sequence.transform(
+        lambda values: values.expanding(min_periods=1).median()
+    )
+
+    # 간격이 두 개 이상일 때만 중앙값 절대편차로 불규칙성을 계산합니다.
+    rows["history_mad_days"] = historical_sequence.transform(
+        lambda values: values.expanding(min_periods=2).apply(
+            _median_absolute_deviation,
+            raw=True,
+        )
+    )
+    # 같은 MAD라도 대표 주기가 다른 상품을 비교할 수 있도록 비율도 남깁니다.
+    positive_history_median = rows["history_median_days"].where(
+        rows["history_median_days"].gt(0)
+    )
+    rows["history_relative_mad"] = rows["history_mad_days"].div(positive_history_median)
 
     # 현재 행을 제외한 과거 관측 간격의 개수를 함께 남겨 fallback 근거로 씁니다.
     observed_count = rows["event_observed"].astype("int64")

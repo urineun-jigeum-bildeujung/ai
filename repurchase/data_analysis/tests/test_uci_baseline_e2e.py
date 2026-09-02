@@ -41,15 +41,53 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert summary["prediction_scope"] == "same_user_same_product"
     assert summary["validation_evaluation"]["sample_count"] > 0
     assert summary["test_evaluation"]["sample_count"] > 0
+    assert [
+        candidate["shrinkage_strength"]
+        for candidate in summary["validation_shrinkage_candidates"]
+    ] == [1.0, 2.0, 4.0, 8.0]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
     )
     assert summary["current_prediction_example"]["prediction_source"] == (
         "user_product_history"
     )
+    history_count_analysis = summary["test_evaluation"][
+        "user_product_error_by_history_count"
+    ]
+    tail_error_analysis = summary["test_evaluation"]["user_product_error_tail"]
+    assert [row["requested_tail_rate"] for row in tail_error_analysis] == [0.01, 0.05]
+    assert all(row["tail_sample_count"] > 0 for row in tail_error_analysis)
+    assert all(row["by_history_count"] for row in tail_error_analysis)
+    assert all(
+        history_row["overall_sample_count"] > 0
+        for row in tail_error_analysis
+        for history_row in row["by_history_count"]
+    )
+    assert history_count_analysis
+    assert all(row["sample_count"] > 0 for row in history_count_analysis)
+    variability_analysis = summary["test_evaluation"][
+        "user_product_variability_analysis"
+    ]
+    assert variability_analysis is not None
+    assert variability_analysis["sample_count"] > 0
+    product_analysis = summary["test_evaluation"]["user_product_error_by_product"]
+    assert product_analysis is not None
+    assert product_analysis["product_count"] > 0
+    assert product_analysis["top_contributors"]
+    assert summary["test_evaluation"]["user_product_error_by_anchor_month"]
     assert all(summary["invariants"].values())
 
     markdown = render_markdown(summary)
+
+    assert "Validation 수축 강도 후보 비교" in markdown
+    assert "상위 5% MAE(일)" in markdown
+    assert "Validation 기존 최악 5% 고정 코호트 재평가" in markdown
+    assert "악화 표본" in markdown
     assert "## 결과 해석" in markdown
     assert "## 현재 평가의 한계" in markdown
     assert "Test fallback 사용 결과" in markdown
+    assert "Test 개인 이력 꼬리오차 기여도" in markdown
+    assert "Test 개인 이력 개수별 오차" in markdown
+    assert "Test 개인 이력 변동성과 오차의 관계" in markdown
+    assert "Test 개인 이력 오차 기여 상위 상품" in markdown
+    assert "Test 개인 이력 월별 오차" in markdown
