@@ -417,10 +417,8 @@ def summarize_largest_error_tail_by_history_count(
     return summary
 
 
-def summarize_user_product_errors_by_prior_count(
-    rows: pd.DataFrame,
-) -> pd.DataFrame:
-    """개인화 예측이 사용한 prior의 종류·관측 수별 오차를 집계합니다."""
+def _get_validated_user_product_prior_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """개인화 예측 중 prior 관측 수를 신뢰할 수 있는 행만 검증해 반환합니다."""
     missing_columns = PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
     if missing_columns:
         missing_text = ", ".join(sorted(missing_columns))
@@ -438,6 +436,15 @@ def summarize_user_product_errors_by_prior_count(
     if normalized_counts.le(0).any() or normalized_counts.mod(1).ne(0).any():
         raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
 
+    return user_product_rows
+
+
+def summarize_user_product_errors_by_prior_count(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """개인화 예측이 사용한 prior의 종류·관측 수별 오차를 집계합니다."""
+    user_product_rows = _get_validated_user_product_prior_rows(rows)
+
     total_count = len(user_product_rows)
     summary = (
         user_product_rows.groupby(
@@ -454,6 +461,88 @@ def summarize_user_product_errors_by_prior_count(
         .reset_index()
     )
     summary["sample_rate"] = summary["sample_count"] / total_count
+    return summary
+
+
+def summarize_fixed_cohort_prior_support(
+    candidate_rows: pd.DataFrame,
+    fixed_cohort_rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """전체와 고정 꼬리 표본의 prior 관측 수 분포를 비교합니다."""
+    user_product_rows = _get_validated_user_product_prior_rows(candidate_rows)
+    _validate_fixed_cohort_ids(
+        user_product_rows,
+        label="수축 후보 개인화 예측",
+    )
+    _validate_fixed_cohort_ids(
+        fixed_cohort_rows,
+        label="고정 꼬리 표본",
+    )
+
+    fixed_cohort_keys = fixed_cohort_rows.loc[
+        :,
+        list(SAMPLE_ID_COLUMNS),
+    ].copy()
+    prior_columns = [
+        *SAMPLE_ID_COLUMNS,
+        "prior_source",
+        "prior_observation_count",
+    ]
+    fixed_prior_rows = fixed_cohort_keys.merge(
+        user_product_rows.loc[:, prior_columns],
+        on=list(SAMPLE_ID_COLUMNS),
+        how="left",
+        validate="one_to_one",
+        indicator=True,
+    )
+    missing_fixed_rows = fixed_prior_rows["_merge"].ne("both")
+    if missing_fixed_rows.any():
+        missing_count = int(missing_fixed_rows.sum())
+        raise ValueError(
+            "수축 후보 개인화 예측에서 고정 꼬리 표본 "
+            f"{missing_count}개를 찾을 수 없습니다."
+        )
+    fixed_prior_rows = fixed_prior_rows.drop(columns="_merge")
+
+    group_columns = ["prior_source", "prior_observation_count"]
+    overall_counts = (
+        user_product_rows.groupby(
+            group_columns,
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("overall_sample_count")
+        .reset_index()
+    )
+    fixed_tail_counts = (
+        fixed_prior_rows.groupby(
+            group_columns,
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("fixed_tail_sample_count")
+        .reset_index()
+    )
+    summary = overall_counts.merge(
+        fixed_tail_counts,
+        on=group_columns,
+        how="left",
+        validate="one_to_one",
+    )
+    summary["fixed_tail_sample_count"] = (
+        summary["fixed_tail_sample_count"].fillna(0).astype("int64")
+    )
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(
+        len(user_product_rows)
+    )
+    summary["fixed_tail_sample_rate"] = summary["fixed_tail_sample_count"].div(
+        len(fixed_prior_rows)
+    )
+    summary["tail_overrepresentation_ratio"] = summary["fixed_tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
     return summary
 
 

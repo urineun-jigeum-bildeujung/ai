@@ -10,6 +10,7 @@ from scripts.modeling.error_analysis import (
     build_fixed_cohort_comparison_rows,
     compare_error_on_fixed_cohort,
     select_largest_error_rows,
+    summarize_fixed_cohort_prior_support,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
     summarize_user_product_error_variability,
@@ -235,6 +236,39 @@ def test_summarize_user_product_errors_by_prior_count() -> None:
     assert result["mae_days"].tolist() == [20.0, 10.0]
     assert result["median_absolute_error_days"].tolist() == [20.0, 10.0]
     assert result["mean_prediction_error_days"].tolist() == [10.0, 10.0]
+
+
+def test_summarize_fixed_cohort_prior_support() -> None:
+    """고정 꼬리에 prior 관측 수가 얼마나 과대표집됐는지 계산합니다."""
+    candidate_rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2", "U3", "U4", "U5", "U6"],
+            "order_id": ["O1", "O2", "O3", "O4", "O5", "O6"],
+            "product_id": ["P1", "P2", "P3", "P4", "P5", "P6"],
+            "prediction_source": ["shrunk_user_product_history"] * 6,
+            "prior_source": ["product_history"] * 6,
+            "prior_observation_count": [1, 1, 2, 2, 10, 10],
+            "target_duration_days": [30.0] * 6,
+            "predicted_duration_days": [130.0, 120.0, 40.0, 35.0, 31.0, 32.0],
+        }
+    )
+    fixed_cohort_rows = candidate_rows.iloc[:2].copy()
+
+    result = summarize_fixed_cohort_prior_support(
+        candidate_rows,
+        fixed_cohort_rows,
+    )
+    by_prior_count = result.set_index("prior_observation_count")
+
+    assert by_prior_count.loc[1, "overall_sample_count"] == 2
+    assert by_prior_count.loc[1, "overall_sample_rate"] == pytest.approx(2 / 6)
+    assert by_prior_count.loc[1, "fixed_tail_sample_count"] == 2
+    assert by_prior_count.loc[1, "fixed_tail_sample_rate"] == 1.0
+    assert by_prior_count.loc[1, "tail_overrepresentation_ratio"] == 3.0
+    assert by_prior_count.loc[2, "fixed_tail_sample_count"] == 0
+    assert by_prior_count.loc[2, "tail_overrepresentation_ratio"] == 0.0
+    assert by_prior_count.loc[10, "fixed_tail_sample_count"] == 0
+    assert by_prior_count.loc[10, "tail_overrepresentation_ratio"] == 0.0
 
 
 @pytest.mark.parametrize("tail_rate", [0.0, -0.1, 1.1])
