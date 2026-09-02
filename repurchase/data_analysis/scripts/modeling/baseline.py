@@ -295,22 +295,10 @@ def predict_shrunk_hierarchical_median_baseline(
     """상품 prior와 개인 중앙값을 이력 수에 따라 혼합해 예측합니다."""
     _require_columns(samples, PREDICT_REQUIRED_COLUMNS)
     normalized_strength = _normalize_shrinkage_strength(shrinkage_strength)
-    predictions = samples.copy()
     history_counts, has_user_product_history = _validate_personal_history_features(
-        predictions
+        samples
     )
-
-    # 상품 통계가 없는 경우에도 예측할 수 있도록 전체 중앙값을 prior로 둡니다.
-    predictions["prior_duration_days"] = model.global_median_days
-    predictions["prior_source"] = "global_history"
-    predictions["prior_observation_count"] = model.global_observation_count
-
-    product_median = predictions["product_id"].map(model.product_median_days)
-    product_count = predictions["product_id"].map(model.product_observation_counts)
-    has_product_history = product_median.notna()
-    predictions.loc[has_product_history, "prior_duration_days"] = product_median
-    predictions.loc[has_product_history, "prior_source"] = "product_history"
-    predictions.loc[has_product_history, "prior_observation_count"] = product_count
+    predictions = attach_hierarchical_prior_features(model, samples)
 
     # 개인 이력이 없으면 prior 예측을 그대로 사용합니다.
     predictions["predicted_duration_days"] = predictions["prior_duration_days"]
@@ -350,9 +338,6 @@ def predict_shrunk_hierarchical_median_baseline(
         raise MedianBaselineError("수축 중앙값 예측 이후에도 예측값이 비어 있습니다.")
     if predictions["predicted_duration_days"].lt(0).any():
         raise MedianBaselineError("수축 중앙값 모델이 음수 기간을 예측했습니다.")
-    predictions["prior_observation_count"] = predictions[
-        "prior_observation_count"
-    ].astype("int64")
     predictions["prediction_observation_count"] = predictions[
         "prediction_observation_count"
     ].astype("int64")

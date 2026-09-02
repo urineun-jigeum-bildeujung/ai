@@ -233,11 +233,14 @@ def test_shrunk_prediction_blends_personal_history_with_available_prior() -> Non
         "product_history",
         "global_history",
     ]
+    assert predictions["prior_observation_count"].tolist() == [2, 1, 3]
     assert predictions["prediction_source"].tolist() == [
         "shrunk_user_product_history",
         "product_history",
         "global_history",
     ]
+    assert predictions["prediction_observation_count"].tolist() == [1, 1, 3]
+    assert predictions["shrinkage_strength"].tolist() == [4.0, 4.0, 4.0]
 
     # 벡터 계산 결과가 앞서 검증한 단일 행 계산 함수와 같은지 확인합니다.
     expected = blend_personal_and_prior_medians(
