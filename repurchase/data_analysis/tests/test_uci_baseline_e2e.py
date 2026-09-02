@@ -84,6 +84,8 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "Validation 기존 최악 5% 고정 코호트 재평가" in markdown
     assert "악화 표본" in markdown
     assert "## 결과 해석" in markdown
+    assert "단일 지표로 수축 강도를 확정하지 않습니다" in markdown
+    assert "LightGBM을 우선" in markdown
     assert "## 현재 평가의 한계" in markdown
     assert "Test fallback 사용 결과" in markdown
     assert "Test 개인 이력 꼬리오차 기여도" in markdown

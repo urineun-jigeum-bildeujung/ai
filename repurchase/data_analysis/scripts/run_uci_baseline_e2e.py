@@ -514,6 +514,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
     seven_day_change = (
         hierarchical_test["within_7_days_rate"] - global_test["within_7_days_rate"]
     )
+    best_shrinkage_mae = (
+        min(shrinkage_candidates, key=lambda candidate: candidate["mae_days"])
+        if shrinkage_candidates
+        else None
+    )
+    best_shrinkage_within_seven_days = (
+        max(
+            shrinkage_candidates,
+            key=lambda candidate: candidate["within_7_days_rate"],
+        )
+        if shrinkage_candidates
+        else None
+    )
     lines.extend(
         [
             "",
@@ -527,10 +540,27 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"±7일 적중률은 **{abs(seven_day_change):.2%}p "
             f"{'증가' if seven_day_change >= 0 else '감소'}**했습니다.",
             "- 개인 이력은 일반적인 표본을 더 가깝게 맞혔지만 일부 큰 오차가 "
-            "평균 절대오차를 끌어올렸습니다. 따라서 다음 실험에서는 개인 이력 "
-            "개수와 간격 변동성에 따른 안정화가 필요합니다.",
+            "평균 절대오차를 끌어올렸습니다.",
             "- 이 결과만으로 계층형 모델을 최종 채택하지 않습니다. 전역 기준보다 "
             "좋아진 지표와 나빠진 지표를 함께 다음 모델의 비교 기준으로 사용합니다.",
+        ]
+    )
+    if best_shrinkage_mae and best_shrinkage_within_seven_days:
+        lines.extend(
+            [
+                f"- Validation 후보 중 MAE는 `k={best_shrinkage_mae['shrinkage_strength']:.0f}`에서 "
+                f"**{best_shrinkage_mae['mae_days']:.2f}일**로 가장 낮았지만, ±7일 "
+                f"적중률은 `k={best_shrinkage_within_seven_days['shrinkage_strength']:.0f}`의 "
+                f"**{best_shrinkage_within_seven_days['within_7_days_rate']:.2%}**가 가장 "
+                "높아 단일 지표로 수축 강도를 확정하지 않습니다.",
+                "- 수축 중앙값은 큰 오차를 완화하는 비교 기준으로 유지합니다. 다음 "
+                "실험은 이력 수·변동성·상품·시기의 비선형 상호작용을 학습하는 "
+                "LightGBM을 우선하고, 우측검열까지 사용하는 생존분석은 별도 비교 "
+                "실험으로 분리합니다.",
+            ]
+        )
+    lines.extend(
+        [
             "",
             "## 현재 평가의 한계",
             "",
@@ -541,8 +571,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "구매 간격이 상대적으로 덜 포함될 수 있습니다.",
             "- 70%·15%·15% 단일 시간 분할 결과이므로 계절별 안정성을 별도로 "
             "검증해야 합니다.",
-            "- 과거 간격 한 건도 개인 이력으로 사용했으므로 이력 수에 따른 성능 "
-            "분석 후 최소 이력 또는 수축 추정 적용 여부를 결정해야 합니다.",
+            "- 수축 강도는 Validation의 MAE·중앙 절대오차·±7일 적중률 간 "
+            "우선순위를 정한 뒤 확정해야 합니다.",
         ]
     )
 

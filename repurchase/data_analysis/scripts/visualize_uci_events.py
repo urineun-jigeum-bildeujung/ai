@@ -9,11 +9,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
 from .paths import FIGURE_DIR, REPORT_DIR
-from .plotting import configure_korean_font, save_figure
+from .plotting import configure_korean_font, plt, save_figure
 
 REPORT_PATH = REPORT_DIR / "uci_purchase_event_validation.json"
 FIGURE_NAME = "uci_purchase_event_duplicate_sensitivity.png"

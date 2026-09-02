@@ -10,14 +10,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter
 
 from .paths import FIGURE_DIR, REPORT_DIR
-from .plotting import configure_korean_font, save_figure
+from .plotting import configure_korean_font, plt, save_figure
 
 DATASETS = {
     "uci_online_retail_ii": "UCI 전체",

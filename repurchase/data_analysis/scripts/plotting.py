@@ -1,4 +1,9 @@
-"""재구매 분석 그래프에서 공통으로 사용하는 글꼴·저장 설정을 제공합니다."""
+"""재구매 분석 그래프에서 공통으로 사용하는 백엔드·글꼴·저장 설정입니다."""
+
+import matplotlib
+
+# 화면이 없는 CI·서버에서도 그래프 창을 열지 않고 PNG를 생성합니다.
+matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 from matplotlib import font_manager

@@ -15,6 +15,7 @@ from scripts.modeling.error_analysis import (
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
+    summarize_user_product_errors_by_prior_count,
     summarize_user_product_errors_by_product,
 )
 
@@ -212,6 +213,28 @@ def test_compare_error_on_fixed_cohort_tracks_same_reference_failures() -> None:
         "IMPROVED",
         "IMPROVED",
     ]
+
+
+def test_summarize_user_product_errors_by_prior_count() -> None:
+    """개인화 예측의 prior 관측 수별 표본 비중과 오차를 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["shrunk_user_product_history"] * 3,
+            "prior_source": ["product_history"] * 3,
+            "prior_observation_count": [1, 1, 10],
+            "target_duration_days": [30.0, 30.0, 30.0],
+            "predicted_duration_days": [60.0, 20.0, 40.0],
+        }
+    )
+
+    result = summarize_user_product_errors_by_prior_count(rows)
+
+    assert result["prior_observation_count"].tolist() == [1, 10]
+    assert result["sample_count"].tolist() == [2, 1]
+    assert result["sample_rate"].tolist() == pytest.approx([2 / 3, 1 / 3])
+    assert result["mae_days"].tolist() == [20.0, 10.0]
+    assert result["median_absolute_error_days"].tolist() == [20.0, 10.0]
+    assert result["mean_prediction_error_days"].tolist() == [10.0, 10.0]
 
 
 @pytest.mark.parametrize("tail_rate", [0.0, -0.1, 1.1])

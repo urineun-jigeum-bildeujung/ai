@@ -35,6 +35,14 @@ VARIABILITY_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
+# 수축 예측이 의존한 상품·전체 prior의 관측 수와 오차를 비교할 때 필요합니다.
+PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prior_source",
+        "prior_observation_count",
+    }
+)
+
 PRODUCT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     {
         "prediction_source",
@@ -406,6 +414,46 @@ def summarize_largest_error_tail_by_history_count(
         if total_tail_absolute_error == 0
         else summary["tail_absolute_error_days"].div(total_tail_absolute_error)
     )
+    return summary
+
+
+def summarize_user_product_errors_by_prior_count(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """개인화 예측이 사용한 prior의 종류·관측 수별 오차를 집계합니다."""
+    missing_columns = PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"prior 지지 표본 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    prior_counts = user_product_rows["prior_observation_count"]
+    if prior_counts.isna().any():
+        raise ValueError("prior 관측 수에 결측값이 있습니다.")
+    if is_bool_dtype(prior_counts.dtype) or not is_numeric_dtype(prior_counts.dtype):
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+    normalized_counts = prior_counts.astype("float64")
+    if not np.isfinite(normalized_counts.to_numpy(copy=False)).all():
+        raise ValueError("prior 관측 수는 유한한 정수여야 합니다.")
+    if normalized_counts.le(0).any() or normalized_counts.mod(1).ne(0).any():
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+
+    total_count = len(user_product_rows)
+    summary = (
+        user_product_rows.groupby(
+            ["prior_source", "prior_observation_count"],
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            sample_count=("absolute_error_days", "size"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+    )
+    summary["sample_rate"] = summary["sample_count"] / total_count
     return summary
 
 
