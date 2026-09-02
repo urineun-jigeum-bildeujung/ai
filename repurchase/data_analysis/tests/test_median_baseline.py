@@ -7,6 +7,7 @@ import pytest
 
 from scripts.modeling.baseline import (
     MedianBaselineError,
+    attach_hierarchical_prior_features,
     blend_personal_and_prior_medians,
     calculate_personal_history_weight,
     fit_hierarchical_median_baseline,
@@ -132,6 +133,50 @@ def test_fit_uses_only_outcomes_known_by_training_cutoff() -> None:
     assert model.global_median_days == 20.0
     assert model.product_median_days == {"p1": 15.0, "p2": 40.0}
     assert model.product_observation_counts == {"p1": 2, "p2": 1}
+
+
+def test_attach_prior_features_uses_product_then_global_without_mutating_input() -> (
+    None
+):
+    """상품 prior와 전체 fallback을 붙이되 입력 데이터는 변경하지 않습니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+    samples = pd.DataFrame(
+        {
+            "product_id": ["p1", "new"],
+            "memo": ["상품 이력 있음", "처음 보는 상품"],
+        }
+    )
+    original = samples.copy(deep=True)
+
+    result = attach_hierarchical_prior_features(model, samples)
+
+    assert result["prior_duration_days"].tolist() == [15.0, 20.0]
+    assert result["prior_source"].tolist() == [
+        "product_history",
+        "global_history",
+    ]
+    assert result["prior_observation_count"].tolist() == [2, 3]
+    pd.testing.assert_frame_equal(samples, original)
+
+
+def test_attach_prior_features_requires_only_product_id() -> None:
+    """개인 이력 피처 없이도 prior 선택이 가능해야 합니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+
+    result = attach_hierarchical_prior_features(
+        model,
+        pd.DataFrame({"product_id": ["p2"]}),
+    )
+
+    assert result.loc[0, "prior_duration_days"] == 40.0
+    assert result.loc[0, "prior_source"] == "product_history"
+    assert result.loc[0, "prior_observation_count"] == 1
 
 
 def test_prediction_uses_user_product_then_product_then_global_fallback() -> None:

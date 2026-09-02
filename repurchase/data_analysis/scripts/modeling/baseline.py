@@ -34,6 +34,8 @@ PREDICT_REQUIRED_COLUMNS: Final[tuple[str, ...]] = (
     "history_interval_count",
 )
 
+PRIOR_FEATURE_REQUIRED_COLUMNS: Final[tuple[str, ...]] = ("product_id",)
+
 
 @dataclass(frozen=True)
 class HierarchicalMedianModel:
@@ -208,6 +210,34 @@ def fit_hierarchical_median_baseline(
         product_median_days=product_summary["median"].astype(float).to_dict(),
         product_observation_counts=product_summary["count"].astype(int).to_dict(),
     )
+
+
+def attach_hierarchical_prior_features(
+    model: HierarchicalMedianModel,
+    samples: pd.DataFrame,
+) -> pd.DataFrame:
+    """상품 이력이 없으면 전체 이력으로 대체한 prior 피처를 추가합니다."""
+    _require_columns(samples, PRIOR_FEATURE_REQUIRED_COLUMNS)
+    result = samples.copy()
+
+    # 처음 보는 상품도 처리할 수 있도록 모든 행을 전체 이력 prior로 초기화합니다.
+    result["prior_duration_days"] = model.global_median_days
+    result["prior_source"] = "global_history"
+    result["prior_observation_count"] = model.global_observation_count
+
+    # 상품 이력이 있는 행만 더 구체적인 상품별 prior로 교체합니다.
+    product_median = result["product_id"].map(model.product_median_days)
+    product_count = result["product_id"].map(model.product_observation_counts)
+    has_product_history = product_median.notna()
+    result.loc[has_product_history, "prior_duration_days"] = product_median
+    result.loc[has_product_history, "prior_source"] = "product_history"
+    result.loc[has_product_history, "prior_observation_count"] = product_count
+
+    # 관측 수는 사람이나 상품에 관계없이 개수이므로 정수형으로 통일합니다.
+    result["prior_observation_count"] = result["prior_observation_count"].astype(
+        "int64"
+    )
+    return result
 
 
 def predict_hierarchical_median_baseline(
