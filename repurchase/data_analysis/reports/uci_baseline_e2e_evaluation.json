@@ -148,6 +148,3097 @@
       "fixed_cohort_late_prediction_rate": 0.9794628751974723
     }
   ],
+  "validation_prior_support_analysis": [
+    {
+      "prior_source": "global_history",
+      "prior_observation_count": 163957,
+      "overall_sample_count": 1018,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.08047430830039526,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.019630846966297015
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 1,
+      "overall_sample_count": 112,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.008853754940711462,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.5352911306702777
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 2,
+      "overall_sample_count": 150,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.011857707509881422,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.3996840442338073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 3,
+      "overall_sample_count": 220,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.017391304347826087,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.27251184834123227
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 4,
+      "overall_sample_count": 114,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.009011857707509882,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.17530001940079265
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 5,
+      "overall_sample_count": 73,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.005770750988142293,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.5475123893613798
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 6,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 7,
+      "overall_sample_count": 71,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.005612648221343873,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.844402910353114
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 8,
+      "overall_sample_count": 43,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.003399209486166008,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 2.788493331863772
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 9,
+      "overall_sample_count": 69,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.005454545454545455,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 1.7377567140600316
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 10,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 3.223258421240381
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 11,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 2.7755836405125507
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 12,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 13,
+      "overall_sample_count": 23,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0018181818181818182,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.6066350710900474
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 14,
+      "overall_sample_count": 62,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004901185770750988,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.2893033684961526
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 15,
+      "overall_sample_count": 48,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.003794466403162055,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.249012638230648
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 16,
+      "overall_sample_count": 50,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.003952569169960474,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 2.398104265402844
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 17,
+      "overall_sample_count": 32,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0025296442687747036,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.2490126382306477
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 18,
+      "overall_sample_count": 59,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0046640316205533595,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.6935764586178275
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 19,
+      "overall_sample_count": 45,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0035573122529644267,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 20,
+      "overall_sample_count": 40,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0031620553359683794,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.9984202211690363
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 21,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 22,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.4274430151207405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 23,
+      "overall_sample_count": 71,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.005612648221343873,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.1258705471374852
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 24,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 25,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.4274430151207405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 26,
+      "overall_sample_count": 58,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.00458498023715415,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.3782208421855422
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 27,
+      "overall_sample_count": 50,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.003952569169960474,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.9984202211690363
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 28,
+      "overall_sample_count": 43,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.003399209486166008,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.394246665931886
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 29,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 5.450236966824645
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 30,
+      "overall_sample_count": 64,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.005059288537549407,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.5612657977883095
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 31,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4758143383735801
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 32,
+      "overall_sample_count": 63,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004980237154150198,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.26883823566288
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 33,
+      "overall_sample_count": 46,
+      "fixed_tail_sample_count": 9,
+      "overall_sample_rate": 0.0036363636363636364,
+      "fixed_tail_sample_rate": 0.014218009478672985,
+      "tail_overrepresentation_ratio": 3.9099526066350707
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 34,
+      "overall_sample_count": 97,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0076679841897233205,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.2060227032133027
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 35,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.997630331753555
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 36,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.2490126382306477
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 37,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7401556374700133
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 38,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 4.440933824820081
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 39,
+      "overall_sample_count": 39,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.0030830039525691698,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 3.074492647952364
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 40,
+      "overall_sample_count": 29,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.002292490118577075,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.3782208421855422
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 41,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.9032573534943205
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 42,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.3510826131400426
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 43,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.051800116404756
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 44,
+      "overall_sample_count": 25,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.001976284584980237,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 45,
+      "overall_sample_count": 24,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0018972332015810276,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 46,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.997630331753555
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 47,
+      "overall_sample_count": 52,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.004110671936758893,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.1529347429821364
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 48,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 4.6117389719285455
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 49,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 50,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 51,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.4274430151207402
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 52,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 53,
+      "overall_sample_count": 7,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0005533596837944664,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 54,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 5.181089462290094
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 55,
+      "overall_sample_count": 57,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004505928853754941,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.4024001552063412
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 56,
+      "overall_sample_count": 24,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0018972332015810276,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.8326750921537651
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 57,
+      "overall_sample_count": 35,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002766798418972332,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.570977206048296
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 58,
+      "overall_sample_count": 55,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004347826086956522,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.4533965244865719
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 59,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 4.996050552922591
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 60,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.9968404423380726
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 61,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.3322801474460242
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 62,
+      "overall_sample_count": 82,
+      "fixed_tail_sample_count": 12,
+      "overall_sample_rate": 0.006482213438735178,
+      "fixed_tail_sample_rate": 0.018957345971563982,
+      "tail_overrepresentation_ratio": 2.9245173968327363
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 63,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 4.512561789736534
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 64,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 65,
+      "overall_sample_count": 24,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0018972332015810276,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.498025276461296
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 66,
+      "overall_sample_count": 34,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0026877470355731225,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 67,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 3.330700368615061
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 68,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 69,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 70,
+      "overall_sample_count": 70,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.005533596837944664,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 71,
+      "overall_sample_count": 34,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0026877470355731225,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 2.3510826131400426
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 72,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.051800116404756
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 73,
+      "overall_sample_count": 41,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.003241106719367589,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 74,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 75,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 76,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 77,
+      "overall_sample_count": 26,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0020553359683794467,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 3.8431158099404543
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 78,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 79,
+      "overall_sample_count": 35,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002766798418972332,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.570977206048296
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 80,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.8167456556082147
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 82,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 83,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 84,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5551167281025101
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 85,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.4980252764612954
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 86,
+      "overall_sample_count": 44,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0034782608695652175,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 87,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 88,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 89,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 90,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5401135732889287
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 91,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.6645602948920484
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 92,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 93,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 3.155400349214268
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 94,
+      "overall_sample_count": 41,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.003241106719367589,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.4622586984163681
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 95,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.9032573534943205
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 97,
+      "overall_sample_count": 53,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.0041897233201581025,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 2.262362514530985
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 98,
+      "overall_sample_count": 38,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0030039525691699606,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 2.62950029101189
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 99,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 3.155400349214268
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 100,
+      "overall_sample_count": 3,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00023715415019762845,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 101,
+      "overall_sample_count": 23,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0018181818181818182,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 102,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.051800116404756
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 103,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 3.9968404423380726
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 104,
+      "overall_sample_count": 74,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.005849802371541502,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.0802271465778575
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 105,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.9032573534943205
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 106,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 107,
+      "overall_sample_count": 48,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.003794466403162055,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.249012638230648
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 110,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 111,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 5.99526066350711
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 112,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 113,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.5372463239761818
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 115,
+      "overall_sample_count": 26,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0020553359683794467,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 116,
+      "overall_sample_count": 39,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0030830039525691698,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 117,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 5.551167281025101
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 119,
+      "overall_sample_count": 33,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0026086956521739132,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.2111637704054765
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 120,
+      "overall_sample_count": 38,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0030039525691699606,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 121,
+      "overall_sample_count": 38,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0030039525691699606,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 122,
+      "overall_sample_count": 58,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.00458498023715415,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.0336656316391568
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 123,
+      "overall_sample_count": 100,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.007905138339920948,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.599526066350711
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 124,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 4.996050552922591
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 125,
+      "overall_sample_count": 68,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.005375494071146245,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 2.0571972864975376
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 126,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 127,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 128,
+      "overall_sample_count": 3,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00023715415019762845,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 129,
+      "overall_sample_count": 29,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002292490118577075,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6891104210927711
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 130,
+      "overall_sample_count": 34,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0026877470355731225,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 131,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 132,
+      "overall_sample_count": 35,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.002766798418972332,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 2.283908824193184
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 133,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 134,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.9032573534943205
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 135,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 136,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 137,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.9984202211690363
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 138,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 4.6117389719285455
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 139,
+      "overall_sample_count": 3,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00023715415019762845,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 140,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 141,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 145,
+      "overall_sample_count": 39,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0030830039525691698,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 2.049661765301576
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 146,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.3322801474460242
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 147,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 148,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 149,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 150,
+      "overall_sample_count": 3,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.00023715415019762845,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 13.322801474460242
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 151,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 152,
+      "overall_sample_count": 54,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.004268774703557313,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.8503890936750333
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 153,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.4980252764612954
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 154,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 155,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 156,
+      "overall_sample_count": 33,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0026086956521739132,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 158,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.5372463239761818
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 159,
+      "overall_sample_count": 84,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0066403162055335965,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.7137215075603702
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 160,
+      "overall_sample_count": 23,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0018181818181818182,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.7377567140600316
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 161,
+      "overall_sample_count": 24,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0018972332015810276,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.8326750921537651
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 162,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.7251184834123223
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 163,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.8548860302414805
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 164,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 167,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.9984202211690363
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 168,
+      "overall_sample_count": 25,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.001976284584980237,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.598736176935229
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 170,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.6653501843075302
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 171,
+      "overall_sample_count": 7,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0005533596837944664,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 172,
+      "overall_sample_count": 30,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0023715415019762848,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.3322801474460242
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 173,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9083728278041073
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 174,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 175,
+      "overall_sample_count": 16,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0012648221343873518,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 176,
+      "overall_sample_count": 25,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.001976284584980237,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 177,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.6645602948920484
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 178,
+      "overall_sample_count": 3,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.00023715415019762845,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 6.661400737230121
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 179,
+      "overall_sample_count": 61,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004822134387351779,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.3104394892911713
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 180,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 183,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.103600232809512
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 184,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 185,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 186,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.9516286767471602
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 188,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 2.160454293155715
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 189,
+      "overall_sample_count": 30,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0023715415019762848,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6661400737230121
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 190,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 192,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 193,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 194,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 195,
+      "overall_sample_count": 23,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0018181818181818182,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.6066350710900474
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 196,
+      "overall_sample_count": 73,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.005770750988142293,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.5475123893613798
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 197,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 199,
+      "overall_sample_count": 32,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0025296442687747036,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6245063191153238
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 202,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 203,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 204,
+      "overall_sample_count": 48,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.003794466403162055,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.6653501843075302
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 205,
+      "overall_sample_count": 54,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.004268774703557313,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.37007781873500667
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 206,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 207,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 208,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 210,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.6645602948920484
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 211,
+      "overall_sample_count": 52,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.004110671936758893,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.9215579049702272
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 212,
+      "overall_sample_count": 29,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002292490118577075,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6891104210927711
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 214,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.9339550527442289
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 215,
+      "overall_sample_count": 4,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00031620553359683795,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 216,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9516286767471602
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 217,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 218,
+      "overall_sample_count": 45,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0035573122529644267,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.7763735299280323
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 219,
+      "overall_sample_count": 71,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.005612648221343873,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 1.4073381839218566
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 220,
+      "overall_sample_count": 100,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.007905138339920948,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 1.199052132701422
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 221,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 223,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 224,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.4980252764612954
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 226,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 4.440933824820081
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 227,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 230,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9992101105845181
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 231,
+      "overall_sample_count": 25,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.001976284584980237,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.398104265402844
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 232,
+      "overall_sample_count": 22,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0017391304347826088,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 235,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 237,
+      "overall_sample_count": 51,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.004031620553359684,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 238,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 239,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.9968404423380726
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 240,
+      "overall_sample_count": 58,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00458498023715415,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 241,
+      "overall_sample_count": 7,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0005533596837944664,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.8548860302414805
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 243,
+      "overall_sample_count": 13,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0010276679841897233,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 246,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 247,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 248,
+      "overall_sample_count": 32,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0025296442687747036,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 250,
+      "overall_sample_count": 47,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.003715415019762846,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4251957917380928
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 251,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.0802271465778575
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 252,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 253,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.6653501843075302
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 255,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 257,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 258,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 261,
+      "overall_sample_count": 66,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0052173913043478265,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.6055818852027383
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 263,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 264,
+      "overall_sample_count": 4,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00031620553359683795,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 265,
+      "overall_sample_count": 11,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0008695652173913044,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.8167456556082147
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 268,
+      "overall_sample_count": 41,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.003241106719367589,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.9748391322775787
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 269,
+      "overall_sample_count": 14,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0011067193675889327,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.4274430151207402
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 270,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.1102334562050202
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 271,
+      "overall_sample_count": 20,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0015810276679841897,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 273,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 277,
+      "overall_sample_count": 26,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0020553359683794467,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 2.3058694859642728
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 280,
+      "overall_sample_count": 82,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.006482213438735178,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.24370978306939467
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 282,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5551167281025101
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 283,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.9968404423380726
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 285,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 292,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 295,
+      "overall_sample_count": 48,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.003794466403162055,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.8326750921537651
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 297,
+      "overall_sample_count": 33,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0026086956521739132,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 307,
+      "overall_sample_count": 15,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0011857707509881424,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.3322801474460242
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 309,
+      "overall_sample_count": 29,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002292490118577075,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6891104210927711
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 311,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 314,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5401135732889287
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 315,
+      "overall_sample_count": 56,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.004426877470355731,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 318,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 323,
+      "overall_sample_count": 39,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0030830039525691698,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.024830882650788
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 324,
+      "overall_sample_count": 46,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0036363636363636364,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.8688783570300158
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 327,
+      "overall_sample_count": 55,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.004347826086956522,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.7266982622432859
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 328,
+      "overall_sample_count": 1,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 7.905138339920949e-05,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 329,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 2.4980252764612954
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 330,
+      "overall_sample_count": 35,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.002766798418972332,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 2.85488603024148
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 334,
+      "overall_sample_count": 8,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0006324110671936759,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 339,
+      "overall_sample_count": 9,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007114624505928853,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 341,
+      "overall_sample_count": 48,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.003794466403162055,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.8326750921537651
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 342,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 343,
+      "overall_sample_count": 42,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0033201581027667982,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.9032573534943205
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 357,
+      "overall_sample_count": 50,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.003952569169960474,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.39968404423380727
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 358,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 3.155400349214268
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 359,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.4274430151207402
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 362,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.6203407198667863
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 363,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 364,
+      "overall_sample_count": 43,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.003399209486166008,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4647488886439619
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 366,
+      "overall_sample_count": 34,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0026877470355731225,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5877706532850107
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 368,
+      "overall_sample_count": 50,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.003952569169960474,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.199052132701422
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 370,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 371,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 4.440933824820081
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 372,
+      "overall_sample_count": 6,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0004743083003952569,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 3.3307003686150605
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 375,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 376,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 377,
+      "overall_sample_count": 65,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.005138339920948616,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.2297970591809455
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 387,
+      "overall_sample_count": 26,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0020553359683794467,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7686231619880909
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 388,
+      "overall_sample_count": 38,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0030039525691699606,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.525900058202378
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 389,
+      "overall_sample_count": 1,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 7.905138339920949e-05,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 399,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6446516842480763
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 400,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 4.207200465619024
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 402,
+      "overall_sample_count": 46,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0036363636363636364,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4344391785150079
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 403,
+      "overall_sample_count": 17,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0013438735177865612,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 5.877706532850107
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 404,
+      "overall_sample_count": 57,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.004505928853754941,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.051800116404756
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 407,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 408,
+      "overall_sample_count": 31,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.002450592885375494,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.9339550527442289
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 410,
+      "overall_sample_count": 33,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0026086956521739132,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.8167456556082149
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 416,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.9516286767471602
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 417,
+      "overall_sample_count": 30,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0023715415019762848,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 429,
+      "overall_sample_count": 52,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004110671936758893,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.5372463239761818
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 430,
+      "overall_sample_count": 80,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.006324110671936759,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 0.9992101105845181
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 444,
+      "overall_sample_count": 47,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.003715415019762846,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.8503915834761856
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 458,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 464,
+      "overall_sample_count": 39,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0030830039525691698,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.512415441325394
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 466,
+      "overall_sample_count": 4,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.00031620553359683795,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 487,
+      "overall_sample_count": 70,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.005533596837944664,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.570977206048296
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 489,
+      "overall_sample_count": 21,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0016600790513833991,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 502,
+      "overall_sample_count": 37,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.002924901185770751,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.0802271465778575
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 506,
+      "overall_sample_count": 64,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.005059288537549407,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.6245063191153238
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 507,
+      "overall_sample_count": 12,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0009486166007905138,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 518,
+      "overall_sample_count": 34,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0026877470355731225,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.1755413065700213
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 527,
+      "overall_sample_count": 174,
+      "fixed_tail_sample_count": 14,
+      "overall_sample_rate": 0.01375494071146245,
+      "fixed_tail_sample_rate": 0.022116903633491312,
+      "tail_overrepresentation_ratio": 1.607924315883133
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 529,
+      "overall_sample_count": 40,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0031620553359683794,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.49960505529225907
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 536,
+      "overall_sample_count": 10,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0007905138339920949,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 540,
+      "overall_sample_count": 56,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.004426877470355731,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 1.0705822613405553
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 548,
+      "overall_sample_count": 33,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0026086956521739132,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 558,
+      "overall_sample_count": 43,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.003399209486166008,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4647488886439619
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 571,
+      "overall_sample_count": 186,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.014703557312252964,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 0.7520936316227557
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 572,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 573,
+      "overall_sample_count": 35,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.002766798418972332,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 1.141954412096592
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 576,
+      "overall_sample_count": 86,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.006798418972332016,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.23237444432198096
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 577,
+      "overall_sample_count": 63,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.004980237154150198,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 1.26883823566288
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 588,
+      "overall_sample_count": 19,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.0015019762845849803,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 3.155400349214268
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 604,
+      "overall_sample_count": 84,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.0066403162055335965,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 0.9516286767471602
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 607,
+      "overall_sample_count": 77,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.00608695652173913,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 1.5572105619498986
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 623,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 629,
+      "overall_sample_count": 71,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.005612648221343873,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 632,
+      "overall_sample_count": 18,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.0014229249011857706,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 2.2204669124100405
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 638,
+      "overall_sample_count": 63,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.004980237154150198,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.63441911783144
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 640,
+      "overall_sample_count": 73,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.005770750988142293,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.5475123893613798
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 654,
+      "overall_sample_count": 98,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.00774703557312253,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 0.8156817229261373
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 668,
+      "overall_sample_count": 99,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.00782608695652174,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.40372125680182547
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 679,
+      "overall_sample_count": 25,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.001976284584980237,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 3.197472353870458
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 680,
+      "overall_sample_count": 36,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0028458498023715413,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.5551167281025101
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 685,
+      "overall_sample_count": 5,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.0003952569169960474,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 689,
+      "overall_sample_count": 101,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.007984189723320158,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 1.3850437176419064
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 743,
+      "overall_sample_count": 76,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.006007905138339921,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.525900058202378
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 748,
+      "overall_sample_count": 129,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.010197628458498025,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.30983259242930794
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 757,
+      "overall_sample_count": 27,
+      "fixed_tail_sample_count": 5,
+      "overall_sample_rate": 0.0021343873517786563,
+      "fixed_tail_sample_rate": 0.007898894154818325,
+      "tail_overrepresentation_ratio": 3.7007781873500667
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 761,
+      "overall_sample_count": 69,
+      "fixed_tail_sample_count": 0,
+      "overall_sample_rate": 0.005454545454545455,
+      "fixed_tail_sample_rate": 0.0,
+      "tail_overrepresentation_ratio": 0.0
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 868,
+      "overall_sample_count": 28,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0022134387351778655,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.7137215075603701
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 937,
+      "overall_sample_count": 30,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0023715415019762848,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.6661400737230121
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 965,
+      "overall_sample_count": 98,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.00774703557312253,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.611761292194603
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 973,
+      "overall_sample_count": 45,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.0035573122529644267,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.4440933824820081
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 992,
+      "overall_sample_count": 150,
+      "fixed_tail_sample_count": 7,
+      "overall_sample_rate": 0.011857707509881422,
+      "fixed_tail_sample_rate": 0.011058451816745656,
+      "tail_overrepresentation_ratio": 0.9325961032122171
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 1283,
+      "overall_sample_count": 115,
+      "fixed_tail_sample_count": 2,
+      "overall_sample_rate": 0.00909090909090909,
+      "fixed_tail_sample_rate": 0.00315955766192733,
+      "tail_overrepresentation_ratio": 0.34755134281200634
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 1355,
+      "overall_sample_count": 179,
+      "fixed_tail_sample_count": 4,
+      "overall_sample_rate": 0.014150197628458499,
+      "fixed_tail_sample_rate": 0.00631911532385466,
+      "tail_overrepresentation_ratio": 0.446574351099226
+    },
+    {
+      "prior_source": "product_history",
+      "prior_observation_count": 2436,
+      "overall_sample_count": 150,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.011857707509881422,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 0.7993680884676146
+    }
+  ],
+  "validation_prior_support_bucket_analysis": [
+    {
+      "prior_source": "global_history",
+      "prior_support_bucket": "128+",
+      "overall_sample_count": 1018,
+      "fixed_tail_sample_count": 1,
+      "overall_sample_rate": 0.08047430830039526,
+      "fixed_tail_sample_rate": 0.001579778830963665,
+      "tail_overrepresentation_ratio": 0.019630846966297015
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "1",
+      "overall_sample_count": 112,
+      "fixed_tail_sample_count": 3,
+      "overall_sample_rate": 0.008853754940711462,
+      "fixed_tail_sample_rate": 0.004739336492890996,
+      "tail_overrepresentation_ratio": 0.5352911306702777
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "2-3",
+      "overall_sample_count": 370,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.02924901185770751,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 0.32406814397335726
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "4-7",
+      "overall_sample_count": 272,
+      "fixed_tail_sample_count": 6,
+      "overall_sample_rate": 0.02150197628458498,
+      "fixed_tail_sample_rate": 0.009478672985781991,
+      "tail_overrepresentation_ratio": 0.44082798996375805
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "8-15",
+      "overall_sample_count": 334,
+      "fixed_tail_sample_count": 33,
+      "overall_sample_rate": 0.02640316205533597,
+      "fixed_tail_sample_rate": 0.052132701421800945,
+      "tail_overrepresentation_ratio": 1.9744870448676106
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "16-31",
+      "overall_sample_count": 691,
+      "fixed_tail_sample_count": 54,
+      "overall_sample_rate": 0.054624505928853755,
+      "fixed_tail_sample_rate": 0.08530805687203792,
+      "tail_overrepresentation_ratio": 1.5617176836921558
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "32-63",
+      "overall_sample_count": 979,
+      "fixed_tail_sample_count": 89,
+      "overall_sample_rate": 0.07739130434782608,
+      "fixed_tail_sample_rate": 0.1406003159557662,
+      "tail_overrepresentation_ratio": 1.8167456556082149
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "64-127",
+      "overall_sample_count": 1630,
+      "fixed_tail_sample_count": 97,
+      "overall_sample_rate": 0.12885375494071147,
+      "fixed_tail_sample_rate": 0.15323854660347552,
+      "tail_overrepresentation_ratio": 1.1892439352969113
+    },
+    {
+      "prior_source": "product_history",
+      "prior_support_bucket": "128+",
+      "overall_sample_count": 7244,
+      "fixed_tail_sample_count": 344,
+      "overall_sample_rate": 0.5726482213438735,
+      "fixed_tail_sample_rate": 0.5434439178515008,
+      "tail_overrepresentation_ratio": 0.949001319826268
+    }
+  ],
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {

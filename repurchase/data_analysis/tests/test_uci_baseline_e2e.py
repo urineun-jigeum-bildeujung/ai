@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -62,6 +64,24 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert sum(
         row["fixed_tail_sample_rate"] for row in prior_support_analysis
     ) == pytest.approx(1.0)
+    prior_support_bucket_analysis = summary["validation_prior_support_bucket_analysis"]
+    assert prior_support_bucket_analysis
+    assert all(
+        isinstance(row["prior_support_bucket"], str)
+        for row in prior_support_bucket_analysis
+    )
+    assert sum(
+        row["overall_sample_count"] for row in prior_support_bucket_analysis
+    ) == sum(row["overall_sample_count"] for row in prior_support_analysis)
+    assert sum(
+        row["fixed_tail_sample_count"] for row in prior_support_bucket_analysis
+    ) == sum(row["fixed_tail_sample_count"] for row in prior_support_analysis)
+    assert sum(
+        row["overall_sample_rate"] for row in prior_support_bucket_analysis
+    ) == pytest.approx(1.0)
+    assert sum(
+        row["fixed_tail_sample_rate"] for row in prior_support_bucket_analysis
+    ) == pytest.approx(1.0)
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
     )
@@ -94,11 +114,27 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert summary["test_evaluation"]["user_product_error_by_anchor_month"]
     assert all(summary["invariants"].values())
 
+    # 실제 보고서 저장과 동일한 조건으로 pandas 전용 타입과 NaN 잔존을 검사합니다.
+    serialized_summary = json.dumps(
+        summary,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert json.loads(serialized_summary) == summary
+
     markdown = render_markdown(summary)
 
     assert "Validation 수축 강도 후보 비교" in markdown
     assert "상위 5% MAE(일)" in markdown
     assert "Validation 기존 최악 5% 고정 코호트 재평가" in markdown
+    assert "Validation prior 지지 표본 로그 구간 분석" in markdown
+    has_single_product_prior = any(
+        row["prior_source"] == "product_history" and row["prior_observation_count"] == 1
+        for row in prior_support_analysis
+    )
+    assert ("상품 prior 관측 1건 가설 검증" in markdown) is (has_single_product_prior)
+    assert "배율과 전체·꼬리 표본 수를 함께 해석" in markdown
+    assert "인과관계를 증명하지 않습니다" in markdown
     assert "악화 표본" in markdown
     assert "## 결과 해석" in markdown
     assert "단일 지표로 수축 강도를 확정하지 않습니다" in markdown

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any, Final
 
 import pandas as pd
@@ -25,6 +26,7 @@ from .modeling.error_analysis import (
     summarize_fixed_cohort_prior_support,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
+    summarize_prior_support_by_log2_bucket,
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
@@ -162,7 +164,7 @@ def _split_summary(samples: pd.DataFrame) -> dict[str, object]:
 def _analyze_validation_prior_support(
     validation_rows: pd.DataFrame,
     model: HierarchicalMedianModel,
-) -> list[dict[str, object]]:
+) -> pd.DataFrame:
     """Validation 고정 꼬리에서 prior 관측 수의 과대표집 여부를 분석합니다."""
     reference_predictions = predict_hierarchical_median_baseline(
         model,
@@ -180,7 +182,7 @@ def _analyze_validation_prior_support(
         prior_enriched_predictions,
         fixed_tail_rows,
     )
-    return summary.to_dict(orient="records")
+    return summary
 
 
 def _build_current_prediction(
@@ -258,6 +260,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         validation_rows,
         train_model,
     )
+    validation_prior_support_bucket_analysis = summarize_prior_support_by_log2_bucket(
+        validation_prior_support_analysis
+    )
     observation_end_at = pd.Timestamp(samples["anchor_at"].max())
 
     invariants = {
@@ -302,7 +307,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         "validation_shrinkage_candidates": validation_shrinkage_candidates.to_dict(
             orient="records"
         ),
-        "validation_prior_support_analysis": validation_prior_support_analysis,
+        "validation_prior_support_analysis": validation_prior_support_analysis.to_dict(
+            orient="records"
+        ),
+        "validation_prior_support_bucket_analysis": (
+            validation_prior_support_bucket_analysis.to_dict(orient="records")
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -323,6 +333,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
     validation = summary["validation_evaluation"]
     test = summary["test_evaluation"]
     shrinkage_candidates = summary["validation_shrinkage_candidates"]
+    prior_support_analysis = summary["validation_prior_support_analysis"]
+    prior_support_bucket_analysis = summary["validation_prior_support_bucket_analysis"]
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -413,6 +425,85 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 f"({candidate['fixed_cohort_worsened_sample_rate']:.2%}) | "
                 f"{candidate['fixed_cohort_late_prediction_rate']:.2%} |"
             )
+
+    single_product_prior = next(
+        (
+            row
+            for row in prior_support_analysis
+            if row["prior_source"] == "product_history"
+            and row["prior_observation_count"] == 1
+        ),
+        None,
+    )
+    if prior_support_bucket_analysis:
+        lines.extend(
+            [
+                "",
+                "## Validation prior 지지 표본 로그 구간 분석",
+                "",
+            ]
+        )
+        if single_product_prior is not None:
+            ratio = single_product_prior["tail_overrepresentation_ratio"]
+            if math.isclose(ratio, 1.0):
+                distribution_text = "비슷하게"
+                hypothesis_text = (
+                    "관측 수 1건이 고정 꼬리에 특별히 더 많이 나타난다는 근거는 "
+                    "관찰되지 않았습니다."
+                )
+            elif ratio > 1:
+                distribution_text = "많이"
+                hypothesis_text = (
+                    "관측 수 1건이 고정 꼬리에 과대표집되었지만, 이 결과만으로 "
+                    "꼬리오차의 원인이라고 판단할 수는 없습니다."
+                )
+            else:
+                distribution_text = "적게"
+                hypothesis_text = (
+                    "따라서 관측 수 1건이 꼬리오차의 일반적인 원인이라는 가설은 "
+                    "이번 Validation 분할에서 지지되지 않았습니다."
+                )
+            lines.extend(
+                [
+                    "### 상품 prior 관측 1건 가설 검증",
+                    "",
+                    f"- 전체 개인화 표본 중 **{single_product_prior['overall_sample_count']:,}건 "
+                    f"({single_product_prior['overall_sample_rate']:.2%})**, 기존 최악 5% "
+                    f"고정 꼬리 중 **{single_product_prior['fixed_tail_sample_count']:,}건 "
+                    f"({single_product_prior['fixed_tail_sample_rate']:.2%})**입니다.",
+                    f"- 과대표집 배율은 **{ratio:.2f}배**로, 관측 수 1건 상품 prior가 "
+                    f"고정 꼬리에서 전체 분포보다 {distribution_text} 나타났습니다.",
+                    f"- {hypothesis_text}",
+                    "",
+                ]
+            )
+        lines.extend(
+            [
+                "| prior 출처 | 관측 수 구간 | 전체 표본 | 전체 비율 | "
+                "고정 꼬리 표본 | 꼬리 비율 | 과대표집 배율 |",
+                "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for row in prior_support_bucket_analysis:
+            lines.append(
+                f"| `{row['prior_source']}` | `{row['prior_support_bucket']}` | "
+                f"{row['overall_sample_count']:,} | {row['overall_sample_rate']:.2%} | "
+                f"{row['fixed_tail_sample_count']:,} | "
+                f"{row['fixed_tail_sample_rate']:.2%} | "
+                f"{row['tail_overrepresentation_ratio']:.2f}배 |"
+            )
+        lines.extend(
+            [
+                "",
+                "- 과대표집 배율은 전체 분포 대비 고정 꼬리에서 얼마나 자주 "
+                "나타났는지를 비교한 값입니다.",
+                "- 배율이 크더라도 실제 표본 수가 적으면 우연에 민감하므로, 배율과 "
+                "전체·꼬리 표본 수를 함께 해석해야 합니다.",
+                "- 이 표는 prior 관측 수 구간과 꼬리 동반 빈도의 기술적 연관을 "
+                "보여주며, 특정 구간이 큰 오차의 원인이라는 인과관계를 증명하지 "
+                "않습니다.",
+            ]
+        )
 
     test_sources = test["hierarchical_baseline"]["by_prediction_source"]
     lines.extend(
