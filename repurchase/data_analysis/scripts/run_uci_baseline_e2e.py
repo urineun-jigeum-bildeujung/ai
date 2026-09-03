@@ -15,11 +15,14 @@ import pandas as pd
 from .loaders import load_uci_online_retail_ii
 from .modeling.baseline import (
     HierarchicalMedianModel,
+    attach_hierarchical_prior_features,
     fit_hierarchical_median_baseline,
     predict_global_median_baseline,
     predict_hierarchical_median_baseline,
 )
 from .modeling.error_analysis import (
+    select_largest_error_rows,
+    summarize_fixed_cohort_prior_support,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
     summarize_user_product_error_variability,
@@ -47,6 +50,8 @@ TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
 TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
 # 개인 이력 1~2건 구간의 과신을 완화하는 약한~강한 수축 후보를 비교합니다.
 SHRINKAGE_STRENGTH_CANDIDATES: Final[tuple[float, ...]] = (1.0, 2.0, 4.0, 8.0)
+# 모델 후보 비교와 prior 분석이 동일한 기존 최악 표본을 사용하도록 고정합니다.
+MODEL_SELECTION_TAIL_RATE: Final[float] = 0.05
 
 
 def _isoformat(timestamp: pd.Timestamp) -> str:
@@ -154,6 +159,30 @@ def _split_summary(samples: pd.DataFrame) -> dict[str, object]:
     return summary
 
 
+def _analyze_validation_prior_support(
+    validation_rows: pd.DataFrame,
+    model: HierarchicalMedianModel,
+) -> list[dict[str, object]]:
+    """Validation 고정 꼬리에서 prior 관측 수의 과대표집 여부를 분석합니다."""
+    reference_predictions = predict_hierarchical_median_baseline(
+        model,
+        validation_rows,
+    )
+    fixed_tail_rows = select_largest_error_rows(
+        reference_predictions,
+        tail_rate=MODEL_SELECTION_TAIL_RATE,
+    )
+    prior_enriched_predictions = attach_hierarchical_prior_features(
+        model,
+        reference_predictions,
+    )
+    summary = summarize_fixed_cohort_prior_support(
+        prior_enriched_predictions,
+        fixed_tail_rows,
+    )
+    return summary.to_dict(orient="records")
+
+
 def _build_current_prediction(
     samples: pd.DataFrame,
     model: HierarchicalMedianModel,
@@ -223,6 +252,11 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         validation_rows,
         train_model,
         shrinkage_strengths=SHRINKAGE_STRENGTH_CANDIDATES,
+        tail_rate=MODEL_SELECTION_TAIL_RATE,
+    )
+    validation_prior_support_analysis = _analyze_validation_prior_support(
+        validation_rows,
+        train_model,
     )
     observation_end_at = pd.Timestamp(samples["anchor_at"].max())
 
@@ -268,6 +302,7 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         "validation_shrinkage_candidates": validation_shrinkage_candidates.to_dict(
             orient="records"
         ),
+        "validation_prior_support_analysis": validation_prior_support_analysis,
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(

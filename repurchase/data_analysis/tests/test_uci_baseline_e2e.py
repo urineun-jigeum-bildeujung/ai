@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_baseline_e2e import render_markdown, run_baseline_cycle
@@ -45,6 +46,22 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         candidate["shrinkage_strength"]
         for candidate in summary["validation_shrinkage_candidates"]
     ] == [1.0, 2.0, 4.0, 8.0]
+    prior_support_analysis = summary["validation_prior_support_analysis"]
+    assert prior_support_analysis
+    assert (
+        sum(row["overall_sample_count"] for row in prior_support_analysis)
+        == summary["validation_shrinkage_candidates"][0]["personal_sample_count"]
+    )
+    assert (
+        sum(row["fixed_tail_sample_count"] for row in prior_support_analysis)
+        == summary["validation_shrinkage_candidates"][0]["fixed_cohort_sample_count"]
+    )
+    assert sum(
+        row["overall_sample_rate"] for row in prior_support_analysis
+    ) == pytest.approx(1.0)
+    assert sum(
+        row["fixed_tail_sample_rate"] for row in prior_support_analysis
+    ) == pytest.approx(1.0)
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
     )
