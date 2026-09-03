@@ -577,6 +577,20 @@ def summarize_fixed_cohort_prior_support(
     return summary
 
 
+def _add_prior_support_bucket(rows: pd.DataFrame) -> pd.DataFrame:
+    """검증된 prior 관측 수를 공통 로그 2 구간으로 분류합니다."""
+    bucketed = rows.copy()
+    bucketed["prior_support_bucket"] = pd.cut(
+        bucketed["prior_observation_count"],
+        bins=PRIOR_SUPPORT_BUCKET_BINS,
+        labels=PRIOR_SUPPORT_BUCKET_LABELS,
+        right=True,
+    )
+    if bucketed["prior_support_bucket"].isna().any():
+        raise ValueError("prior 관측 수를 로그 2 구간으로 분류하지 못했습니다.")
+    return bucketed
+
+
 def summarize_prior_support_by_log2_bucket(
     detailed_summary: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -619,15 +633,7 @@ def summarize_prior_support_by_log2_bucket(
     ):
         raise ValueError("고정 꼬리 표본 수는 전체 표본 수보다 클 수 없습니다.")
 
-    bucketed = detailed_summary.copy()
-    bucketed["prior_support_bucket"] = pd.cut(
-        prior_counts,
-        bins=PRIOR_SUPPORT_BUCKET_BINS,
-        labels=PRIOR_SUPPORT_BUCKET_LABELS,
-        right=True,
-    )
-    if bucketed["prior_support_bucket"].isna().any():
-        raise ValueError("prior 관측 수를 로그 2 구간으로 분류하지 못했습니다.")
+    bucketed = _add_prior_support_bucket(detailed_summary)
 
     summary = (
         bucketed.groupby(
