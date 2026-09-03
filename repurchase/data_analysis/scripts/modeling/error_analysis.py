@@ -7,7 +7,7 @@ from typing import Final
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from pandas.api.types import is_bool_dtype, is_integer_dtype, is_numeric_dtype
 
 from .samples import SAMPLE_ID_COLUMNS
 
@@ -40,6 +40,37 @@ PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     {
         "prior_source",
         "prior_observation_count",
+    }
+)
+
+# 작은 관측 수는 세밀하게, 큰 관측 수는 넓게 비교하도록 2배 단위로 확장합니다.
+PRIOR_SUPPORT_BUCKET_BINS: Final[tuple[float, ...]] = (
+    0,
+    1,
+    3,
+    7,
+    15,
+    31,
+    63,
+    127,
+    np.inf,
+)
+PRIOR_SUPPORT_BUCKET_LABELS: Final[tuple[str, ...]] = (
+    "1",
+    "2-3",
+    "4-7",
+    "8-15",
+    "16-31",
+    "32-63",
+    "64-127",
+    "128+",
+)
+PRIOR_BUCKET_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prior_source",
+        "prior_observation_count",
+        "overall_sample_count",
+        "fixed_tail_sample_count",
     }
 )
 
@@ -539,6 +570,85 @@ def summarize_fixed_cohort_prior_support(
     )
     summary["fixed_tail_sample_rate"] = summary["fixed_tail_sample_count"].div(
         len(fixed_prior_rows)
+    )
+    summary["tail_overrepresentation_ratio"] = summary["fixed_tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
+    return summary
+
+
+def summarize_prior_support_by_log2_bucket(
+    detailed_summary: pd.DataFrame,
+) -> pd.DataFrame:
+    """관측 수별 상세 prior 결과를 2배 단위 구간으로 묶어 요약합니다."""
+    missing_columns = PRIOR_BUCKET_SUMMARY_REQUIRED_COLUMNS - set(
+        detailed_summary.columns
+    )
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"prior 구간 요약 필수 열이 없습니다: {missing_text}")
+    if detailed_summary.empty:
+        raise ValueError("구간으로 요약할 prior 상세 결과가 없습니다.")
+
+    prior_sources = detailed_summary["prior_source"]
+    if (
+        prior_sources.isna().any()
+        or prior_sources.astype("string").str.strip().eq("").any()
+    ):
+        raise ValueError("prior 출처에는 비어 있지 않은 값이 필요합니다.")
+
+    prior_counts = detailed_summary["prior_observation_count"]
+    sample_count_columns = ["overall_sample_count", "fixed_tail_sample_count"]
+    for column in ["prior_observation_count", *sample_count_columns]:
+        values = detailed_summary[column]
+        if values.isna().any():
+            raise ValueError(f"{column}에 결측값이 있습니다.")
+        if is_bool_dtype(values.dtype) or not is_integer_dtype(values.dtype):
+            raise ValueError(f"{column}은 정수형이어야 합니다.")
+
+    if prior_counts.le(0).any():
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+    if detailed_summary["overall_sample_count"].le(0).any():
+        raise ValueError("전체 표본 수는 양의 정수여야 합니다.")
+    if detailed_summary["fixed_tail_sample_count"].lt(0).any():
+        raise ValueError("고정 꼬리 표본 수는 음수일 수 없습니다.")
+    if (
+        detailed_summary["fixed_tail_sample_count"]
+        .gt(detailed_summary["overall_sample_count"])
+        .any()
+    ):
+        raise ValueError("고정 꼬리 표본 수는 전체 표본 수보다 클 수 없습니다.")
+
+    bucketed = detailed_summary.copy()
+    bucketed["prior_support_bucket"] = pd.cut(
+        prior_counts,
+        bins=PRIOR_SUPPORT_BUCKET_BINS,
+        labels=PRIOR_SUPPORT_BUCKET_LABELS,
+        right=True,
+    )
+    if bucketed["prior_support_bucket"].isna().any():
+        raise ValueError("prior 관측 수를 로그 2 구간으로 분류하지 못했습니다.")
+
+    summary = (
+        bucketed.groupby(
+            ["prior_source", "prior_support_bucket"],
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            overall_sample_count=("overall_sample_count", "sum"),
+            fixed_tail_sample_count=("fixed_tail_sample_count", "sum"),
+        )
+        .reset_index()
+    )
+    overall_total = int(summary["overall_sample_count"].sum())
+    fixed_tail_total = int(summary["fixed_tail_sample_count"].sum())
+    if fixed_tail_total <= 0:
+        raise ValueError("로그 2 구간에 포함된 고정 꼬리 표본이 없습니다.")
+
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(overall_total)
+    summary["fixed_tail_sample_rate"] = summary["fixed_tail_sample_count"].div(
+        fixed_tail_total
     )
     summary["tail_overrepresentation_ratio"] = summary["fixed_tail_sample_rate"].div(
         summary["overall_sample_rate"]

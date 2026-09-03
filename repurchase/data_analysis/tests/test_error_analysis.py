@@ -13,6 +13,7 @@ from scripts.modeling.error_analysis import (
     summarize_fixed_cohort_prior_support,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
+    summarize_prior_support_by_log2_bucket,
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
@@ -269,6 +270,96 @@ def test_summarize_fixed_cohort_prior_support() -> None:
     assert by_prior_count.loc[2, "tail_overrepresentation_ratio"] == 0.0
     assert by_prior_count.loc[10, "fixed_tail_sample_count"] == 0
     assert by_prior_count.loc[10, "tail_overrepresentation_ratio"] == 0.0
+
+
+def test_summarize_prior_support_by_log2_bucket_preserves_boundary_counts() -> None:
+    """관측 수 경계를 빠짐없이 2배 단위 구간으로 묶고 표본 합계를 보존합니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history"] * 14,
+            "prior_observation_count": [
+                1,
+                2,
+                3,
+                4,
+                7,
+                8,
+                15,
+                16,
+                31,
+                32,
+                63,
+                64,
+                127,
+                128,
+            ],
+            "overall_sample_count": [1] * 14,
+            "fixed_tail_sample_count": [1] * 14,
+        }
+    )
+
+    result = summarize_prior_support_by_log2_bucket(detailed_summary)
+
+    assert result["prior_support_bucket"].astype("string").tolist() == [
+        "1",
+        "2-3",
+        "4-7",
+        "8-15",
+        "16-31",
+        "32-63",
+        "64-127",
+        "128+",
+    ]
+    assert result["overall_sample_count"].tolist() == [1, 2, 2, 2, 2, 2, 2, 1]
+    assert result["fixed_tail_sample_count"].tolist() == [1, 2, 2, 2, 2, 2, 2, 1]
+    assert result["overall_sample_count"].sum() == 14
+    assert result["fixed_tail_sample_count"].sum() == 14
+    assert result["overall_sample_rate"].sum() == pytest.approx(1.0)
+    assert result["fixed_tail_sample_rate"].sum() == pytest.approx(1.0)
+    assert result["tail_overrepresentation_ratio"].tolist() == pytest.approx([1.0] * 8)
+    weighted_ratio_checksum = (
+        result["overall_sample_rate"] * result["tail_overrepresentation_ratio"]
+    ).sum()
+    assert weighted_ratio_checksum == pytest.approx(1.0)
+
+
+def test_summarize_prior_support_by_log2_bucket_keeps_sources_separate() -> None:
+    """같은 관측 수 구간이어도 상품 prior와 전체 prior를 합치지 않습니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history", "global_history"],
+            "prior_observation_count": [128, 163_957],
+            "overall_sample_count": [30, 70],
+            "fixed_tail_sample_count": [3, 7],
+        }
+    )
+
+    result = summarize_prior_support_by_log2_bucket(detailed_summary)
+
+    assert result["prior_source"].tolist() == [
+        "global_history",
+        "product_history",
+    ]
+    assert result["prior_support_bucket"].astype("string").tolist() == [
+        "128+",
+        "128+",
+    ]
+    assert result["overall_sample_count"].tolist() == [70, 30]
+
+
+def test_summarize_prior_support_by_log2_bucket_rejects_missing_source() -> None:
+    """출처 결측으로 그룹화 과정에서 표본이 조용히 사라지는 것을 막습니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history", None],
+            "prior_observation_count": [1, 2],
+            "overall_sample_count": [10, 5],
+            "fixed_tail_sample_count": [1, 1],
+        }
+    )
+
+    with pytest.raises(ValueError, match="prior 출처"):
+        summarize_prior_support_by_log2_bucket(detailed_summary)
 
 
 @pytest.mark.parametrize("tail_rate", [0.0, -0.1, 1.1])
