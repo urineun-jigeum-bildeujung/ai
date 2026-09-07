@@ -43,6 +43,11 @@ artifacts/
 .vscode/
 .DS_Store
 
-recommendation/endtoend/data/amazon/
+recommendation/endtoend/data/amazon/**/*.jsonl
+recommendation/endtoend/data/amazon/**/*.json
+recommendation/endtoend/data/amazon/**/*.csv
+recommendation/endtoend/data/amazon/*.jsonl
+recommendation/endtoend/data/amazon/*.json
+recommendation/endtoend/data/amazon/*.csv
 recommendation/endtoend/models/
 recommendation/endtoend/.cache/
