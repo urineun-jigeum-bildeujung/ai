@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-전체 추천 파이프라인 통합.
+전체 추천 파이프라인 통합 (리뷰 작성자 프로필 유사도 반영 버전).
 
 reviews -> KcELECTRA 감성분석 -> aspect 태깅 -> 상품별 review_features 집계
 -> pet_id 입력 -> 알러지 필터링(역추천) -> DeepFM 스코어링 -> recommendation_items 출력
+
+[이번 변경 사항 - 콜드스타트 로직: 사용자 프로필 + 리뷰 작성자 프로필 + 리뷰 keywords]
+- DeepFM 수치 점수(순위 계산)는 기존 방식(전체 리뷰 단순 평균) 그대로 유지
+  (가중 유사도를 feature 자체에 반영하려면 deepfm_features.py 재설계 + 재학습이 필요해
+   범위가 커짐 -> 다음 단계 이슈로 분리)
+- 추천 사유(reason_keywords/reason_text)는 "추천 대상과 프로필이 비슷한 리뷰 작성자"의
+  반응에 가중치를 둬서 생성하도록 변경 (reviewer_profile_similarity.py 사용)
+- 각 리뷰의 reviewer_pet은 현재 더미 데이터에 가상으로 붙여둔 것이며,
+  reviews.pet_id가 실제 스키마에 반영되면 DB 조인 결과로 대체하면 된다.
 
 실행: python3 src/pipeline.py
 사전 조건: train/finetune_kcelectra.py, train/train_deepfm.py 를 먼저 실행해서
@@ -28,6 +37,7 @@ from tagging import tag_aspects, ASPECTS
 from deepfm_features import build_interaction_features
 from allergy_filter import check_allergy_conflict
 from deepfm_model import load_deepfm
+from reviewer_profile_similarity import compute_weighted_aspect_scores
 
 DEEPFM_MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "deepfm")
 
@@ -35,33 +45,31 @@ DEEPFM_MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "deep
 NEGATIVE_TAGS = {info["tag_negative"] for info in ASPECTS.values()}
 
 
-def build_review_features():
-    """reviews -> review_features (KcELECTRA 감성분석 + aspect 태깅)."""
-    review_features = []
+def build_review_features_with_authors():
+    """
+    reviews -> review_features (KcELECTRA 감성분석 + aspect 태깅) + reviewer_pet 포함.
+    상품별로 묶어서 반환: {product_id: [{"reviewer_pet":, "sentiment_label":, "keyword_tags":}, ...]}
+    """
+    grouped = defaultdict(list)
     for review in DUMMY_REVIEWS:
         sentiment = analyze_sentiment(review["review_text"])
         tags = tag_aspects(review["review_text"])
-        review_features.append({
-            "review_id": review["review_id"],
-            "product_id": review["product_id"],
+        grouped[review["product_id"]].append({
+            "reviewer_pet": review["reviewer_pet"],
             "sentiment_label": sentiment["sentiment_label"],
-            "sentiment_score": sentiment["sentiment_score"],
             "keyword_tags": tags,
         })
-    return review_features
+    return grouped
 
 
-def summarize_by_product(review_features: list) -> dict:
-    """상품별로 review_features 집계 -> DeepFM feature 및 추천 사유 생성에 사용."""
-    grouped = defaultdict(list)
-    for rf in review_features:
-        grouped[rf["product_id"]].append(rf)
-
+def summarize_by_product(product_reviews_by_id: dict) -> dict:
+    """
+    DeepFM feature 계산용 - 상품별 전체 리뷰 단순 집계 (가중치 없음, 기존 방식 유지).
+    추천 사유(reason)는 이 집계를 쓰지 않고 아래 compute_weighted_aspect_scores로 별도 계산한다.
+    """
     summary = {}
-    for product_id, feats in grouped.items():
+    for product_id, feats in product_reviews_by_id.items():
         positive_feats = [f for f in feats if f["sentiment_label"] == "POSITIVE"]
-        # 긍정 리뷰의 태그 중에서도, tagging.py가 정의한 부정 태그 목록(NEGATIVE_TAGS)에
-        # 없는 것만 추천 사유로 사용 (문자열 패턴 추측이 아니라 정의를 직접 참조)
         positive_tags = [
             tag for f in positive_feats for tag in f["keyword_tags"]
             if tag not in NEGATIVE_TAGS
@@ -75,7 +83,36 @@ def summarize_by_product(review_features: list) -> dict:
     return summary
 
 
-def recommend_for_pet(pet: dict, products: list, review_summary: dict, encoder, model) -> list:
+def build_reason_from_weighted_scores(weighted_result: dict, top_n: int = 5) -> tuple:
+    """
+    compute_weighted_aspect_scores() 결과에서 긍정적인(값이 양수인) 태그를 골라
+    reason_keywords, reason_text를 생성한다.
+    (나와 비슷한 프로필의 리뷰어 반응일수록 이미 가중치가 높게 반영되어 있음)
+    """
+    weighted_scores = weighted_result["weighted_aspect_scores"]
+    # 값이 양수(긍정 방향)인 것만, 점수 높은 순으로 정렬
+    positive_ranked = sorted(
+        [(tag, score) for tag, score in weighted_scores.items() if score > 0],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    reason_keywords = [tag for tag, _ in positive_ranked[:top_n]]
+
+    if reason_keywords:
+        reason_text = (
+            "나와 비슷한 반려동물을 키우는 분들의 리뷰에서 "
+            + ", ".join(reason_keywords) + " 등의 반응이 있어 추천합니다."
+        )
+    elif weighted_result["used_review_count"] > 0:
+        reason_text = "등록하신 반려동물 정보를 기준으로 추천합니다."
+    else:
+        reason_text = "등록하신 반려동물 정보를 기준으로 추천합니다. (참고할 만한 비슷한 프로필의 리뷰가 아직 없어요)"
+
+    return reason_keywords, reason_text
+
+
+def recommend_for_pet(pet: dict, products: list, product_review_summary: dict,
+                       product_reviews_by_id: dict, encoder, model) -> list:
     """
     pet_id 하나에 대해 전체 상품 후보군을 순회하며
     recommendation_items 스키마 형태의 결과 리스트를 반환한다.
@@ -102,8 +139,8 @@ def recommend_for_pet(pet: dict, products: list, review_summary: dict, encoder, 
             })
             continue
 
-        # 3) DeepFM 스코어링
-        summary = review_summary.get(product["product_id"], {
+        # 3) DeepFM 스코어링 (기존 방식 - 전체 리뷰 단순 평균 기반 feature)
+        summary = product_review_summary.get(product["product_id"], {
             "positive_tags": [], "negative_tags": [], "total_reviews": 1,
         })
         features = build_interaction_features(pet, product, summary)
@@ -114,11 +151,10 @@ def recommend_for_pet(pet: dict, products: list, review_summary: dict, encoder, 
         with torch.no_grad():
             score = model(batch).item()
 
-        reason_keywords = list(dict.fromkeys(summary["positive_tags"]))  # 중복 제거, 순서 유지
-        if reason_keywords:
-            reason_text = "리뷰에서 " + ", ".join(reason_keywords) + " 등의 반응이 있어 추천합니다."
-        else:
-            reason_text = "등록하신 반려동물 정보를 기준으로 추천합니다."
+        # 4) 추천 사유 - 리뷰 작성자 프로필 유사도 가중치 반영 (신규)
+        product_reviews = product_reviews_by_id.get(product["product_id"], [])
+        weighted_result = compute_weighted_aspect_scores(pet, product_reviews)
+        reason_keywords, reason_text = build_reason_from_weighted_scores(weighted_result)
 
         results.append({
             "product_id": product["product_id"],
@@ -128,9 +164,14 @@ def recommend_for_pet(pet: dict, products: list, review_summary: dict, encoder, 
             "reason_keywords": reason_keywords,
             "reason_text": reason_text,
             "matched_allergen": [],
+            # 참고용 -- 이 추천 사유가 실제로 몇 건의 "유사 프로필 리뷰"를 근거로 했는지
+            "reviewer_similarity_meta": {
+                "used_review_count": weighted_result["used_review_count"],
+                "total_similarity_weight": weighted_result["total_weight"],
+            },
         })
 
-    # 4) 점수 기준 정렬 + rank 부여 (RECOMMEND만 랭킹)
+    # 5) 점수 기준 정렬 + rank 부여 (RECOMMEND만 랭킹)
     recommend_items = sorted(
         [r for r in results if r["recommend_type"] == "RECOMMEND"],
         key=lambda x: x["score"],
@@ -148,16 +189,17 @@ def recommend_for_pet(pet: dict, products: list, review_summary: dict, encoder, 
 
 def run_pipeline():
     print("=" * 60)
-    print("STEP 1. 리뷰 -> KcELECTRA 감성분석 + aspect 태깅")
+    print("STEP 1. 리뷰 -> KcELECTRA 감성분석 + aspect 태깅 + reviewer_pet 결합")
     print("=" * 60)
-    review_features = build_review_features()
-    print(f"{len(review_features)}건 처리 완료")
+    product_reviews_by_id = build_review_features_with_authors()
+    total_reviews = sum(len(v) for v in product_reviews_by_id.values())
+    print(f"{total_reviews}건 처리 완료")
 
     print()
     print("=" * 60)
-    print("STEP 2. 상품별 review_features 집계")
+    print("STEP 2. 상품별 review_features 집계 (DeepFM feature용, 가중치 없음)")
     print("=" * 60)
-    review_summary = summarize_by_product(review_features)
+    review_summary = summarize_by_product(product_reviews_by_id)
     for pid, s in review_summary.items():
         print(f"{pid}: positive_tags={s['positive_tags']}, total_reviews={s['total_reviews']}")
 
@@ -170,11 +212,11 @@ def run_pipeline():
 
     print()
     print("=" * 60)
-    print("STEP 4. 반려동물별 추천/역추천 (recommendation_items)")
+    print("STEP 4. 반려동물별 추천/역추천 (리뷰 작성자 프로필 유사도 반영)")
     print("=" * 60)
     for pet in PET_PROFILES:
         print(f"\n--- pet_id: {pet['pet_id']} ({pet['species']}, {pet['breed']}, 알러지: {pet['allergy_codes']}) ---")
-        items = recommend_for_pet(pet, PRODUCTS, review_summary, encoder, model)
+        items = recommend_for_pet(pet, PRODUCTS, review_summary, product_reviews_by_id, encoder, model)
         for item in items:
             print(json.dumps(item, ensure_ascii=False))
 
