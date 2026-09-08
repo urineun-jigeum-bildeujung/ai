@@ -174,14 +174,33 @@ def build_product_aspect_features(product_review_summary: dict) -> dict:
     return dense
 
 
+def _calc_age_fit_score(pet_age_group: str, product_target_age_group) -> float:
+    """
+    반려동물의 실제 생애주기와 상품의 타겟 생애주기가 얼마나 잘 맞는지 계산.
+    완전 일치=1.0, 한 단계 차이=0.5, 두 단계 이상 차이=0.0.
+    상품에 타겟 생애주기가 지정되지 않은 경우("전 연령 대상")는 제한이 없다는 뜻이므로
+    항상 적합하다고 보고 1.0으로 처리한다.
+    """
+    if not product_target_age_group:
+        return 1.0
+    if pet_age_group not in AGE_GROUP_VOCAB or product_target_age_group not in AGE_GROUP_VOCAB:
+        return 0.5  # 알 수 없는 값에 대한 안전한 기본값 (중립)
+
+    pet_idx = AGE_GROUP_VOCAB.index(pet_age_group)
+    product_idx = AGE_GROUP_VOCAB.index(product_target_age_group)
+    diff = abs(pet_idx - product_idx)
+    max_diff = len(AGE_GROUP_VOCAB) - 1  # 2 (GROWTH~SENIOR)
+
+    return round(1.0 - diff / max_diff, 4)
+
+
 def build_product_features(product: dict, product_review_summary: dict) -> dict:
     """
     product_master + aspect 리뷰 집계 -> DeepFM 아이템측 feature.
 
-    target_age_group도 순서형 값이지만, 이건 "타겟 대상"이라는 상품 속성이라
-    반려동물의 실제 age_group과 "일치하는지"가 핵심 정보(적합도)이지
-    그 자체의 순서 위치가 직접적인 의미를 가지지는 않아 ordinal 변환 대상에서는 제외.
-    (참고: pet 쪽 age_group_ordinal과 비교하는 적합도 feature는 추후 필요시 별도 설계)
+    target_age_group은 sparse(카테고리)로도 유지하되, 반려동물의 실제 생애주기와
+    비교한 "적합도" 자체는 pet 정보가 함께 있어야 계산 가능하므로
+    build_interaction_features()에서 age_fit_score로 별도 추가한다.
     """
     aspect_dense = build_product_aspect_features(product_review_summary)
 
@@ -206,9 +225,15 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
 def build_interaction_features(pet: dict, product: dict, product_review_summary: dict) -> dict:
     """
     유저측 + 아이템측 feature를 합쳐 하나의 학습 샘플 형태로 반환.
+    age_fit_score는 pet과 product 정보가 둘 다 필요해서 이 단계에서 계산해
+    product_features.dense에 추가한다.
     """
     pet_features = build_pet_features(pet)
     product_features = build_product_features(product, product_review_summary)
+
+    pet_age_group = _calc_age_group(pet["birth_date"])
+    age_fit_score = _calc_age_fit_score(pet_age_group, product.get("target_age_group"))
+    product_features["dense"]["age_fit_score"] = age_fit_score
 
     return {
         "pet_id": pet["pet_id"],
