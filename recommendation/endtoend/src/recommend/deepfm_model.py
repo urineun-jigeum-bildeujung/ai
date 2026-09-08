@@ -10,8 +10,17 @@ len(DENSE_FIELDS) 기준으로 동적으로 계산되므로 이 리스트만 수
 """
 
 import os
+import sys
 import torch
 import torch.nn as nn
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "data", "masters"))
+from breed_master import DOG_BREEDS, CAT_BREEDS
+
+# 품종 마스터(강아지+고양이 전체)를 고정 vocab으로 사용.
+# 기존에는 학습 데이터에서 본 품종만 fit_dynamic_vocab()으로 등록해서,
+# 학습 때 못 본 품종이 나중에 들어오면 전부 UNKNOWN 처리되는 문제가 있었다.
+BREED_VOCAB = sorted(set(DOG_BREEDS) | set(CAT_BREEDS))
 
 
 # ---------------------------------------------------------------------------
@@ -24,7 +33,7 @@ SPARSE_FIELD_VOCABS = {
     "age_group": ["GROWTH", "ADULT", "SENIOR"],
     "breed_size": ["SMALL", "MEDIUM", "LARGE"],
     "bcs": ["1", "2", "3", "4", "5"],
-    "breed": None,  # 품종 마스터 미확정 -> 학습 데이터에서 동적으로 구축 + UNKNOWN 처리
+    "breed": BREED_VOCAB,  # 품종 마스터 기반 고정 vocab (강아지 151종 + 고양이 79종)
     "category_code": ["FOOD", "SUPPLEMENT", "TREAT"],
     "subcategory_code": [
         "DRY_FOOD", "WET_FOOD", "FREEZE_DRIED_FOOD", "BAKED_FOOD",
@@ -63,6 +72,12 @@ class FeatureEncoder:
                 self.sparse_vocabs[field] = {UNKNOWN_TOKEN: 0}
 
     def fit_dynamic_vocab(self, field: str, values: list):
+        """
+        고정 vocab이 없는 필드(SPARSE_FIELD_VOCABS에서 값이 None인 경우)를
+        학습 데이터로부터 동적으로 구축할 때 사용.
+        breed는 breed_master 기반 고정 vocab이 이미 있으므로 더 이상 호출할 필요 없음
+        (호출해도 이미 존재하는 값이라 안전하게 무시됨).
+        """
         vocab = self.sparse_vocabs[field]
         for v in values:
             v = str(v)
