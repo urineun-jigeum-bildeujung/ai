@@ -129,11 +129,16 @@ def build_pet_features(pet: dict) -> dict:
 def build_product_aspect_features(product_review_summary: dict) -> dict:
     """
     aspect_keyword_dict 기반 리뷰 집계 -> dense feature 6개.
-    """
-    positive_tags = product_review_summary.get("positive_tags", [])
-    negative_tags = product_review_summary.get("negative_tags", [])
-    total_reviews = product_review_summary.get("total_reviews", 1) or 1
 
+    두 가지 입력 형태를 지원한다:
+    1) 기존 방식(카운트 기반, pet과 무관하게 상품 전체 리뷰 단순 집계):
+       {"positive_tags": [...], "negative_tags": [...], "total_reviews": int}
+    2) 신규 방식(유사도 가중, pet마다 다른 값 -- reviewer_profile_similarity.compute_weighted_aspect_scores 결과):
+       {"weighted_aspect_scores": {tag_string: 0~1 가중 점수, ...}, ...}
+       주의: compute_weighted_aspect_scores의 출력 키는 aspect_code가 아니라
+       "기호성 좋음" 같은 원본 태그 문자열이므로, 아래 aspect_tag_map으로 변환한 뒤
+       (긍정 태그 가중 점수) - (부정 태그 가중 점수)를 최종 -1~1 점수로 사용한다.
+    """
     aspect_tag_map = {
         "palatability": ("기호성 좋음", "기호성 낮음"),
         "digestion": ("소화 잘됨", "소화 불편 후기 있음"),
@@ -142,6 +147,22 @@ def build_product_aspect_features(product_review_summary: dict) -> dict:
         "allergic_reaction": ("알러지 반응 없음(후기)", "알러지 반응 있음(후기)"),
         "price_value": ("가성비 좋음", "가격 부담 후기 있음"),
     }
+
+    if "weighted_aspect_scores" in product_review_summary:
+        weighted = product_review_summary["weighted_aspect_scores"]
+        dense = {}
+        for aspect_code, (pos_tag, neg_tag) in aspect_tag_map.items():
+            pos_score = weighted.get(pos_tag, 0.0)  # 존재하면 +1.0 근처 (긍정 방향)
+            neg_score = weighted.get(neg_tag, 0.0)  # 존재하면 -1.0 근처 (이미 음수로 나옴)
+            # 주의: neg_score가 이미 음수이므로 덧셈으로 합쳐야 함 (뺄셈하면 부호가 이중 반영되는 버그 발생)
+            combined = pos_score + neg_score
+            dense[f"{aspect_code}_score"] = round(max(-1.0, min(1.0, combined)), 4)
+        return dense
+
+    # 기존 방식: 상품 전체 리뷰 단순 집계 (pet과 무관, 폴백용)
+    positive_tags = product_review_summary.get("positive_tags", [])
+    negative_tags = product_review_summary.get("negative_tags", [])
+    total_reviews = product_review_summary.get("total_reviews", 1) or 1
 
     dense = {}
     for aspect_code, (pos_tag, neg_tag) in aspect_tag_map.items():
