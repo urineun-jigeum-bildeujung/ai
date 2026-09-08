@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-DeepFM 입력 feature 설계 (구체화 버전).
+DeepFM 입력 feature 설계.
 
-- 유저(반려동물)측: 온보딩 6개 필드 (species/breed/age/weight/bcs/allergy)
+- 유저(반려동물)측: 온보딩 필드 (species/breed/sex/age/weight/bcs/allergy/concerns)
 - 아이템(상품)측: 상품 메타 + aspect_keyword_dict 기반 리뷰 집계 feature
 
-주의: 이 모듈은 "feature 벡터를 만드는 부분"만 다룬다.
-실제 DeepFM 학습에 필요한 label(구매/클릭 등 정답)은 아직 없어서
-학습 자체는 이 모듈 범위 밖 — 데이터 쌓이면 별도로 붙인다.
+[버그 수정 이력]
+bcs(신체조건점수, 1~5)와 age_group(GROWTH/ADULT/SENIOR)은 순서가 있는(ordinal) 값인데,
+지금까지 sparse(카테고리) feature로만 다뤄서 species/breed 같은 순서 없는 값과
+동일하게 취급되고 있었다. 즉 모델 입장에서 bcs=3과 bcs=4가 "가깝다"는 것을
+전혀 알 수 없는 상태였다.
+
+수정: sparse 표현은 그대로 유지하되(비선형 패턴 포착 가능성 남겨둠),
+0~1로 정규화한 숫자값을 dense feature로 추가해서 순서/거리 정보를 모델에
+직접 알려주도록 개선했다. (예: bcs_norm, age_group_ordinal)
 """
 
 from datetime import date
@@ -20,7 +26,7 @@ from concern_master import CONCERN_VOCAB    # 확정 마스터 95개 전체
 
 SPECIES_VOCAB = ["DOG", "CAT"]
 SEX_VOCAB = ["MALE", "FEMALE"]
-AGE_GROUP_VOCAB = ["GROWTH", "ADULT", "SENIOR"]
+AGE_GROUP_VOCAB = ["GROWTH", "ADULT", "SENIOR"]  # 순서 있음 -- ordinal 인코딩 대상
 BREED_SIZE_VOCAB = ["SMALL", "MEDIUM", "LARGE"]
 CATEGORY_VOCAB = ["FOOD", "SUPPLEMENT", "TREAT"]
 
@@ -32,6 +38,8 @@ ASPECT_CODES = [
     "allergic_reaction",
     "price_value",
 ]
+
+BCS_MIN, BCS_MAX = 1, 5
 
 
 def _calc_age_group(birth_date_str: str) -> str:
@@ -67,33 +75,49 @@ def _normalize(value: float, min_v: float, max_v: float) -> float:
     return round((value - min_v) / (max_v - min_v), 4)
 
 
+def _ordinal_normalize(value: str, order: list) -> float:
+    """
+    순서형 카테고리 값을 0~1 사이 숫자로 변환.
+    예: AGE_GROUP_VOCAB=["GROWTH","ADULT","SENIOR"] 일 때
+        GROWTH -> 0.0, ADULT -> 0.5, SENIOR -> 1.0
+    값이 리스트에 없으면 중간값(0.5)으로 처리 (알 수 없는 값에 대한 안전한 기본값).
+    """
+    if value not in order or len(order) <= 1:
+        return 0.5
+    idx = order.index(value)
+    return round(idx / (len(order) - 1), 4)
+
+
 def build_pet_features(pet: dict) -> dict:
     """
     pet_profile -> DeepFM 유저측 feature.
     sparse: 인덱스/카테고리 값 그대로 반환 (실제 모델단에서 임베딩 레이어가 처리)
-    dense: 0~1 정규화된 수치
+    dense: 0~1 정규화된 수치 (bcs_norm, age_group_ordinal 포함 -- 순서 정보 명시)
     multi_hot: 알러지처럼 여러 값 가능한 필드 -> 0/1 벡터
     """
     age_months = _calc_age_months(pet["birth_date"])
     age_group = _calc_age_group(pet["birth_date"])
     breed_size = _calc_breed_size(pet["weight"])
 
-    allergy_multi_hot = [1 if code in pet["allergy_codes"] else 0 for code in ALLERGEN_VOCAB]
+    allergy_multi_hot = [1 if code in pet.get("allergy_codes", []) else 0 for code in ALLERGEN_VOCAB]
     concern_multi_hot = [1 if code in pet.get("concerns", []) else 0 for code in CONCERN_VOCAB]
 
     return {
         "sparse": {
             "species": pet["species"],
             "breed": pet["breed"],  # 실제로는 품종 마스터 코드로 매핑 필요
-            "sex": pet["sex"],      # MALE/FEMALE
-            "age_group": age_group,
+            "sex": pet.get("sex"),
+            "age_group": age_group,      # 카테고리 표현은 그대로 유지
             "breed_size": breed_size,
-            "bcs": pet["bcs"],  # 1~5, ordinal sparse로 취급
+            "bcs": pet["bcs"],            # 카테고리 표현은 그대로 유지 (1~5, ordinal sparse)
         },
         "dense": {
             "age_months_norm": _normalize(age_months, 0, 180),  # 0~15세 가정
             "weight_norm": _normalize(pet["weight"], 0, 50),    # 0~50kg 가정
-            "neutered": 1.0 if pet["neutered"] else 0.0,        # boolean -> dense 0/1
+            "neutered": 1.0 if pet.get("neutered") else 0.0,
+            # --- 순서 정보를 명시적으로 담은 신규 dense feature ---
+            "bcs_norm": _normalize(pet["bcs"], BCS_MIN, BCS_MAX),
+            "age_group_ordinal": _ordinal_normalize(age_group, AGE_GROUP_VOCAB),
         },
         "multi_hot": {
             "allergy_codes": allergy_multi_hot,   # ALLERGEN_VOCAB(120) 순서와 매칭
@@ -105,14 +129,11 @@ def build_pet_features(pet: dict) -> dict:
 def build_product_aspect_features(product_review_summary: dict) -> dict:
     """
     aspect_keyword_dict 기반 리뷰 집계 -> dense feature 6개.
-    product_review_summary: {"positive_tags": [...], "negative_tags": [...], "total_reviews": int}
-    각 aspect 별로 (긍정 언급 - 부정 언급) / 전체 리뷰 수 로 -1~1 사이 점수 계산.
     """
     positive_tags = product_review_summary.get("positive_tags", [])
     negative_tags = product_review_summary.get("negative_tags", [])
     total_reviews = product_review_summary.get("total_reviews", 1) or 1
 
-    # aspect_code 별 긍/부정 태그 매핑 (aspect_tagging.py의 tag_positive/tag_negative와 매칭)
     aspect_tag_map = {
         "palatability": ("기호성 좋음", "기호성 낮음"),
         "digestion": ("소화 잘됨", "소화 불편 후기 있음"),
@@ -135,6 +156,11 @@ def build_product_aspect_features(product_review_summary: dict) -> dict:
 def build_product_features(product: dict, product_review_summary: dict) -> dict:
     """
     product_master + aspect 리뷰 집계 -> DeepFM 아이템측 feature.
+
+    target_age_group도 순서형 값이지만, 이건 "타겟 대상"이라는 상품 속성이라
+    반려동물의 실제 age_group과 "일치하는지"가 핵심 정보(적합도)이지
+    그 자체의 순서 위치가 직접적인 의미를 가지지는 않아 ordinal 변환 대상에서는 제외.
+    (참고: pet 쪽 age_group_ordinal과 비교하는 적합도 feature는 추후 필요시 별도 설계)
     """
     aspect_dense = build_product_aspect_features(product_review_summary)
 
@@ -147,7 +173,7 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
         },
         "multi_hot": {
             "target_species": [1 if s in product["target_species"] else 0 for s in SPECIES_VOCAB],
-            "allergen_flags": [1 if a in product["allergen_flags"] else 0 for a in ALLERGEN_VOCAB],
+            "allergen_flags": [1 if a in product.get("allergen_flags", []) else 0 for a in ALLERGEN_VOCAB],
         },
         "dense": {
             "price_norm": _normalize(product["price"], 0, 100000),
@@ -159,7 +185,6 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
 def build_interaction_features(pet: dict, product: dict, product_review_summary: dict) -> dict:
     """
     유저측 + 아이템측 feature를 합쳐 하나의 학습 샘플 형태로 반환.
-    label(구매/클릭 등 정답)은 아직 없음 -> 별도 컬럼으로 비워둠 (추후 결정).
     """
     pet_features = build_pet_features(pet)
     product_features = build_product_features(product, product_review_summary)
@@ -169,5 +194,5 @@ def build_interaction_features(pet: dict, product: dict, product_review_summary:
         "product_id": product["product_id"],
         "pet_features": pet_features,
         "product_features": product_features,
-        "label": None,  # TODO: 구매 이력/합성 주문 데이터 확보 후 결정
+        "label": None,
     }

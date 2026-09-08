@@ -2,20 +2,11 @@
 """
 DeepFM 모델 (raw PyTorch 직접 구현) + FeatureEncoder.
 
-deepctr-torch 대신 직접 구현한 이유:
-- 최신 pandas/numpy 환경에서의 호환성 리스크 회피
-- src/features/deepfm_features.py가 만드는 sparse/dense/multi-hot 딕셔너리 구조를
-  그대로 받아 쓰기 위함 (라이브러리 전용 Feat 객체로 재변환하는 과정 불필요)
-
-구조:
-- 1차항(Linear): 모든 필드의 1차 가중치 합
-- 2차항(FM): 필드 임베딩 간 pairwise interaction (표준 FM 공식)
-- Deep항(DNN): 전체 필드 임베딩 concat + dense 값을 MLP에 통과
-- 최종: sigmoid(Linear + FM + Deep)
-
-multi-hot 필드(allergy_codes, concerns, target_species, allergen_flags)는
-각 항목을 개별 임베딩하지 않고, 활성화된 항목들의 임베딩을 평균 풀링해서
-하나의 필드 임베딩으로 압축한다 (표준적인 방식).
+[변경 이력]
+bcs_norm, age_group_ordinal을 DENSE_FIELDS에 추가 (deepfm_features.py에서
+순서형 값을 0~1 정규화한 dense feature로 새로 만든 것과 짝을 맞춤).
+dense 벡터 차원이 10 -> 12로 늘어나지만, dense_linear/DNN 입력 차원이
+len(DENSE_FIELDS) 기준으로 동적으로 계산되므로 이 리스트만 수정하면 된다.
 """
 
 import os
@@ -25,10 +16,8 @@ import torch.nn as nn
 
 # ---------------------------------------------------------------------------
 # Feature 스키마 정의
-# (src/features/deepfm_features.py의 build_interaction_features() 출력 구조와 정확히 대응)
 # ---------------------------------------------------------------------------
 
-# sparse 필드: field_name -> 고정 vocab (알고 있는 경우) 또는 None (데이터에서 동적으로 구축)
 SPARSE_FIELD_VOCABS = {
     "species": ["DOG", "CAT"],
     "sex": ["MALE", "FEMALE"],
@@ -42,11 +31,10 @@ SPARSE_FIELD_VOCABS = {
         "POWDER_SUPPLEMENT", "LIQUID_SUPPLEMENT", "CHEWABLE_SUPPLEMENT", "TABLET_SUPPLEMENT",
         "JERKY_TREAT", "WET_TREAT", "FREEZE_DRIED_TREAT", "BISCUIT_TREAT",
     ],
-    "target_breed_size": ["SMALL", "MEDIUM", "LARGE"],  # None -> UNKNOWN 처리
-    "target_age_group": ["GROWTH", "ADULT", "SENIOR"],  # None -> UNKNOWN 처리
+    "target_breed_size": ["SMALL", "MEDIUM", "LARGE"],
+    "target_age_group": ["GROWTH", "ADULT", "SENIOR"],
 }
 
-# multi-hot 필드: field_name -> vocab 크기 (allergen_master/concern_master 참조)
 MULTIHOT_FIELD_SIZES = {
     "allergy_codes": 120,
     "concerns": 95,
@@ -55,8 +43,9 @@ MULTIHOT_FIELD_SIZES = {
 }
 
 # dense 필드 (pet_features.dense + product_features.dense 순서 고정)
+# bcs_norm, age_group_ordinal -- 순서형 값의 순서/거리 정보를 명시적으로 전달하기 위해 추가
 DENSE_FIELDS = [
-    "age_months_norm", "weight_norm", "neutered",
+    "age_months_norm", "weight_norm", "neutered", "bcs_norm", "age_group_ordinal",
     "price_norm", "palatability_score", "digestion_score",
     "skin_coat_score", "vitality_weight_score", "allergic_reaction_score", "price_value_score",
 ]
@@ -65,22 +54,15 @@ UNKNOWN_TOKEN = "<UNK>"
 
 
 class FeatureEncoder:
-    """
-    build_interaction_features() 출력(중첩 딕셔너리)을 모델 입력 텐서로 변환.
-    sparse 필드는 정수 인덱스로, multi-hot은 0/1 벡터 그대로, dense는 float 벡터로.
-    """
-
     def __init__(self):
-        self.sparse_vocabs = {}  # field_name -> {value: index}
+        self.sparse_vocabs = {}
         for field, vocab in SPARSE_FIELD_VOCABS.items():
             if vocab is not None:
-                # 0번 인덱스는 UNKNOWN용으로 예약
                 self.sparse_vocabs[field] = {UNKNOWN_TOKEN: 0, **{v: i + 1 for i, v in enumerate(vocab)}}
             else:
-                self.sparse_vocabs[field] = {UNKNOWN_TOKEN: 0}  # 동적 구축 대상
+                self.sparse_vocabs[field] = {UNKNOWN_TOKEN: 0}
 
     def fit_dynamic_vocab(self, field: str, values: list):
-        """breed처럼 고정 vocab이 없는 필드를 학습 데이터에서 구축."""
         vocab = self.sparse_vocabs[field]
         for v in values:
             v = str(v)
@@ -92,21 +74,19 @@ class FeatureEncoder:
 
     def _encode_sparse(self, field: str, value) -> int:
         value = str(value) if value is not None else UNKNOWN_TOKEN
-        return self.sparse_vocabs[field].get(value, 0)  # 미확인 값은 UNKNOWN(0)
+        return self.sparse_vocabs[field].get(value, 0)
 
     def encode(self, sample: dict) -> dict:
-        """
-        sample: build_interaction_features()의 반환값 1건.
-        반환: {"sparse": {field: int}, "multi_hot": {field: [0/1,...]}, "dense": [float,...], "label": int or None}
-        """
         pet_f = sample["pet_features"]
         prod_f = sample["product_features"]
 
         sparse_out = {}
         for field, value in pet_f["sparse"].items():
-            sparse_out[field] = self._encode_sparse(field, value)
+            if field in self.sparse_vocabs:
+                sparse_out[field] = self._encode_sparse(field, value)
         for field, value in prod_f["sparse"].items():
-            sparse_out[field] = self._encode_sparse(field, value)
+            if field in self.sparse_vocabs:
+                sparse_out[field] = self._encode_sparse(field, value)
 
         multihot_out = {}
         for field, vec in pet_f["multi_hot"].items():
@@ -132,20 +112,18 @@ class FeatureEncoder:
 
     @classmethod
     def from_saved_vocab(cls, vocab_path: str) -> "FeatureEncoder":
-        """학습 시 저장된 feature_encoder.json으로부터 인코더를 복원 (추론 시 사용)."""
         import json
-        encoder = cls.__new__(cls)  # __init__을 건너뛰고 vocab을 직접 주입
+        encoder = cls.__new__(cls)
         with open(vocab_path, "r", encoding="utf-8") as f:
             encoder.sparse_vocabs = json.load(f)
         return encoder
 
     def collate(self, encoded_samples: list) -> dict:
-        """encode()로 변환된 샘플 여러 개를 배치 텐서로 묶는다."""
         batch = {"sparse": {}, "multi_hot": {}, "dense": None, "label": None}
 
         for field in SPARSE_FIELD_VOCABS:
             batch["sparse"][field] = torch.tensor(
-                [s["sparse"][field] for s in encoded_samples], dtype=torch.long
+                [s["sparse"].get(field, 0) for s in encoded_samples], dtype=torch.long
             )
 
         for field, size in MULTIHOT_FIELD_SIZES.items():
@@ -164,17 +142,12 @@ class FeatureEncoder:
         return batch
 
 
-# ---------------------------------------------------------------------------
-# DeepFM 모델
-# ---------------------------------------------------------------------------
-
 class DeepFM(nn.Module):
     def __init__(self, encoder: FeatureEncoder, embed_dim: int = 8, dnn_hidden: tuple = (64, 32), dropout: float = 0.2):
         super().__init__()
         self.encoder = encoder
         self.embed_dim = embed_dim
 
-        # --- sparse 필드: 1차항(dim=1) + 2차/deep용 임베딩(dim=embed_dim) ---
         self.sparse_linear = nn.ModuleDict({
             field: nn.Embedding(encoder.vocab_size(field), 1)
             for field in SPARSE_FIELD_VOCABS
@@ -184,7 +157,6 @@ class DeepFM(nn.Module):
             for field in SPARSE_FIELD_VOCABS
         })
 
-        # --- multi-hot 필드: 1차항(vocab_size -> 1, bias 없는 Linear) + 임베딩(평균 풀링) ---
         self.multihot_linear = nn.ModuleDict({
             field: nn.Linear(size, 1, bias=False)
             for field, size in MULTIHOT_FIELD_SIZES.items()
@@ -194,22 +166,18 @@ class DeepFM(nn.Module):
             for field, size in MULTIHOT_FIELD_SIZES.items()
         })
 
-        # --- dense 필드: 1차항(선형) ---
         n_dense = len(DENSE_FIELDS)
         self.dense_linear = nn.Linear(n_dense, 1)
 
         self.bias = nn.Parameter(torch.zeros(1))
 
-        # 임베딩 초기화: nn.Embedding 기본값(표준정규분포, std=1)을 그대로 두면
-        # FM 2차항(여러 필드 임베딩의 합을 제곱)에서 값이 크게 증폭되어
-        # sigmoid가 0/1에 극단적으로 포화되고 학습이 안 되는 문제가 생긴다.
-        # 표준 DeepFM 구현처럼 작은 표준편차로 재초기화한다.
+        # 임베딩 초기화: 기본값(표준편차 1)이면 FM 2차항에서 값이 크게 증폭되어
+        # sigmoid가 포화되고 학습이 안 되는 문제가 생기므로 작은 표준편차로 재초기화.
         for emb in list(self.sparse_linear.values()) + list(self.sparse_embed.values()):
             nn.init.normal_(emb.weight, mean=0.0, std=0.01)
         for lin in self.multihot_linear.values():
             nn.init.normal_(lin.weight, mean=0.0, std=0.01)
 
-        # --- Deep 파트 입력 차원: (sparse 필드 수 + multi-hot 필드 수) * embed_dim + dense 원본값 ---
         n_fields = len(SPARSE_FIELD_VOCABS) + len(MULTIHOT_FIELD_SIZES)
         dnn_input_dim = n_fields * embed_dim + n_dense
 
@@ -226,49 +194,40 @@ class DeepFM(nn.Module):
     def forward(self, batch: dict) -> torch.Tensor:
         sparse = batch["sparse"]
         multi_hot = batch["multi_hot"]
-        dense = batch["dense"]  # (B, n_dense)
+        dense = batch["dense"]
 
-        field_embeds = []  # 각 원소 shape: (B, embed_dim)
-        linear_terms = []  # 각 원소 shape: (B, 1)
+        field_embeds = []
+        linear_terms = []
 
         for field in SPARSE_FIELD_VOCABS:
-            idx = sparse[field]  # (B,)
-            linear_terms.append(self.sparse_linear[field](idx).squeeze(-1))  # (B,)
-            field_embeds.append(self.sparse_embed[field](idx))  # (B, embed_dim)
+            idx = sparse[field]
+            linear_terms.append(self.sparse_linear[field](idx).squeeze(-1))
+            field_embeds.append(self.sparse_embed[field](idx))
 
         for field in MULTIHOT_FIELD_SIZES:
-            vec = multi_hot[field]  # (B, vocab_size), 0/1
-            linear_terms.append(self.multihot_linear[field](vec).squeeze(-1))  # (B,)
-            # 평균 풀링: 활성화된 항목의 임베딩 평균 (활성 항목 없으면 0벡터)
-            active_count = vec.sum(dim=1, keepdim=True).clamp(min=1.0)  # (B,1)
-            pooled = (vec @ self.multihot_embed_table[field]) / active_count  # (B, embed_dim)
+            vec = multi_hot[field]
+            linear_terms.append(self.multihot_linear[field](vec).squeeze(-1))
+            active_count = vec.sum(dim=1, keepdim=True).clamp(min=1.0)
+            pooled = (vec @ self.multihot_embed_table[field]) / active_count
             field_embeds.append(pooled)
 
-        # --- 1차항 합산: 모든 필드의 (B,) 선형항 + dense 선형항 + bias ---
-        first_order = torch.stack(linear_terms, dim=1).sum(dim=1, keepdim=True)  # (B, 1)
-        first_order = first_order + self.dense_linear(dense) + self.bias  # (B, 1)
+        first_order = torch.stack(linear_terms, dim=1).sum(dim=1, keepdim=True)
+        first_order = first_order + self.dense_linear(dense) + self.bias
 
-        # --- 2차항(FM): 0.5 * [(sum v_i)^2 - sum(v_i^2)], 필드 임베딩 기준 ---
-        stacked = torch.stack(field_embeds, dim=1)  # (B, n_fields, embed_dim)
-        sum_then_square = stacked.sum(dim=1) ** 2          # (B, embed_dim)
-        square_then_sum = (stacked ** 2).sum(dim=1)         # (B, embed_dim)
-        fm_second_order = 0.5 * (sum_then_square - square_then_sum).sum(dim=1, keepdim=True)  # (B,1)
+        stacked = torch.stack(field_embeds, dim=1)
+        sum_then_square = stacked.sum(dim=1) ** 2
+        square_then_sum = (stacked ** 2).sum(dim=1)
+        fm_second_order = 0.5 * (sum_then_square - square_then_sum).sum(dim=1, keepdim=True)
 
-        # --- Deep 파트 ---
-        flat_embeds = stacked.view(stacked.size(0), -1)  # (B, n_fields*embed_dim)
+        flat_embeds = stacked.view(stacked.size(0), -1)
         dnn_input = torch.cat([flat_embeds, dense], dim=1)
-        deep_out = self.dnn(dnn_input)  # (B,1)
+        deep_out = self.dnn(dnn_input)
 
         logit = first_order + fm_second_order + deep_out
-        return torch.sigmoid(logit).squeeze(-1)  # (B,)
+        return torch.sigmoid(logit).squeeze(-1)
 
 
 def load_deepfm(model_dir: str) -> tuple:
-    """
-    저장된 모델(deepfm_model.pt) + vocab(feature_encoder.json) + config(model_config.json)로부터
-    FeatureEncoder와 DeepFM 모델을 복원한다.
-    반환: (encoder, model)
-    """
     import json
 
     encoder = FeatureEncoder.from_saved_vocab(os.path.join(model_dir, "feature_encoder.json"))
