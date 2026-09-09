@@ -128,16 +128,22 @@ def build_pet_features(pet: dict) -> dict:
 
 def build_product_aspect_features(product_review_summary: dict) -> dict:
     """
-    aspect_keyword_dict 기반 리뷰 집계 -> dense feature 6개.
+    aspect_keyword_dict 기반 리뷰 집계 -> dense feature 6개(price_value 제외 시 5개).
 
-    두 가지 입력 형태를 지원한다:
+    세 가지 입력 형태를 지원한다:
     1) 기존 방식(카운트 기반, pet과 무관하게 상품 전체 리뷰 단순 집계):
        {"positive_tags": [...], "negative_tags": [...], "total_reviews": int}
-    2) 신규 방식(유사도 가중, pet마다 다른 값 -- reviewer_profile_similarity.compute_weighted_aspect_scores 결과):
+    2) 유사도 가중 방식(pet마다 다른 값 -- reviewer_profile_similarity.compute_weighted_aspect_scores 결과):
        {"weighted_aspect_scores": {tag_string: 0~1 가중 점수, ...}, ...}
        주의: compute_weighted_aspect_scores의 출력 키는 aspect_code가 아니라
        "기호성 좋음" 같은 원본 태그 문자열이므로, 아래 aspect_tag_map으로 변환한 뒤
        (긍정 태그 가중 점수) - (부정 태그 가중 점수)를 최종 -1~1 점수로 사용한다.
+    3) 정형 평점 방식(신규, 사용자가 리뷰 작성 시 1~3점으로 직접 선택한 값 기반):
+       {"rating_aspect_scores": {"palatability": [1.0, 0.0, ...], ...}}
+       -- rating_converter.convert_rating_to_score()로 이미 -1~1 변환된 점수들의 리스트
+       (리뷰 여러 개, 필요시 리뷰 작성자 유사도로 가중된 값). 상품 단위로 평균낸다.
+       가격·가성비는 추천 근거에서 제외하기로 확정되어 이 방식에서는 다루지 않는다
+       (price_value_score는 항상 0.0으로 채워짐 -- DENSE_FIELDS 차원 유지 목적).
     """
     aspect_tag_map = {
         "palatability": ("기호성 좋음", "기호성 낮음"),
@@ -147,6 +153,33 @@ def build_product_aspect_features(product_review_summary: dict) -> dict:
         "allergic_reaction": ("알러지 반응 없음(후기)", "알러지 반응 있음(후기)"),
         "price_value": ("가성비 좋음", "가격 부담 후기 있음"),
     }
+
+    if "weighted_aspect_scores_by_code" in product_review_summary:
+        # 신규(최신): reviewer_profile_similarity.compute_weighted_aspect_scores()의
+        # 출력을 그대로 사용. 이미 aspect_code를 키로 하는 단일 -1~1 값이라
+        # (긍/부정 방향과 유사도 가중까지 다 반영된 최종값) 별도 변환 없이 그대로 매핑한다.
+        # 가격·가성비는 추천 근거에서 제외하기로 확정되어 항상 0.0 고정.
+        weighted_by_code = product_review_summary["weighted_aspect_scores_by_code"]
+        dense = {}
+        for aspect_code in aspect_tag_map:
+            if aspect_code == "price_value":
+                dense[f"{aspect_code}_score"] = 0.0
+                continue
+            dense[f"{aspect_code}_score"] = round(weighted_by_code.get(aspect_code, 0.0), 4)
+        return dense
+
+    if "rating_aspect_scores" in product_review_summary:
+        rating_scores = product_review_summary["rating_aspect_scores"]
+        dense = {}
+        for aspect_code in aspect_tag_map:
+            if aspect_code == "price_value":
+                # 가격·가성비는 추천 근거에서 제외하기로 확정 -- 중립값으로 고정
+                dense[f"{aspect_code}_score"] = 0.0
+                continue
+            scores = rating_scores.get(aspect_code, [])
+            avg = sum(scores) / len(scores) if scores else 0.0
+            dense[f"{aspect_code}_score"] = round(avg, 4)
+        return dense
 
     if "weighted_aspect_scores" in product_review_summary:
         weighted = product_review_summary["weighted_aspect_scores"]

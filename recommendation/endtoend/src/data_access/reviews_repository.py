@@ -77,12 +77,18 @@ def _fetch_reviews_from_db(product_id: str = None) -> list:
     실제 PostgreSQL에서 reviews를 pet_profile과 조인해서 가져온다.
     product_id를 지정하면 해당 상품 리뷰만, 없으면 전체를 가져온다.
     반환 형태는 더미 리뷰 데이터(dummy_reviews.DUMMY_REVIEWS)와 동일한 스키마로 맞춘다.
+
+    [변경 이력] 5개 aspect(기호성/소화·배변/피부·모질/체중·활력/알러지반응)가
+    리뷰 작성 화면에서 사용자가 직접 선택하는 1~3점 정형 필드로 확정되어
+    조회 컬럼에 추가했다. 컬럼명(*_rating)은 실제 스키마 확정 시 재확인 필요.
     """
     conn = _get_db_connection()
     try:
         with conn.cursor() as cur:
             query = """
                 SELECT r.review_id, r.product_id, r.rating, r.review_text,
+                       r.palatability_rating, r.digestion_rating, r.skin_coat_rating,
+                       r.vitality_weight_rating, r.allergic_reaction_rating,
                        p.species, p.birth_date, p.weight, p.allergy_codes
                 FROM reviews r
                 JOIN pet_profile p ON r.pet_id = p.pet_id
@@ -97,12 +103,20 @@ def _fetch_reviews_from_db(product_id: str = None) -> list:
             rows = cur.fetchall()
 
             reviews = []
-            for review_id, pid, rating, review_text, species, birth_date, weight, allergy_codes in rows:
+            for (review_id, pid, rating, review_text,
+                 palatability_rating, digestion_rating, skin_coat_rating,
+                 vitality_weight_rating, allergic_reaction_rating,
+                 species, birth_date, weight, allergy_codes) in rows:
                 reviews.append({
                     "review_id": review_id,
                     "product_id": pid,
                     "rating": rating,
                     "review_text": review_text,
+                    "palatability_rating": palatability_rating,
+                    "digestion_rating": digestion_rating,
+                    "skin_coat_rating": skin_coat_rating,
+                    "vitality_weight_rating": vitality_weight_rating,
+                    "allergic_reaction_rating": allergic_reaction_rating,
                     "reviewer_pet": {
                         "species": species,
                         "birth_date": birth_date.isoformat() if hasattr(birth_date, "isoformat") else birth_date,
