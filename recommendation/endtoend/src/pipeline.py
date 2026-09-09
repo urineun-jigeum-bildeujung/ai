@@ -6,13 +6,12 @@ reviews -> KcELECTRA 감성분석 -> aspect 태깅 -> 상품별 review_features 
 -> pet_id 입력 -> 알러지 필터링(역추천) -> DeepFM 스코어링 -> recommendation_items 출력
 
 [이번 변경 사항 - 콜드스타트 로직: 사용자 프로필 + 리뷰 작성자 프로필 + 리뷰 keywords]
-- DeepFM 수치 점수(순위 계산)는 기존 방식(전체 리뷰 단순 평균) 그대로 유지
-  (가중 유사도를 feature 자체에 반영하려면 deepfm_features.py 재설계 + 재학습이 필요해
-   범위가 커짐 -> 다음 단계 이슈로 분리)
-- 추천 사유(reason_keywords/reason_text)는 "추천 대상과 프로필이 비슷한 리뷰 작성자"의
-  반응에 가중치를 둬서 생성하도록 변경 (reviewer_profile_similarity.py 사용)
-- 각 리뷰의 reviewer_pet은 현재 더미 데이터에 가상으로 붙여둔 것이며,
-  reviews.pet_id가 실제 스키마에 반영되면 DB 조인 결과로 대체하면 된다.
+- DeepFM feature와 추천 사유 모두 "추천 대상과 프로필이 비슷한 리뷰 작성자"의
+  반응에 가중치를 둬서 계산 (reviewer_profile_similarity.py 사용)
+- 리뷰 작성자의 pet_profile(reviewer_pet)은 data_access.reviews_repository를 통해 가져온다.
+  reviews.pet_id 스키마가 실제로 반영되었으므로, 실제 DB 연동 시에는
+  reviews_repository.py의 USE_DUMMY_DATA 환경변수만 false로 바꾸면 되고
+  이 파일(pipeline.py)은 수정할 필요가 없다.
 
 실행: python3 src/pipeline.py
 사전 조건: train/finetune_kcelectra.py, train/train_deepfm.py 를 먼저 실행해서
@@ -24,6 +23,7 @@ import os
 import json
 from collections import defaultdict
 
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # data_access 등 src/ 하위 모듈 import용
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "data", "dummy"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "sentiment"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "aspect"))
@@ -31,7 +31,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "features"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "recommend"))
 
 from dummy_data import PET_PROFILES, PRODUCTS
-from dummy_reviews import DUMMY_REVIEWS
+from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
 from kcelectra_infer import analyze_sentiment
 from tagging import tag_aspects, ASPECTS
 from deepfm_features import build_interaction_features
@@ -49,9 +49,12 @@ def build_review_features_with_authors():
     """
     reviews -> review_features (KcELECTRA 감성분석 + aspect 태깅) + reviewer_pet 포함.
     상품별로 묶어서 반환: {product_id: [{"reviewer_pet":, "sentiment_label":, "keyword_tags":}, ...]}
+
+    데이터 출처(더미 파일 vs 실제 PostgreSQL)는 data_access.reviews_repository가 담당하며,
+    USE_DUMMY_DATA 환경변수로 전환된다. 이 함수는 출처와 무관하게 동일하게 동작한다.
     """
     grouped = defaultdict(list)
-    for review in DUMMY_REVIEWS:
+    for review in load_reviews_with_reviewer_pet():
         sentiment = analyze_sentiment(review["review_text"])
         tags = tag_aspects(review["review_text"])
         grouped[review["product_id"]].append({
