@@ -14,6 +14,8 @@ from scripts.modeling.error_analysis import (
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
     summarize_prior_support_by_log2_bucket,
+    summarize_product_concentration,
+    summarize_product_frequency,
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
@@ -345,6 +347,138 @@ def test_summarize_prior_support_by_log2_bucket_keeps_sources_separate() -> None
         "128+",
     ]
     assert result["overall_sample_count"].tolist() == [70, 30]
+
+
+def test_summarize_product_frequency_counts_rows_by_product() -> None:
+    """같은 상품의 여러 표본을 상품별 행 개수와 점유율로 집계합니다."""
+    rows = pd.DataFrame(
+        {
+            "product_id": ["P1", "P1", "P1", "P2", "P2", "P3"],
+            "absolute_error_days": [120.0, 90.0, 70.0, 80.0, 60.0, 50.0],
+        }
+    )
+
+    result = summarize_product_frequency(rows)
+
+    assert result["product_id"].tolist() == ["P1", "P2", "P3"]
+    assert result["sample_count"].tolist() == [3, 2, 1]
+    assert result["sample_share"].tolist() == pytest.approx([3 / 6, 2 / 6, 1 / 6])
+    assert result["sample_share"].sum() == pytest.approx(1.0)
+
+
+def test_summarize_product_concentration_calculates_top1_share() -> None:
+    """행 순서와 관계없이 최다 상품의 행 수와 점유율을 계산합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2", "P3", "P4"],
+            "sample_count": [1, 6, 2, 1],
+            "sample_share": [0.1, 0.6, 0.2, 0.1],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result == {
+        "total_sample_count": 10,
+        "unique_product_count": 4,
+        "top1_sample_count": 6,
+        "top1_share": pytest.approx(0.6),
+    }
+
+
+def test_summarize_product_concentration_rejects_empty_input() -> None:
+    """상품이 없는 빈 빈도표는 계산 전에 명확한 오류로 거부합니다."""
+    product_frequency = pd.DataFrame(
+        columns=["product_id", "sample_count", "sample_share"]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품 집중도를 분석할 표본이 없습니다",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+def test_summarize_product_concentration_rejects_duplicate_product() -> None:
+    """이미 집계된 빈도표에 같은 상품이 두 번 나타나면 오류로 거부합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P1", "P2"],
+            "sample_count": [3, 2, 5],
+            "sample_share": [0.3, 0.2, 0.5],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품별 빈도표에는 상품 ID가 중복될 수 없습니다",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize("missing_column", ["product_id", "sample_count"])
+def test_summarize_product_concentration_rejects_missing_required_column(
+    missing_column: str,
+) -> None:
+    """상품 집중도 계산에 필요한 원천 열이 없으면 열 이름을 알려줍니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [6, 4],
+        }
+    ).drop(columns=missing_column)
+
+    with pytest.raises(
+        ValueError,
+        match=rf"상품 집중도 분석 필수 열이 없습니다: {missing_column}",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize(
+    ("sample_counts", "expected_message"),
+    [
+        ([6, None], "sample_count에는 결측값이 없어야 합니다"),
+        ([6, 0], "sample_count는 1 이상의 정수여야 합니다"),
+        ([6, -2], "sample_count는 1 이상의 정수여야 합니다"),
+        ([6.0, 4.0], "sample_count는 정수형이어야 합니다"),
+        (["6", "4"], "sample_count는 정수형이어야 합니다"),
+        ([True, True], "sample_count는 정수형이어야 합니다"),
+    ],
+)
+def test_summarize_product_concentration_rejects_invalid_sample_count(
+    sample_counts: list[object],
+    expected_message: str,
+) -> None:
+    """행 개수는 결측값이 없는 양의 정수형만 허용합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": sample_counts,
+        }
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize("invalid_product_id", [None, "   "])
+def test_summarize_product_concentration_rejects_empty_product_id(
+    invalid_product_id: object,
+) -> None:
+    """결측값이나 공백뿐인 상품 ID는 고유 상품으로 인정하지 않습니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", invalid_product_id],
+            "sample_count": [6, 4],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품 ID에는 비어 있지 않은 값이 필요합니다",
+    ):
+        summarize_product_concentration(product_frequency)
 
 
 def test_summarize_prior_support_by_log2_bucket_rejects_missing_source() -> None:

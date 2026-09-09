@@ -74,6 +74,14 @@ PRIOR_BUCKET_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
+# 상품 집중도는 상품 식별자와 관측 행 수만을 원천값으로 사용합니다.
+PRODUCT_FREQUENCY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "product_id",
+        "sample_count",
+    }
+)
+
 PRODUCT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     {
         "prediction_source",
@@ -660,6 +668,75 @@ def summarize_prior_support_by_log2_bucket(
         summary["overall_sample_rate"]
     )
     return summary
+
+
+def _validate_nonempty_product_ids(product_ids: pd.Series) -> None:
+    """상품 ID에 결측값이나 공백 문자열이 없는지 검증합니다."""
+    if (
+        product_ids.isna().any()
+        or product_ids.astype("string").str.strip().eq("").any()
+    ):
+        raise ValueError("상품 ID에는 비어 있지 않은 값이 필요합니다.")
+
+
+def summarize_product_frequency(rows: pd.DataFrame) -> pd.DataFrame:
+    """입력 표본의 상품별 행 개수와 점유율을 집계합니다."""
+    if "product_id" not in rows.columns:
+        raise ValueError("상품 빈도 분석에 필요한 product_id가 없습니다.")
+    if rows.empty:
+        raise ValueError("상품 빈도를 분석할 표본이 없습니다.")
+
+    _validate_nonempty_product_ids(rows["product_id"])
+
+    summary = (
+        rows.groupby(
+            "product_id",
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("sample_count")
+        .reset_index()
+    )
+    summary["sample_share"] = summary["sample_count"].div(len(rows))
+    return summary
+
+
+def summarize_product_concentration(
+    product_frequency: pd.DataFrame,
+) -> dict[str, int | float]:
+    """상품별 빈도표에서 전체 표본 수와 상품 집중도를 요약합니다."""
+    missing_columns = PRODUCT_FREQUENCY_REQUIRED_COLUMNS - set(
+        product_frequency.columns
+    )
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"상품 집중도 분석 필수 열이 없습니다: {missing_text}")
+    if product_frequency.empty:
+        raise ValueError("상품 집중도를 분석할 표본이 없습니다.")
+
+    product_ids = product_frequency["product_id"]
+    _validate_nonempty_product_ids(product_ids)
+    if product_ids.duplicated().any():
+        raise ValueError("상품별 빈도표에는 상품 ID가 중복될 수 없습니다.")
+
+    sample_counts = product_frequency["sample_count"]
+    if sample_counts.isna().any():
+        raise ValueError("sample_count에는 결측값이 없어야 합니다.")
+    if is_bool_dtype(sample_counts.dtype) or not is_integer_dtype(sample_counts.dtype):
+        raise ValueError("sample_count는 정수형이어야 합니다.")
+    if sample_counts.le(0).any():
+        raise ValueError("sample_count는 1 이상의 정수여야 합니다.")
+
+    total_sample_count = int(sample_counts.sum())
+    top1_sample_count = int(sample_counts.max())
+
+    return {
+        "total_sample_count": total_sample_count,
+        "unique_product_count": int(len(product_frequency)),
+        "top1_sample_count": top1_sample_count,
+        "top1_share": top1_sample_count / total_sample_count,
+    }
 
 
 def summarize_user_product_errors_by_history_count(
