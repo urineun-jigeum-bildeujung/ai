@@ -123,16 +123,21 @@ def compute_profile_similarity(target_pet: dict, reviewer_pet: dict) -> float:
     return round(total, 4)
 
 
-def compute_weighted_aspect_scores(target_pet: dict, review_features_with_authors: list) -> dict:
+def compute_weighted_aspect_scores(target_pet: dict, reviews_with_ratings: list) -> dict:
     """
     target_pet: 추천 대상 반려동물의 pet_profile
-    review_features_with_authors: [
+    reviews_with_ratings: [
         {
             "reviewer_pet": {...pet_profile...},   # 리뷰 작성자의 pet_profile
-            "sentiment_label": "POSITIVE"/"NEGATIVE",
-            "keyword_tags": [...],                  # aspect 태깅 결과
+            "ratings": {                             # rating_converter로 변환된 -1~1 점수
+                "palatability": 1.0, "digestion": 0.0, "skin_coat": None, ...
+            },
         }, ...
     ]
+    (ratings 값이 None인 항목은 "그 리뷰에서 해당 aspect를 평가하지 않음"을 뜻하며 집계에서 제외한다.
+     rating_converter.convert_rating_to_score()가 이미 None -> 0.0으로 변환해서 줄 수도 있는데,
+     그 경우 "중립(2점)"과 "평가 안 함"이 구분 안 되므로, 이 함수 입력 단계에서는
+     원본 None을 그대로 유지해서 넘기는 것을 권장한다.
 
     반환: {
         "weighted_aspect_scores": {aspect_code: -1~1 사이 가중 평균 점수, ...},
@@ -142,19 +147,12 @@ def compute_weighted_aspect_scores(target_pet: dict, review_features_with_author
     """
     from collections import defaultdict
 
-    # aspect_tagging.py의 ASPECTS와 동일한 negative 태그 목록
-    # (pipeline.py에서 이미 이 방식으로 긍/부정 태그를 구분하고 있어 동일 기준 사용)
-    NEGATIVE_TAG_MARKERS = ["후기 있음", "낮음", "있음(후기)"]
-
-    def _is_negative_tag(tag: str) -> bool:
-        return any(marker in tag for marker in NEGATIVE_TAG_MARKERS)
-
     aspect_weighted_sum = defaultdict(float)
     aspect_weight_sum = defaultdict(float)
     total_weight = 0.0
     used_review_count = 0
 
-    for review in review_features_with_authors:
+    for review in reviews_with_ratings:
         similarity = compute_profile_similarity(target_pet, review["reviewer_pet"])
         if similarity <= 0:
             continue  # 종이 다르면 아예 반영 안 함
@@ -162,18 +160,16 @@ def compute_weighted_aspect_scores(target_pet: dict, review_features_with_author
         used_review_count += 1
         total_weight += similarity
 
-        for tag in review["keyword_tags"]:
-            # 태그 문자열에서 aspect 방향(긍/부정)을 판별해 +1/-1로 환산
-            direction = -1.0 if _is_negative_tag(tag) else 1.0
-            # aspect_code 자체는 태그 문자열만으로는 알 수 없으므로,
-            # 여기서는 태그 문자열 자체를 key로 사용 (tagging.py와 연동 시 aspect_code로 교체 권장)
-            aspect_weighted_sum[tag] += similarity * direction
-            aspect_weight_sum[tag] += similarity
+        for aspect_code, score in review["ratings"].items():
+            if score is None:
+                continue  # 이 리뷰에서 해당 aspect를 평가하지 않음 -> 집계에서 제외
+            aspect_weighted_sum[aspect_code] += similarity * score
+            aspect_weight_sum[aspect_code] += similarity
 
     weighted_scores = {}
-    for tag, weight_sum in aspect_weight_sum.items():
+    for aspect_code, weight_sum in aspect_weight_sum.items():
         if weight_sum > 0:
-            weighted_scores[tag] = round(aspect_weighted_sum[tag] / weight_sum, 4)
+            weighted_scores[aspect_code] = round(aspect_weighted_sum[aspect_code] / weight_sum, 4)
 
     return {
         "weighted_aspect_scores": weighted_scores,
