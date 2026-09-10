@@ -383,7 +383,96 @@ def test_summarize_product_concentration_calculates_top1_share() -> None:
         "unique_product_count": 4,
         "top1_sample_count": 6,
         "top1_share": pytest.approx(0.6),
+        "top5_sample_count": 10,
+        "top5_share": pytest.approx(1.0),
+        "hhi": pytest.approx(0.42),
+        "effective_product_count": pytest.approx(1 / 0.42),
     }
+
+
+def test_summarize_product_concentration_calculates_top5_share() -> None:
+    """상위 다섯 상품이 전체 표본에서 차지하는 행 수와 비율을 계산합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2", "P3", "P4", "P5", "P6"],
+            "sample_count": [5, 40, 25, 15, 10, 5],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result == {
+        "total_sample_count": 100,
+        "unique_product_count": 6,
+        "top1_sample_count": 40,
+        "top1_share": pytest.approx(0.4),
+        "top5_sample_count": 95,
+        "top5_share": pytest.approx(0.95),
+        "hhi": pytest.approx(0.26),
+        "effective_product_count": pytest.approx(1 / 0.26),
+    }
+
+
+def test_summarize_product_concentration_calculates_hhi() -> None:
+    """상품 수가 같을 때 점유율이 더 쏠린 분포의 HHI가 큰지 확인합니다."""
+    concentrated_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [75, 25],
+        }
+    )
+    distributed_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [50, 50],
+        }
+    )
+
+    concentrated_result = summarize_product_concentration(concentrated_frequency)
+    distributed_result = summarize_product_concentration(distributed_frequency)
+
+    assert concentrated_result["hhi"] == pytest.approx(0.625)
+    assert distributed_result["hhi"] == pytest.approx(0.5)
+    assert concentrated_result["hhi"] > distributed_result["hhi"]
+    assert concentrated_result["effective_product_count"] == pytest.approx(1.6)
+    assert distributed_result["effective_product_count"] == pytest.approx(2.0)
+
+
+def test_summarize_product_concentration_handles_single_product() -> None:
+    """상품 하나가 모든 표본을 차지하는 최대 집중 경계값을 확인합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1"],
+            "sample_count": [100],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result["unique_product_count"] == 1
+    assert result["top1_share"] == pytest.approx(1.0)
+    assert result["top5_share"] == pytest.approx(1.0)
+    assert result["hhi"] == pytest.approx(1.0)
+    assert result["effective_product_count"] == pytest.approx(1.0)
+
+
+def test_summarize_product_concentration_sums_large_counts_safely() -> None:
+    """int64 범위를 넘는 양의 표본 수도 음수로 넘치지 않고 합산합니다."""
+    large_count = 2**62
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [large_count, large_count],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result["total_sample_count"] == 2**63
+    assert result["top1_share"] == pytest.approx(0.5)
+    assert result["top5_sample_count"] == 2**63
+    assert result["top5_share"] == pytest.approx(1.0)
+    assert result["hhi"] == pytest.approx(0.5)
 
 
 def test_summarize_product_concentration_rejects_empty_input() -> None:

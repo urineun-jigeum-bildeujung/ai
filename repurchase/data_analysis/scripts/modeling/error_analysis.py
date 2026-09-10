@@ -728,14 +728,23 @@ def summarize_product_concentration(
     if sample_counts.le(0).any():
         raise ValueError("sample_count는 1 이상의 정수여야 합니다.")
 
-    total_sample_count = int(sample_counts.sum())
+    # 합산 전에 Python 정수로 변환해 고정 크기 정수의 오버플로를 방지합니다.
+    total_sample_count = sum(int(value) for value in sample_counts)
     top1_sample_count = int(sample_counts.max())
+    top5_sample_count = sum(int(value) for value in sample_counts.nlargest(5))
+    product_shares = sample_counts.div(total_sample_count)
+    hhi = float(product_shares.pow(2).sum())
+    effective_product_count = 1.0 / hhi
 
     return {
         "total_sample_count": total_sample_count,
         "unique_product_count": int(len(product_frequency)),
         "top1_sample_count": top1_sample_count,
         "top1_share": top1_sample_count / total_sample_count,
+        "top5_sample_count": top5_sample_count,
+        "top5_share": top5_sample_count / total_sample_count,
+        "hhi": hhi,
+        "effective_product_count": effective_product_count,
     }
 
 
