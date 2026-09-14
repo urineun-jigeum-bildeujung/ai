@@ -36,6 +36,7 @@ from deepfm_features import build_interaction_features
 from deepfm_labeling import build_training_pairs
 from deepfm_model import FeatureEncoder, DeepFM
 from reviewer_profile_similarity import compute_weighted_aspect_scores
+from purchase_history_similarity import build_purchase_history_feature
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "deepfm")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -57,6 +58,29 @@ DUMMY_ORDER_ITEMS = [
     {"order_id": "order_004", "product_id": "prod_005", "pet_id": "pet_002", "quantity": 1, "cancelled_quantity": 0, "returned_quantity": 0, "item_status": "PAID"},
     {"order_id": "order_005", "product_id": "prod_003", "pet_id": "pet_001", "quantity": 1, "cancelled_quantity": 0, "returned_quantity": 0, "item_status": "PAID"},
 ]
+
+# 실제로는 product_embeddings 테이블(pgvector)에서 조회. 여기서는 구조 검증용 저차원 더미 벡터 사용.
+DUMMY_PRODUCT_EMBEDDINGS = {
+    "prod_001": [0.9, 0.1, 0.0, 0.2],
+    "prod_002": [0.85, 0.15, 0.05, 0.1],
+    "prod_003": [0.1, 0.9, 0.3, 0.0],
+    "prod_004": [0.8, 0.2, 0.0, 0.15],
+    "prod_005": [0.05, 0.1, 0.9, 0.2],
+}
+
+
+def build_orders_with_user_id(pets_by_id: dict) -> dict:
+    """
+    DUMMY_ORDERS는 order_status만 가지고 있고 user_id가 없어서,
+    order_items의 pet_id -> pet_profile.user_id 로 역으로 채워 넣는다.
+    (실제로는 orders 테이블에 user_id가 원래부터 존재함)
+    """
+    orders_with_user = {oid: dict(o) for oid, o in DUMMY_ORDERS.items()}
+    for item in DUMMY_ORDER_ITEMS:
+        pet = pets_by_id.get(item["pet_id"])
+        if pet and item["order_id"] in orders_with_user:
+            orders_with_user[item["order_id"]]["user_id"] = pet["user_id"]
+    return orders_with_user
 
 
 def build_reviews_by_product():
@@ -84,6 +108,7 @@ def build_dataset():
 
     pairs = build_training_pairs(DUMMY_ORDER_ITEMS, DUMMY_ORDERS, pets_by_id, PRODUCTS)
     reviews_by_product = build_reviews_by_product()
+    orders_with_user_id = build_orders_with_user_id(pets_by_id)
 
     samples = []
     for pair in pairs:
@@ -95,7 +120,16 @@ def build_dataset():
         weighted_result = compute_weighted_aspect_scores(pet, product_reviews)
         summary = {"weighted_aspect_scores_by_code": weighted_result["weighted_aspect_scores"]}
 
-        feat = build_interaction_features(pet, product, summary)
+        # 구매 이력 기반 유사도 (콜드스타트면 자동 0.0)
+        purchase_sim = build_purchase_history_feature(
+            user_id=pet["user_id"],
+            candidate_product_id=product["product_id"],
+            order_items=DUMMY_ORDER_ITEMS,
+            orders=orders_with_user_id,
+            product_embeddings=DUMMY_PRODUCT_EMBEDDINGS,
+        )
+
+        feat = build_interaction_features(pet, product, summary, purchase_history_similarity=purchase_sim)
         feat["label"] = pair["label"]
         samples.append(feat)
     return samples
@@ -154,6 +188,7 @@ def main():
         mlflow.log_param("val_size", len(val_samples))
         mlflow.log_param("data_source", "dummy order_items (파이프라인 검증용, 실데이터 아님)")
         mlflow.log_param("aspect_score_method", "structured_rating_reviewer_similarity_weighted")
+        mlflow.log_param("purchase_history_feature", "product_embedding_cosine_similarity")
 
         model = DeepFM(encoder, embed_dim=embed_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
