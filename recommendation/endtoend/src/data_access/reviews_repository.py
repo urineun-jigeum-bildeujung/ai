@@ -21,6 +21,16 @@ import sys
 # 환경변수로 더미/실제 DB 전환 (기본값: 더미 -- 실데이터 준비 전까지는 이게 안전)
 USE_DUMMY_DATA = os.environ.get("USE_DUMMY_DATA", "true").lower() != "false"
 
+# review_question.review_question_type -> dummy_reviews.py / rating_converter.py에서
+# 쓰는 필드명(*_rating) 매핑. FEEDING_CONVENIENCE는 추천 근거 제외가 확정되어 매핑에서 뺐다.
+QUESTION_TYPE_TO_FIELD = {
+    "PALATABILITY": "palatability_rating",
+    "DIGESTION": "digestion_rating",
+    "SKIN_COAT": "skin_coat_rating",
+    "WEIGHT_VITALITY": "vitality_weight_rating",
+    "ALLERGY": "allergic_reaction_rating",
+}
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "data", "dummy"))
 
 
@@ -74,25 +84,35 @@ def _fetch_reviewer_pet_from_db(pet_id: str) -> dict:
 
 def _fetch_reviews_from_db(product_id: str = None) -> list:
     """
-    실제 PostgreSQL에서 reviews를 pet_profile과 조인해서 가져온다.
+    실제 PostgreSQL에서 review + review_question(1:N)을 pet_profile과 조인해서 가져온다.
     product_id를 지정하면 해당 상품 리뷰만, 없으면 전체를 가져온다.
     반환 형태는 더미 리뷰 데이터(dummy_reviews.DUMMY_REVIEWS)와 동일한 스키마로 맞춘다.
 
-    [변경 이력] 5개 aspect(기호성/소화·배변/피부·모질/체중·활력/알러지반응)가
-    리뷰 작성 화면에서 사용자가 직접 선택하는 1~3점 정형 필드로 확정되어
-    조회 컬럼에 추가했다. 컬럼명(*_rating)은 실제 스키마 확정 시 재확인 필요.
+    [최종 스키마 확정 사항]
+    - 5개 aspect 평점은 review 테이블의 컬럼이 아니라, review_question 테이블에
+      리뷰 하나당 여러 행(질문-답변 방식)으로 저장됨.
+    - review_question.review_question_type 값: PALATABILITY, DIGESTION,
+      FEEDING_CONVENIENCE, SKIN_COAT, WEIGHT_VITALITY, ALLERGY
+      (FEEDING_CONVENIENCE는 추천 근거에서 제외 확정 -- 우리 5개 aspect에 미포함)
+    - review_question.review_answer 값은 NEGATIVE/NEUTRAL/POSITIVE 문자열로 저장되나,
+      API 응답 시 1(NEGATIVE)/2(NEUTRAL)/3(POSITIVE) 숫자로 변환되어 내려오기로
+      백엔드와 확정함 -- 이 함수는 이미 숫자로 변환된 값을 받는다고 가정한다.
+    - review.pet_id로 pet_profile과 직접 조인 가능. member_id는 작성자 식별용으로
+      존재하나 지금 파이프라인에서는 pet_id 기준 조인만 사용.
     """
     conn = _get_db_connection()
     try:
         with conn.cursor() as cur:
             query = """
-                SELECT r.review_id, r.product_id, r.rating, r.review_text,
-                       r.palatability_rating, r.digestion_rating, r.skin_coat_rating,
-                       r.vitality_weight_rating, r.allergic_reaction_rating,
+                SELECT r.id, r.product_id, r.star_rate,
+                       rq.review_question_type, rq.review_answer,
                        p.species, p.birth_date, p.weight, p.allergy_codes
-                FROM reviews r
+                FROM review r
+                JOIN review_question rq ON rq.review_id = r.id
                 JOIN pet_profile p ON r.pet_id = p.pet_id
                 WHERE r.pet_id IS NOT NULL
+                  AND r.deleted_at IS NULL
+                  AND rq.review_question_type != 'FEEDING_CONVENIENCE'
             """
             params = ()
             if product_id:
@@ -102,29 +122,32 @@ def _fetch_reviews_from_db(product_id: str = None) -> list:
             cur.execute(query, params)
             rows = cur.fetchall()
 
-            reviews = []
-            for (review_id, pid, rating, review_text,
-                 palatability_rating, digestion_rating, skin_coat_rating,
-                 vitality_weight_rating, allergic_reaction_rating,
+            # review_question이 리뷰당 여러 행이므로 review_id 기준으로 묶는다
+            reviews_by_id = {}
+            for (review_id, pid, star_rate, question_type, answer,
                  species, birth_date, weight, allergy_codes) in rows:
-                reviews.append({
-                    "review_id": review_id,
-                    "product_id": pid,
-                    "rating": rating,
-                    "review_text": review_text,
-                    "palatability_rating": palatability_rating,
-                    "digestion_rating": digestion_rating,
-                    "skin_coat_rating": skin_coat_rating,
-                    "vitality_weight_rating": vitality_weight_rating,
-                    "allergic_reaction_rating": allergic_reaction_rating,
-                    "reviewer_pet": {
-                        "species": species,
-                        "birth_date": birth_date.isoformat() if hasattr(birth_date, "isoformat") else birth_date,
-                        "weight": float(weight),
-                        "allergy_codes": allergy_codes or [],
-                    },
-                })
-            return reviews
+                if review_id not in reviews_by_id:
+                    reviews_by_id[review_id] = {
+                        "review_id": review_id,
+                        "product_id": pid,
+                        "rating": star_rate,
+                        "palatability_rating": None,
+                        "digestion_rating": None,
+                        "skin_coat_rating": None,
+                        "vitality_weight_rating": None,
+                        "allergic_reaction_rating": None,
+                        "reviewer_pet": {
+                            "species": species,
+                            "birth_date": birth_date.isoformat() if hasattr(birth_date, "isoformat") else birth_date,
+                            "weight": float(weight),
+                            "allergy_codes": allergy_codes or [],
+                        },
+                    }
+                field_name = QUESTION_TYPE_TO_FIELD.get(question_type)
+                if field_name:
+                    reviews_by_id[review_id][field_name] = answer
+
+            return list(reviews_by_id.values())
     finally:
         conn.close()
 
