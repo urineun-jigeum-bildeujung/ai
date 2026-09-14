@@ -57,6 +57,34 @@ def train_val_split(labeled_reviews: list, val_ratio: float = 0.2, seed: int = 4
     return train_set, val_set
 
 
+def load_generated_reviews(train_path: str, val_path: str):
+    """
+    entity_injection 기반으로 생성된 실제 학습/검증 데이터를 로드.
+    (train_reviews.jsonl, val_reviews.jsonl -- 생성 단계에서 이미 겹치지 않게 분리되어 있음)
+
+    dummy_reviews와 달리 sentiment_label이 생성 조건으로 이미 부여되어 있어
+    별점 -> 라벨 변환이 필요 없다.
+    """
+    import json
+
+    def _load(path):
+        labeled = []
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                item = json.loads(line)
+                label = item["sentiment_label"]  # 이미 POSITIVE/NEGATIVE
+                labeled.append({
+                    "text": item["review_text"],
+                    "label": label,
+                    "label_id": LABEL2ID[label],
+                })
+        return labeled
+
+    train_set = _load(train_path)
+    val_set = _load(val_path)
+    return train_set, val_set
+
+
 if __name__ == "__main__":
     labeled = load_labeled_reviews()
     train_set, val_set = train_val_split(labeled)

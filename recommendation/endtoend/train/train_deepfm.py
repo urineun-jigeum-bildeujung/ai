@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-DeepFM 학습 스크립트.
+DeepFM 학습 스크립트 (정형 aspect 평점 기반 버전).
 
 실행: python3 train/train_deepfm.py
-(도커 컨테이너 안에서 실행 가능 -- HuggingFace 다운로드 불필요해서
- KcELECTRA와 달리 인터넷 없이도 동작함)
 
-데이터: 지금은 더미 pet_profile/product_master + 더미 order_items -- 파이프라인 검증 목적.
+[변경 이력]
+KcELECTRA/tagging.py를 더 이상 사용하지 않기로 확정됨에 따라(정형 aspect 평점
+1~3점을 추천의 핵심 데이터로 사용, 리뷰 텍스트 감성분석은 MVP 이후 부가 기능으로
+보류), 학습 데이터 생성 시 더 이상 감성분석/키워드 태깅을 거치지 않고
+rating_converter로 변환된 -1~1 aspect score를 바로 사용한다.
+
+데이터: 지금은 더미 pet_profile/product_master/reviews + 더미 order_items -- 파이프라인 검증 목적.
         실제 합성 order_items(10만 건)가 오면 order_items 로딩 부분만 교체하면 된다.
 """
 
@@ -14,6 +18,7 @@ import sys
 import os
 import json
 
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # src.data_access import용
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "data", "dummy"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "aspect"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "features"))
@@ -25,10 +30,13 @@ import mlflow
 from sklearn.metrics import roc_auc_score, accuracy_score
 
 from dummy_data import PET_PROFILES, PRODUCTS
-from tagging import tag_aspects
+from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
+from rating_converter import ASPECT_FIELD_TO_CODE, convert_rating_to_score
 from deepfm_features import build_interaction_features
 from deepfm_labeling import build_training_pairs
 from deepfm_model import FeatureEncoder, DeepFM
+from reviewer_profile_similarity import compute_weighted_aspect_scores
+from purchase_history_similarity import build_purchase_history_feature
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "models", "deepfm")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -51,11 +59,47 @@ DUMMY_ORDER_ITEMS = [
     {"order_id": "order_005", "product_id": "prod_003", "pet_id": "pet_001", "quantity": 1, "cancelled_quantity": 0, "returned_quantity": 0, "item_status": "PAID"},
 ]
 
+# 실제로는 product_embeddings 테이블(pgvector)에서 조회. 여기서는 구조 검증용 저차원 더미 벡터 사용.
+DUMMY_PRODUCT_EMBEDDINGS = {
+    "prod_001": [0.9, 0.1, 0.0, 0.2],
+    "prod_002": [0.85, 0.15, 0.05, 0.1],
+    "prod_003": [0.1, 0.9, 0.3, 0.0],
+    "prod_004": [0.8, 0.2, 0.0, 0.15],
+    "prod_005": [0.05, 0.1, 0.9, 0.2],
+}
 
-def build_dummy_review_summary():
-    """리뷰 집계 -- 지금은 KcELECTRA/aspect 파이프라인 없이 빈 값으로 처리.
-    실제로는 이 자리에 reviews + kcelectra_infer + tagging 결과를 집계해서 넣는다."""
-    return {p["product_id"]: {"positive_tags": [], "negative_tags": [], "total_reviews": 1} for p in PRODUCTS}
+
+def build_orders_with_user_id(pets_by_id: dict) -> dict:
+    """
+    DUMMY_ORDERS는 order_status만 가지고 있고 user_id가 없어서,
+    order_items의 pet_id -> pet_profile.user_id 로 역으로 채워 넣는다.
+    (실제로는 orders 테이블에 user_id가 원래부터 존재함)
+    """
+    orders_with_user = {oid: dict(o) for oid, o in DUMMY_ORDERS.items()}
+    for item in DUMMY_ORDER_ITEMS:
+        pet = pets_by_id.get(item["pet_id"])
+        if pet and item["order_id"] in orders_with_user:
+            orders_with_user[item["order_id"]]["user_id"] = pet["user_id"]
+    return orders_with_user
+
+
+def build_reviews_by_product():
+    """
+    reviews -> {reviewer_pet, ratings} 형태로 변환, 상품별로 묶어서 반환.
+    pipeline.py의 build_reviews_with_ratings()와 동일한 로직.
+    """
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for review in load_reviews_with_reviewer_pet():
+        ratings = {}
+        for field_name, aspect_code in ASPECT_FIELD_TO_CODE.items():
+            raw_rating = review.get(field_name)
+            ratings[aspect_code] = convert_rating_to_score(raw_rating) if raw_rating is not None else None
+        grouped[review["product_id"]].append({
+            "reviewer_pet": review["reviewer_pet"],
+            "ratings": ratings,
+        })
+    return grouped
 
 
 def build_dataset():
@@ -63,13 +107,29 @@ def build_dataset():
     products_by_id = {p["product_id"]: p for p in PRODUCTS}
 
     pairs = build_training_pairs(DUMMY_ORDER_ITEMS, DUMMY_ORDERS, pets_by_id, PRODUCTS)
-    review_summary = build_dummy_review_summary()
+    reviews_by_product = build_reviews_by_product()
+    orders_with_user_id = build_orders_with_user_id(pets_by_id)
 
     samples = []
     for pair in pairs:
         pet = pets_by_id[pair["pet_id"]]
         product = products_by_id[pair["product_id"]]
-        feat = build_interaction_features(pet, product, review_summary[product["product_id"]])
+
+        # (pet, product) 쌍마다 유사도 가중 aspect score를 새로 계산 -- pet마다 다른 값이 나옴
+        product_reviews = reviews_by_product.get(product["product_id"], [])
+        weighted_result = compute_weighted_aspect_scores(pet, product_reviews)
+        summary = {"weighted_aspect_scores_by_code": weighted_result["weighted_aspect_scores"]}
+
+        # 구매 이력 기반 유사도 (콜드스타트면 자동 0.0)
+        purchase_sim = build_purchase_history_feature(
+            user_id=pet["user_id"],
+            candidate_product_id=product["product_id"],
+            order_items=DUMMY_ORDER_ITEMS,
+            orders=orders_with_user_id,
+            product_embeddings=DUMMY_PRODUCT_EMBEDDINGS,
+        )
+
+        feat = build_interaction_features(pet, product, summary, purchase_history_similarity=purchase_sim)
         feat["label"] = pair["label"]
         samples.append(feat)
     return samples
@@ -94,7 +154,7 @@ def evaluate(model, batch):
     try:
         auc = roc_auc_score(labels, preds)
     except ValueError:
-        auc = float("nan")  # 검증셋에 클래스가 하나만 있으면 AUC 계산 불가 (더미 데이터 규모 한계)
+        auc = float("nan")
     return acc, auc
 
 
@@ -102,7 +162,7 @@ def main():
     mlflow.set_experiment("deepfm_recommendation")
 
     with mlflow.start_run():
-        print("데이터 준비")
+        print("데이터 준비 (정형 aspect 평점 + 리뷰 작성자 프로필 유사도 반영)")
         samples = build_dataset()
         print(f"전체 샘플: {len(samples)}건 (positive: {sum(1 for s in samples if s['label']==1)}, "
               f"negative: {sum(1 for s in samples if s['label']==0)})")
@@ -111,7 +171,6 @@ def main():
         print(f"학습 {len(train_samples)}건 / 검증 {len(val_samples)}건")
 
         encoder = FeatureEncoder()
-        encoder.fit_dynamic_vocab("breed", [p["breed"] for p in PET_PROFILES])
 
         train_encoded = [encoder.encode(s) for s in train_samples]
         val_encoded = [encoder.encode(s) for s in val_samples]
@@ -120,7 +179,7 @@ def main():
 
         embed_dim = 8
         learning_rate = 1e-3
-        num_epochs = 30  # 더미 데이터라 소규모, epoch 늘려서 학습 곡선 확인
+        num_epochs = 30
 
         mlflow.log_param("embed_dim", embed_dim)
         mlflow.log_param("learning_rate", learning_rate)
@@ -128,6 +187,8 @@ def main():
         mlflow.log_param("train_size", len(train_samples))
         mlflow.log_param("val_size", len(val_samples))
         mlflow.log_param("data_source", "dummy order_items (파이프라인 검증용, 실데이터 아님)")
+        mlflow.log_param("aspect_score_method", "structured_rating_reviewer_similarity_weighted")
+        mlflow.log_param("purchase_history_feature", "product_embedding_cosine_similarity")
 
         model = DeepFM(encoder, embed_dim=embed_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -147,14 +208,13 @@ def main():
                 print(f"epoch {epoch:3d} | train_loss: {loss.item():.4f} | val_acc: {val_acc:.4f} | val_auc: {val_auc:.4f}")
                 mlflow.log_metric("train_loss", loss.item(), step=epoch)
                 mlflow.log_metric("val_accuracy", val_acc, step=epoch)
-                if val_auc == val_auc:  # NaN 체크
+                if val_auc == val_auc:
                     mlflow.log_metric("val_auc", val_auc, step=epoch)
 
         final_val_acc, final_val_auc = evaluate(model, val_batch)
         print(f"\n최종 검증 accuracy: {final_val_acc:.4f}, AUC: {final_val_auc:.4f}")
         mlflow.log_metric("final_val_accuracy", final_val_acc)
 
-        # 모델 + 인코더(vocab) + 재구성용 config 저장 -- 추론 시 전부 필요
         model_path = os.path.join(OUTPUT_DIR, "deepfm_model.pt")
         encoder_path = os.path.join(OUTPUT_DIR, "feature_encoder.json")
         config_path = os.path.join(OUTPUT_DIR, "model_config.json")
@@ -172,7 +232,7 @@ def main():
         print(f"모델 저장: {model_path}")
         print(f"vocab 저장: {encoder_path}")
         print(f"config 저장: {config_path}")
-        print("\n주의: 이번 학습은 더미 order_items(5건) 기준이라 성능 지표 자체는 의미가 크지 않음.")
+        print("\n주의: 이번 학습은 더미 데이터 기준이라 성능 지표 자체는 의미가 크지 않음.")
         print("학습 코드/파이프라인이 정상 동작하는지 확인하는 것이 이번 실행의 목적.")
 
 

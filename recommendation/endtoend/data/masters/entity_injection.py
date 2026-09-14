@@ -10,6 +10,12 @@ LM(파인튜닝된 언어모델)은 "자연스러운 리뷰 문체"를 담당하
 각 리뷰가 실제로 어떤 속성을 포함하게 됐는지 ground truth로 함께 기록해서,
 나중에 review_features 추출 로직(KcELECTRA, aspect tagging 등)의 정확도를
 검증하는 데 사용할 수 있게 한다.
+
+[버그 수정 이력]
+- 나이(age) 삽입 시 "살"과 "개월" 템플릿이 같은 정수값을 공유해서,
+  ground_truth에 단위 구분 없이 숫자만 저장되던 문제를 수정.
+  review_features.extracted_age 스키마 정의(개월 수)에 맞춰,
+  "살" 템플릿이 뽑히면 ground_truth["age"]를 *12 해서 개월로 통일 기록.
 """
 
 import random
@@ -56,7 +62,6 @@ ASPECT_PHRASES = {
     },
 }
 
-
 # -----------------------------
 # 삽입 확률 설정
 # -----------------------------
@@ -69,7 +74,10 @@ INJECTION_PROB = {
     "aspect_phrase": 0.6,      # aspect 표현 (기호성/소화 등) -- 실제 리뷰에서 가장 흔한 유형이라 비율 높게
 }
 
-AGE_TEMPLATES = ["{age}살인데", "{age}개월인데", "우리 애가 {age}살이라"]
+# 나이 템플릿: "살"과 "개월"을 명확히 분리 (버그 수정 핵심)
+AGE_YEAR_TEMPLATES = ["{age}살인데", "우리 애가 {age}살이라"]
+AGE_MONTH_TEMPLATES = ["{age}개월인데"]
+
 WEIGHT_TEMPLATES = ["{weight}kg 정도인데", "체중이 {weight}kg인데"]
 BREED_TEMPLATES = ["{breed}인데", "저희 집 {breed}가", "{breed} 키우는데"]
 
@@ -113,7 +121,7 @@ def inject_attributes(base_text: str, species: str, sentiment: str, seed: int = 
         "final_text": 속성이 삽입된 최종 텍스트,
         "ground_truth": {
             "breed": str or None,
-            "age": int or None,
+            "age": int or None,       # 항상 "개월 수"로 통일해서 기록 (스키마 정의 준수)
             "weight": float or None,
             "allergen_mentioned": str or None,
             "concern_mentioned": str or None,
@@ -134,7 +142,7 @@ def inject_attributes(base_text: str, species: str, sentiment: str, seed: int = 
     # 1) 품종/나이/체중
     if rng.random() < INJECTION_PROB["breed_age_weight"]:
         breed = rng.choice(breed_pool)
-        age = rng.randint(1, 14)
+        age_years = rng.randint(1, 14)
         weight = round(rng.uniform(2.0, 30.0), 1)
 
         choice = rng.choice(["breed", "age", "weight", "breed_age"])
@@ -142,15 +150,23 @@ def inject_attributes(base_text: str, species: str, sentiment: str, seed: int = 
             clauses.append(rng.choice(BREED_TEMPLATES).format(breed=breed))
             ground_truth["breed"] = breed
         elif choice == "age":
-            clauses.append(rng.choice(AGE_TEMPLATES).format(age=age))
-            ground_truth["age"] = age
+            # "살"/"개월" 템플릿 중 무엇이 뽑혔는지에 따라 ground_truth를 개월 수로 통일해서 기록
+            # (extracted_age 스키마 정의가 "개월 수"이므로, 문장 표현 단위와 무관하게 항상 개월로 저장)
+            use_month_template = rng.random() < 0.5
+            if use_month_template:
+                age_months_for_text = age_years  # "개월" 문구에는 그대로 표시 (1~14개월)
+                clauses.append(rng.choice(AGE_MONTH_TEMPLATES).format(age=age_months_for_text))
+                ground_truth["age"] = age_months_for_text
+            else:
+                clauses.append(rng.choice(AGE_YEAR_TEMPLATES).format(age=age_years))
+                ground_truth["age"] = age_years * 12
         elif choice == "weight":
             clauses.append(rng.choice(WEIGHT_TEMPLATES).format(weight=weight))
             ground_truth["weight"] = weight
         else:
-            clauses.append(f"{age}살 {breed}인데")
+            clauses.append(f"{age_years}살 {breed}인데")
             ground_truth["breed"] = breed
-            ground_truth["age"] = age
+            ground_truth["age"] = age_years * 12
 
     # 2) 알러지 반응 언급
     if rng.random() < INJECTION_PROB["allergy_reaction"]:
