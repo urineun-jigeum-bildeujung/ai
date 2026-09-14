@@ -255,11 +255,16 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
     }
 
 
-def build_interaction_features(pet: dict, product: dict, product_review_summary: dict) -> dict:
+def build_interaction_features(pet: dict, product: dict, product_review_summary: dict,
+                                purchase_history_similarity: float = 0.0) -> dict:
     """
     유저측 + 아이템측 feature를 합쳐 하나의 학습 샘플 형태로 반환.
     age_fit_score는 pet과 product 정보가 둘 다 필요해서 이 단계에서 계산해
     product_features.dense에 추가한다.
+
+    purchase_history_similarity: 사용자의 기존 구매 상품과 이 상품 간 임베딩 유사도.
+    호출부(pipeline.py 등)에서 purchase_history_similarity.build_purchase_history_feature()로
+    미리 계산해서 넘겨준다. 구매 이력이 없는 사용자(콜드스타트)는 기본값 0.0(중립)이 그대로 사용된다.
     """
     pet_features = build_pet_features(pet)
     product_features = build_product_features(product, product_review_summary)
@@ -267,6 +272,7 @@ def build_interaction_features(pet: dict, product: dict, product_review_summary:
     pet_age_group = _calc_age_group(pet["birth_date"])
     age_fit_score = _calc_age_fit_score(pet_age_group, product.get("target_age_group"))
     product_features["dense"]["age_fit_score"] = age_fit_score
+    product_features["dense"]["purchase_history_similarity"] = purchase_history_similarity
 
     return {
         "pet_id": pet["pet_id"],

@@ -54,9 +54,13 @@ MULTIHOT_FIELD_SIZES = {
 # dense 필드 (pet_features.dense + product_features.dense 순서 고정)
 # bcs_norm, age_group_ordinal -- 순서형 값의 순서/거리 정보를 명시적으로 전달하기 위해 추가
 # age_fit_score -- 반려동물 실제 생애주기와 상품 타겟 생애주기 간 적합도 (pet+product 결합 feature)
+# purchase_history_similarity -- 사용자의 기존 구매 상품과 후보 상품 간 임베딩 유사도.
+#   구매 이력 없는 사용자(콜드스타트)는 0.0(중립)으로 처리되어 콜드스타트/기존 유저를
+#   동일한 모델 구조로 함께 다룰 수 있다.
 DENSE_FIELDS = [
     "age_months_norm", "weight_norm", "neutered", "bcs_norm", "age_group_ordinal",
-    "price_norm", "age_fit_score", "palatability_score", "digestion_score",
+    "price_norm", "age_fit_score", "purchase_history_similarity",
+    "palatability_score", "digestion_score",
     "skin_coat_score", "vitality_weight_score", "allergic_reaction_score", "price_value_score",
 ]
 
