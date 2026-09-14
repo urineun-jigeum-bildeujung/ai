@@ -3281,6 +3281,60 @@
       "monte_carlo_upper_tail_p_value": 0.999000999000999
     }
   },
+  "validation_label_maturity_analysis": [
+    {
+      "anchor_month": "2011-05",
+      "validation_sample_count": 27327,
+      "matured_sample_count": 7571,
+      "median_available_followup_days": 96.3515625,
+      "unmatured_sample_count": 19756,
+      "maturity_rate": 0.2770519998536246,
+      "evaluable_sample_count": 7571,
+      "mean_target_duration_days": 41.41531263300019,
+      "median_target_duration_days": 37.06180555555556,
+      "mae_days": 36.72781061506626,
+      "median_absolute_error_days": 22.327430555555548
+    },
+    {
+      "anchor_month": "2011-06",
+      "validation_sample_count": 26622,
+      "matured_sample_count": 5927,
+      "median_available_followup_days": 66.27934027777778,
+      "unmatured_sample_count": 20695,
+      "maturity_rate": 0.2226354143189843,
+      "evaluable_sample_count": 5927,
+      "mean_target_duration_days": 31.97973164238982,
+      "median_target_duration_days": 31.893055555555556,
+      "mae_days": 36.22690945859813,
+      "median_absolute_error_days": 19.425000000000004
+    },
+    {
+      "anchor_month": "2011-07",
+      "validation_sample_count": 26242,
+      "matured_sample_count": 3622,
+      "median_available_followup_days": 34.146701388888886,
+      "unmatured_sample_count": 22620,
+      "maturity_rate": 0.1380230165383736,
+      "evaluable_sample_count": 3622,
+      "mean_target_duration_days": 18.582323110313517,
+      "median_target_duration_days": 17.005555555555556,
+      "mae_days": 34.284978085311984,
+      "median_absolute_error_days": 18.812152777777776
+    },
+    {
+      "anchor_month": "2011-08",
+      "validation_sample_count": 17149,
+      "matured_sample_count": 556,
+      "median_available_followup_days": 10.2953125,
+      "unmatured_sample_count": 16593,
+      "maturity_rate": 0.03242171555192722,
+      "evaluable_sample_count": 556,
+      "mean_target_duration_days": 7.376668665067946,
+      "median_target_duration_days": 6.911111111111111,
+      "mae_days": 29.110540942246203,
+      "median_absolute_error_days": 17.595659722222223
+    }
+  ],
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {
@@ -8380,6 +8434,8 @@
     "validation_anchors_after_train": true,
     "test_anchors_after_validation": true,
     "validation_outcomes_matured": true,
+    "validation_population_preserved": true,
+    "validation_matured_population_preserved": true,
     "test_outcomes_matured": true
   }
 }

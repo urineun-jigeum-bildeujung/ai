@@ -5,6 +5,16 @@
 """
 
 from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+
+def dataframe_to_nullable_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """DataFrame 결측값을 표준 JSON의 null로 변환할 수 있는 레코드로 만듭니다."""
+    # 실수형 열은 None을 다시 NaN으로 바꾸므로 먼저 object형으로 변환합니다.
+    nullable_frame = frame.astype(object).where(frame.notna(), None)
+    return nullable_frame.to_dict(orient="records")
 
 
 def write_text_atomically(path: Path, content: str) -> None:

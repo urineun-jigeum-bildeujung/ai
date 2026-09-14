@@ -9,6 +9,7 @@ import pytest
 
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_baseline_e2e import (
+    _format_optional_days,
     build_product_concentration_trials_report,
     render_markdown,
     run_baseline_cycle,
@@ -120,6 +121,22 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         <= random_baseline["observed_comparison"]["monte_carlo_upper_tail_p_value"]
         <= 1.0
     )
+    maturity_analysis = summary["validation_label_maturity_analysis"]
+    assert maturity_analysis
+    assert (
+        sum(row["validation_sample_count"] for row in maturity_analysis)
+        == (summary["split_summary"]["validation"]["sample_count"])
+    )
+    assert (
+        sum(row["matured_sample_count"] for row in maturity_analysis)
+        == (summary["validation_evaluation"]["sample_count"])
+    )
+    assert all(
+        row["validation_sample_count"]
+        == row["matured_sample_count"] + row["unmatured_sample_count"]
+        for row in maturity_analysis
+    )
+    assert all(0.0 <= row["maturity_rate"] <= 1.0 for row in maturity_analysis)
     assert "product_concentration_analysis" not in summary["test_evaluation"]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
@@ -178,6 +195,10 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
 
     markdown = render_markdown(summary)
 
+    assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
+    assert "관찰 가능 기간 중앙값(일)" in markdown
+    assert "성숙 표본에서만 계산한 조건부 결과" in markdown
+    assert "낮은 MAE를 모델 개선으로 단독 해석하지 않습니다" in markdown
     assert "Validation 수축 강도 후보 비교" in markdown
     assert "상위 5% MAE(일)" in markdown
     assert "Validation 기존 최악 5% 고정 코호트 재평가" in markdown
@@ -215,3 +236,9 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "Test 개인 이력 변동성과 오차의 관계" in markdown
     assert "Test 개인 이력 오차 기여 상위 상품" in markdown
     assert "Test 개인 이력 월별 오차" in markdown
+
+
+def test_format_optional_days_distinguishes_missing_from_zero() -> None:
+    """계산 불가 상태를 실제 오차 0일과 다른 문구로 표시합니다."""
+    assert _format_optional_days(None) == "계산 불가"
+    assert _format_optional_days(0.0) == "0.00"

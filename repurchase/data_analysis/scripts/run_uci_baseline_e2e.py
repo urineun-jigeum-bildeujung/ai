@@ -38,6 +38,11 @@ from .modeling.error_analysis import (
     summarize_user_product_errors_by_product,
 )
 from .modeling.evaluation import evaluate_predictions
+from .modeling.maturity_analysis import (
+    merge_validation_maturity_and_quality,
+    summarize_matured_prediction_quality_by_anchor_month,
+    summarize_validation_label_maturity_by_anchor_month,
+)
 from .modeling.model_selection import evaluate_shrinkage_candidates
 from .modeling.samples import (
     assign_temporal_splits,
@@ -48,7 +53,7 @@ from .paths import REPORT_DIR
 from .preprocessing.events import build_uci_purchase_events
 from .preprocessing.labels import build_same_product_repurchase_labels
 from .preprocessing.uci import classify_uci_rows
-from .reporting import write_text_atomically
+from .reporting import dataframe_to_nullable_records, write_text_atomically
 
 JSON_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.md"
@@ -81,6 +86,13 @@ class BaselineCycleResult:
 def _isoformat(timestamp: pd.Timestamp) -> str:
     """보고서의 모든 시각을 동일한 ISO 8601 문자열로 변환합니다."""
     return pd.Timestamp(timestamp).isoformat()
+
+
+def _format_optional_days(value: object) -> str:
+    """계산 가능한 일수는 소수 둘째 자리로, 없는 값은 계산 불가로 표시합니다."""
+    if value is None:
+        return "계산 불가"
+    return f"{float(value):.2f}"
 
 
 def _model_summary(model: HierarchicalMedianModel) -> dict[str, object]:
@@ -251,9 +263,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     split = make_temporal_split(samples)
     samples = assign_temporal_splits(samples, split)
 
-    validation_rows = samples.loc[
-        samples["split"].eq("validation") & samples["outcome_available_by_split_end"]
-    ]
+    # 라벨 성숙률의 분모가 사라지지 않도록 전체 Validation 모집단을 먼저 보존합니다.
+    validation_population = samples.loc[samples["split"].eq("validation")].copy()
+    # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
+    validation_rows = validation_population.loc[
+        validation_population["outcome_available_by_split_end"]
+    ].copy()
     test_rows = samples.loc[
         samples["split"].eq("test") & samples["outcome_available_by_split_end"]
     ]
@@ -278,6 +293,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     validation_reference_predictions = predict_hierarchical_median_baseline(
         train_model,
         validation_rows,
+    )
+    validation_maturity_analysis = merge_validation_maturity_and_quality(
+        summarize_validation_label_maturity_by_anchor_month(validation_population),
+        summarize_matured_prediction_quality_by_anchor_month(
+            validation_reference_predictions
+        ),
     )
     validation_prior_support_analysis = _analyze_validation_prior_support(
         validation_reference_predictions,
@@ -326,13 +347,21 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             split.start_at < split.train_end_at < split.validation_end_at < split.end_at
         ),
         "validation_anchors_after_train": bool(
-            validation_rows["anchor_at"].gt(split.train_end_at).all()
+            validation_population["anchor_at"].gt(split.train_end_at).all()
         ),
         "test_anchors_after_validation": bool(
             test_rows["anchor_at"].gt(split.validation_end_at).all()
         ),
         "validation_outcomes_matured": bool(
             validation_rows["next_same_product_at"].le(split.validation_end_at).all()
+        ),
+        "validation_population_preserved": bool(
+            int(validation_maturity_analysis["validation_sample_count"].sum())
+            == len(validation_population)
+        ),
+        "validation_matured_population_preserved": bool(
+            int(validation_maturity_analysis["matured_sample_count"].sum())
+            == len(validation_rows)
         ),
         "test_outcomes_matured": bool(
             test_rows["next_same_product_at"].le(split.end_at).all()
@@ -375,6 +404,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "validation_product_concentration_random_baseline": (
             validation_product_concentration_random_baseline
         ),
+        "validation_label_maturity_analysis": dataframe_to_nullable_records(
+            validation_maturity_analysis
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -407,6 +439,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     concentration_random_baseline = summary[
         "validation_product_concentration_random_baseline"
     ]
+    maturity_analysis = summary["validation_label_maturity_analysis"]
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -429,6 +462,41 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"{values.get('matured_outcome_count', 0):,} | "
             f"{values.get('unmatured_or_censored_count', 0):,} |"
         )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 월별 라벨 성숙도와 조건부 오차",
+            "",
+            "| 구매 기준 월 | 전체 표본 | 성숙 표본 | 미성숙·검열 | 성숙률 | "
+            "관찰 가능 기간 중앙값(일) | 실제 간격 평균(일) | "
+            "실제 간격 중앙값(일) | MAE(일) | 중앙 절대오차(일) |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in maturity_analysis:
+        lines.append(
+            f"| {row['anchor_month']} | {row['validation_sample_count']:,} | "
+            f"{row['matured_sample_count']:,} | "
+            f"{row['unmatured_sample_count']:,} | {row['maturity_rate']:.2%} | "
+            f"{row['median_available_followup_days']:.2f} | "
+            f"{_format_optional_days(row['mean_target_duration_days'])} | "
+            f"{_format_optional_days(row['median_target_duration_days'])} | "
+            f"{_format_optional_days(row['mae_days'])} | "
+            f"{_format_optional_days(row['median_absolute_error_days'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "- MAE와 실제 재구매 간격은 Validation 종료일까지 다음 구매가 확인된 "
+            "성숙 표본에서만 계산한 조건부 결과입니다.",
+            "- 평가 마감에 가까운 월은 관찰 가능 기간이 짧아 긴 재구매 간격이 "
+            "미성숙 상태로 남을 수 있으므로, 낮은 MAE를 모델 개선으로 단독 "
+            "해석하지 않습니다.",
+            "- 성숙 표본이 없는 월의 실제 간격과 오차는 0이 아닌 `계산 불가`로 "
+            "표시합니다.",
+        ]
+    )
 
     lines.extend(
         [
