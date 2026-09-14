@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-DeepFM 학습 스크립트.
+DeepFM 학습 스크립트 (정형 aspect 평점 기반 버전).
 
 실행: python3 train/train_deepfm.py
-(도커 컨테이너 안에서 실행 가능 -- HuggingFace 다운로드 불필요해서
- KcELECTRA와 달리 인터넷 없이도 동작함)
 
 [변경 이력]
-기존에는 "상품 하나당 review_features 집계 하나"를 만들어서 모든 pet에
-동일한 aspect score를 사용했다. 이번 변경으로 콜드스타트 로직(사용자 프로필 +
-리뷰 작성자 프로필 + keywords)을 feature 단계에도 반영하기 위해,
-(pet, product) 쌍마다 "그 pet과 유사한 프로필의 리뷰어 반응"을 가중 평균한
-aspect score를 사용하도록 바꿨다 (reviewer_profile_similarity.compute_weighted_aspect_scores).
+KcELECTRA/tagging.py를 더 이상 사용하지 않기로 확정됨에 따라(정형 aspect 평점
+1~3점을 추천의 핵심 데이터로 사용, 리뷰 텍스트 감성분석은 MVP 이후 부가 기능으로
+보류), 학습 데이터 생성 시 더 이상 감성분석/키워드 태깅을 거치지 않고
+rating_converter로 변환된 -1~1 aspect score를 바로 사용한다.
 
-데이터: 지금은 더미 pet_profile/product_master + 더미 order_items -- 파이프라인 검증 목적.
+데이터: 지금은 더미 pet_profile/product_master/reviews + 더미 order_items -- 파이프라인 검증 목적.
         실제 합성 order_items(10만 건)가 오면 order_items 로딩 부분만 교체하면 된다.
 """
 
@@ -21,6 +18,7 @@ import sys
 import os
 import json
 
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # src.data_access import용
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "data", "dummy"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "aspect"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "features"))
@@ -32,8 +30,8 @@ import mlflow
 from sklearn.metrics import roc_auc_score, accuracy_score
 
 from dummy_data import PET_PROFILES, PRODUCTS
-from dummy_reviews import DUMMY_REVIEWS
-from tagging import tag_aspects
+from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
+from rating_converter import ASPECT_FIELD_TO_CODE, convert_rating_to_score
 from deepfm_features import build_interaction_features
 from deepfm_labeling import build_training_pairs
 from deepfm_model import FeatureEncoder, DeepFM
@@ -61,22 +59,21 @@ DUMMY_ORDER_ITEMS = [
 ]
 
 
-def build_product_reviews_by_id():
+def build_reviews_by_product():
     """
-    reviews -> 상품별로 묶은 review_features(+reviewer_pet) 리스트.
-    KcELECTRA 대신 별점 기반 감성(라벨링 가이드라인 규칙)을 사용
-    -- 학습 스크립트는 GPU에서 KcELECTRA 없이도 빠르게 반복 실행할 수 있게 하기 위함.
-    실제 서빙 파이프라인(src/pipeline.py)은 KcELECTRA 추론을 사용한다.
+    reviews -> {reviewer_pet, ratings} 형태로 변환, 상품별로 묶어서 반환.
+    pipeline.py의 build_reviews_with_ratings()와 동일한 로직.
     """
     from collections import defaultdict
     grouped = defaultdict(list)
-    for review in DUMMY_REVIEWS:
-        sentiment_label = "POSITIVE" if review["rating"] >= 4 else "NEGATIVE"
-        tags = tag_aspects(review["review_text"])
+    for review in load_reviews_with_reviewer_pet():
+        ratings = {}
+        for field_name, aspect_code in ASPECT_FIELD_TO_CODE.items():
+            raw_rating = review.get(field_name)
+            ratings[aspect_code] = convert_rating_to_score(raw_rating) if raw_rating is not None else None
         grouped[review["product_id"]].append({
             "reviewer_pet": review["reviewer_pet"],
-            "sentiment_label": sentiment_label,
-            "keyword_tags": tags,
+            "ratings": ratings,
         })
     return grouped
 
@@ -86,7 +83,7 @@ def build_dataset():
     products_by_id = {p["product_id"]: p for p in PRODUCTS}
 
     pairs = build_training_pairs(DUMMY_ORDER_ITEMS, DUMMY_ORDERS, pets_by_id, PRODUCTS)
-    product_reviews_by_id = build_product_reviews_by_id()
+    reviews_by_product = build_reviews_by_product()
 
     samples = []
     for pair in pairs:
@@ -94,9 +91,9 @@ def build_dataset():
         product = products_by_id[pair["product_id"]]
 
         # (pet, product) 쌍마다 유사도 가중 aspect score를 새로 계산 -- pet마다 다른 값이 나옴
-        product_reviews = product_reviews_by_id.get(product["product_id"], [])
+        product_reviews = reviews_by_product.get(product["product_id"], [])
         weighted_result = compute_weighted_aspect_scores(pet, product_reviews)
-        summary = {"weighted_aspect_scores": weighted_result["weighted_aspect_scores"]}
+        summary = {"weighted_aspect_scores_by_code": weighted_result["weighted_aspect_scores"]}
 
         feat = build_interaction_features(pet, product, summary)
         feat["label"] = pair["label"]
@@ -131,7 +128,7 @@ def main():
     mlflow.set_experiment("deepfm_recommendation")
 
     with mlflow.start_run():
-        print("데이터 준비 (pet마다 다른 유사도 가중 aspect score 반영)")
+        print("데이터 준비 (정형 aspect 평점 + 리뷰 작성자 프로필 유사도 반영)")
         samples = build_dataset()
         print(f"전체 샘플: {len(samples)}건 (positive: {sum(1 for s in samples if s['label']==1)}, "
               f"negative: {sum(1 for s in samples if s['label']==0)})")
@@ -156,7 +153,7 @@ def main():
         mlflow.log_param("train_size", len(train_samples))
         mlflow.log_param("val_size", len(val_samples))
         mlflow.log_param("data_source", "dummy order_items (파이프라인 검증용, 실데이터 아님)")
-        mlflow.log_param("aspect_score_method", "reviewer_profile_similarity_weighted")
+        mlflow.log_param("aspect_score_method", "structured_rating_reviewer_similarity_weighted")
 
         model = DeepFM(encoder, embed_dim=embed_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
