@@ -2,20 +2,26 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from scripts.modeling.error_analysis import (
     add_error_columns,
     build_fixed_cohort_comparison_rows,
+    build_random_product_concentration_trials,
     compare_error_on_fixed_cohort,
+    compare_observed_hhi_to_random_trials,
+    sample_random_cohort,
     select_largest_error_rows,
     summarize_fixed_cohort_prior_support,
+    summarize_largest_error_product_concentration,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
     summarize_prior_support_by_log2_bucket,
     summarize_product_concentration,
     summarize_product_frequency,
+    summarize_random_product_concentration_trials,
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
@@ -473,6 +479,298 @@ def test_summarize_product_concentration_sums_large_counts_safely() -> None:
     assert result["top5_sample_count"] == 2**63
     assert result["top5_share"] == pytest.approx(1.0)
     assert result["hhi"] == pytest.approx(0.5)
+
+
+def test_summarize_largest_error_product_concentration_uses_personalized_rows() -> None:
+    """전체와 꼬리 집중도 모두 동일한 개인화 예측 모집단에서 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "product_history",
+                "product_history",
+            ],
+            "product_id": [
+                "P1",
+                "P1",
+                "P1",
+                "P1",
+                "P2",
+                "P2",
+                "P3",
+                "P3",
+                "P4",
+                "P4",
+            ],
+            "target_duration_days": [30.0] * 10,
+            "predicted_duration_days": [
+                130.0,
+                120.0,
+                31.0,
+                31.0,
+                40.0,
+                39.0,
+                38.0,
+                37.0,
+                500.0,
+                400.0,
+            ],
+        }
+    )
+
+    result = summarize_largest_error_product_concentration(rows, tail_rate=0.25)
+
+    overall = result["overall_personalized"]
+    tail = result["largest_error_tail"]
+    assert overall["total_sample_count"] == 8
+    assert overall["unique_product_count"] == 3
+    assert overall["top1_share"] == pytest.approx(0.5)
+    assert tail["total_sample_count"] == 2
+    assert tail["unique_product_count"] == 1
+    assert tail["top1_share"] == pytest.approx(1.0)
+    assert tail["hhi"] == pytest.approx(1.0)
+    assert tail["effective_product_count"] == pytest.approx(1.0)
+
+
+def test_summarize_largest_error_product_concentration_reports_actual_tail_rate() -> (
+    None
+):
+    """올림으로 달라진 실제 꼬리 비율을 요청 비율과 구분해 기록합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 7,
+            "product_id": ["P1", "P1", "P2", "P2", "P3", "P3", "P4"],
+            "target_duration_days": [30.0] * 7,
+            "predicted_duration_days": [130.0, 120.0, 40.0, 39.0, 38.0, 37.0, 31.0],
+        }
+    )
+
+    result = summarize_largest_error_product_concentration(rows, tail_rate=0.25)
+
+    assert result["requested_tail_rate"] == pytest.approx(0.25)
+    assert result["actual_tail_sample_rate"] == pytest.approx(2 / 7)
+    assert result["largest_error_tail"]["total_sample_count"] == 2
+
+
+def test_sample_random_cohort_is_unique_and_reproducible() -> None:
+    """비복원추출로 고유한 행을 뽑고 같은 시드에서 결과를 재현합니다."""
+    rows = pd.DataFrame(
+        {
+            "sample_id": [f"S{index}" for index in range(10)],
+        }
+    )
+
+    first = sample_random_cohort(
+        rows,
+        sample_count=4,
+        random_generator=np.random.default_rng(42),
+    )
+    second = sample_random_cohort(
+        rows,
+        sample_count=4,
+        random_generator=np.random.default_rng(42),
+    )
+
+    assert len(first) == 4
+    assert first["sample_id"].nunique() == 4
+    assert first["sample_id"].tolist() == second["sample_id"].tolist()
+    assert len(rows) == 10
+
+
+@pytest.mark.parametrize(
+    ("sample_count", "expected_message"),
+    [
+        (0, "1 이상"),
+        (-1, "1 이상"),
+        (11, "사용 가능한 표본 수"),
+        (1.5, "정수"),
+        (True, "정수"),
+    ],
+)
+def test_sample_random_cohort_rejects_invalid_sample_count(
+    sample_count: object,
+    expected_message: str,
+) -> None:
+    """비교 집단의 크기를 바꾸는 잘못된 표본 수를 명확하게 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "sample_id": [f"S{index}" for index in range(10)],
+        }
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        sample_random_cohort(
+            rows,
+            sample_count=sample_count,
+            random_generator=np.random.default_rng(42),
+        )
+
+
+def test_build_random_product_concentration_trials_preserves_each_trial() -> None:
+    """반복별 상품 집중도 원자료를 표 형태로 보존하고 재현합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 8,
+            "product_id": ["P1", "P1", "P1", "P1", "P1", "P2", "P2", "P3"],
+            "target_duration_days": [30.0] * 8,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0],
+        }
+    )
+
+    first = build_random_product_concentration_trials(
+        rows,
+        sample_count=4,
+        trial_count=3,
+        random_seed=42,
+    )
+    second = build_random_product_concentration_trials(
+        rows,
+        sample_count=4,
+        trial_count=3,
+        random_seed=42,
+    )
+
+    assert first["trial_index"].tolist() == [0, 1, 2]
+    assert first["total_sample_count"].tolist() == [4, 4, 4]
+    assert first["hhi"].between(0.0, 1.0, inclusive="right").all()
+    pd.testing.assert_frame_equal(first, second)
+
+
+@pytest.mark.parametrize("trial_count", [0, -1, 1.5, True])
+def test_build_random_product_concentration_trials_rejects_invalid_trial_count(
+    trial_count: object,
+) -> None:
+    """분포를 만들 수 없는 잘못된 반복 횟수를 실행 전에 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 4,
+            "product_id": ["P1", "P1", "P2", "P2"],
+            "target_duration_days": [30.0] * 4,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="trial_count는 1 이상의 정수"):
+        build_random_product_concentration_trials(
+            rows,
+            sample_count=2,
+            trial_count=trial_count,
+            random_seed=42,
+        )
+
+
+@pytest.mark.parametrize("random_seed", [-1, 1.5, True])
+def test_build_random_product_concentration_trials_rejects_invalid_seed(
+    random_seed: object,
+) -> None:
+    """재현 가능한 난수 생성에 사용할 수 없는 시드를 명확하게 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 4,
+            "product_id": ["P1", "P1", "P2", "P2"],
+            "target_duration_days": [30.0] * 4,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="random_seed는 0 이상의 정수"):
+        build_random_product_concentration_trials(
+            rows,
+            sample_count=2,
+            trial_count=3,
+            random_seed=random_seed,
+        )
+
+
+def test_summarize_random_product_concentration_trials_describes_hhi_distribution() -> (
+    None
+):
+    """반복별 HHI 원자료에서 중심과 5·95백분위수를 계산합니다."""
+    trials = pd.DataFrame(
+        {
+            "trial_index": [0, 1, 2, 3, 4],
+            "hhi": [0.1, 0.2, 0.3, 0.4, 0.5],
+        }
+    )
+
+    result = summarize_random_product_concentration_trials(trials)
+
+    assert result == {
+        "trial_count": 5,
+        "hhi_mean": pytest.approx(0.3),
+        "hhi_median": pytest.approx(0.3),
+        "hhi_p05": pytest.approx(0.12),
+        "hhi_p95": pytest.approx(0.48),
+    }
+
+
+@pytest.mark.parametrize(
+    ("trials", "expected_message"),
+    [
+        (pd.DataFrame({"other": [0.3]}), "hhi 열"),
+        (pd.DataFrame({"hhi": pd.Series(dtype=float)}), "반복 결과가 없습니다"),
+        (pd.DataFrame({"hhi": ["0.3"]}), "hhi는 숫자"),
+        (pd.DataFrame({"hhi": [True]}), "hhi는 숫자"),
+        (pd.DataFrame({"hhi": [float("nan")]}), "유한한 값"),
+        (pd.DataFrame({"hhi": [float("inf")]}), "유한한 값"),
+        (pd.DataFrame({"hhi": [0.0]}), "0 초과 1 이하"),
+        (pd.DataFrame({"hhi": [1.1]}), "0 초과 1 이하"),
+    ],
+)
+def test_summarize_random_product_concentration_trials_rejects_invalid_hhi(
+    trials: pd.DataFrame,
+    expected_message: str,
+) -> None:
+    """분포 요약을 왜곡하거나 NaN으로 만드는 잘못된 HHI를 거부합니다."""
+    with pytest.raises(ValueError, match=expected_message):
+        summarize_random_product_concentration_trials(trials)
+
+
+def test_compare_observed_hhi_to_random_trials_locates_actual_tail() -> None:
+    """실제 꼬리 HHI의 경험적 백분위와 상위 꼬리 확률을 계산합니다."""
+    trials = pd.DataFrame(
+        {
+            "trial_index": [0, 1, 2, 3, 4],
+            "hhi": [0.1, 0.2, 0.3, 0.4, 0.5],
+        }
+    )
+
+    result = compare_observed_hhi_to_random_trials(
+        trials,
+        observed_hhi=0.45,
+    )
+
+    assert result == {
+        "observed_hhi": pytest.approx(0.45),
+        "observed_hhi_empirical_percentile": pytest.approx(0.8),
+        "random_hhi_at_least_observed_count": 1,
+        "random_hhi_at_least_observed_rate": pytest.approx(0.2),
+        "monte_carlo_upper_tail_p_value": pytest.approx(2 / 6),
+    }
+
+
+@pytest.mark.parametrize(
+    "observed_hhi",
+    [None, "0.3", True, float("nan"), float("inf"), 0.0, -0.1, 1.1],
+)
+def test_compare_observed_hhi_to_random_trials_rejects_invalid_observation(
+    observed_hhi: object,
+) -> None:
+    """실제 집중도의 위치를 거짓으로 계산할 수 있는 관측값을 거부합니다."""
+    trials = pd.DataFrame({"hhi": [0.1, 0.2, 0.3]})
+
+    with pytest.raises(ValueError, match="observed_hhi는 0 초과 1 이하"):
+        compare_observed_hhi_to_random_trials(
+            trials,
+            observed_hhi=observed_hhi,
+        )
 
 
 def test_summarize_product_concentration_rejects_empty_input() -> None:

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+from dataclasses import dataclass
 from typing import Any, Final
 
 import pandas as pd
@@ -22,11 +23,15 @@ from .modeling.baseline import (
     predict_hierarchical_median_baseline,
 )
 from .modeling.error_analysis import (
+    build_random_product_concentration_trials,
+    compare_observed_hhi_to_random_trials,
     select_largest_error_rows,
     summarize_fixed_cohort_prior_support,
+    summarize_largest_error_product_concentration,
     summarize_largest_error_tail,
     summarize_largest_error_tail_by_history_count,
     summarize_prior_support_by_log2_bucket,
+    summarize_random_product_concentration_trials,
     summarize_user_product_error_variability,
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
@@ -47,6 +52,9 @@ from .reporting import write_text_atomically
 
 JSON_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.md"
+PRODUCT_CONCENTRATION_TRIALS_REPORT_PATH = (
+    REPORT_DIR / "uci_baseline_e2e_product_concentration_trials.json"
+)
 TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
 # 1% 결과가 극소수 표본에만 좌우되는지 확인하기 위해 5% 결과도 함께 비교합니다.
 TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
@@ -54,6 +62,20 @@ TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
 SHRINKAGE_STRENGTH_CANDIDATES: Final[tuple[float, ...]] = (1.0, 2.0, 4.0, 8.0)
 # 모델 후보 비교와 prior 분석이 동일한 기존 최악 표본을 사용하도록 고정합니다.
 MODEL_SELECTION_TAIL_RATE: Final[float] = 0.05
+# 같은 크기의 무작위 표본을 충분히 반복해 HHI 비교 분포를 만듭니다.
+PRODUCT_CONCENTRATION_RANDOM_TRIAL_COUNT: Final[int] = 1_000
+# 같은 코드와 데이터에서 동일한 무작위 비교 결과를 재현하도록 시드를 고정합니다.
+PRODUCT_CONCENTRATION_RANDOM_SEED: Final[int] = 42
+# 실제 집중도가 무작위 상단 5%에 있는지를 판단하는 사전 기준입니다.
+PRODUCT_CONCENTRATION_SIGNIFICANCE_LEVEL: Final[float] = 0.05
+
+
+@dataclass(frozen=True)
+class BaselineCycleResult:
+    """E2E 요약과 별도 보존할 무작위 분석 원자료를 함께 전달합니다."""
+
+    summary: dict[str, Any]
+    product_concentration_trials: pd.DataFrame
 
 
 def _isoformat(timestamp: pd.Timestamp) -> str:
@@ -162,14 +184,10 @@ def _split_summary(samples: pd.DataFrame) -> dict[str, object]:
 
 
 def _analyze_validation_prior_support(
-    validation_rows: pd.DataFrame,
+    reference_predictions: pd.DataFrame,
     model: HierarchicalMedianModel,
 ) -> pd.DataFrame:
     """Validation 고정 꼬리에서 prior 관측 수의 과대표집 여부를 분석합니다."""
-    reference_predictions = predict_hierarchical_median_baseline(
-        model,
-        validation_rows,
-    )
     fixed_tail_rows = select_largest_error_rows(
         reference_predictions,
         tail_rate=MODEL_SELECTION_TAIL_RATE,
@@ -227,7 +245,7 @@ def _build_current_prediction(
     }
 
 
-def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
+def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     """재구매 라벨부터 시간 분할·순차 학습·평가·현재 예측을 실행합니다."""
     samples = build_historical_interval_features(labels)
     split = make_temporal_split(samples)
@@ -256,13 +274,51 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         shrinkage_strengths=SHRINKAGE_STRENGTH_CANDIDATES,
         tail_rate=MODEL_SELECTION_TAIL_RATE,
     )
-    validation_prior_support_analysis = _analyze_validation_prior_support(
+    # 같은 Validation 기준 예측을 원인별 분석에서 공유해 계산 기준을 통일합니다.
+    validation_reference_predictions = predict_hierarchical_median_baseline(
+        train_model,
         validation_rows,
+    )
+    validation_prior_support_analysis = _analyze_validation_prior_support(
+        validation_reference_predictions,
         train_model,
     )
     validation_prior_support_bucket_analysis = summarize_prior_support_by_log2_bucket(
         validation_prior_support_analysis
     )
+    validation_product_concentration_analysis = (
+        summarize_largest_error_product_concentration(
+            validation_reference_predictions,
+            tail_rate=MODEL_SELECTION_TAIL_RATE,
+        )
+    )
+    tail_sample_count = int(
+        validation_product_concentration_analysis["largest_error_tail"][
+            "total_sample_count"
+        ]
+    )
+    validation_product_concentration_random_trials = (
+        build_random_product_concentration_trials(
+            validation_reference_predictions,
+            sample_count=tail_sample_count,
+            trial_count=PRODUCT_CONCENTRATION_RANDOM_TRIAL_COUNT,
+            random_seed=PRODUCT_CONCENTRATION_RANDOM_SEED,
+        )
+    )
+    observed_tail_hhi = float(
+        validation_product_concentration_analysis["largest_error_tail"]["hhi"]
+    )
+    validation_product_concentration_random_baseline = {
+        "sample_count_per_trial": tail_sample_count,
+        "random_seed": PRODUCT_CONCENTRATION_RANDOM_SEED,
+        "distribution": summarize_random_product_concentration_trials(
+            validation_product_concentration_random_trials
+        ),
+        "observed_comparison": compare_observed_hhi_to_random_trials(
+            validation_product_concentration_random_trials,
+            observed_hhi=observed_tail_hhi,
+        ),
+    }
     observation_end_at = pd.Timestamp(samples["anchor_at"].max())
 
     invariants = {
@@ -288,7 +344,7 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
             f"베이스라인 E2E 불변조건을 위반했습니다: {failed_invariants}"
         )
 
-    return {
+    summary = {
         "dataset": "uci_online_retail_ii",
         "prediction_scope": "same_user_same_product",
         "split": {
@@ -313,6 +369,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         "validation_prior_support_bucket_analysis": (
             validation_prior_support_bucket_analysis.to_dict(orient="records")
         ),
+        "validation_product_concentration_analysis": (
+            validation_product_concentration_analysis
+        ),
+        "validation_product_concentration_random_baseline": (
+            validation_product_concentration_random_baseline
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -325,6 +387,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> dict[str, Any]:
         ),
         "invariants": invariants,
     }
+    return BaselineCycleResult(
+        summary=summary,
+        product_concentration_trials=(
+            validation_product_concentration_random_trials.copy()
+        ),
+    )
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -335,6 +403,10 @@ def render_markdown(summary: dict[str, Any]) -> str:
     shrinkage_candidates = summary["validation_shrinkage_candidates"]
     prior_support_analysis = summary["validation_prior_support_analysis"]
     prior_support_bucket_analysis = summary["validation_prior_support_bucket_analysis"]
+    product_concentration = summary["validation_product_concentration_analysis"]
+    concentration_random_baseline = summary[
+        "validation_product_concentration_random_baseline"
+    ]
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -504,6 +576,93 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 "않습니다.",
             ]
         )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 개인화 예측 상품 집중도",
+            "",
+            f"- 분석 요청 비율: **{product_concentration['requested_tail_rate']:.2%}**",
+            f"- 실제 선택: **{product_concentration['largest_error_tail']['total_sample_count']:,} / "
+            f"{product_concentration['overall_personalized']['total_sample_count']:,}건 "
+            f"({product_concentration['actual_tail_sample_rate']:.3%})**",
+            "",
+            "| 구분 | 표본 수 | 실제 상품 수 | Top-1 점유율 | Top-5 점유율 | "
+            "HHI | 유효 상품 수 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for label, key in (
+        ("전체 개인화", "overall_personalized"),
+        ("큰 절대오차 꼬리", "largest_error_tail"),
+    ):
+        concentration = product_concentration[key]
+        lines.append(
+            f"| {label} | {concentration['total_sample_count']:,} | "
+            f"{concentration['unique_product_count']:,} | "
+            f"{concentration['top1_share']:.2%} | "
+            f"{concentration['top5_share']:.2%} | "
+            f"{concentration['hhi']:.4f} | "
+            f"{concentration['effective_product_count']:.2f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "- HHI가 높고 유효 상품 수가 작을수록 표본이 일부 상품에 더 "
+            "집중되어 있음을 뜻합니다.",
+            "- 집중도 차이는 오차가 특정 상품에 함께 나타나는지를 보여주지만, "
+            "그 상품이 오차의 원인임을 단독으로 증명하지는 않습니다.",
+        ]
+    )
+
+    random_distribution = concentration_random_baseline["distribution"]
+    observed_comparison = concentration_random_baseline["observed_comparison"]
+    observed_percentile = observed_comparison["observed_hhi_empirical_percentile"]
+    upper_tail_p_value = observed_comparison["monte_carlo_upper_tail_p_value"]
+    if upper_tail_p_value <= PRODUCT_CONCENTRATION_SIGNIFICANCE_LEVEL:
+        concentration_interpretation = (
+            "실제 꼬리 HHI가 무작위 비교 분포의 상단 5%에 있어, 큰 오차가 "
+            "특정 상품에 집중됐다는 가설을 후속 분석할 근거가 관찰됐습니다."
+        )
+    elif observed_percentile <= PRODUCT_CONCENTRATION_SIGNIFICANCE_LEVEL:
+        concentration_interpretation = (
+            "실제 꼬리 HHI가 무작위 비교 분포의 하단 5%에 있어, 큰 오차가 "
+            "특정 상품에 집중됐다는 가설은 이번 Validation에서 지지되지 "
+            "않았습니다."
+        )
+    else:
+        concentration_interpretation = (
+            "실제 꼬리 HHI가 무작위 비교 분포의 중앙 범위에 있어, 상품 "
+            "집중도가 일반적인 무작위 변동과 다르다는 근거는 관찰되지 "
+            "않았습니다."
+        )
+    lines.extend(
+        [
+            "",
+            "### 동일 표본 수 무작위 기준선",
+            "",
+            f"- 각 반복에서 개인화 표본 **{concentration_random_baseline['sample_count_per_trial']:,}건**을 "
+            f"비복원 추출하고, 고정 시드 `{concentration_random_baseline['random_seed']}`로 "
+            f"**{random_distribution['trial_count']:,}회** 반복했습니다.",
+            "",
+            "| 실제 꼬리 HHI | 무작위 평균 | 무작위 중앙값 | 무작위 5백분위 | "
+            "무작위 95백분위 | 실제 HHI 백분위 | 상단 꼬리 p-value |",
+            "| ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            f"| {observed_comparison['observed_hhi']:.6f} | "
+            f"{random_distribution['hhi_mean']:.6f} | "
+            f"{random_distribution['hhi_median']:.6f} | "
+            f"{random_distribution['hhi_p05']:.6f} | "
+            f"{random_distribution['hhi_p95']:.6f} | "
+            f"{observed_percentile:.2%} | {upper_tail_p_value:.4f} |",
+            "",
+            f"- 무작위 반복 중 **{observed_comparison['random_hhi_at_least_observed_rate']:.2%}**가 "
+            "실제 꼬리 HHI 이상이었습니다.",
+            f"- {concentration_interpretation}",
+            "- 이 p-value는 모델이 맞을 확률이 아니라, 동일 표본 수 무작위 "
+            "추출에서도 실제만큼 높은 집중도가 얼마나 자주 나타나는지를 "
+            "뜻합니다.",
+        ]
+    )
 
     test_sources = test["hierarchical_baseline"]["by_prediction_source"]
     lines.extend(
@@ -727,6 +886,27 @@ def render_markdown(summary: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def build_product_concentration_trials_report(
+    result: BaselineCycleResult,
+) -> dict[str, object]:
+    """무작위 상품 집중도 원자료를 재현 정보와 함께 저장 구조로 변환합니다."""
+    summary = result.summary
+    concentration = summary["validation_product_concentration_analysis"]
+    random_baseline = summary["validation_product_concentration_random_baseline"]
+
+    return {
+        "dataset": summary["dataset"],
+        "evaluation_split": "validation",
+        "requested_tail_rate": concentration["requested_tail_rate"],
+        "actual_tail_sample_rate": concentration["actual_tail_sample_rate"],
+        "sample_count_per_trial": random_baseline["sample_count_per_trial"],
+        "random_seed": random_baseline["random_seed"],
+        "distribution": random_baseline["distribution"],
+        "observed_comparison": random_baseline["observed_comparison"],
+        "trials": result.product_concentration_trials.to_dict(orient="records"),
+    }
+
+
 def main() -> None:
     """실제 UCI 원본을 읽어 모델 E2E를 실행하고 JSON·Markdown을 저장합니다."""
     source = load_uci_online_retail_ii()
@@ -736,10 +916,22 @@ def main() -> None:
         events,
         observation_end_at=pd.Timestamp(events["ordered_at"].max()),
     )
-    summary = run_baseline_cycle(labels)
+    result = run_baseline_cycle(labels)
+    summary = result.summary
+    random_trials_report = build_product_concentration_trials_report(result)
     write_text_atomically(
         JSON_REPORT_PATH,
         json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+    )
+    write_text_atomically(
+        PRODUCT_CONCENTRATION_TRIALS_REPORT_PATH,
+        json.dumps(
+            random_trials_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n",
     )
     write_text_atomically(MARKDOWN_REPORT_PATH, render_markdown(summary))
     print(json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False))

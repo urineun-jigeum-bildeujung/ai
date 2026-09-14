@@ -8,7 +8,11 @@ import pandas as pd
 import pytest
 
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
-from scripts.run_uci_baseline_e2e import render_markdown, run_baseline_cycle
+from scripts.run_uci_baseline_e2e import (
+    build_product_concentration_trials_report,
+    render_markdown,
+    run_baseline_cycle,
+)
 
 
 def make_purchase_events() -> pd.DataFrame:
@@ -39,7 +43,8 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         observation_end_at=pd.Timestamp(events["ordered_at"].max()),
     )
 
-    summary = run_baseline_cycle(labels)
+    result = run_baseline_cycle(labels)
+    summary = result.summary
 
     assert summary["prediction_scope"] == "same_user_same_product"
     assert summary["validation_evaluation"]["sample_count"] > 0
@@ -82,6 +87,40 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert sum(
         row["fixed_tail_sample_rate"] for row in prior_support_bucket_analysis
     ) == pytest.approx(1.0)
+    product_concentration = summary["validation_product_concentration_analysis"]
+    overall_concentration = product_concentration["overall_personalized"]
+    tail_concentration = product_concentration["largest_error_tail"]
+    reference_candidate = summary["validation_shrinkage_candidates"][0]
+    assert product_concentration["requested_tail_rate"] == pytest.approx(0.05)
+    assert (
+        overall_concentration["total_sample_count"]
+        == reference_candidate["personal_sample_count"]
+    )
+    assert (
+        tail_concentration["total_sample_count"]
+        == reference_candidate["fixed_cohort_sample_count"]
+    )
+    assert product_concentration["actual_tail_sample_rate"] == pytest.approx(
+        tail_concentration["total_sample_count"]
+        / overall_concentration["total_sample_count"]
+    )
+    random_baseline = summary["validation_product_concentration_random_baseline"]
+    assert (
+        random_baseline["sample_count_per_trial"]
+        == tail_concentration["total_sample_count"]
+    )
+    assert random_baseline["distribution"]["trial_count"] == 1_000
+    assert "trials" not in random_baseline
+    assert len(result.product_concentration_trials) == 1_000
+    assert random_baseline["observed_comparison"]["observed_hhi"] == pytest.approx(
+        tail_concentration["hhi"]
+    )
+    assert (
+        0.0
+        <= random_baseline["observed_comparison"]["monte_carlo_upper_tail_p_value"]
+        <= 1.0
+    )
+    assert "product_concentration_analysis" not in summary["test_evaluation"]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
     )
@@ -114,6 +153,15 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert summary["test_evaluation"]["user_product_error_by_anchor_month"]
     assert all(summary["invariants"].values())
 
+    random_trials_report = build_product_concentration_trials_report(result)
+    assert random_trials_report["dataset"] == "uci_online_retail_ii"
+    assert random_trials_report["evaluation_split"] == "validation"
+    assert (
+        random_trials_report["sample_count_per_trial"]
+        == tail_concentration["total_sample_count"]
+    )
+    assert len(random_trials_report["trials"]) == 1_000
+
     # 실제 보고서 저장과 동일한 조건으로 pandas 전용 타입과 NaN 잔존을 검사합니다.
     serialized_summary = json.dumps(
         summary,
@@ -121,6 +169,12 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         allow_nan=False,
     )
     assert json.loads(serialized_summary) == summary
+    serialized_trials_report = json.dumps(
+        random_trials_report,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert json.loads(serialized_trials_report) == random_trials_report
 
     markdown = render_markdown(summary)
 
@@ -128,6 +182,21 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "상위 5% MAE(일)" in markdown
     assert "Validation 기존 최악 5% 고정 코호트 재평가" in markdown
     assert "Validation prior 지지 표본 로그 구간 분석" in markdown
+    assert "Validation 개인화 예측 상품 집중도" in markdown
+    assert "실제 상품 수" in markdown
+    assert "Top-1 점유율" in markdown
+    assert "Top-5 점유율" in markdown
+    assert "유효 상품 수" in markdown
+    expected_selection_text = (
+        f"실제 선택: **{tail_concentration['total_sample_count']:,} / "
+        f"{overall_concentration['total_sample_count']:,}건 "
+        f"({product_concentration['actual_tail_sample_rate']:.3%})**"
+    )
+    assert expected_selection_text in markdown
+    assert "동일 표본 수 무작위 기준선" in markdown
+    assert "실제 HHI 백분위" in markdown
+    assert "상단 꼬리 p-value" in markdown
+    assert "p-value는 모델이 맞을 확률이 아니라" in markdown
     has_single_product_prior = any(
         row["prior_source"] == "product_history" and row["prior_observation_count"] == 1
         for row in prior_support_analysis

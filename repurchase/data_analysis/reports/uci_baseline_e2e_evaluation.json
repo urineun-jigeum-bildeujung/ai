@@ -3239,6 +3239,48 @@
       "tail_overrepresentation_ratio": 0.949001319826268
     }
   ],
+  "validation_product_concentration_analysis": {
+    "requested_tail_rate": 0.05,
+    "actual_tail_sample_rate": 0.0500395256916996,
+    "overall_personalized": {
+      "total_sample_count": 12650,
+      "unique_product_count": 1262,
+      "top1_sample_count": 179,
+      "top1_share": 0.014150197628458499,
+      "top5_sample_count": 782,
+      "top5_share": 0.06181818181818182,
+      "hhi": 0.003163980065303317,
+      "effective_product_count": 316.0576171026332
+    },
+    "largest_error_tail": {
+      "total_sample_count": 633,
+      "unique_product_count": 398,
+      "top1_sample_count": 14,
+      "top1_share": 0.022116903633491312,
+      "top5_sample_count": 42,
+      "top5_share": 0.06635071090047394,
+      "hhi": 0.003945703525677021,
+      "effective_product_count": 253.44022770398485
+    }
+  },
+  "validation_product_concentration_random_baseline": {
+    "sample_count_per_trial": 633,
+    "random_seed": 42,
+    "distribution": {
+      "trial_count": 1000,
+      "hhi_mean": 0.0046482384093399125,
+      "hhi_median": 0.004637012745545797,
+      "hhi_p05": 0.0042252220550102445,
+      "hhi_p95": 0.0051241736109551295
+    },
+    "observed_comparison": {
+      "observed_hhi": 0.003945703525677021,
+      "observed_hhi_empirical_percentile": 0.001,
+      "random_hhi_at_least_observed_count": 999,
+      "random_hhi_at_least_observed_rate": 0.999,
+      "monte_carlo_upper_tail_p_value": 0.999000999000999
+    }
+  },
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {

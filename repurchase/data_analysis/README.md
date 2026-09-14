@@ -104,6 +104,7 @@ python -m pytest
 - `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
 - `reports/uci_baseline_e2e_evaluation.json`: 시간 분할·베이스라인 학습·평가·현재 예측 전체 결과
 - `reports/uci_baseline_e2e_evaluation.md`: 전역·계층형 중앙값 성능과 fallback 사용 비율 검토 요약
+- `reports/uci_baseline_e2e_product_concentration_trials.json`: Validation 최악 5%와 비교한 동일 크기 무작위 표본 1,000회의 상품 집중도 원자료
 
 ## 파일 관리
 

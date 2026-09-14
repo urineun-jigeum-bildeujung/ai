@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from math import ceil
+from numbers import Integral, Real
 from typing import Final
 
 import numpy as np
@@ -193,6 +194,145 @@ def select_largest_error_rows(
         user_product_rows,
         tail_rate,
     )
+
+
+def _validate_positive_integer(value: object, *, name: str) -> int:
+    """표본 수·반복 횟수처럼 1 이상이어야 하는 정수를 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise ValueError(f"{name}는 1 이상의 정수여야 합니다.")
+
+    normalized_value = int(value)
+    if normalized_value < 1:
+        raise ValueError(f"{name}는 1 이상의 정수여야 합니다.")
+    return normalized_value
+
+
+def _validate_nonnegative_integer(value: object, *, name: str) -> int:
+    """난수 시드처럼 0 이상이어야 하는 정수를 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise ValueError(f"{name}는 0 이상의 정수여야 합니다.")
+
+    normalized_value = int(value)
+    if normalized_value < 0:
+        raise ValueError(f"{name}는 0 이상의 정수여야 합니다.")
+    return normalized_value
+
+
+def _get_validated_hhi_values(trials: pd.DataFrame) -> pd.Series:
+    """무작위 반복의 HHI 열이 존재하고 유효한 확률 범위인지 검증합니다."""
+    if "hhi" not in trials.columns:
+        raise ValueError("무작위 반복 결과에 hhi 열이 필요합니다.")
+    if trials.empty:
+        raise ValueError("요약할 무작위 HHI 반복 결과가 없습니다.")
+
+    hhi_values = trials["hhi"]
+    if is_bool_dtype(hhi_values.dtype) or not is_numeric_dtype(hhi_values.dtype):
+        raise ValueError("무작위 반복의 hhi는 숫자여야 합니다.")
+    if not np.isfinite(hhi_values.to_numpy(dtype=float)).all():
+        raise ValueError("무작위 반복의 hhi에는 유한한 값만 사용할 수 있습니다.")
+    if not hhi_values.gt(0.0).all() or not hhi_values.le(1.0).all():
+        raise ValueError("무작위 반복의 hhi는 0 초과 1 이하여야 합니다.")
+    return hhi_values
+
+
+def _validate_hhi(value: object, *, name: str) -> float:
+    """비교 대상 HHI가 유한한 숫자이며 올바른 범위인지 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name}는 0 초과 1 이하의 숫자여야 합니다.")
+
+    normalized_value = float(value)
+    if not np.isfinite(normalized_value) or not 0.0 < normalized_value <= 1.0:
+        raise ValueError(f"{name}는 0 초과 1 이하의 숫자여야 합니다.")
+    return normalized_value
+
+
+def sample_random_cohort(
+    rows: pd.DataFrame,
+    *,
+    sample_count: int,
+    random_generator: np.random.Generator,
+) -> pd.DataFrame:
+    """같은 크기의 무작위 비교 표본을 비복원 방식으로 선택합니다."""
+    sample_count = _validate_positive_integer(sample_count, name="sample_count")
+    if sample_count > len(rows):
+        raise ValueError(
+            "sample_count는 사용 가능한 표본 수보다 클 수 없습니다: "
+            f"요청 {sample_count:,}건, 사용 가능 {len(rows):,}건"
+        )
+
+    return rows.sample(
+        n=sample_count,
+        replace=False,
+        random_state=random_generator,
+    ).copy()
+
+
+def build_random_product_concentration_trials(
+    rows: pd.DataFrame,
+    *,
+    sample_count: int,
+    trial_count: int,
+    random_seed: int,
+) -> pd.DataFrame:
+    """동일 크기의 무작위 코호트를 반복해 상품 집중도 원자료를 만듭니다."""
+    trial_count = _validate_positive_integer(trial_count, name="trial_count")
+    random_seed = _validate_nonnegative_integer(random_seed, name="random_seed")
+    user_product_rows = _get_user_product_error_rows(rows)
+    random_generator = np.random.default_rng(random_seed)
+    trial_records: list[dict[str, int | float]] = []
+
+    for trial_index in range(trial_count):
+        random_rows = sample_random_cohort(
+            user_product_rows,
+            sample_count=sample_count,
+            random_generator=random_generator,
+        )
+        product_frequency = summarize_product_frequency(random_rows)
+        concentration = summarize_product_concentration(product_frequency)
+        trial_records.append(
+            {
+                "trial_index": trial_index,
+                **concentration,
+            }
+        )
+
+    return pd.DataFrame.from_records(trial_records)
+
+
+def summarize_random_product_concentration_trials(
+    trials: pd.DataFrame,
+) -> dict[str, int | float]:
+    """무작위 상품 집중도 반복에서 HHI의 중심과 범위를 요약합니다."""
+    hhi_values = _get_validated_hhi_values(trials)
+    return {
+        "trial_count": int(len(trials)),
+        "hhi_mean": float(hhi_values.mean()),
+        "hhi_median": float(hhi_values.median()),
+        "hhi_p05": float(hhi_values.quantile(0.05)),
+        "hhi_p95": float(hhi_values.quantile(0.95)),
+    }
+
+
+def compare_observed_hhi_to_random_trials(
+    trials: pd.DataFrame,
+    *,
+    observed_hhi: float,
+) -> dict[str, int | float]:
+    """실제 꼬리 HHI가 무작위 반복 분포에서 차지하는 위치를 계산합니다."""
+    hhi_values = _get_validated_hhi_values(trials)
+    observed_hhi = _validate_hhi(observed_hhi, name="observed_hhi")
+    trial_count = len(hhi_values)
+    at_least_observed_count = int(hhi_values.ge(observed_hhi).sum())
+
+    return {
+        "observed_hhi": observed_hhi,
+        "observed_hhi_empirical_percentile": float(hhi_values.le(observed_hhi).mean()),
+        "random_hhi_at_least_observed_count": at_least_observed_count,
+        "random_hhi_at_least_observed_rate": at_least_observed_count / trial_count,
+        # 유한 반복에서 초과값이 없더라도 확률을 0으로 단정하지 않도록 보정합니다.
+        "monte_carlo_upper_tail_p_value": (at_least_observed_count + 1)
+        / (trial_count + 1),
+    }
 
 
 def summarize_largest_error_tail(
@@ -745,6 +885,29 @@ def summarize_product_concentration(
         "top5_share": top5_sample_count / total_sample_count,
         "hhi": hhi,
         "effective_product_count": effective_product_count,
+    }
+
+
+def summarize_largest_error_product_concentration(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> dict[str, object]:
+    """개인화 예측 전체와 큰 절대오차 표본의 상품 집중도를 비교합니다."""
+    # 두 집중도의 모집단을 동일하게 유지하도록 개인화 예측만 먼저 분리합니다.
+    user_product_rows = _get_user_product_error_rows(rows)
+    largest_error_rows = _select_largest_from_user_product_rows(
+        user_product_rows,
+        tail_rate,
+    )
+
+    overall_frequency = summarize_product_frequency(user_product_rows)
+    largest_error_frequency = summarize_product_frequency(largest_error_rows)
+
+    return {
+        "requested_tail_rate": tail_rate,
+        "actual_tail_sample_rate": len(largest_error_rows) / len(user_product_rows),
+        "overall_personalized": summarize_product_concentration(overall_frequency),
+        "largest_error_tail": summarize_product_concentration(largest_error_frequency),
     }
 
 
