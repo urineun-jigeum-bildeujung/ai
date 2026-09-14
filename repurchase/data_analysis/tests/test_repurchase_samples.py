@@ -41,6 +41,14 @@ def test_history_features_use_only_intervals_known_before_anchor() -> None:
     assert samples.loc[1, "history_median_days"] == 10.0
     assert samples.loc[2, "history_median_days"] == 15.0
     assert samples.loc[3, "history_median_days"] == 20.0
+    assert pd.isna(samples.loc[0, "history_mad_days"])
+    assert pd.isna(samples.loc[1, "history_mad_days"])
+    assert samples.loc[2, "history_mad_days"] == 5.0
+    assert samples.loc[3, "history_mad_days"] == 10.0
+    assert pd.isna(samples.loc[0, "history_relative_mad"])
+    assert pd.isna(samples.loc[1, "history_relative_mad"])
+    assert samples.loc[2, "history_relative_mad"] == pytest.approx(1 / 3)
+    assert samples.loc[3, "history_relative_mad"] == 0.5
     assert pd.isna(samples.loc[3, "target_duration_days"])
 
 
