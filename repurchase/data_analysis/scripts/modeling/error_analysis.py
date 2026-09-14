@@ -1,0 +1,1071 @@
+"""재구매 예측의 행 단위 오차를 보존해 성능 악화 원인을 분석합니다."""
+
+from __future__ import annotations
+
+from math import ceil
+from numbers import Integral, Real
+from typing import Final
+
+import numpy as np
+import pandas as pd
+from pandas.api.types import is_bool_dtype, is_integer_dtype, is_numeric_dtype
+
+from .samples import SAMPLE_ID_COLUMNS
+
+# 절대오차를 계산하려면 실제 관측값과 모델 예측값이 모두 필요합니다.
+REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "target_duration_days",
+        "predicted_duration_days",
+    }
+)
+
+# 개인·상품 이력 개수별 오차를 비교할 때 추가로 필요한 열입니다.
+HISTORY_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prediction_source",
+        "history_interval_count",
+    }
+)
+
+# 과거 간격의 상대적 불규칙성과 예측 오차의 관계를 분석할 때 필요한 열입니다.
+VARIABILITY_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prediction_source",
+        "history_relative_mad",
+    }
+)
+
+# 수축 예측이 의존한 상품·전체 prior의 관측 수와 오차를 비교할 때 필요합니다.
+PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prior_source",
+        "prior_observation_count",
+    }
+)
+
+# 작은 관측 수는 세밀하게, 큰 관측 수는 넓게 비교하도록 2배 단위로 확장합니다.
+PRIOR_SUPPORT_BUCKET_BINS: Final[tuple[float, ...]] = (
+    0,
+    1,
+    3,
+    7,
+    15,
+    31,
+    63,
+    127,
+    np.inf,
+)
+PRIOR_SUPPORT_BUCKET_LABELS: Final[tuple[str, ...]] = (
+    "1",
+    "2-3",
+    "4-7",
+    "8-15",
+    "16-31",
+    "32-63",
+    "64-127",
+    "128+",
+)
+PRIOR_BUCKET_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prior_source",
+        "prior_observation_count",
+        "overall_sample_count",
+        "fixed_tail_sample_count",
+    }
+)
+
+# 상품 집중도는 상품 식별자와 관측 행 수만을 원천값으로 사용합니다.
+PRODUCT_FREQUENCY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "product_id",
+        "sample_count",
+    }
+)
+
+PRODUCT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prediction_source",
+        "product_id",
+    }
+)
+
+TIME_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "prediction_source",
+        "anchor_at",
+    }
+)
+
+# 개인 이력을 사용한 예측 방식을 한곳에서 관리해 모든 오차 분석이 같은 범위를 봅니다.
+USER_PRODUCT_PREDICTION_SOURCES: Final[frozenset[str]] = frozenset(
+    {
+        "user_product_history",
+        "shrunk_user_product_history",
+    }
+)
+
+
+def validate_error_analysis_input(rows: pd.DataFrame) -> None:
+    """오차 계산에 필요한 필수 열이 모두 있는지 확인합니다."""
+    # 필요한 열에서 실제 입력 열을 빼면 누락된 열만 남습니다.
+    missing_columns = REQUIRED_COLUMNS - set(rows.columns)
+
+    if missing_columns:
+        # 여러 열이 누락되어도 항상 같은 순서로 오류 메시지를 만듭니다.
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"필수 열이 없습니다: {missing_text}")
+
+    if rows.empty:
+        raise ValueError("오차를 분석할 예측 표본이 없습니다.")
+
+    for column in sorted(REQUIRED_COLUMNS):
+        values = rows[column]
+
+        if values.isna().any():
+            raise ValueError(f"{column}에 결측값이 있습니다.")
+        # True와 False는 계산상 1과 0이 될 수 있지만 기간 데이터로는 허용하지 않습니다.
+        if is_bool_dtype(values.dtype) or not is_numeric_dtype(values.dtype):
+            raise ValueError(f"{column}은 숫자형이어야 합니다.")
+        if not np.isfinite(values.to_numpy(dtype="float64", copy=False)).all():
+            raise ValueError(f"{column}에는 유한한 숫자만 사용할 수 있습니다.")
+
+    # 0일 후속 구매는 실제 데이터에 존재하므로 음수인 정답만 차단합니다.
+    if rows["target_duration_days"].lt(0).any():
+        raise ValueError("실제 재구매 간격은 음수일 수 없습니다.")
+
+
+def add_error_columns(rows: pd.DataFrame) -> pd.DataFrame:
+    """원본을 변경하지 않고 각 예측 표본에 방향·절대오차 열을 추가합니다."""
+    validate_error_analysis_input(rows)
+
+    result = rows.copy()
+    # 음수 예측을 삭제하지 않고 모델 실패 여부를 별도 열에 보존합니다.
+    result["is_invalid_prediction"] = result["predicted_duration_days"].lt(0)
+    # 양수면 실제보다 늦게, 음수면 실제보다 빠르게 예측했다는 뜻입니다.
+    result["prediction_error_days"] = (
+        result["predicted_duration_days"] - result["target_duration_days"]
+    )
+    result["absolute_error_days"] = result["prediction_error_days"].abs()
+    return result
+
+
+def _get_user_product_error_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """오차 열을 계산하고 개인·상품 이력 예측 표본만 반환합니다."""
+    if "prediction_source" not in rows.columns:
+        raise ValueError("개인 이력 분석 필수 열이 없습니다: prediction_source")
+
+    error_rows = add_error_columns(rows)
+    user_product_rows = error_rows.loc[
+        error_rows["prediction_source"].isin(USER_PRODUCT_PREDICTION_SOURCES)
+    ].copy()
+
+    if user_product_rows.empty:
+        raise ValueError("분석할 개인·상품 이력 예측 표본이 없습니다.")
+
+    return user_product_rows
+
+
+def _select_largest_from_user_product_rows(
+    user_product_rows: pd.DataFrame,
+    tail_rate: float,
+) -> pd.DataFrame:
+    """오차가 계산된 개인·상품 이력에서 큰 절대오차 표본을 선택합니다."""
+    if not 0 < tail_rate <= 1:
+        raise ValueError("tail_rate는 0보다 크고 1 이하여야 합니다.")
+
+    # 표본 수에 비율을 곱한 결과를 올림하고, 작은 데이터에서도 1개는 선택합니다.
+    tail_count = max(1, ceil(len(user_product_rows) * tail_rate))
+    return user_product_rows.nlargest(
+        tail_count,
+        "absolute_error_days",
+    ).copy()
+
+
+def select_largest_error_rows(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.01,
+) -> pd.DataFrame:
+    """절대오차가 큰 상위 비율의 개인·상품 이력 표본을 선택합니다."""
+    # 이번 원인 분석의 대상인 개인·상품 이력 예측만 분리합니다.
+    user_product_rows = _get_user_product_error_rows(rows)
+    # 오차 방향이 아닌 크기를 기준으로 가장 크게 실패한 행부터 선택합니다.
+    return _select_largest_from_user_product_rows(
+        user_product_rows,
+        tail_rate,
+    )
+
+
+def _validate_positive_integer(value: object, *, name: str) -> int:
+    """표본 수·반복 횟수처럼 1 이상이어야 하는 정수를 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise ValueError(f"{name}는 1 이상의 정수여야 합니다.")
+
+    normalized_value = int(value)
+    if normalized_value < 1:
+        raise ValueError(f"{name}는 1 이상의 정수여야 합니다.")
+    return normalized_value
+
+
+def _validate_nonnegative_integer(value: object, *, name: str) -> int:
+    """난수 시드처럼 0 이상이어야 하는 정수를 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise ValueError(f"{name}는 0 이상의 정수여야 합니다.")
+
+    normalized_value = int(value)
+    if normalized_value < 0:
+        raise ValueError(f"{name}는 0 이상의 정수여야 합니다.")
+    return normalized_value
+
+
+def _get_validated_hhi_values(trials: pd.DataFrame) -> pd.Series:
+    """무작위 반복의 HHI 열이 존재하고 유효한 확률 범위인지 검증합니다."""
+    if "hhi" not in trials.columns:
+        raise ValueError("무작위 반복 결과에 hhi 열이 필요합니다.")
+    if trials.empty:
+        raise ValueError("요약할 무작위 HHI 반복 결과가 없습니다.")
+
+    hhi_values = trials["hhi"]
+    if is_bool_dtype(hhi_values.dtype) or not is_numeric_dtype(hhi_values.dtype):
+        raise ValueError("무작위 반복의 hhi는 숫자여야 합니다.")
+    if not np.isfinite(hhi_values.to_numpy(dtype=float)).all():
+        raise ValueError("무작위 반복의 hhi에는 유한한 값만 사용할 수 있습니다.")
+    if not hhi_values.gt(0.0).all() or not hhi_values.le(1.0).all():
+        raise ValueError("무작위 반복의 hhi는 0 초과 1 이하여야 합니다.")
+    return hhi_values
+
+
+def _validate_hhi(value: object, *, name: str) -> float:
+    """비교 대상 HHI가 유한한 숫자이며 올바른 범위인지 검증합니다."""
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise ValueError(f"{name}는 0 초과 1 이하의 숫자여야 합니다.")
+
+    normalized_value = float(value)
+    if not np.isfinite(normalized_value) or not 0.0 < normalized_value <= 1.0:
+        raise ValueError(f"{name}는 0 초과 1 이하의 숫자여야 합니다.")
+    return normalized_value
+
+
+def sample_random_cohort(
+    rows: pd.DataFrame,
+    *,
+    sample_count: int,
+    random_generator: np.random.Generator,
+) -> pd.DataFrame:
+    """같은 크기의 무작위 비교 표본을 비복원 방식으로 선택합니다."""
+    sample_count = _validate_positive_integer(sample_count, name="sample_count")
+    if sample_count > len(rows):
+        raise ValueError(
+            "sample_count는 사용 가능한 표본 수보다 클 수 없습니다: "
+            f"요청 {sample_count:,}건, 사용 가능 {len(rows):,}건"
+        )
+
+    return rows.sample(
+        n=sample_count,
+        replace=False,
+        random_state=random_generator,
+    ).copy()
+
+
+def build_random_product_concentration_trials(
+    rows: pd.DataFrame,
+    *,
+    sample_count: int,
+    trial_count: int,
+    random_seed: int,
+) -> pd.DataFrame:
+    """동일 크기의 무작위 코호트를 반복해 상품 집중도 원자료를 만듭니다."""
+    trial_count = _validate_positive_integer(trial_count, name="trial_count")
+    random_seed = _validate_nonnegative_integer(random_seed, name="random_seed")
+    user_product_rows = _get_user_product_error_rows(rows)
+    random_generator = np.random.default_rng(random_seed)
+    trial_records: list[dict[str, int | float]] = []
+
+    for trial_index in range(trial_count):
+        random_rows = sample_random_cohort(
+            user_product_rows,
+            sample_count=sample_count,
+            random_generator=random_generator,
+        )
+        product_frequency = summarize_product_frequency(random_rows)
+        concentration = summarize_product_concentration(product_frequency)
+        trial_records.append(
+            {
+                "trial_index": trial_index,
+                **concentration,
+            }
+        )
+
+    return pd.DataFrame.from_records(trial_records)
+
+
+def summarize_random_product_concentration_trials(
+    trials: pd.DataFrame,
+) -> dict[str, int | float]:
+    """무작위 상품 집중도 반복에서 HHI의 중심과 범위를 요약합니다."""
+    hhi_values = _get_validated_hhi_values(trials)
+    return {
+        "trial_count": int(len(trials)),
+        "hhi_mean": float(hhi_values.mean()),
+        "hhi_median": float(hhi_values.median()),
+        "hhi_p05": float(hhi_values.quantile(0.05)),
+        "hhi_p95": float(hhi_values.quantile(0.95)),
+    }
+
+
+def compare_observed_hhi_to_random_trials(
+    trials: pd.DataFrame,
+    *,
+    observed_hhi: float,
+) -> dict[str, int | float]:
+    """실제 꼬리 HHI가 무작위 반복 분포에서 차지하는 위치를 계산합니다."""
+    hhi_values = _get_validated_hhi_values(trials)
+    observed_hhi = _validate_hhi(observed_hhi, name="observed_hhi")
+    trial_count = len(hhi_values)
+    at_least_observed_count = int(hhi_values.ge(observed_hhi).sum())
+
+    return {
+        "observed_hhi": observed_hhi,
+        "observed_hhi_empirical_percentile": float(hhi_values.le(observed_hhi).mean()),
+        "random_hhi_at_least_observed_count": at_least_observed_count,
+        "random_hhi_at_least_observed_rate": at_least_observed_count / trial_count,
+        # 유한 반복에서 초과값이 없더라도 확률을 0으로 단정하지 않도록 보정합니다.
+        "monte_carlo_upper_tail_p_value": (at_least_observed_count + 1)
+        / (trial_count + 1),
+    }
+
+
+def summarize_largest_error_tail(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.01,
+) -> dict[str, float | int]:
+    """큰 절대오차 표본의 전체 오차 기여도와 예측 방향을 요약합니다."""
+    user_product_rows = _get_user_product_error_rows(rows)
+    tail_rows = _select_largest_from_user_product_rows(
+        user_product_rows,
+        tail_rate,
+    )
+
+    total_absolute_error = float(user_product_rows["absolute_error_days"].sum())
+    tail_absolute_error = float(tail_rows["absolute_error_days"].sum())
+    tail_sample_count = len(tail_rows)
+    late_prediction_count = int(tail_rows["prediction_error_days"].gt(0).sum())
+    early_prediction_count = int(tail_rows["prediction_error_days"].lt(0).sum())
+    exact_prediction_count = int(tail_rows["prediction_error_days"].eq(0).sum())
+
+    return {
+        "requested_tail_rate": tail_rate,
+        "tail_sample_count": tail_sample_count,
+        # 올림으로 선택하므로 실제 표본 비율은 요청한 비율과 조금 다를 수 있습니다.
+        "actual_tail_sample_rate": tail_sample_count / len(user_product_rows),
+        "tail_absolute_error_days": tail_absolute_error,
+        "absolute_error_share": (
+            0.0
+            if total_absolute_error == 0
+            else tail_absolute_error / total_absolute_error
+        ),
+        "late_prediction_count": late_prediction_count,
+        "late_prediction_rate": late_prediction_count / tail_sample_count,
+        "early_prediction_count": early_prediction_count,
+        "early_prediction_rate": early_prediction_count / tail_sample_count,
+        "exact_prediction_count": exact_prediction_count,
+        "exact_prediction_rate": exact_prediction_count / tail_sample_count,
+    }
+
+
+def _validate_fixed_cohort_ids(rows: pd.DataFrame, *, label: str) -> None:
+    """고정 코호트 비교용 표본 키가 존재하고 행을 하나씩 식별하는지 확인합니다."""
+    missing_columns = set(SAMPLE_ID_COLUMNS) - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"{label}에 표본 식별 열이 없습니다: {missing_text}")
+    if rows.empty:
+        raise ValueError(f"{label}에 비교할 표본이 없습니다.")
+    if rows.loc[:, list(SAMPLE_ID_COLUMNS)].isna().any().any():
+        raise ValueError(f"{label}의 표본 식별 열에 결측값이 있습니다.")
+    if rows.duplicated(subset=list(SAMPLE_ID_COLUMNS)).any():
+        raise ValueError(f"{label}에 중복된 표본 식별자가 있습니다.")
+
+
+def _get_fixed_cohort_error_rows(
+    rows: pd.DataFrame,
+    cohort_keys: pd.DataFrame,
+    *,
+    label: str,
+) -> pd.DataFrame:
+    """표본 키로 예측 결과를 연결해 고정 코호트의 행별 오차를 반환합니다."""
+    _validate_fixed_cohort_ids(rows, label=label)
+    error_rows = add_error_columns(rows)
+    error_columns = [
+        *SAMPLE_ID_COLUMNS,
+        "target_duration_days",
+        "predicted_duration_days",
+        "prediction_error_days",
+        "absolute_error_days",
+    ]
+    matched_rows = cohort_keys.merge(
+        error_rows.loc[:, error_columns],
+        on=list(SAMPLE_ID_COLUMNS),
+        how="left",
+        validate="one_to_one",
+        indicator=True,
+    )
+    if matched_rows["_merge"].ne("both").any():
+        raise ValueError(f"{label}에서 고정 코호트 표본을 찾을 수 없습니다.")
+    return matched_rows.drop(columns="_merge")
+
+
+def compare_error_on_fixed_cohort(
+    reference_rows: pd.DataFrame,
+    candidate_rows: pd.DataFrame,
+    cohort_rows: pd.DataFrame,
+) -> dict[str, float | int]:
+    """같은 코호트에서 기준 모델과 후보 모델의 오차 변화를 요약합니다."""
+    comparison = build_fixed_cohort_comparison_rows(
+        reference_rows,
+        candidate_rows,
+        cohort_rows,
+    )
+
+    return summarize_fixed_cohort_comparison_rows(comparison)
+
+
+def summarize_fixed_cohort_comparison_rows(
+    comparison: pd.DataFrame,
+) -> dict[str, float | int]:
+    """이미 연결된 고정 코호트 비교 행을 집계해 모델 수준 지표로 요약합니다."""
+    required_columns = {
+        "absolute_error_days_reference",
+        "absolute_error_days_candidate",
+        "prediction_error_days_candidate",
+        "comparison_outcome",
+    }
+    missing_columns = required_columns - set(comparison.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"고정 코호트 요약 필수 열이 없습니다: {missing_text}")
+    if comparison.empty:
+        raise ValueError("요약할 고정 코호트 비교 행이 없습니다.")
+
+    reference_absolute_error = comparison["absolute_error_days_reference"]
+    candidate_absolute_error = comparison["absolute_error_days_candidate"]
+    improved = comparison["comparison_outcome"].eq("IMPROVED")
+    worsened = comparison["comparison_outcome"].eq("WORSENED")
+    unchanged = comparison["comparison_outcome"].eq("UNCHANGED")
+    candidate_direction_error = comparison["prediction_error_days_candidate"]
+    sample_count = len(comparison)
+    reference_mae = float(reference_absolute_error.mean())
+    candidate_mae = float(candidate_absolute_error.mean())
+    improved_count = int(improved.sum())
+    worsened_count = int(worsened.sum())
+    unchanged_count = int(unchanged.sum())
+    candidate_late_count = int(candidate_direction_error.gt(0).sum())
+    candidate_early_count = int(candidate_direction_error.lt(0).sum())
+
+    return {
+        "cohort_sample_count": sample_count,
+        "reference_mae_days": reference_mae,
+        "candidate_mae_days": candidate_mae,
+        "mae_improvement_days": reference_mae - candidate_mae,
+        "improved_sample_count": improved_count,
+        "improved_sample_rate": improved_count / sample_count,
+        "worsened_sample_count": worsened_count,
+        "worsened_sample_rate": worsened_count / sample_count,
+        "unchanged_sample_count": unchanged_count,
+        "unchanged_sample_rate": unchanged_count / sample_count,
+        "candidate_late_prediction_count": candidate_late_count,
+        "candidate_late_prediction_rate": candidate_late_count / sample_count,
+        "candidate_early_prediction_count": candidate_early_count,
+        "candidate_early_prediction_rate": candidate_early_count / sample_count,
+    }
+
+
+def build_fixed_cohort_comparison_rows(
+    reference_rows: pd.DataFrame,
+    candidate_rows: pd.DataFrame,
+    cohort_rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """고정 코호트의 기준·후보 오차를 표본별로 연결해 변화 상태를 부여합니다."""
+    _validate_fixed_cohort_ids(cohort_rows, label="고정 코호트")
+    cohort_keys = cohort_rows.loc[:, list(SAMPLE_ID_COLUMNS)].copy()
+    reference_errors = _get_fixed_cohort_error_rows(
+        reference_rows,
+        cohort_keys,
+        label="기준 예측",
+    )
+    candidate_errors = _get_fixed_cohort_error_rows(
+        candidate_rows,
+        cohort_keys,
+        label="후보 예측",
+    )
+    comparison = reference_errors.merge(
+        candidate_errors,
+        on=list(SAMPLE_ID_COLUMNS),
+        how="inner",
+        validate="one_to_one",
+        suffixes=("_reference", "_candidate"),
+    )
+    comparison["absolute_error_improvement_days"] = (
+        comparison["absolute_error_days_reference"]
+        - comparison["absolute_error_days_candidate"]
+    )
+    comparison["comparison_outcome"] = "UNCHANGED"
+    comparison.loc[
+        comparison["absolute_error_improvement_days"].gt(0),
+        "comparison_outcome",
+    ] = "IMPROVED"
+    comparison.loc[
+        comparison["absolute_error_improvement_days"].lt(0),
+        "comparison_outcome",
+    ] = "WORSENED"
+    return comparison
+
+
+def summarize_largest_error_tail_by_history_count(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.01,
+) -> pd.DataFrame:
+    """전체와 꼬리 표본의 개인 이력 개수 분포를 비교합니다."""
+    missing_columns = HISTORY_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"꼬리 이력 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    history_counts = user_product_rows["history_interval_count"]
+    if history_counts.isna().any():
+        raise ValueError("개인·상품 이력 개수에 결측값이 있습니다.")
+    if history_counts.le(0).any():
+        raise ValueError("개인·상품 이력 예측에는 1개 이상의 과거 간격이 필요합니다.")
+
+    tail_rows = _select_largest_from_user_product_rows(
+        user_product_rows,
+        tail_rate,
+    )
+    overall_counts = (
+        user_product_rows.groupby(
+            "history_interval_count",
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("overall_sample_count")
+        .reset_index()
+    )
+    tail_counts = (
+        tail_rows.groupby(
+            "history_interval_count",
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            tail_sample_count=("absolute_error_days", "size"),
+            tail_absolute_error_days=("absolute_error_days", "sum"),
+        )
+        .reset_index()
+    )
+    summary = overall_counts.merge(
+        tail_counts,
+        on="history_interval_count",
+        how="left",
+        validate="one_to_one",
+    )
+    summary["tail_sample_count"] = (
+        summary["tail_sample_count"].fillna(0).astype("int64")
+    )
+    summary["tail_absolute_error_days"] = summary["tail_absolute_error_days"].fillna(
+        0.0
+    )
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(
+        len(user_product_rows)
+    )
+    summary["tail_sample_rate"] = summary["tail_sample_count"].div(len(tail_rows))
+    summary["tail_membership_rate"] = summary["tail_sample_count"].div(
+        summary["overall_sample_count"]
+    )
+    summary["tail_overrepresentation_ratio"] = summary["tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
+
+    total_tail_absolute_error = float(tail_rows["absolute_error_days"].sum())
+    summary["tail_absolute_error_share"] = (
+        0.0
+        if total_tail_absolute_error == 0
+        else summary["tail_absolute_error_days"].div(total_tail_absolute_error)
+    )
+    return summary
+
+
+def _get_validated_user_product_prior_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """개인화 예측 중 prior 관측 수를 신뢰할 수 있는 행만 검증해 반환합니다."""
+    missing_columns = PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"prior 지지 표본 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    prior_counts = user_product_rows["prior_observation_count"]
+    if prior_counts.isna().any():
+        raise ValueError("prior 관측 수에 결측값이 있습니다.")
+    if is_bool_dtype(prior_counts.dtype) or not is_numeric_dtype(prior_counts.dtype):
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+    normalized_counts = prior_counts.astype("float64")
+    if not np.isfinite(normalized_counts.to_numpy(copy=False)).all():
+        raise ValueError("prior 관측 수는 유한한 정수여야 합니다.")
+    if normalized_counts.le(0).any() or normalized_counts.mod(1).ne(0).any():
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+
+    return user_product_rows
+
+
+def summarize_user_product_errors_by_prior_count(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """개인화 예측이 사용한 prior의 종류·관측 수별 오차를 집계합니다."""
+    user_product_rows = _get_validated_user_product_prior_rows(rows)
+
+    total_count = len(user_product_rows)
+    summary = (
+        user_product_rows.groupby(
+            ["prior_source", "prior_observation_count"],
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            sample_count=("absolute_error_days", "size"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+    )
+    summary["sample_rate"] = summary["sample_count"] / total_count
+    return summary
+
+
+def summarize_fixed_cohort_prior_support(
+    candidate_rows: pd.DataFrame,
+    fixed_cohort_rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """전체와 고정 꼬리 표본의 prior 관측 수 분포를 비교합니다."""
+    user_product_rows = _get_validated_user_product_prior_rows(candidate_rows)
+    _validate_fixed_cohort_ids(
+        user_product_rows,
+        label="수축 후보 개인화 예측",
+    )
+    _validate_fixed_cohort_ids(
+        fixed_cohort_rows,
+        label="고정 꼬리 표본",
+    )
+
+    fixed_cohort_keys = fixed_cohort_rows.loc[
+        :,
+        list(SAMPLE_ID_COLUMNS),
+    ].copy()
+    prior_columns = [
+        *SAMPLE_ID_COLUMNS,
+        "prior_source",
+        "prior_observation_count",
+    ]
+    fixed_prior_rows = fixed_cohort_keys.merge(
+        user_product_rows.loc[:, prior_columns],
+        on=list(SAMPLE_ID_COLUMNS),
+        how="left",
+        validate="one_to_one",
+        indicator=True,
+    )
+    missing_fixed_rows = fixed_prior_rows["_merge"].ne("both")
+    if missing_fixed_rows.any():
+        missing_count = int(missing_fixed_rows.sum())
+        raise ValueError(
+            "수축 후보 개인화 예측에서 고정 꼬리 표본 "
+            f"{missing_count}개를 찾을 수 없습니다."
+        )
+    fixed_prior_rows = fixed_prior_rows.drop(columns="_merge")
+
+    group_columns = ["prior_source", "prior_observation_count"]
+    overall_counts = (
+        user_product_rows.groupby(
+            group_columns,
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("overall_sample_count")
+        .reset_index()
+    )
+    fixed_tail_counts = (
+        fixed_prior_rows.groupby(
+            group_columns,
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("fixed_tail_sample_count")
+        .reset_index()
+    )
+    summary = overall_counts.merge(
+        fixed_tail_counts,
+        on=group_columns,
+        how="left",
+        validate="one_to_one",
+    )
+    summary["fixed_tail_sample_count"] = (
+        summary["fixed_tail_sample_count"].fillna(0).astype("int64")
+    )
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(
+        len(user_product_rows)
+    )
+    summary["fixed_tail_sample_rate"] = summary["fixed_tail_sample_count"].div(
+        len(fixed_prior_rows)
+    )
+    summary["tail_overrepresentation_ratio"] = summary["fixed_tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
+    return summary
+
+
+def _add_prior_support_bucket(rows: pd.DataFrame) -> pd.DataFrame:
+    """검증된 prior 관측 수를 공통 로그 2 구간으로 분류합니다."""
+    bucketed = rows.copy()
+    bucketed["prior_support_bucket"] = pd.cut(
+        bucketed["prior_observation_count"],
+        bins=PRIOR_SUPPORT_BUCKET_BINS,
+        labels=PRIOR_SUPPORT_BUCKET_LABELS,
+        right=True,
+    )
+    if bucketed["prior_support_bucket"].isna().any():
+        raise ValueError("prior 관측 수를 로그 2 구간으로 분류하지 못했습니다.")
+    return bucketed
+
+
+def summarize_prior_support_by_log2_bucket(
+    detailed_summary: pd.DataFrame,
+) -> pd.DataFrame:
+    """관측 수별 상세 prior 결과를 2배 단위 구간으로 묶어 요약합니다."""
+    missing_columns = PRIOR_BUCKET_SUMMARY_REQUIRED_COLUMNS - set(
+        detailed_summary.columns
+    )
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"prior 구간 요약 필수 열이 없습니다: {missing_text}")
+    if detailed_summary.empty:
+        raise ValueError("구간으로 요약할 prior 상세 결과가 없습니다.")
+
+    prior_sources = detailed_summary["prior_source"]
+    if (
+        prior_sources.isna().any()
+        or prior_sources.astype("string").str.strip().eq("").any()
+    ):
+        raise ValueError("prior 출처에는 비어 있지 않은 값이 필요합니다.")
+
+    prior_counts = detailed_summary["prior_observation_count"]
+    sample_count_columns = ["overall_sample_count", "fixed_tail_sample_count"]
+    for column in ["prior_observation_count", *sample_count_columns]:
+        values = detailed_summary[column]
+        if values.isna().any():
+            raise ValueError(f"{column}에 결측값이 있습니다.")
+        if is_bool_dtype(values.dtype) or not is_integer_dtype(values.dtype):
+            raise ValueError(f"{column}은 정수형이어야 합니다.")
+
+    if prior_counts.le(0).any():
+        raise ValueError("prior 관측 수는 양의 정수여야 합니다.")
+    if detailed_summary["overall_sample_count"].le(0).any():
+        raise ValueError("전체 표본 수는 양의 정수여야 합니다.")
+    if detailed_summary["fixed_tail_sample_count"].lt(0).any():
+        raise ValueError("고정 꼬리 표본 수는 음수일 수 없습니다.")
+    if (
+        detailed_summary["fixed_tail_sample_count"]
+        .gt(detailed_summary["overall_sample_count"])
+        .any()
+    ):
+        raise ValueError("고정 꼬리 표본 수는 전체 표본 수보다 클 수 없습니다.")
+
+    bucketed = _add_prior_support_bucket(detailed_summary)
+
+    summary = (
+        bucketed.groupby(
+            ["prior_source", "prior_support_bucket"],
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            overall_sample_count=("overall_sample_count", "sum"),
+            fixed_tail_sample_count=("fixed_tail_sample_count", "sum"),
+        )
+        .reset_index()
+    )
+    overall_total = int(summary["overall_sample_count"].sum())
+    fixed_tail_total = int(summary["fixed_tail_sample_count"].sum())
+    if fixed_tail_total <= 0:
+        raise ValueError("로그 2 구간에 포함된 고정 꼬리 표본이 없습니다.")
+
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(overall_total)
+    summary["fixed_tail_sample_rate"] = summary["fixed_tail_sample_count"].div(
+        fixed_tail_total
+    )
+    summary["tail_overrepresentation_ratio"] = summary["fixed_tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
+    return summary
+
+
+def _validate_nonempty_product_ids(product_ids: pd.Series) -> None:
+    """상품 ID에 결측값이나 공백 문자열이 없는지 검증합니다."""
+    if (
+        product_ids.isna().any()
+        or product_ids.astype("string").str.strip().eq("").any()
+    ):
+        raise ValueError("상품 ID에는 비어 있지 않은 값이 필요합니다.")
+
+
+def summarize_product_frequency(rows: pd.DataFrame) -> pd.DataFrame:
+    """입력 표본의 상품별 행 개수와 점유율을 집계합니다."""
+    if "product_id" not in rows.columns:
+        raise ValueError("상품 빈도 분석에 필요한 product_id가 없습니다.")
+    if rows.empty:
+        raise ValueError("상품 빈도를 분석할 표본이 없습니다.")
+
+    _validate_nonempty_product_ids(rows["product_id"])
+
+    summary = (
+        rows.groupby(
+            "product_id",
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("sample_count")
+        .reset_index()
+    )
+    summary["sample_share"] = summary["sample_count"].div(len(rows))
+    return summary
+
+
+def summarize_product_concentration(
+    product_frequency: pd.DataFrame,
+) -> dict[str, int | float]:
+    """상품별 빈도표에서 전체 표본 수와 상품 집중도를 요약합니다."""
+    missing_columns = PRODUCT_FREQUENCY_REQUIRED_COLUMNS - set(
+        product_frequency.columns
+    )
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"상품 집중도 분석 필수 열이 없습니다: {missing_text}")
+    if product_frequency.empty:
+        raise ValueError("상품 집중도를 분석할 표본이 없습니다.")
+
+    product_ids = product_frequency["product_id"]
+    _validate_nonempty_product_ids(product_ids)
+    if product_ids.duplicated().any():
+        raise ValueError("상품별 빈도표에는 상품 ID가 중복될 수 없습니다.")
+
+    sample_counts = product_frequency["sample_count"]
+    if sample_counts.isna().any():
+        raise ValueError("sample_count에는 결측값이 없어야 합니다.")
+    if is_bool_dtype(sample_counts.dtype) or not is_integer_dtype(sample_counts.dtype):
+        raise ValueError("sample_count는 정수형이어야 합니다.")
+    if sample_counts.le(0).any():
+        raise ValueError("sample_count는 1 이상의 정수여야 합니다.")
+
+    # 합산 전에 Python 정수로 변환해 고정 크기 정수의 오버플로를 방지합니다.
+    total_sample_count = sum(int(value) for value in sample_counts)
+    top1_sample_count = int(sample_counts.max())
+    top5_sample_count = sum(int(value) for value in sample_counts.nlargest(5))
+    product_shares = sample_counts.div(total_sample_count)
+    hhi = float(product_shares.pow(2).sum())
+    effective_product_count = 1.0 / hhi
+
+    return {
+        "total_sample_count": total_sample_count,
+        "unique_product_count": int(len(product_frequency)),
+        "top1_sample_count": top1_sample_count,
+        "top1_share": top1_sample_count / total_sample_count,
+        "top5_sample_count": top5_sample_count,
+        "top5_share": top5_sample_count / total_sample_count,
+        "hhi": hhi,
+        "effective_product_count": effective_product_count,
+    }
+
+
+def summarize_largest_error_product_concentration(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> dict[str, object]:
+    """개인화 예측 전체와 큰 절대오차 표본의 상품 집중도를 비교합니다."""
+    # 두 집중도의 모집단을 동일하게 유지하도록 개인화 예측만 먼저 분리합니다.
+    user_product_rows = _get_user_product_error_rows(rows)
+    largest_error_rows = _select_largest_from_user_product_rows(
+        user_product_rows,
+        tail_rate,
+    )
+
+    overall_frequency = summarize_product_frequency(user_product_rows)
+    largest_error_frequency = summarize_product_frequency(largest_error_rows)
+
+    return {
+        "requested_tail_rate": tail_rate,
+        "actual_tail_sample_rate": len(largest_error_rows) / len(user_product_rows),
+        "overall_personalized": summarize_product_concentration(overall_frequency),
+        "largest_error_tail": summarize_product_concentration(largest_error_frequency),
+    }
+
+
+def summarize_user_product_errors_by_history_count(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """개인·상품 이력 예측의 오차를 과거 구매 간격 개수별로 요약합니다."""
+    missing_columns = HISTORY_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"이력 개수별 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    if user_product_rows["history_interval_count"].isna().any():
+        raise ValueError("개인·상품 이력 개수에 결측값이 있습니다.")
+    if user_product_rows["history_interval_count"].le(0).any():
+        raise ValueError("개인·상품 이력 예측에는 1개 이상의 과거 간격이 필요합니다.")
+
+    summary = (
+        user_product_rows.groupby(
+            "history_interval_count",
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            sample_count=("absolute_error_days", "size"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+    )
+    return summary
+
+
+def _spearman_rank_correlation(
+    left: pd.Series,
+    right: pd.Series,
+) -> float | None:
+    """두 숫자의 실제 크기 대신 순위가 함께 변하는 정도를 계산합니다."""
+    if len(left) < 2 or left.nunique() < 2 or right.nunique() < 2:
+        return None
+
+    left_rank = left.rank(method="average")
+    right_rank = right.rank(method="average")
+    return float(left_rank.corr(right_rank))
+
+
+def summarize_user_product_error_variability(
+    rows: pd.DataFrame,
+) -> dict[str, float | int | None]:
+    """개인·상품 이력의 상대 MAD와 절대오차 간 순위 관계를 요약합니다."""
+    missing_columns = VARIABILITY_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"변동성 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    analysis_rows = user_product_rows.loc[
+        user_product_rows["history_relative_mad"].notna()
+    ].copy()
+
+    if analysis_rows.empty:
+        raise ValueError("변동성을 계산할 수 있는 개인·상품 이력 표본이 없습니다.")
+
+    variability = analysis_rows["history_relative_mad"]
+    if is_bool_dtype(variability.dtype) or not is_numeric_dtype(variability.dtype):
+        raise ValueError("history_relative_mad는 숫자형이어야 합니다.")
+    if not np.isfinite(variability.to_numpy(dtype="float64", copy=False)).all():
+        raise ValueError("history_relative_mad에는 유한한 숫자만 사용할 수 있습니다.")
+    if variability.lt(0).any():
+        raise ValueError("history_relative_mad는 음수일 수 없습니다.")
+
+    return {
+        "sample_count": int(len(analysis_rows)),
+        "median_relative_mad": float(variability.median()),
+        "spearman_relative_mad_absolute_error": _spearman_rank_correlation(
+            variability,
+            analysis_rows["absolute_error_days"],
+        ),
+    }
+
+
+def summarize_user_product_errors_by_product(rows: pd.DataFrame) -> pd.DataFrame:
+    """개인·상품 이력 예측의 전체 오차 기여도를 상품별로 요약합니다."""
+    missing_columns = PRODUCT_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"상품별 분석 필수 열이 없습니다: {missing_text}")
+    if rows["product_id"].isna().any():
+        raise ValueError("상품별 분석에 사용할 product_id에 결측값이 있습니다.")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+
+    total_absolute_error = float(user_product_rows["absolute_error_days"].sum())
+    summary = (
+        user_product_rows.groupby("product_id", observed=True, sort=True)
+        .agg(
+            sample_count=("absolute_error_days", "size"),
+            total_absolute_error_days=("absolute_error_days", "sum"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+    )
+    summary["sample_rate"] = summary["sample_count"].div(len(user_product_rows))
+    if total_absolute_error == 0:
+        summary["absolute_error_share"] = 0.0
+    else:
+        summary["absolute_error_share"] = summary["total_absolute_error_days"].div(
+            total_absolute_error
+        )
+    return summary.sort_values(
+        ["total_absolute_error_days", "sample_count", "product_id"],
+        ascending=[False, False, True],
+        kind="stable",
+        ignore_index=True,
+    )
+
+
+def summarize_user_product_errors_by_anchor_month(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """개인·상품 이력 예측의 오차를 예측 기준 월별로 요약합니다."""
+    missing_columns = TIME_SUMMARY_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"월별 분석 필수 열이 없습니다: {missing_text}")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    user_product_rows["anchor_at"] = pd.to_datetime(
+        user_product_rows["anchor_at"],
+        errors="raise",
+    )
+    if user_product_rows["anchor_at"].isna().any():
+        raise ValueError("예측 기준 시각에 결측값이 있습니다.")
+
+    user_product_rows["anchor_month"] = (
+        user_product_rows["anchor_at"].dt.to_period("M").astype(str)
+    )
+    total_absolute_error = float(user_product_rows["absolute_error_days"].sum())
+    summary = (
+        user_product_rows.groupby("anchor_month", observed=True, sort=True)
+        .agg(
+            sample_count=("absolute_error_days", "size"),
+            total_absolute_error_days=("absolute_error_days", "sum"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+    )
+    summary["sample_rate"] = summary["sample_count"].div(len(user_product_rows))
+    if total_absolute_error == 0:
+        summary["absolute_error_share"] = 0.0
+    else:
+        summary["absolute_error_share"] = summary["total_absolute_error_days"].div(
+            total_absolute_error
+        )
+    return summary

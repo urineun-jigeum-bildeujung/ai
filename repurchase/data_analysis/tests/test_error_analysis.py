@@ -1,0 +1,1062 @@
+"""재구매 오차 분석 함수의 행 단위 계산을 검증합니다."""
+
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from scripts.modeling.error_analysis import (
+    add_error_columns,
+    build_fixed_cohort_comparison_rows,
+    build_random_product_concentration_trials,
+    compare_error_on_fixed_cohort,
+    compare_observed_hhi_to_random_trials,
+    sample_random_cohort,
+    select_largest_error_rows,
+    summarize_fixed_cohort_prior_support,
+    summarize_largest_error_product_concentration,
+    summarize_largest_error_tail,
+    summarize_largest_error_tail_by_history_count,
+    summarize_prior_support_by_log2_bucket,
+    summarize_product_concentration,
+    summarize_product_frequency,
+    summarize_random_product_concentration_trials,
+    summarize_user_product_error_variability,
+    summarize_user_product_errors_by_anchor_month,
+    summarize_user_product_errors_by_history_count,
+    summarize_user_product_errors_by_prior_count,
+    summarize_user_product_errors_by_product,
+)
+
+
+def test_add_error_columns_without_mutating_input() -> None:
+    """방향·절대오차를 계산하되 원본 DataFrame은 변경하지 않는지 확인합니다."""
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [30.0, 50.0],
+            "predicted_duration_days": [28.0, 70.0],
+        }
+    )
+
+    result = add_error_columns(rows)
+
+    assert result["prediction_error_days"].tolist() == [-2.0, 20.0]
+    assert result["absolute_error_days"].tolist() == [2.0, 20.0]
+    assert result["is_invalid_prediction"].tolist() == [False, False]
+    assert "prediction_error_days" not in rows.columns
+    assert "absolute_error_days" not in rows.columns
+    assert "is_invalid_prediction" not in rows.columns
+
+
+def test_personal_error_summary_accepts_original_and_shrunk_predictions() -> None:
+    """기존·수축 개인화 예측은 포함하고 상품 fallback 예측은 제외합니다."""
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [10.0, 20.0, 30.0],
+            "predicted_duration_days": [12.0, 24.0, 100.0],
+            "prediction_source": [
+                "user_product_history",
+                "shrunk_user_product_history",
+                "product_history",
+            ],
+            "history_interval_count": [1, 2, 0],
+        }
+    )
+
+    result = summarize_user_product_errors_by_history_count(rows)
+
+    assert result["history_interval_count"].tolist() == [1, 2]
+    assert result["sample_count"].tolist() == [1, 1]
+    assert result["mae_days"].tolist() == [2.0, 4.0]
+
+
+def test_add_error_columns_rejects_missing_required_column() -> None:
+    """필수 열이 누락되면 계산 전에 명확한 오류를 반환하는지 확인합니다."""
+    # 실제 구매 간격은 있지만 모델 예측값은 없는 잘못된 입력을 만듭니다.
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [30.0],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="predicted_duration_days",
+    ):
+        add_error_columns(rows)
+
+
+@pytest.mark.parametrize(
+    ("target_value", "predicted_value", "expected_message"),
+    [
+        ("30일", 28.0, "숫자형"),
+        (None, 28.0, "결측값"),
+        (30.0, float("inf"), "유한한 숫자"),
+        (-1.0, 28.0, "음수일 수 없습니다"),
+    ],
+)
+def test_add_error_columns_rejects_unusable_values(
+    target_value: object,
+    predicted_value: object,
+    expected_message: str,
+) -> None:
+    """숫자로 비교할 수 없는 입력과 잘못된 실제 기간을 거부하는지 확인합니다."""
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [target_value],
+            "predicted_duration_days": [predicted_value],
+        }
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        add_error_columns(rows)
+
+
+def test_add_error_columns_keeps_negative_prediction_as_model_failure() -> None:
+    """음수 예측을 제거하지 않고 오차와 실패 표시를 함께 보존합니다."""
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [30.0],
+            "predicted_duration_days": [-5.0],
+        }
+    )
+
+    result = add_error_columns(rows)
+
+    assert result["prediction_error_days"].tolist() == [-35.0]
+    assert result["absolute_error_days"].tolist() == [35.0]
+    assert result["is_invalid_prediction"].tolist() == [True]
+
+
+def test_add_error_columns_preserves_early_and_late_direction() -> None:
+    """빠른 예측은 음수, 늦은 예측은 양수로 구분하는지 확인합니다."""
+    rows = pd.DataFrame(
+        {
+            "target_duration_days": [30.0, 30.0],
+            "predicted_duration_days": [20.0, 40.0],
+        }
+    )
+
+    result = add_error_columns(rows)
+
+    assert result["prediction_error_days"].tolist() == [-10.0, 10.0]
+
+
+def test_select_largest_error_rows_uses_absolute_error_size() -> None:
+    """빠른·늦은 방향과 관계없이 절대오차가 큰 개인 이력을 선택합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "product_history",
+            ],
+            "target_duration_days": [120.0, 20.0, 30.0, 30.0],
+            "predicted_duration_days": [20.0, 100.0, 35.0, 300.0],
+        }
+    )
+
+    result = select_largest_error_rows(rows, tail_rate=0.5)
+
+    # 개인 이력 3개의 50%는 1.5개이므로 올림한 2개가 선택됩니다.
+    assert len(result) == 2
+    # -100일과 +80일이 선택되어 오차의 방향과 크기가 함께 보존됩니다.
+    assert result["prediction_error_days"].tolist() == [-100.0, 80.0]
+    assert result["absolute_error_days"].tolist() == [100.0, 80.0]
+
+
+def test_compare_error_on_fixed_cohort_tracks_same_reference_failures() -> None:
+    """후보별 최악 행이 달라도 기준 모델의 고정 실패 표본만 다시 비교합니다."""
+    sample_ids = {
+        "user_id": ["u1", "u2", "u3"],
+        "order_id": ["o1", "o2", "o3"],
+        "product_id": ["p1", "p2", "p3"],
+    }
+    reference_rows = pd.DataFrame(
+        {
+            **sample_ids,
+            "prediction_source": ["user_product_history"] * 3,
+            "target_duration_days": [30.0, 30.0, 30.0],
+            "predicted_duration_days": [130.0, 70.0, 32.0],
+        }
+    )
+    candidate_rows = pd.DataFrame(
+        {
+            **sample_ids,
+            "prediction_source": ["shrunk_user_product_history"] * 3,
+            "target_duration_days": [30.0, 30.0, 30.0],
+            "predicted_duration_days": [50.0, 20.0, 300.0],
+        }
+    )
+    # 기준 모델의 오차는 100·40·2일이므로 상위 50%는 u1과 u2입니다.
+    fixed_cohort = select_largest_error_rows(reference_rows, tail_rate=0.5)
+
+    comparison_rows = build_fixed_cohort_comparison_rows(
+        reference_rows,
+        candidate_rows,
+        fixed_cohort,
+    )
+
+    result = compare_error_on_fixed_cohort(
+        reference_rows,
+        candidate_rows,
+        fixed_cohort,
+    )
+
+    assert result["cohort_sample_count"] == 2
+    assert result["reference_mae_days"] == 70.0
+    assert result["candidate_mae_days"] == 15.0
+    assert result["mae_improvement_days"] == 55.0
+    assert result["improved_sample_count"] == 2
+    assert result["improved_sample_rate"] == 1.0
+    assert result["worsened_sample_count"] == 0
+    assert result["worsened_sample_rate"] == 0.0
+    assert result["candidate_late_prediction_count"] == 1
+    assert result["candidate_late_prediction_rate"] == 0.5
+    assert result["candidate_early_prediction_count"] == 1
+    assert result["candidate_early_prediction_rate"] == 0.5
+    assert comparison_rows["user_id"].tolist() == ["u1", "u2"]
+    assert comparison_rows["absolute_error_improvement_days"].tolist() == [80.0, 30.0]
+    assert comparison_rows["comparison_outcome"].tolist() == [
+        "IMPROVED",
+        "IMPROVED",
+    ]
+
+
+def test_summarize_user_product_errors_by_prior_count() -> None:
+    """개인화 예측의 prior 관측 수별 표본 비중과 오차를 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["shrunk_user_product_history"] * 3,
+            "prior_source": ["product_history"] * 3,
+            "prior_observation_count": [1, 1, 10],
+            "target_duration_days": [30.0, 30.0, 30.0],
+            "predicted_duration_days": [60.0, 20.0, 40.0],
+        }
+    )
+
+    result = summarize_user_product_errors_by_prior_count(rows)
+
+    assert result["prior_observation_count"].tolist() == [1, 10]
+    assert result["sample_count"].tolist() == [2, 1]
+    assert result["sample_rate"].tolist() == pytest.approx([2 / 3, 1 / 3])
+    assert result["mae_days"].tolist() == [20.0, 10.0]
+    assert result["median_absolute_error_days"].tolist() == [20.0, 10.0]
+    assert result["mean_prediction_error_days"].tolist() == [10.0, 10.0]
+
+
+def test_summarize_fixed_cohort_prior_support() -> None:
+    """고정 꼬리에 prior 관측 수가 얼마나 과대표집됐는지 계산합니다."""
+    candidate_rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2", "U3", "U4", "U5", "U6"],
+            "order_id": ["O1", "O2", "O3", "O4", "O5", "O6"],
+            "product_id": ["P1", "P2", "P3", "P4", "P5", "P6"],
+            "prediction_source": ["shrunk_user_product_history"] * 6,
+            "prior_source": ["product_history"] * 6,
+            "prior_observation_count": [1, 1, 2, 2, 10, 10],
+            "target_duration_days": [30.0] * 6,
+            "predicted_duration_days": [130.0, 120.0, 40.0, 35.0, 31.0, 32.0],
+        }
+    )
+    fixed_cohort_rows = candidate_rows.iloc[:2].copy()
+
+    result = summarize_fixed_cohort_prior_support(
+        candidate_rows,
+        fixed_cohort_rows,
+    )
+    by_prior_count = result.set_index("prior_observation_count")
+
+    assert by_prior_count.loc[1, "overall_sample_count"] == 2
+    assert by_prior_count.loc[1, "overall_sample_rate"] == pytest.approx(2 / 6)
+    assert by_prior_count.loc[1, "fixed_tail_sample_count"] == 2
+    assert by_prior_count.loc[1, "fixed_tail_sample_rate"] == 1.0
+    assert by_prior_count.loc[1, "tail_overrepresentation_ratio"] == 3.0
+    assert by_prior_count.loc[2, "fixed_tail_sample_count"] == 0
+    assert by_prior_count.loc[2, "tail_overrepresentation_ratio"] == 0.0
+    assert by_prior_count.loc[10, "fixed_tail_sample_count"] == 0
+    assert by_prior_count.loc[10, "tail_overrepresentation_ratio"] == 0.0
+
+
+def test_summarize_prior_support_by_log2_bucket_preserves_boundary_counts() -> None:
+    """관측 수 경계를 빠짐없이 2배 단위 구간으로 묶고 표본 합계를 보존합니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history"] * 14,
+            "prior_observation_count": [
+                1,
+                2,
+                3,
+                4,
+                7,
+                8,
+                15,
+                16,
+                31,
+                32,
+                63,
+                64,
+                127,
+                128,
+            ],
+            "overall_sample_count": [1] * 14,
+            "fixed_tail_sample_count": [1] * 14,
+        }
+    )
+
+    result = summarize_prior_support_by_log2_bucket(detailed_summary)
+
+    assert result["prior_support_bucket"].astype("string").tolist() == [
+        "1",
+        "2-3",
+        "4-7",
+        "8-15",
+        "16-31",
+        "32-63",
+        "64-127",
+        "128+",
+    ]
+    assert result["overall_sample_count"].tolist() == [1, 2, 2, 2, 2, 2, 2, 1]
+    assert result["fixed_tail_sample_count"].tolist() == [1, 2, 2, 2, 2, 2, 2, 1]
+    assert result["overall_sample_count"].sum() == 14
+    assert result["fixed_tail_sample_count"].sum() == 14
+    assert result["overall_sample_rate"].sum() == pytest.approx(1.0)
+    assert result["fixed_tail_sample_rate"].sum() == pytest.approx(1.0)
+    assert result["tail_overrepresentation_ratio"].tolist() == pytest.approx([1.0] * 8)
+    weighted_ratio_checksum = (
+        result["overall_sample_rate"] * result["tail_overrepresentation_ratio"]
+    ).sum()
+    assert weighted_ratio_checksum == pytest.approx(1.0)
+
+
+def test_summarize_prior_support_by_log2_bucket_keeps_sources_separate() -> None:
+    """같은 관측 수 구간이어도 상품 prior와 전체 prior를 합치지 않습니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history", "global_history"],
+            "prior_observation_count": [128, 163_957],
+            "overall_sample_count": [30, 70],
+            "fixed_tail_sample_count": [3, 7],
+        }
+    )
+
+    result = summarize_prior_support_by_log2_bucket(detailed_summary)
+
+    assert result["prior_source"].tolist() == [
+        "global_history",
+        "product_history",
+    ]
+    assert result["prior_support_bucket"].astype("string").tolist() == [
+        "128+",
+        "128+",
+    ]
+    assert result["overall_sample_count"].tolist() == [70, 30]
+
+
+def test_summarize_product_frequency_counts_rows_by_product() -> None:
+    """같은 상품의 여러 표본을 상품별 행 개수와 점유율로 집계합니다."""
+    rows = pd.DataFrame(
+        {
+            "product_id": ["P1", "P1", "P1", "P2", "P2", "P3"],
+            "absolute_error_days": [120.0, 90.0, 70.0, 80.0, 60.0, 50.0],
+        }
+    )
+
+    result = summarize_product_frequency(rows)
+
+    assert result["product_id"].tolist() == ["P1", "P2", "P3"]
+    assert result["sample_count"].tolist() == [3, 2, 1]
+    assert result["sample_share"].tolist() == pytest.approx([3 / 6, 2 / 6, 1 / 6])
+    assert result["sample_share"].sum() == pytest.approx(1.0)
+
+
+def test_summarize_product_concentration_calculates_top1_share() -> None:
+    """행 순서와 관계없이 최다 상품의 행 수와 점유율을 계산합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2", "P3", "P4"],
+            "sample_count": [1, 6, 2, 1],
+            "sample_share": [0.1, 0.6, 0.2, 0.1],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result == {
+        "total_sample_count": 10,
+        "unique_product_count": 4,
+        "top1_sample_count": 6,
+        "top1_share": pytest.approx(0.6),
+        "top5_sample_count": 10,
+        "top5_share": pytest.approx(1.0),
+        "hhi": pytest.approx(0.42),
+        "effective_product_count": pytest.approx(1 / 0.42),
+    }
+
+
+def test_summarize_product_concentration_calculates_top5_share() -> None:
+    """상위 다섯 상품이 전체 표본에서 차지하는 행 수와 비율을 계산합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2", "P3", "P4", "P5", "P6"],
+            "sample_count": [5, 40, 25, 15, 10, 5],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result == {
+        "total_sample_count": 100,
+        "unique_product_count": 6,
+        "top1_sample_count": 40,
+        "top1_share": pytest.approx(0.4),
+        "top5_sample_count": 95,
+        "top5_share": pytest.approx(0.95),
+        "hhi": pytest.approx(0.26),
+        "effective_product_count": pytest.approx(1 / 0.26),
+    }
+
+
+def test_summarize_product_concentration_calculates_hhi() -> None:
+    """상품 수가 같을 때 점유율이 더 쏠린 분포의 HHI가 큰지 확인합니다."""
+    concentrated_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [75, 25],
+        }
+    )
+    distributed_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [50, 50],
+        }
+    )
+
+    concentrated_result = summarize_product_concentration(concentrated_frequency)
+    distributed_result = summarize_product_concentration(distributed_frequency)
+
+    assert concentrated_result["hhi"] == pytest.approx(0.625)
+    assert distributed_result["hhi"] == pytest.approx(0.5)
+    assert concentrated_result["hhi"] > distributed_result["hhi"]
+    assert concentrated_result["effective_product_count"] == pytest.approx(1.6)
+    assert distributed_result["effective_product_count"] == pytest.approx(2.0)
+
+
+def test_summarize_product_concentration_handles_single_product() -> None:
+    """상품 하나가 모든 표본을 차지하는 최대 집중 경계값을 확인합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1"],
+            "sample_count": [100],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result["unique_product_count"] == 1
+    assert result["top1_share"] == pytest.approx(1.0)
+    assert result["top5_share"] == pytest.approx(1.0)
+    assert result["hhi"] == pytest.approx(1.0)
+    assert result["effective_product_count"] == pytest.approx(1.0)
+
+
+def test_summarize_product_concentration_sums_large_counts_safely() -> None:
+    """int64 범위를 넘는 양의 표본 수도 음수로 넘치지 않고 합산합니다."""
+    large_count = 2**62
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [large_count, large_count],
+        }
+    )
+
+    result = summarize_product_concentration(product_frequency)
+
+    assert result["total_sample_count"] == 2**63
+    assert result["top1_share"] == pytest.approx(0.5)
+    assert result["top5_sample_count"] == 2**63
+    assert result["top5_share"] == pytest.approx(1.0)
+    assert result["hhi"] == pytest.approx(0.5)
+
+
+def test_summarize_largest_error_product_concentration_uses_personalized_rows() -> None:
+    """전체와 꼬리 집중도 모두 동일한 개인화 예측 모집단에서 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "product_history",
+                "product_history",
+            ],
+            "product_id": [
+                "P1",
+                "P1",
+                "P1",
+                "P1",
+                "P2",
+                "P2",
+                "P3",
+                "P3",
+                "P4",
+                "P4",
+            ],
+            "target_duration_days": [30.0] * 10,
+            "predicted_duration_days": [
+                130.0,
+                120.0,
+                31.0,
+                31.0,
+                40.0,
+                39.0,
+                38.0,
+                37.0,
+                500.0,
+                400.0,
+            ],
+        }
+    )
+
+    result = summarize_largest_error_product_concentration(rows, tail_rate=0.25)
+
+    overall = result["overall_personalized"]
+    tail = result["largest_error_tail"]
+    assert overall["total_sample_count"] == 8
+    assert overall["unique_product_count"] == 3
+    assert overall["top1_share"] == pytest.approx(0.5)
+    assert tail["total_sample_count"] == 2
+    assert tail["unique_product_count"] == 1
+    assert tail["top1_share"] == pytest.approx(1.0)
+    assert tail["hhi"] == pytest.approx(1.0)
+    assert tail["effective_product_count"] == pytest.approx(1.0)
+
+
+def test_summarize_largest_error_product_concentration_reports_actual_tail_rate() -> (
+    None
+):
+    """올림으로 달라진 실제 꼬리 비율을 요청 비율과 구분해 기록합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 7,
+            "product_id": ["P1", "P1", "P2", "P2", "P3", "P3", "P4"],
+            "target_duration_days": [30.0] * 7,
+            "predicted_duration_days": [130.0, 120.0, 40.0, 39.0, 38.0, 37.0, 31.0],
+        }
+    )
+
+    result = summarize_largest_error_product_concentration(rows, tail_rate=0.25)
+
+    assert result["requested_tail_rate"] == pytest.approx(0.25)
+    assert result["actual_tail_sample_rate"] == pytest.approx(2 / 7)
+    assert result["largest_error_tail"]["total_sample_count"] == 2
+
+
+def test_sample_random_cohort_is_unique_and_reproducible() -> None:
+    """비복원추출로 고유한 행을 뽑고 같은 시드에서 결과를 재현합니다."""
+    rows = pd.DataFrame(
+        {
+            "sample_id": [f"S{index}" for index in range(10)],
+        }
+    )
+
+    first = sample_random_cohort(
+        rows,
+        sample_count=4,
+        random_generator=np.random.default_rng(42),
+    )
+    second = sample_random_cohort(
+        rows,
+        sample_count=4,
+        random_generator=np.random.default_rng(42),
+    )
+
+    assert len(first) == 4
+    assert first["sample_id"].nunique() == 4
+    assert first["sample_id"].tolist() == second["sample_id"].tolist()
+    assert len(rows) == 10
+
+
+@pytest.mark.parametrize(
+    ("sample_count", "expected_message"),
+    [
+        (0, "1 이상"),
+        (-1, "1 이상"),
+        (11, "사용 가능한 표본 수"),
+        (1.5, "정수"),
+        (True, "정수"),
+    ],
+)
+def test_sample_random_cohort_rejects_invalid_sample_count(
+    sample_count: object,
+    expected_message: str,
+) -> None:
+    """비교 집단의 크기를 바꾸는 잘못된 표본 수를 명확하게 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "sample_id": [f"S{index}" for index in range(10)],
+        }
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        sample_random_cohort(
+            rows,
+            sample_count=sample_count,
+            random_generator=np.random.default_rng(42),
+        )
+
+
+def test_build_random_product_concentration_trials_preserves_each_trial() -> None:
+    """반복별 상품 집중도 원자료를 표 형태로 보존하고 재현합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 8,
+            "product_id": ["P1", "P1", "P1", "P1", "P1", "P2", "P2", "P3"],
+            "target_duration_days": [30.0] * 8,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0],
+        }
+    )
+
+    first = build_random_product_concentration_trials(
+        rows,
+        sample_count=4,
+        trial_count=3,
+        random_seed=42,
+    )
+    second = build_random_product_concentration_trials(
+        rows,
+        sample_count=4,
+        trial_count=3,
+        random_seed=42,
+    )
+
+    assert first["trial_index"].tolist() == [0, 1, 2]
+    assert first["total_sample_count"].tolist() == [4, 4, 4]
+    assert first["hhi"].between(0.0, 1.0, inclusive="right").all()
+    pd.testing.assert_frame_equal(first, second)
+
+
+@pytest.mark.parametrize("trial_count", [0, -1, 1.5, True])
+def test_build_random_product_concentration_trials_rejects_invalid_trial_count(
+    trial_count: object,
+) -> None:
+    """분포를 만들 수 없는 잘못된 반복 횟수를 실행 전에 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 4,
+            "product_id": ["P1", "P1", "P2", "P2"],
+            "target_duration_days": [30.0] * 4,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="trial_count는 1 이상의 정수"):
+        build_random_product_concentration_trials(
+            rows,
+            sample_count=2,
+            trial_count=trial_count,
+            random_seed=42,
+        )
+
+
+@pytest.mark.parametrize("random_seed", [-1, 1.5, True])
+def test_build_random_product_concentration_trials_rejects_invalid_seed(
+    random_seed: object,
+) -> None:
+    """재현 가능한 난수 생성에 사용할 수 없는 시드를 명확하게 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 4,
+            "product_id": ["P1", "P1", "P2", "P2"],
+            "target_duration_days": [30.0] * 4,
+            "predicted_duration_days": [31.0, 32.0, 33.0, 34.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="random_seed는 0 이상의 정수"):
+        build_random_product_concentration_trials(
+            rows,
+            sample_count=2,
+            trial_count=3,
+            random_seed=random_seed,
+        )
+
+
+def test_summarize_random_product_concentration_trials_describes_hhi_distribution() -> (
+    None
+):
+    """반복별 HHI 원자료에서 중심과 5·95백분위수를 계산합니다."""
+    trials = pd.DataFrame(
+        {
+            "trial_index": [0, 1, 2, 3, 4],
+            "hhi": [0.1, 0.2, 0.3, 0.4, 0.5],
+        }
+    )
+
+    result = summarize_random_product_concentration_trials(trials)
+
+    assert result == {
+        "trial_count": 5,
+        "hhi_mean": pytest.approx(0.3),
+        "hhi_median": pytest.approx(0.3),
+        "hhi_p05": pytest.approx(0.12),
+        "hhi_p95": pytest.approx(0.48),
+    }
+
+
+@pytest.mark.parametrize(
+    ("trials", "expected_message"),
+    [
+        (pd.DataFrame({"other": [0.3]}), "hhi 열"),
+        (pd.DataFrame({"hhi": pd.Series(dtype=float)}), "반복 결과가 없습니다"),
+        (pd.DataFrame({"hhi": ["0.3"]}), "hhi는 숫자"),
+        (pd.DataFrame({"hhi": [True]}), "hhi는 숫자"),
+        (pd.DataFrame({"hhi": [float("nan")]}), "유한한 값"),
+        (pd.DataFrame({"hhi": [float("inf")]}), "유한한 값"),
+        (pd.DataFrame({"hhi": [0.0]}), "0 초과 1 이하"),
+        (pd.DataFrame({"hhi": [1.1]}), "0 초과 1 이하"),
+    ],
+)
+def test_summarize_random_product_concentration_trials_rejects_invalid_hhi(
+    trials: pd.DataFrame,
+    expected_message: str,
+) -> None:
+    """분포 요약을 왜곡하거나 NaN으로 만드는 잘못된 HHI를 거부합니다."""
+    with pytest.raises(ValueError, match=expected_message):
+        summarize_random_product_concentration_trials(trials)
+
+
+def test_compare_observed_hhi_to_random_trials_locates_actual_tail() -> None:
+    """실제 꼬리 HHI의 경험적 백분위와 상위 꼬리 확률을 계산합니다."""
+    trials = pd.DataFrame(
+        {
+            "trial_index": [0, 1, 2, 3, 4],
+            "hhi": [0.1, 0.2, 0.3, 0.4, 0.5],
+        }
+    )
+
+    result = compare_observed_hhi_to_random_trials(
+        trials,
+        observed_hhi=0.45,
+    )
+
+    assert result == {
+        "observed_hhi": pytest.approx(0.45),
+        "observed_hhi_empirical_percentile": pytest.approx(0.8),
+        "random_hhi_at_least_observed_count": 1,
+        "random_hhi_at_least_observed_rate": pytest.approx(0.2),
+        "monte_carlo_upper_tail_p_value": pytest.approx(2 / 6),
+    }
+
+
+@pytest.mark.parametrize(
+    "observed_hhi",
+    [None, "0.3", True, float("nan"), float("inf"), 0.0, -0.1, 1.1],
+)
+def test_compare_observed_hhi_to_random_trials_rejects_invalid_observation(
+    observed_hhi: object,
+) -> None:
+    """실제 집중도의 위치를 거짓으로 계산할 수 있는 관측값을 거부합니다."""
+    trials = pd.DataFrame({"hhi": [0.1, 0.2, 0.3]})
+
+    with pytest.raises(ValueError, match="observed_hhi는 0 초과 1 이하"):
+        compare_observed_hhi_to_random_trials(
+            trials,
+            observed_hhi=observed_hhi,
+        )
+
+
+def test_summarize_product_concentration_rejects_empty_input() -> None:
+    """상품이 없는 빈 빈도표는 계산 전에 명확한 오류로 거부합니다."""
+    product_frequency = pd.DataFrame(
+        columns=["product_id", "sample_count", "sample_share"]
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품 집중도를 분석할 표본이 없습니다",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+def test_summarize_product_concentration_rejects_duplicate_product() -> None:
+    """이미 집계된 빈도표에 같은 상품이 두 번 나타나면 오류로 거부합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P1", "P2"],
+            "sample_count": [3, 2, 5],
+            "sample_share": [0.3, 0.2, 0.5],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품별 빈도표에는 상품 ID가 중복될 수 없습니다",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize("missing_column", ["product_id", "sample_count"])
+def test_summarize_product_concentration_rejects_missing_required_column(
+    missing_column: str,
+) -> None:
+    """상품 집중도 계산에 필요한 원천 열이 없으면 열 이름을 알려줍니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": [6, 4],
+        }
+    ).drop(columns=missing_column)
+
+    with pytest.raises(
+        ValueError,
+        match=rf"상품 집중도 분석 필수 열이 없습니다: {missing_column}",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize(
+    ("sample_counts", "expected_message"),
+    [
+        ([6, None], "sample_count에는 결측값이 없어야 합니다"),
+        ([6, 0], "sample_count는 1 이상의 정수여야 합니다"),
+        ([6, -2], "sample_count는 1 이상의 정수여야 합니다"),
+        ([6.0, 4.0], "sample_count는 정수형이어야 합니다"),
+        (["6", "4"], "sample_count는 정수형이어야 합니다"),
+        ([True, True], "sample_count는 정수형이어야 합니다"),
+    ],
+)
+def test_summarize_product_concentration_rejects_invalid_sample_count(
+    sample_counts: list[object],
+    expected_message: str,
+) -> None:
+    """행 개수는 결측값이 없는 양의 정수형만 허용합니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", "P2"],
+            "sample_count": sample_counts,
+        }
+    )
+
+    with pytest.raises(ValueError, match=expected_message):
+        summarize_product_concentration(product_frequency)
+
+
+@pytest.mark.parametrize("invalid_product_id", [None, "   "])
+def test_summarize_product_concentration_rejects_empty_product_id(
+    invalid_product_id: object,
+) -> None:
+    """결측값이나 공백뿐인 상품 ID는 고유 상품으로 인정하지 않습니다."""
+    product_frequency = pd.DataFrame(
+        {
+            "product_id": ["P1", invalid_product_id],
+            "sample_count": [6, 4],
+        }
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="상품 ID에는 비어 있지 않은 값이 필요합니다",
+    ):
+        summarize_product_concentration(product_frequency)
+
+
+def test_summarize_prior_support_by_log2_bucket_rejects_missing_source() -> None:
+    """출처 결측으로 그룹화 과정에서 표본이 조용히 사라지는 것을 막습니다."""
+    detailed_summary = pd.DataFrame(
+        {
+            "prior_source": ["product_history", None],
+            "prior_observation_count": [1, 2],
+            "overall_sample_count": [10, 5],
+            "fixed_tail_sample_count": [1, 1],
+        }
+    )
+
+    with pytest.raises(ValueError, match="prior 출처"):
+        summarize_prior_support_by_log2_bucket(detailed_summary)
+
+
+@pytest.mark.parametrize("tail_rate", [0.0, -0.1, 1.1])
+def test_select_largest_error_rows_rejects_invalid_rate(tail_rate: float) -> None:
+    """0% 이하 또는 100%를 넘는 꼬리 비율을 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"],
+            "target_duration_days": [30.0],
+            "predicted_duration_days": [40.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="tail_rate"):
+        select_largest_error_rows(rows, tail_rate=tail_rate)
+
+
+def test_summarize_largest_error_tail() -> None:
+    """꼬리 표본의 전체 오차 기여도와 예측 방향 비율을 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "product_history",
+            ],
+            "target_duration_days": [120.0, 20.0, 30.0, 30.0, 30.0],
+            "predicted_duration_days": [20.0, 100.0, 50.0, 30.0, 300.0],
+        }
+    )
+
+    result = summarize_largest_error_tail(rows, tail_rate=0.5)
+
+    # 개인 이력 4개 중 절대오차가 큰 상위 2개(-100일, +80일)를 사용합니다.
+    assert result["tail_sample_count"] == 2
+    assert result["actual_tail_sample_rate"] == 0.5
+    # 전체 절대오차 200일 중 꼬리 표본이 만든 오차는 180일입니다.
+    assert result["tail_absolute_error_days"] == 180.0
+    assert result["absolute_error_share"] == pytest.approx(0.9)
+    assert result["late_prediction_count"] == 1
+    assert result["late_prediction_rate"] == 0.5
+    assert result["early_prediction_count"] == 1
+    assert result["early_prediction_rate"] == 0.5
+    assert result["exact_prediction_count"] == 0
+    assert result["exact_prediction_rate"] == 0.0
+
+
+def test_summarize_largest_error_tail_by_history_count() -> None:
+    """이력 개수별 전체 비율과 꼬리 비율을 비교해 과대표집을 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * 8,
+            "history_interval_count": [1, 1, 1, 1, 2, 2, 2, 2],
+            "target_duration_days": [30.0] * 8,
+            "predicted_duration_days": [
+                130.0,
+                120.0,
+                31.0,
+                31.0,
+                40.0,
+                39.0,
+                38.0,
+                37.0,
+            ],
+        }
+    )
+
+    result = summarize_largest_error_tail_by_history_count(rows, tail_rate=0.25)
+    by_history_count = result.set_index("history_interval_count")
+
+    # 전체에서는 두 이력 구간이 각각 절반이지만 큰 오차 2개는 모두 이력 1개입니다.
+    assert by_history_count.loc[1, "overall_sample_rate"] == 0.5
+    assert by_history_count.loc[1, "tail_sample_count"] == 2
+    assert by_history_count.loc[1, "tail_sample_rate"] == 1.0
+    assert by_history_count.loc[1, "tail_membership_rate"] == 0.5
+    assert by_history_count.loc[1, "tail_overrepresentation_ratio"] == 2.0
+    assert by_history_count.loc[1, "tail_absolute_error_share"] == 1.0
+    # 이력 2개 표본도 결과에 보존하되 꼬리에 포함되지 않았음을 0으로 표시합니다.
+    assert by_history_count.loc[2, "tail_sample_count"] == 0
+    assert by_history_count.loc[2, "tail_overrepresentation_ratio"] == 0.0
+
+
+def test_summarize_user_product_errors_by_history_count() -> None:
+    """개인 이력 개수별 표본 수와 오차 지표를 올바르게 요약하는지 확인합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "product_history",
+            ],
+            "history_interval_count": [1, 1, 2, 0],
+            "target_duration_days": [30.0, 50.0, 30.0, 40.0],
+            "predicted_duration_days": [20.0, 70.0, 35.0, 60.0],
+        }
+    )
+
+    result = summarize_user_product_errors_by_history_count(rows)
+    by_history_count = result.set_index("history_interval_count")
+
+    assert by_history_count.loc[1, "sample_count"] == 2
+    assert by_history_count.loc[1, "mae_days"] == 15.0
+    assert by_history_count.loc[1, "median_absolute_error_days"] == 15.0
+    assert by_history_count.loc[1, "mean_prediction_error_days"] == 5.0
+    assert by_history_count.loc[2, "sample_count"] == 1
+    assert by_history_count.loc[2, "mae_days"] == 5.0
+
+
+def test_summarize_user_product_error_variability() -> None:
+    """상대 MAD와 절대오차의 순서가 같을 때 양의 순위 상관을 반환합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "product_history",
+            ],
+            "history_relative_mad": [0.1, 0.2, 0.4, None, 0.9],
+            "target_duration_days": [30.0, 30.0, 30.0, 30.0, 30.0],
+            "predicted_duration_days": [32.0, 40.0, 50.0, 35.0, 100.0],
+        }
+    )
+
+    result = summarize_user_product_error_variability(rows)
+
+    assert result["sample_count"] == 3
+    assert result["median_relative_mad"] == 0.2
+    assert result["spearman_relative_mad_absolute_error"] == pytest.approx(1.0)
+
+
+def make_error_contributor_rows() -> pd.DataFrame:
+    """상품·월별 오차 기여도 검증에 사용할 작은 예측 결과를 만듭니다."""
+    return pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "product_history",
+            ],
+            "product_id": ["p1", "p1", "p2", "p3"],
+            "anchor_at": pd.to_datetime(
+                ["2026-01-01", "2026-02-01", "2026-01-15", "2026-01-20"]
+            ),
+            "target_duration_days": [30.0, 30.0, 30.0, 30.0],
+            "predicted_duration_days": [20.0, 50.0, 35.0, 130.0],
+        }
+    )
+
+
+def test_summarize_user_product_errors_by_product() -> None:
+    """개인 이력의 전체 절대오차 기여도가 큰 상품부터 정렬합니다."""
+    result = summarize_user_product_errors_by_product(make_error_contributor_rows())
+    by_product = result.set_index("product_id")
+
+    assert result["product_id"].tolist() == ["p1", "p2"]
+    assert by_product.loc["p1", "sample_count"] == 2
+    assert by_product.loc["p1", "total_absolute_error_days"] == 30.0
+    assert by_product.loc["p1", "mae_days"] == 15.0
+    assert by_product.loc["p1", "absolute_error_share"] == pytest.approx(30 / 35)
+
+
+def test_summarize_user_product_errors_by_anchor_month() -> None:
+    """상품 전체 이력 예측을 제외하고 예측 기준 월별 오차를 요약합니다."""
+    result = summarize_user_product_errors_by_anchor_month(
+        make_error_contributor_rows()
+    )
+    by_month = result.set_index("anchor_month")
+
+    assert by_month.loc["2026-01", "sample_count"] == 2
+    assert by_month.loc["2026-01", "mae_days"] == 7.5
+    assert by_month.loc["2026-01", "mean_prediction_error_days"] == -2.5
+    assert by_month.loc["2026-02", "sample_count"] == 1
+    assert by_month.loc["2026-02", "mae_days"] == 20.0
