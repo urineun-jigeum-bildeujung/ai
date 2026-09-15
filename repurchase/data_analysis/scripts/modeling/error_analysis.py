@@ -44,8 +44,8 @@ PRIOR_SUPPORT_SUMMARY_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
-# 작은 관측 수는 세밀하게, 큰 관측 수는 넓게 비교하도록 2배 단위로 확장합니다.
-PRIOR_SUPPORT_BUCKET_BINS: Final[tuple[float, ...]] = (
+# 작은 개수는 세밀하게, 큰 개수는 넓게 비교하도록 2배 단위로 확장합니다.
+LOG2_COUNT_BUCKET_BINS: Final[tuple[float, ...]] = (
     0,
     1,
     3,
@@ -56,7 +56,7 @@ PRIOR_SUPPORT_BUCKET_BINS: Final[tuple[float, ...]] = (
     127,
     np.inf,
 )
-PRIOR_SUPPORT_BUCKET_LABELS: Final[tuple[str, ...]] = (
+LOG2_COUNT_BUCKET_LABELS: Final[tuple[str, ...]] = (
     "1",
     "2-3",
     "4-7",
@@ -725,17 +725,22 @@ def summarize_fixed_cohort_prior_support(
     return summary
 
 
-def _add_prior_support_bucket(rows: pd.DataFrame) -> pd.DataFrame:
-    """검증된 prior 관측 수를 공통 로그 2 구간으로 분류합니다."""
+def _add_log2_count_bucket(
+    rows: pd.DataFrame,
+    *,
+    count_column: str,
+    bucket_column: str,
+) -> pd.DataFrame:
+    """검증된 양의 개수를 공통 로그 2 구간으로 분류합니다."""
     bucketed = rows.copy()
-    bucketed["prior_support_bucket"] = pd.cut(
-        bucketed["prior_observation_count"],
-        bins=PRIOR_SUPPORT_BUCKET_BINS,
-        labels=PRIOR_SUPPORT_BUCKET_LABELS,
+    bucketed[bucket_column] = pd.cut(
+        bucketed[count_column],
+        bins=LOG2_COUNT_BUCKET_BINS,
+        labels=LOG2_COUNT_BUCKET_LABELS,
         right=True,
     )
-    if bucketed["prior_support_bucket"].isna().any():
-        raise ValueError("prior 관측 수를 로그 2 구간으로 분류하지 못했습니다.")
+    if bucketed[bucket_column].isna().any():
+        raise ValueError(f"{count_column}을 로그 2 구간으로 분류하지 못했습니다.")
     return bucketed
 
 
@@ -781,7 +786,11 @@ def summarize_prior_support_by_log2_bucket(
     ):
         raise ValueError("고정 꼬리 표본 수는 전체 표본 수보다 클 수 없습니다.")
 
-    bucketed = _add_prior_support_bucket(detailed_summary)
+    bucketed = _add_log2_count_bucket(
+        detailed_summary,
+        count_column="prior_observation_count",
+        bucket_column="prior_support_bucket",
+    )
 
     summary = (
         bucketed.groupby(
@@ -840,6 +849,203 @@ def summarize_product_frequency(rows: pd.DataFrame) -> pd.DataFrame:
     )
     summary["sample_share"] = summary["sample_count"].div(len(rows))
     return summary
+
+
+def add_product_sample_count(rows: pd.DataFrame) -> pd.DataFrame:
+    """원본을 변경하지 않고 각 행에 동일 상품의 입력 표본 수를 추가합니다."""
+    if "product_sample_count" in rows.columns:
+        raise ValueError("product_sample_count 열이 이미 존재합니다.")
+
+    # 상품 ID 검증과 상품별 행 개수 계산은 기존 빈도 집계 규칙을 재사용합니다.
+    product_frequency = summarize_product_frequency(rows)
+    product_counts = product_frequency.set_index("product_id")["sample_count"].rename(
+        "product_sample_count"
+    )
+
+    # 여러 예측 행이 상품별 하나의 집계값에 연결되는 구조인지 함께 검증합니다.
+    return rows.copy().join(
+        product_counts,
+        on="product_id",
+        validate="many_to_one",
+    )
+
+
+def _summarize_error_groups_by_count(
+    enriched_rows: pd.DataFrame,
+    tail_rows: pd.DataFrame,
+    *,
+    group_column: str,
+    entity_column: str,
+    unique_entity_count_column: str,
+    tail_unique_entity_count_column: str,
+) -> pd.DataFrame:
+    """개수 그룹별 전체 오차와 꼬리 분포를 같은 계산 규칙으로 집계합니다."""
+    overall_summary = (
+        enriched_rows.groupby(
+            group_column,
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            unique_entity_count=(entity_column, "nunique"),
+            overall_sample_count=("absolute_error_days", "size"),
+            mae_days=("absolute_error_days", "mean"),
+            median_absolute_error_days=("absolute_error_days", "median"),
+            mean_prediction_error_days=("prediction_error_days", "mean"),
+        )
+        .reset_index()
+        .rename(columns={"unique_entity_count": unique_entity_count_column})
+    )
+    tail_summary = (
+        tail_rows.groupby(
+            group_column,
+            observed=True,
+            sort=True,
+        )
+        .agg(
+            tail_unique_entity_count=(entity_column, "nunique"),
+            tail_sample_count=("absolute_error_days", "size"),
+            tail_absolute_error_days=("absolute_error_days", "sum"),
+        )
+        .reset_index()
+        .rename(
+            columns={
+                "tail_unique_entity_count": tail_unique_entity_count_column,
+            }
+        )
+    )
+    summary = overall_summary.merge(
+        tail_summary,
+        on=group_column,
+        how="left",
+        validate="one_to_one",
+    )
+    for column in [tail_unique_entity_count_column, "tail_sample_count"]:
+        summary[column] = summary[column].fillna(0).astype("int64")
+    summary["tail_absolute_error_days"] = summary["tail_absolute_error_days"].fillna(
+        0.0
+    )
+
+    summary["overall_sample_rate"] = summary["overall_sample_count"].div(
+        len(enriched_rows)
+    )
+    summary["tail_sample_rate"] = summary["tail_sample_count"].div(len(tail_rows))
+    summary["tail_membership_rate"] = summary["tail_sample_count"].div(
+        summary["overall_sample_count"]
+    )
+    summary["tail_overrepresentation_ratio"] = summary["tail_sample_rate"].div(
+        summary["overall_sample_rate"]
+    )
+
+    total_tail_absolute_error = float(tail_rows["absolute_error_days"].sum())
+    summary["tail_absolute_error_share"] = (
+        0.0
+        if total_tail_absolute_error == 0
+        else summary["tail_absolute_error_days"].div(total_tail_absolute_error)
+    )
+    return summary
+
+
+def summarize_user_product_errors_by_product_sample_count(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> pd.DataFrame:
+    """상품의 Validation 표본 수별 전체 오차와 꼬리 과대표집을 비교합니다."""
+    # 최악 표본을 뽑은 모집단과 동일한 개인화 예측 표본만 사용합니다.
+    user_product_rows = _get_user_product_error_rows(rows)
+    enriched_rows = add_product_sample_count(user_product_rows)
+    tail_rows = _select_largest_from_user_product_rows(enriched_rows, tail_rate)
+    return _summarize_error_groups_by_count(
+        enriched_rows,
+        tail_rows,
+        group_column="product_sample_count",
+        entity_column="product_id",
+        unique_entity_count_column="unique_product_count",
+        tail_unique_entity_count_column="tail_unique_product_count",
+    )
+
+
+def summarize_user_product_errors_by_product_sample_count_bucket(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> pd.DataFrame:
+    """상품 Validation 표본 수를 로그 2 구간으로 묶어 오차를 요약합니다."""
+    user_product_rows = _get_user_product_error_rows(rows)
+    enriched_rows = add_product_sample_count(user_product_rows)
+    bucketed_rows = _add_log2_count_bucket(
+        enriched_rows,
+        count_column="product_sample_count",
+        bucket_column="product_sample_count_bucket",
+    )
+    tail_rows = _select_largest_from_user_product_rows(bucketed_rows, tail_rate)
+    return _summarize_error_groups_by_count(
+        bucketed_rows,
+        tail_rows,
+        group_column="product_sample_count_bucket",
+        entity_column="product_id",
+        unique_entity_count_column="unique_product_count",
+        tail_unique_entity_count_column="tail_unique_product_count",
+    )
+
+
+def _get_validated_user_prior_order_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """개인화 예측 중 과거 고유 주문 수를 신뢰할 수 있는 행만 반환합니다."""
+    if "user_prior_order_count" not in rows.columns:
+        raise ValueError("사용자 구매 빈도 분석에 user_prior_order_count가 필요합니다.")
+
+    user_product_rows = _get_user_product_error_rows(rows)
+    prior_order_counts = user_product_rows["user_prior_order_count"]
+    if prior_order_counts.isna().any():
+        raise ValueError("사용자의 과거 주문 수에 결측값이 있습니다.")
+    if is_bool_dtype(prior_order_counts.dtype) or not is_numeric_dtype(
+        prior_order_counts.dtype
+    ):
+        raise ValueError("사용자의 과거 주문 수는 양의 정수여야 합니다.")
+    normalized_counts = prior_order_counts.astype("float64")
+    if not np.isfinite(normalized_counts.to_numpy(copy=False)).all():
+        raise ValueError("사용자의 과거 주문 수는 유한한 정수여야 합니다.")
+    if normalized_counts.le(0).any() or normalized_counts.mod(1).ne(0).any():
+        raise ValueError("개인화 예측의 과거 주문 수는 양의 정수여야 합니다.")
+    return user_product_rows
+
+
+def summarize_user_product_errors_by_user_prior_order_count(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> pd.DataFrame:
+    """예측 시점 이전의 사용자 고유 주문 수별 오차를 상세 집계합니다."""
+    user_product_rows = _get_validated_user_prior_order_rows(rows)
+    tail_rows = _select_largest_from_user_product_rows(user_product_rows, tail_rate)
+    return _summarize_error_groups_by_count(
+        user_product_rows,
+        tail_rows,
+        group_column="user_prior_order_count",
+        entity_column="user_id",
+        unique_entity_count_column="unique_user_count",
+        tail_unique_entity_count_column="tail_unique_user_count",
+    )
+
+
+def summarize_user_product_errors_by_user_prior_order_count_bucket(
+    rows: pd.DataFrame,
+    tail_rate: float = 0.05,
+) -> pd.DataFrame:
+    """사용자의 과거 고유 주문 수를 로그 2 구간으로 묶어 오차를 요약합니다."""
+    user_product_rows = _get_validated_user_prior_order_rows(rows)
+    bucketed_rows = _add_log2_count_bucket(
+        user_product_rows,
+        count_column="user_prior_order_count",
+        bucket_column="user_prior_order_count_bucket",
+    )
+    tail_rows = _select_largest_from_user_product_rows(bucketed_rows, tail_rate)
+    return _summarize_error_groups_by_count(
+        bucketed_rows,
+        tail_rows,
+        group_column="user_prior_order_count_bucket",
+        entity_column="user_id",
+        unique_entity_count_column="unique_user_count",
+        tail_unique_entity_count_column="tail_unique_user_count",
+    )
 
 
 def summarize_product_concentration(

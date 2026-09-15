@@ -52,6 +52,54 @@ def test_history_features_use_only_intervals_known_before_anchor() -> None:
     assert pd.isna(samples.loc[3, "target_duration_days"])
 
 
+def test_user_prior_order_count_uses_distinct_strictly_earlier_orders() -> None:
+    """같은 주문의 상품과 같은 시각 주문을 과거 주문으로 중복 계산하지 않습니다."""
+    labels = pd.DataFrame(
+        {
+            "user_id": ["u1", "u1", "u1", "u1", "u1", "u2"],
+            "order_id": ["o1", "o1", "o2", "o3", "o4", "x1"],
+            "product_id": ["p1", "p2", "p1", "p2", "p1", "p1"],
+            "anchor_at": pd.to_datetime(
+                [
+                    "2026-01-01 10:00",
+                    "2026-01-01 10:01",
+                    "2026-01-10 00:00",
+                    "2026-01-10 00:00",
+                    "2026-01-20 00:00",
+                    "2026-01-20 00:00",
+                ]
+            ),
+            "next_same_product_at": pd.to_datetime([None] * 6),
+            "duration_days": [10.0] * 6,
+            "event_observed": [False] * 6,
+            "is_right_censored": [True] * 6,
+        }
+    )
+
+    result = build_historical_interval_features(labels).set_index(
+        ["user_id", "order_id", "product_id"]
+    )
+
+    assert result.loc[("u1", "o1", "p1"), "user_prior_order_count"] == 0
+    assert result.loc[("u1", "o1", "p2"), "user_prior_order_count"] == 0
+    assert result.loc[("u1", "o2", "p1"), "user_prior_order_count"] == 1
+    assert result.loc[("u1", "o3", "p2"), "user_prior_order_count"] == 1
+    assert result.loc[("u1", "o4", "p1"), "user_prior_order_count"] == 3
+    assert result.loc[("u2", "x1", "p1"), "user_prior_order_count"] == 0
+
+
+def test_user_prior_order_count_uses_earliest_time_for_one_order() -> None:
+    """같은 주문의 상품 시각이 달라도 한 주문으로 묶어 같은 개수를 연결합니다."""
+    labels = make_labels().iloc[:2].copy()
+    labels["order_id"] = "o1"
+    labels.loc[labels.index[1], "product_id"] = "p2"
+    labels.loc[labels.index[1], "anchor_at"] = pd.Timestamp("2026-01-01 00:01")
+
+    result = build_historical_interval_features(labels)
+
+    assert result["user_prior_order_count"].tolist() == [0, 0]
+
+
 def test_temporal_split_preserves_order_and_outcome_maturity() -> None:
     """시간 구간 순서와 각 구간 종료 전 정답 확인 여부를 함께 기록합니다."""
     samples = build_historical_interval_features(make_labels())

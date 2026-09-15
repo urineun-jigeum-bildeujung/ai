@@ -83,6 +83,69 @@ def _validate_labels(labels: pd.DataFrame) -> pd.DataFrame:
     return rows
 
 
+def _add_user_prior_order_count(rows: pd.DataFrame) -> pd.DataFrame:
+    """각 행에 예측 기준 시각보다 앞선 사용자의 고유 주문 수를 추가합니다."""
+    # 같은 주문의 여러 상품 행을 한 건으로 묶고 가장 이른 기록을 대표 시각으로 씁니다.
+    unique_orders = rows.groupby(
+        ["user_id", "order_id"],
+        observed=True,
+        sort=False,
+        as_index=False,
+    ).agg(order_anchor_at=("anchor_at", "min"))
+    orders_by_anchor = (
+        unique_orders.groupby(
+            ["user_id", "order_anchor_at"],
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("orders_at_anchor")
+        .reset_index()
+        .sort_values(
+            ["user_id", "order_anchor_at"],
+            kind="stable",
+            ignore_index=True,
+        )
+    )
+
+    # 누적 주문에서 현재 시각의 주문을 빼 엄격하게 이전인 주문만 남깁니다.
+    cumulative_order_count = orders_by_anchor.groupby(
+        "user_id",
+        observed=True,
+        sort=False,
+    )["orders_at_anchor"].cumsum()
+    orders_by_anchor["user_prior_order_count"] = (
+        cumulative_order_count - orders_by_anchor["orders_at_anchor"]
+    )
+
+    order_counts = unique_orders.merge(
+        orders_by_anchor.loc[
+            :,
+            ["user_id", "order_anchor_at", "user_prior_order_count"],
+        ],
+        on=["user_id", "order_anchor_at"],
+        how="left",
+        sort=False,
+        validate="many_to_one",
+    )
+    result = rows.merge(
+        order_counts.loc[
+            :,
+            ["user_id", "order_id", "user_prior_order_count"],
+        ],
+        on=["user_id", "order_id"],
+        how="left",
+        sort=False,
+        validate="many_to_one",
+    )
+    if result["user_prior_order_count"].isna().any():
+        raise RepurchaseSampleBuildError(
+            "일부 학습 표본에 사용자의 과거 주문 수를 연결하지 못했습니다."
+        )
+    result["user_prior_order_count"] = result["user_prior_order_count"].astype("int64")
+    return result
+
+
 def build_historical_interval_features(labels: pd.DataFrame) -> pd.DataFrame:
     """각 구매 시점 이전에 확정된 동일 사용자·상품 구매 간격만 누적합니다.
 
@@ -95,6 +158,7 @@ def build_historical_interval_features(labels: pd.DataFrame) -> pd.DataFrame:
         kind="stable",
         ignore_index=True,
     )
+    rows = _add_user_prior_order_count(rows)
     pair_keys = [rows["user_id"], rows["product_id"]]
 
     # 관측된 현재 정답을 한 행 뒤부터 사용할 수 있도록 먼저 한 칸 이동합니다.

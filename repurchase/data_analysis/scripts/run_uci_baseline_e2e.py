@@ -36,14 +36,25 @@ from .modeling.error_analysis import (
     summarize_user_product_errors_by_anchor_month,
     summarize_user_product_errors_by_history_count,
     summarize_user_product_errors_by_product,
+    summarize_user_product_errors_by_product_sample_count,
+    summarize_user_product_errors_by_product_sample_count_bucket,
+    summarize_user_product_errors_by_user_prior_order_count,
+    summarize_user_product_errors_by_user_prior_order_count_bucket,
 )
 from .modeling.evaluation import evaluate_predictions
 from .modeling.maturity_analysis import (
+    compare_validation_common_followup_candidates,
+    compare_validation_common_followup_monthly_composition,
     merge_validation_maturity_and_quality,
     summarize_matured_prediction_quality_by_anchor_month,
+    summarize_validation_followup_distribution,
+    summarize_validation_ipcw_weight_stability,
     summarize_validation_label_maturity_by_anchor_month,
 )
-from .modeling.model_selection import evaluate_shrinkage_candidates
+from .modeling.model_selection import (
+    evaluate_ipcw_shrinkage_candidates,
+    evaluate_shrinkage_candidates,
+)
 from .modeling.samples import (
     assign_temporal_splits,
     build_historical_interval_features,
@@ -73,6 +84,10 @@ PRODUCT_CONCENTRATION_RANDOM_TRIAL_COUNT: Final[int] = 1_000
 PRODUCT_CONCENTRATION_RANDOM_SEED: Final[int] = 42
 # 실제 집중도가 무작위 상단 5%에 있는지를 판단하는 사전 기준입니다.
 PRODUCT_CONCENTRATION_SIGNIFICANCE_LEVEL: Final[float] = 0.05
+# 실제 Validation 분위수와 2주·4주·월 단위의 서비스 해석을 함께 비교합니다.
+COMMON_FOLLOWUP_HORIZON_CANDIDATES: Final[tuple[int, ...]] = (14, 28, 30, 60, 90)
+# 후보 비교 결과를 바탕으로 IPCW의 1차 고정 평가 시점을 30일로 설정합니다.
+PRIMARY_IPCW_HORIZON_DAYS: Final[int] = 30
 
 
 @dataclass(frozen=True)
@@ -93,6 +108,20 @@ def _format_optional_days(value: object) -> str:
     if value is None:
         return "계산 불가"
     return f"{float(value):.2f}"
+
+
+def _format_optional_rate(value: object) -> str:
+    """계산 가능한 비율은 백분율로, 없는 값은 계산 불가로 표시합니다."""
+    if value is None:
+        return "계산 불가"
+    return f"{float(value):.2%}"
+
+
+def _format_optional_percentage_point(value: object) -> str:
+    """계산 가능한 비중 변화는 부호 있는 퍼센트포인트로 표시합니다."""
+    if value is None:
+        return "계산 불가"
+    return f"{float(value):+.2%}p"
 
 
 def _model_summary(model: HierarchicalMedianModel) -> dict[str, object]:
@@ -265,6 +294,25 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
 
     # 라벨 성숙률의 분모가 사라지지 않도록 전체 Validation 모집단을 먼저 보존합니다.
     validation_population = samples.loc[samples["split"].eq("validation")].copy()
+    validation_followup_distribution = summarize_validation_followup_distribution(
+        validation_population
+    )
+    validation_common_followup_candidates = (
+        compare_validation_common_followup_candidates(
+            validation_population,
+            horizon_days_candidates=COMMON_FOLLOWUP_HORIZON_CANDIDATES,
+        )
+    )
+    validation_common_followup_monthly_composition = (
+        compare_validation_common_followup_monthly_composition(
+            validation_population,
+            horizon_days_candidates=COMMON_FOLLOWUP_HORIZON_CANDIDATES,
+        )
+    )
+    validation_ipcw_weight_stability = summarize_validation_ipcw_weight_stability(
+        validation_population,
+        horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+    )
     # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
     validation_rows = validation_population.loc[
         validation_population["outcome_available_by_split_end"]
@@ -289,6 +337,21 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         shrinkage_strengths=SHRINKAGE_STRENGTH_CANDIDATES,
         tail_rate=MODEL_SELECTION_TAIL_RATE,
     )
+    validation_ipcw_candidate_evaluation = evaluate_ipcw_shrinkage_candidates(
+        validation_population,
+        train_model,
+        shrinkage_strengths=SHRINKAGE_STRENGTH_CANDIDATES,
+        horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+    )
+    validation_ipcw_candidate_comparison = (
+        validation_ipcw_candidate_evaluation.comparison
+    )
+    validation_ipcw_binary_evaluation = (
+        validation_ipcw_candidate_evaluation.reference_binary_evaluation
+    )
+    validation_ipcw_concordance_evaluation = (
+        validation_ipcw_candidate_evaluation.reference_concordance_evaluation
+    )
     # 같은 Validation 기준 예측을 원인별 분석에서 공유해 계산 기준을 통일합니다.
     validation_reference_predictions = predict_hierarchical_median_baseline(
         train_model,
@@ -309,6 +372,30 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     )
     validation_product_concentration_analysis = (
         summarize_largest_error_product_concentration(
+            validation_reference_predictions,
+            tail_rate=MODEL_SELECTION_TAIL_RATE,
+        )
+    )
+    validation_product_sample_count_analysis = (
+        summarize_user_product_errors_by_product_sample_count(
+            validation_reference_predictions,
+            tail_rate=MODEL_SELECTION_TAIL_RATE,
+        )
+    )
+    validation_product_sample_count_bucket_analysis = (
+        summarize_user_product_errors_by_product_sample_count_bucket(
+            validation_reference_predictions,
+            tail_rate=MODEL_SELECTION_TAIL_RATE,
+        )
+    )
+    validation_user_prior_order_count_analysis = (
+        summarize_user_product_errors_by_user_prior_order_count(
+            validation_reference_predictions,
+            tail_rate=MODEL_SELECTION_TAIL_RATE,
+        )
+    )
+    validation_user_prior_order_count_bucket_analysis = (
+        summarize_user_product_errors_by_user_prior_order_count_bucket(
             validation_reference_predictions,
             tail_rate=MODEL_SELECTION_TAIL_RATE,
         )
@@ -363,6 +450,159 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             int(validation_maturity_analysis["matured_sample_count"].sum())
             == len(validation_rows)
         ),
+        "common_followup_validation_population_preserved": bool(
+            validation_common_followup_candidates["validation_sample_count"]
+            .eq(len(validation_population))
+            .all()
+        ),
+        "common_followup_coverage_counts_balanced": bool(
+            (
+                validation_common_followup_candidates["eligible_sample_count"]
+                + validation_common_followup_candidates["ineligible_sample_count"]
+            )
+            .eq(len(validation_population))
+            .all()
+        ),
+        "common_followup_outcome_counts_balanced": bool(
+            (
+                validation_common_followup_candidates["event_within_horizon_count"]
+                + validation_common_followup_candidates["no_event_within_horizon_count"]
+            )
+            .eq(validation_common_followup_candidates["eligible_sample_count"])
+            .all()
+        ),
+        "ipcw_validation_population_preserved": bool(
+            (
+                validation_ipcw_weight_stability.loc[0, "outcome_known_count"]
+                + validation_ipcw_weight_stability.loc[0, "outcome_unknown_count"]
+            )
+            == len(validation_population)
+        ),
+        "ipcw_known_outcomes_balanced": bool(
+            (
+                validation_ipcw_weight_stability.loc[0, "event_within_horizon_count"]
+                + validation_ipcw_weight_stability.loc[
+                    0, "no_event_within_horizon_count"
+                ]
+            )
+            == validation_ipcw_weight_stability.loc[0, "outcome_known_count"]
+        ),
+        "ipcw_weighted_outcome_mass_balanced": bool(
+            math.isclose(
+                validation_ipcw_weight_stability.loc[0, "ipcw_weighted_event_mass"]
+                + validation_ipcw_weight_stability.loc[
+                    0, "ipcw_weighted_no_event_mass"
+                ],
+                validation_ipcw_weight_stability.loc[0, "ipcw_weight_sum"],
+            )
+        ),
+        "ipcw_binary_evaluation_population_preserved": bool(
+            validation_ipcw_binary_evaluation["validation_sample_count"]
+            == len(validation_population)
+        ),
+        "ipcw_binary_evaluation_known_population_preserved": bool(
+            validation_ipcw_binary_evaluation["outcome_known_count"]
+            == validation_ipcw_weight_stability.loc[0, "outcome_known_count"]
+        ),
+        "ipcw_binary_error_mass_balanced": bool(
+            math.isclose(
+                validation_ipcw_binary_evaluation["ipcw_weighted_false_positive_mass"]
+                + validation_ipcw_binary_evaluation[
+                    "ipcw_weighted_false_negative_mass"
+                ],
+                validation_ipcw_binary_evaluation["ipcw_weighted_error_mass"],
+            )
+        ),
+        "ipcw_binary_confusion_mass_balanced": bool(
+            math.isclose(
+                validation_ipcw_binary_evaluation["ipcw_weighted_true_positive_mass"]
+                + validation_ipcw_binary_evaluation["ipcw_weighted_true_negative_mass"]
+                + validation_ipcw_binary_evaluation["ipcw_weighted_false_positive_mass"]
+                + validation_ipcw_binary_evaluation[
+                    "ipcw_weighted_false_negative_mass"
+                ],
+                validation_ipcw_binary_evaluation["ipcw_weight_sum"],
+            )
+        ),
+        "ipcw_concordance_population_preserved": bool(
+            validation_ipcw_concordance_evaluation["validation_sample_count"]
+            == len(validation_population)
+        ),
+        "ipcw_concordance_pair_counts_balanced": bool(
+            validation_ipcw_concordance_evaluation["concordant_pair_count"]
+            + validation_ipcw_concordance_evaluation["tied_pair_count"]
+            + validation_ipcw_concordance_evaluation["discordant_pair_count"]
+            == validation_ipcw_concordance_evaluation["comparable_pair_count"]
+        ),
+        "ipcw_concordance_index_in_unit_interval": bool(
+            0 <= validation_ipcw_concordance_evaluation["ipcw_concordance_index"] <= 1
+        ),
+        "ipcw_candidate_validation_population_preserved": bool(
+            validation_ipcw_candidate_comparison["validation_sample_count"]
+            .eq(len(validation_population))
+            .all()
+        ),
+        "ipcw_candidate_known_population_preserved": bool(
+            validation_ipcw_candidate_comparison["outcome_known_count"]
+            .eq(validation_ipcw_binary_evaluation["outcome_known_count"])
+            .all()
+        ),
+        "ipcw_candidate_reference_differences_zero": bool(
+            validation_ipcw_candidate_comparison.iloc[0][
+                [
+                    "ipcw_weighted_binary_accuracy_difference_vs_reference",
+                    "ipcw_weighted_balanced_accuracy_difference_vs_reference",
+                    "ipcw_concordance_index_difference_vs_reference",
+                ]
+            ]
+            .dropna()
+            .eq(0)
+            .all()
+        ),
+        "product_sample_count_detail_population_preserved": bool(
+            validation_product_sample_count_analysis["overall_sample_count"].sum()
+            == validation_product_concentration_analysis["overall_personalized"][
+                "total_sample_count"
+            ]
+        ),
+        "product_sample_count_detail_tail_preserved": bool(
+            validation_product_sample_count_analysis["tail_sample_count"].sum()
+            == validation_product_concentration_analysis["largest_error_tail"][
+                "total_sample_count"
+            ]
+        ),
+        "product_sample_count_bucket_population_preserved": bool(
+            validation_product_sample_count_bucket_analysis[
+                "overall_sample_count"
+            ].sum()
+            == validation_product_sample_count_analysis["overall_sample_count"].sum()
+        ),
+        "product_sample_count_bucket_tail_preserved": bool(
+            validation_product_sample_count_bucket_analysis["tail_sample_count"].sum()
+            == validation_product_sample_count_analysis["tail_sample_count"].sum()
+        ),
+        "user_prior_order_count_detail_population_preserved": bool(
+            validation_user_prior_order_count_analysis["overall_sample_count"].sum()
+            == validation_product_concentration_analysis["overall_personalized"][
+                "total_sample_count"
+            ]
+        ),
+        "user_prior_order_count_detail_tail_preserved": bool(
+            validation_user_prior_order_count_analysis["tail_sample_count"].sum()
+            == validation_product_concentration_analysis["largest_error_tail"][
+                "total_sample_count"
+            ]
+        ),
+        "user_prior_order_count_bucket_population_preserved": bool(
+            validation_user_prior_order_count_bucket_analysis[
+                "overall_sample_count"
+            ].sum()
+            == validation_user_prior_order_count_analysis["overall_sample_count"].sum()
+        ),
+        "user_prior_order_count_bucket_tail_preserved": bool(
+            validation_user_prior_order_count_bucket_analysis["tail_sample_count"].sum()
+            == validation_user_prior_order_count_analysis["tail_sample_count"].sum()
+        ),
         "test_outcomes_matured": bool(
             test_rows["next_same_product_at"].le(split.end_at).all()
         ),
@@ -401,11 +641,48 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "validation_product_concentration_analysis": (
             validation_product_concentration_analysis
         ),
+        "validation_product_sample_count_analysis": dataframe_to_nullable_records(
+            validation_product_sample_count_analysis
+        ),
+        "validation_product_sample_count_bucket_analysis": (
+            dataframe_to_nullable_records(
+                validation_product_sample_count_bucket_analysis
+            )
+        ),
+        "validation_user_prior_order_count_analysis": (
+            dataframe_to_nullable_records(validation_user_prior_order_count_analysis)
+        ),
+        "validation_user_prior_order_count_bucket_analysis": (
+            dataframe_to_nullable_records(
+                validation_user_prior_order_count_bucket_analysis
+            )
+        ),
         "validation_product_concentration_random_baseline": (
             validation_product_concentration_random_baseline
         ),
         "validation_label_maturity_analysis": dataframe_to_nullable_records(
             validation_maturity_analysis
+        ),
+        "validation_followup_distribution": dataframe_to_nullable_records(
+            validation_followup_distribution
+        ),
+        "validation_common_followup_candidates": dataframe_to_nullable_records(
+            validation_common_followup_candidates
+        ),
+        "validation_common_followup_monthly_composition": (
+            dataframe_to_nullable_records(
+                validation_common_followup_monthly_composition
+            )
+        ),
+        "validation_ipcw_weight_stability": dataframe_to_nullable_records(
+            validation_ipcw_weight_stability
+        ),
+        "validation_ipcw_binary_evaluation": validation_ipcw_binary_evaluation,
+        "validation_ipcw_concordance_evaluation": (
+            validation_ipcw_concordance_evaluation
+        ),
+        "validation_ipcw_candidate_comparison": dataframe_to_nullable_records(
+            validation_ipcw_candidate_comparison
         ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
@@ -436,10 +713,42 @@ def render_markdown(summary: dict[str, Any]) -> str:
     prior_support_analysis = summary["validation_prior_support_analysis"]
     prior_support_bucket_analysis = summary["validation_prior_support_bucket_analysis"]
     product_concentration = summary["validation_product_concentration_analysis"]
+    product_sample_count_bucket_analysis = summary[
+        "validation_product_sample_count_bucket_analysis"
+    ]
+    user_prior_order_count_bucket_analysis = summary[
+        "validation_user_prior_order_count_bucket_analysis"
+    ]
     concentration_random_baseline = summary[
         "validation_product_concentration_random_baseline"
     ]
     maturity_analysis = summary["validation_label_maturity_analysis"]
+    followup_distribution = summary["validation_followup_distribution"]
+    common_followup_candidates = summary["validation_common_followup_candidates"]
+    common_followup_monthly_composition = summary[
+        "validation_common_followup_monthly_composition"
+    ]
+    ipcw_weight_stability = summary["validation_ipcw_weight_stability"][0]
+    ipcw_binary_evaluation = summary["validation_ipcw_binary_evaluation"]
+    ipcw_concordance_evaluation = summary["validation_ipcw_concordance_evaluation"]
+    ipcw_candidate_comparison = summary["validation_ipcw_candidate_comparison"]
+    ipcw_candidate_comparison_lines = []
+    for candidate in ipcw_candidate_comparison:
+        candidate_label = (
+            "기존 계층형"
+            if candidate["shrinkage_strength"] is None
+            else f"수축 k={float(candidate['shrinkage_strength']):g}"
+        )
+        ipcw_candidate_comparison_lines.append(
+            f"| {candidate_label} | "
+            f"{_format_optional_rate(candidate['ipcw_weighted_precision'])} | "
+            f"{_format_optional_rate(candidate['ipcw_weighted_recall'])} | "
+            f"{_format_optional_rate(candidate['ipcw_weighted_balanced_accuracy'])} | "
+            f"{_format_optional_percentage_point(candidate['ipcw_weighted_balanced_accuracy_difference_vs_reference'])} | "
+            f"{_format_optional_rate(candidate['ipcw_weighted_f1'])} | "
+            f"{_format_optional_rate(candidate['ipcw_concordance_index'])} | "
+            f"{_format_optional_percentage_point(candidate['ipcw_concordance_index_difference_vs_reference'])} |"
+        )
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -462,6 +771,205 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"{values.get('matured_outcome_count', 0):,} | "
             f"{values.get('unmatured_or_censored_count', 0):,} |"
         )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 관찰 가능 기간 분포",
+            "",
+            "| 분위수 | 관찰 가능 기간(일) |",
+            "| ---: | ---: |",
+        ]
+    )
+    for row in followup_distribution:
+        lines.append(
+            f"| {row['quantile']:.0%} | {row['available_followup_days']:.2f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "- 미관측·검열 표본을 제외하지 않은 전체 Validation 모집단에서 "
+            "계산했습니다.",
+            "- 분위수는 공통 관찰 기간 후보를 찾는 근거이며, 최종 후보의 실제 "
+            "평가 가능 비율은 별도로 비교합니다.",
+        ]
+    )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 공통 관찰 기간 후보별 구매 월 구성",
+            "",
+            "| 관찰 기간 | 구매 월 | 전체 | 평가 가능 | 평가 가능률 | 적용 전 비중 | "
+            "적용 후 비중 | 비중 변화 |",
+            "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in common_followup_monthly_composition:
+        lines.append(
+            f"| {row['horizon_days']:.0f}일 | {row['anchor_month']} | "
+            f"{row['validation_sample_count']:,} | {row['eligible_sample_count']:,} | "
+            f"{row['eligible_rate']:.2%} | "
+            f"{row['validation_sample_share']:.2%} | "
+            f"{_format_optional_rate(row['eligible_sample_share'])} | "
+            f"{_format_optional_percentage_point(row['eligible_share_shift'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "- 비중 변화가 양수이면 공통 관찰 기간 적용 후 해당 월이 과대표현되고, "
+            "음수이면 과소표현됩니다.",
+            "- 월별 절대 표본 수와 평가 가능률을 함께 확인해 소표본의 높은 비율을 "
+            "과대해석하지 않습니다.",
+        ]
+    )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 공통 관찰 기간 후보 비교",
+            "",
+            "| 관찰 기간 | 평가 가능 | 평가 제외 | 평가 가능률 | 기간 내 재구매 | "
+            "기간 내 미재구매 | 기간 내 재구매율 | 재구매 간격 평균(일) | "
+            "재구매 간격 중앙값(일) | 재구매 간격 25~75%(일) |",
+            "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    for row in common_followup_candidates:
+        lines.append(
+            f"| {row['horizon_days']:.0f}일 | {row['eligible_sample_count']:,} | "
+            f"{row['ineligible_sample_count']:,} | {row['eligible_rate']:.2%} | "
+            f"{row['event_within_horizon_count']:,} | "
+            f"{row['no_event_within_horizon_count']:,} | "
+            f"{_format_optional_rate(row['event_within_horizon_rate'])} | "
+            f"{_format_optional_days(row['event_duration_mean_days'])} | "
+            f"{_format_optional_days(row['event_duration_median_days'])} | "
+            f"{_format_optional_days(row['event_duration_q25_days'])}~"
+            f"{_format_optional_days(row['event_duration_q75_days'])} |"
+        )
+    lines.extend(
+        [
+            "",
+            "- 기간 내 재구매율의 분모는 전체 Validation이 아니라 해당 기간을 "
+            "충분히 관찰한 평가 가능 표본입니다.",
+            "- 28일과 30일은 25% 분위수 근처에서 이틀 차이의 민감도를 확인하기 "
+            "위한 비교 후보이며, 결과 확인 후 하나를 선택합니다.",
+        ]
+    )
+
+    lines.extend(
+        [
+            "",
+            "## Validation 30일 IPCW 원시 가중치 안정성",
+            "",
+            "| 전체 표본 | 결과 확인 | 결과 불명 | 확인률 | 30일 내 재구매 | "
+            "30일까지 미재구매 |",
+            "| ---: | ---: | ---: | ---: | ---: | ---: |",
+            f"| {ipcw_weight_stability['validation_sample_count']:,} | "
+            f"{ipcw_weight_stability['outcome_known_count']:,} | "
+            f"{ipcw_weight_stability['outcome_unknown_count']:,} | "
+            f"{ipcw_weight_stability['outcome_known_rate']:.2%} | "
+            f"{ipcw_weight_stability['event_within_horizon_count']:,} | "
+            f"{ipcw_weight_stability['no_event_within_horizon_count']:,} |",
+            "",
+            "| 결과 확인 표본의 단순 재구매율 | IPCW 보정 재구매율 | 차이 |",
+            "| ---: | ---: | ---: |",
+            f"| {ipcw_weight_stability['unweighted_known_event_rate']:.2%} | "
+            f"{ipcw_weight_stability['ipcw_weighted_event_rate']:.2%} | "
+            f"{_format_optional_percentage_point(ipcw_weight_stability['ipcw_event_rate_difference'])} |",
+            "",
+            "| 가중치 합/전체 | 평균 | 중앙값 | P90 | P95 | P99 | 최댓값 | "
+            "ESS | ESS/결과 확인 | ESS/전체 |",
+            "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            f"| {ipcw_weight_stability['ipcw_weight_sum_ratio']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_mean']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_median']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_p90']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_p95']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_p99']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_weight_max']:.3f} | "
+            f"{ipcw_weight_stability['ipcw_effective_sample_size']:.2f} | "
+            f"{ipcw_weight_stability['ipcw_effective_to_known_sample_rate']:.2%} | "
+            f"{ipcw_weight_stability['ipcw_effective_to_validation_sample_rate']:.2%} |",
+            "",
+            "- 결과 불명 표본은 30일 전에 검열되어 가중치 0으로 평가식에서 제외됩니다.",
+            "- 아직 상한을 적용하지 않은 원시 가중치이며, P99·최댓값·ESS를 함께 "
+            "보고 상한 필요성을 판단합니다.",
+            "",
+            "### 계층형 중앙값 모델의 30일 IPCW 이진 평가",
+            "",
+            "| 30일 내 재구매 예측 | 단순 오류율 | IPCW 오류율 | IPCW 정확도 | "
+            "거짓양성 질량 | 거짓음성 질량 |",
+            "| ---: | ---: | ---: | ---: | ---: | ---: |",
+            f"| {ipcw_binary_evaluation['predicted_event_count']:,} | "
+            f"{ipcw_binary_evaluation['unweighted_binary_error_rate']:.2%} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_binary_error_rate']:.2%} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_binary_accuracy']:.2%} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_false_positive_mass']:.2f} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_false_negative_mass']:.2f} |",
+            "",
+            "| 가중 TP | 가중 TN | 가중 FP | 가중 FN |",
+            "| ---: | ---: | ---: | ---: |",
+            f"| {ipcw_binary_evaluation['ipcw_weighted_true_positive_mass']:.2f} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_true_negative_mass']:.2f} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_false_positive_mass']:.2f} | "
+            f"{ipcw_binary_evaluation['ipcw_weighted_false_negative_mass']:.2f} |",
+            "",
+            "| Precision | Recall | Specificity | Balanced Accuracy | F1 |",
+            "| ---: | ---: | ---: | ---: | ---: |",
+            f"| {_format_optional_rate(ipcw_binary_evaluation['ipcw_weighted_precision'])} | "
+            f"{_format_optional_rate(ipcw_binary_evaluation['ipcw_weighted_recall'])} | "
+            f"{_format_optional_rate(ipcw_binary_evaluation['ipcw_weighted_specificity'])} | "
+            f"{_format_optional_rate(ipcw_binary_evaluation['ipcw_weighted_balanced_accuracy'])} | "
+            f"{_format_optional_rate(ipcw_binary_evaluation['ipcw_weighted_f1'])} |",
+            "",
+            "| 계층형 모델 정확도 | 항상 미재구매 정확도 | 정확도 차이 |",
+            "| ---: | ---: | ---: |",
+            f"| {ipcw_binary_evaluation['ipcw_weighted_binary_accuracy']:.2%} | "
+            f"{ipcw_binary_evaluation['always_no_event_accuracy']:.2%} | "
+            f"{_format_optional_percentage_point(ipcw_binary_evaluation['accuracy_difference_vs_always_no_event'])} |",
+            "",
+            "- 예상 일수가 30일 이하이면 기간 내 재구매로 변환한 이진 "
+            "베이스라인입니다.",
+            "- 확률 예측이 아니므로 정식 Brier Score가 아니라 IPCW 가중 이진 "
+            "오류율로 기록합니다.",
+            "- 재구매가 적은 불균형 데이터에서는 정확도가 높아도 재구매를 전혀 "
+            "잡지 못할 수 있어 항상 미재구매 기준선과 Balanced Accuracy를 함께 "
+            "비교합니다.",
+            "- 현재는 거짓양성과 거짓음성 비용을 동일하게 취급하되 두 오류 질량을 "
+            "분리해 보존합니다.",
+            "",
+            "### 계층형 중앙값 모델의 30일 IPCW C-index",
+            "",
+            "| 사건 기준 표본 | 비교 기여 사건 | 비교 가능 쌍 | 일반 C-index | IPCW C-index |",
+            "| ---: | ---: | ---: | ---: | ---: |",
+            f"| {ipcw_concordance_evaluation['event_reference_count']:,} | "
+            f"{ipcw_concordance_evaluation['contributing_event_count']:,} | "
+            f"{ipcw_concordance_evaluation['comparable_pair_count']:,} | "
+            f"{ipcw_concordance_evaluation['unweighted_concordance_index']:.2%} | "
+            f"{ipcw_concordance_evaluation['ipcw_concordance_index']:.2%} |",
+            "",
+            "- C-index는 정확한 날짜 오차가 아니라 더 빨리 재구매할 사용자를 "
+            "먼저 정렬했는지 평가합니다.",
+            "- 0.5는 무작위 순위 수준이며 1에 가까울수록 비교 가능한 쌍의 순서를 "
+            "더 정확하게 맞혔다는 뜻입니다.",
+            "- IPCW C-index는 먼저 발생한 사건 시점의 검열 생존확률 제곱의 "
+            "역수로 각 비교 쌍을 보정합니다.",
+            "",
+            "### 기존 계층형 모델과 수축 후보의 동일 조건 비교",
+            "",
+            "| 후보 | Precision | Recall | Balanced Accuracy | 기준 대비 | F1 | "
+            "IPCW C-index | 기준 대비 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            *ipcw_candidate_comparison_lines,
+            "",
+            "- 모든 후보는 동일한 Validation 표본·30일 시점·검열 가중치로 "
+            "비교했습니다.",
+            "- 기준 대비 값은 기존 계층형 중앙값 모델과의 퍼센트포인트 차이입니다.",
+            "- 단일 지표만으로 후보를 확정하지 않고 순위 성능과 이진 판별 성능의 "
+            "변화를 함께 확인합니다.",
+        ]
+    )
 
     lines.extend(
         [
@@ -682,6 +1190,74 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "그 상품이 오차의 원인임을 단독으로 증명하지는 않습니다.",
         ]
     )
+
+    if product_sample_count_bucket_analysis:
+        lines.extend(
+            [
+                "",
+                "## Validation 상품 표본 수 구간별 오차",
+                "",
+                "| 상품 표본 수 | 상품 수 | 전체 표본 | MAE(일) | "
+                "Median AE(일) | 최악 5% 표본 | 꼬리 포함률 | 과대표집 배율 |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for row in product_sample_count_bucket_analysis:
+            lines.append(
+                f"| `{row['product_sample_count_bucket']}` | "
+                f"{row['unique_product_count']:,} | "
+                f"{row['overall_sample_count']:,} | {row['mae_days']:.2f} | "
+                f"{row['median_absolute_error_days']:.2f} | "
+                f"{row['tail_sample_count']:,} | "
+                f"{row['tail_membership_rate']:.2%} | "
+                f"{row['tail_overrepresentation_ratio']:.2f}배 |"
+            )
+        lines.extend(
+            [
+                "",
+                "- 상품 표본 수는 오차 평가가 가능한 개인화 Validation에서 "
+                "해당 상품이 등장한 횟수이며, 모델 입력 피처가 아닌 사후 진단 "
+                "기준입니다.",
+                "- 꼬리 포함률은 각 구간 자체에서 최악 5%에 들어간 비율이고, "
+                "과대표집 배율은 해당 구간의 전체 비중 대비 최악 5% 비중을 "
+                "비교한 값입니다.",
+                "- 배율과 오차가 높더라도 상품 수와 표본 수가 작으면 우연에 "
+                "민감하므로 함께 확인해야 합니다.",
+            ]
+        )
+
+    if user_prior_order_count_bucket_analysis:
+        lines.extend(
+            [
+                "",
+                "## Validation 사용자 과거 주문 수 구간별 오차",
+                "",
+                "| 이전 주문 수 | 사용자 수 | 전체 표본 | MAE(일) | "
+                "Median AE(일) | 최악 5% 표본 | 꼬리 포함률 | 과대표집 배율 |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for row in user_prior_order_count_bucket_analysis:
+            lines.append(
+                f"| `{row['user_prior_order_count_bucket']}` | "
+                f"{row['unique_user_count']:,} | "
+                f"{row['overall_sample_count']:,} | {row['mae_days']:.2f} | "
+                f"{row['median_absolute_error_days']:.2f} | "
+                f"{row['tail_sample_count']:,} | "
+                f"{row['tail_membership_rate']:.2%} | "
+                f"{row['tail_overrepresentation_ratio']:.2f}배 |"
+            )
+        lines.extend(
+            [
+                "",
+                "- 이전 주문 수는 각 예측 시점보다 엄격하게 앞선 사용자의 고유 "
+                "주문 수이며, 같은 주문의 여러 상품은 한 번만 계산합니다.",
+                "- 같은 시각의 서로 다른 주문은 서로의 과거로 계산하지 않아 미래 "
+                "정보와 임의 정렬 순서의 영향을 차단합니다.",
+                "- 사용자 수와 표본 수를 함께 확인해 소수 사용자의 반복 행이 "
+                "구간 결과를 지배하는지 구분해야 합니다.",
+            ]
+        )
 
     random_distribution = concentration_random_baseline["distribution"]
     observed_comparison = concentration_random_baseline["observed_comparison"]

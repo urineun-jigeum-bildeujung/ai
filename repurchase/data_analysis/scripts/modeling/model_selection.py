@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import pandas as pd
 
@@ -20,7 +21,156 @@ from .error_analysis import (
     select_largest_error_rows,
     summarize_largest_error_tail,
 )
-from .evaluation import evaluate_predictions
+from .evaluation import (
+    evaluate_ipcw_binary_predictions,
+    evaluate_ipcw_concordance_index,
+    evaluate_predictions,
+)
+from .maturity_analysis import add_validation_ipcw_weights
+
+IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
+
+
+@dataclass(frozen=True)
+class IPCWShrinkageCandidateEvaluation:
+    """후보 비교표와 기존 계층형 모델의 상세 IPCW 결과를 함께 보관합니다."""
+
+    comparison: pd.DataFrame
+    reference_binary_evaluation: dict[str, float | int | None]
+    reference_concordance_evaluation: dict[str, float | int]
+
+
+def _attach_candidate_predictions(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """같은 표본 순서인지 확인한 뒤 후보 예측값만 IPCW 평가 행에 연결합니다."""
+    missing_columns = set(IPCW_CANDIDATE_ID_COLUMNS) - set(weighted_samples.columns)
+    missing_columns |= set(IPCW_CANDIDATE_ID_COLUMNS) - set(predictions.columns)
+    if missing_columns:
+        raise ValueError(
+            f"IPCW 후보 정렬 확인 열이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if len(weighted_samples) != len(predictions):
+        raise ValueError("IPCW 기준 표본 수와 후보 예측 표본 수가 다릅니다.")
+    if weighted_samples.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
+        raise ValueError("IPCW 기준 표본 식별자가 중복됐습니다.")
+    if predictions.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
+        raise ValueError("후보 예측 표본 식별자가 중복됐습니다.")
+
+    weighted_ids = weighted_samples.loc[:, IPCW_CANDIDATE_ID_COLUMNS].reset_index(
+        drop=True
+    )
+    prediction_ids = predictions.loc[:, IPCW_CANDIDATE_ID_COLUMNS].reset_index(
+        drop=True
+    )
+    if not weighted_ids.equals(prediction_ids):
+        raise ValueError("IPCW 기준 표본과 후보 예측 표본의 순서가 다릅니다.")
+
+    evaluation_rows = weighted_samples.copy()
+    evaluation_rows["predicted_duration_days"] = predictions[
+        "predicted_duration_days"
+    ].to_numpy(copy=True)
+    return evaluation_rows
+
+
+def evaluate_ipcw_shrinkage_candidates(
+    samples: pd.DataFrame,
+    model: HierarchicalMedianModel,
+    *,
+    shrinkage_strengths: Sequence[float],
+    horizon_days: int,
+) -> IPCWShrinkageCandidateEvaluation:
+    """동일한 IPCW 조건에서 기존 계층형 모델과 수축 후보를 직접 비교합니다."""
+    if samples.empty:
+        raise ValueError("IPCW로 비교할 Validation 표본이 없습니다.")
+    if not shrinkage_strengths:
+        raise ValueError("IPCW로 평가할 수축 강도 후보가 없습니다.")
+
+    weighted_samples = add_validation_ipcw_weights(
+        samples,
+        horizon_days=horizon_days,
+    )
+    candidate_predictions: list[tuple[str, float | None, pd.DataFrame]] = [
+        (
+            "hierarchical_median",
+            None,
+            predict_hierarchical_median_baseline(model, samples),
+        )
+    ]
+    evaluated_strengths: set[float] = set()
+    for shrinkage_strength in shrinkage_strengths:
+        predictions = predict_shrunk_hierarchical_median_baseline(
+            model,
+            samples,
+            shrinkage_strength=shrinkage_strength,
+        )
+        normalized_strength = float(predictions["shrinkage_strength"].iat[0])
+        if normalized_strength in evaluated_strengths:
+            raise ValueError(f"중복된 수축 강도 후보입니다: {normalized_strength}")
+        evaluated_strengths.add(normalized_strength)
+        candidate_predictions.append(
+            (
+                "shrunk_hierarchical_median",
+                normalized_strength,
+                predictions,
+            )
+        )
+
+    results: list[dict[str, float | int | str | None]] = []
+    reference_binary_evaluation: dict[str, float | int | None] | None = None
+    reference_concordance_evaluation: dict[str, float | int] | None = None
+    for candidate_name, shrinkage_strength, predictions in candidate_predictions:
+        evaluation_rows = _attach_candidate_predictions(
+            weighted_samples,
+            predictions,
+        )
+        binary_evaluation = evaluate_ipcw_binary_predictions(evaluation_rows)
+        concordance_evaluation = evaluate_ipcw_concordance_index(evaluation_rows)
+        if shrinkage_strength is None:
+            reference_binary_evaluation = binary_evaluation
+            reference_concordance_evaluation = concordance_evaluation
+        results.append(
+            {
+                "model_candidate": candidate_name,
+                "shrinkage_strength": shrinkage_strength,
+                "validation_sample_count": int(
+                    binary_evaluation["validation_sample_count"]
+                ),
+                "outcome_known_count": int(binary_evaluation["outcome_known_count"]),
+                "ipcw_weighted_binary_accuracy": float(
+                    binary_evaluation["ipcw_weighted_binary_accuracy"]
+                ),
+                "ipcw_weighted_precision": binary_evaluation["ipcw_weighted_precision"],
+                "ipcw_weighted_recall": binary_evaluation["ipcw_weighted_recall"],
+                "ipcw_weighted_specificity": binary_evaluation[
+                    "ipcw_weighted_specificity"
+                ],
+                "ipcw_weighted_balanced_accuracy": binary_evaluation[
+                    "ipcw_weighted_balanced_accuracy"
+                ],
+                "ipcw_weighted_f1": binary_evaluation["ipcw_weighted_f1"],
+                "ipcw_concordance_index": float(
+                    concordance_evaluation["ipcw_concordance_index"]
+                ),
+            }
+        )
+
+    result = pd.DataFrame(results)
+    reference = result.iloc[0]
+    for metric in (
+        "ipcw_weighted_binary_accuracy",
+        "ipcw_weighted_balanced_accuracy",
+        "ipcw_concordance_index",
+    ):
+        result[f"{metric}_difference_vs_reference"] = result[metric] - reference[metric]
+    if reference_binary_evaluation is None or reference_concordance_evaluation is None:
+        raise RuntimeError("기존 계층형 모델의 IPCW 기준 결과가 생성되지 않았습니다.")
+    return IPCWShrinkageCandidateEvaluation(
+        comparison=result,
+        reference_binary_evaluation=reference_binary_evaluation,
+        reference_concordance_evaluation=reference_concordance_evaluation,
+    )
 
 
 def evaluate_shrinkage_candidates(

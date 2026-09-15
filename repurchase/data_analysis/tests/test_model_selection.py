@@ -6,7 +6,10 @@ import pandas as pd
 import pytest
 
 from scripts.modeling.baseline import HierarchicalMedianModel
-from scripts.modeling.model_selection import evaluate_shrinkage_candidates
+from scripts.modeling.model_selection import (
+    evaluate_ipcw_shrinkage_candidates,
+    evaluate_shrinkage_candidates,
+)
 
 
 def make_model() -> HierarchicalMedianModel:
@@ -30,6 +33,26 @@ def make_validation_samples() -> pd.DataFrame:
             "history_median_days": [120.0, None],
             "history_interval_count": [1, 0],
             "target_duration_days": [30.0, 20.0],
+        }
+    )
+
+
+def make_ipcw_validation_samples() -> pd.DataFrame:
+    """동일한 검열 조건에서 기존 모델과 수축 후보를 비교할 표본을 만듭니다."""
+    return pd.DataFrame(
+        {
+            "user_id": ["u1", "u2", "u3", "u4"],
+            "order_id": ["o1", "o2", "o3", "o4"],
+            "product_id": ["p1", "new", "p1", "new"],
+            "history_median_days": [12.0, None, 3.0, None],
+            "history_interval_count": [1, 0, 2, 0],
+            "split": ["validation"] * 4,
+            "anchor_at": pd.to_datetime(
+                ["2026-08-18", "2026-08-17", "2026-08-16", "2026-08-15"]
+            ),
+            "split_end_at": pd.to_datetime(["2026-08-20"] * 4),
+            "outcome_available_by_split_end": [True, False, True, False],
+            "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
         }
     )
 
@@ -66,6 +89,36 @@ def test_evaluate_shrinkage_candidates_preserves_candidates_and_metrics() -> Non
         [45.0, 72.0, 80.0]
     )
     assert result["fixed_cohort_improved_sample_rate"].tolist() == [1.0] * 3
+
+
+def test_evaluate_ipcw_shrinkage_candidates_uses_same_population_and_reference() -> (
+    None
+):
+    """기존 모델과 모든 수축 후보를 같은 표본·검열 가중치에서 비교합니다."""
+    evaluation = evaluate_ipcw_shrinkage_candidates(
+        make_ipcw_validation_samples(),
+        make_model(),
+        shrinkage_strengths=(1.0, 4.0),
+        horizon_days=4,
+    )
+    result = evaluation.comparison
+
+    assert result["model_candidate"].tolist() == [
+        "hierarchical_median",
+        "shrunk_hierarchical_median",
+        "shrunk_hierarchical_median",
+    ]
+    assert result["shrinkage_strength"].isna().tolist() == [True, False, False]
+    assert result["validation_sample_count"].tolist() == [4, 4, 4]
+    assert result["outcome_known_count"].nunique() == 1
+    assert result.iloc[0][
+        "ipcw_weighted_balanced_accuracy_difference_vs_reference"
+    ] == pytest.approx(0.0)
+    assert result.iloc[0][
+        "ipcw_concordance_index_difference_vs_reference"
+    ] == pytest.approx(0.0)
+    assert evaluation.reference_binary_evaluation["validation_sample_count"] == 4
+    assert evaluation.reference_concordance_evaluation["validation_sample_count"] == 4
 
 
 @pytest.mark.parametrize(
