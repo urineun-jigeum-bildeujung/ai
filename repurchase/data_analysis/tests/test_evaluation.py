@@ -9,6 +9,7 @@ from scripts.modeling.evaluation import (
     RepurchaseEvaluationError,
     _FenwickCountTree,
     bootstrap_ipcw_brier_difference_by_user,
+    bootstrap_ipcw_brier_pair_difference_by_user,
     calculate_ipcw_concordance_pair_weight,
     calculate_pair_concordance_credit,
     evaluate_ipcw_binary_predictions,
@@ -379,3 +380,40 @@ def test_bootstrap_ipcw_brier_difference_rejects_single_user() -> None:
             bootstrap_replicates=100,
             random_seed=42,
         )
+
+
+def test_bootstrap_ipcw_brier_pair_resamples_complete_user_clusters() -> None:
+    """같은 사용자 표본에서 기준 모델과 후보 모델의 Brier 차이를 반복합니다."""
+    rows = pd.DataFrame(
+        {
+            # U1은 1행, U2는 3행이므로 사용자 2명을 복원추출한 행 수는 2·4·6뿐입니다.
+            "user_id": ["U1", "U2", "U2", "U2"],
+            "reference_predicted_event_probability": [0.6, 0.4, 0.6, 0.4],
+            "candidate_predicted_event_probability": [0.8, 0.2, 0.8, 0.2],
+            "ipcw_event_within_horizon": pd.Series(
+                [True, False, True, False],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [30, 30, 30, 30],
+            "ipcw_outcome_known": [True, True, True, True],
+            "ipcw_weight": [1.0, 1.0, 2.0, 2.0],
+        }
+    )
+
+    result = bootstrap_ipcw_brier_pair_difference_by_user(
+        rows,
+        bootstrap_replicates=100,
+        random_seed=42,
+    )
+    repeated = bootstrap_ipcw_brier_pair_difference_by_user(
+        rows,
+        bootstrap_replicates=100,
+        random_seed=42,
+    )
+
+    assert len(result.trials) == 100
+    assert result.trials["sampled_user_count"].eq(2).all()
+    assert set(result.trials["resampled_row_count"]) <= {2, 4, 6}
+    assert result.summary["point_brier_improvement"] > 0
+    assert result.summary["bootstrap_positive_improvement_rate"] == 1.0
+    pd.testing.assert_frame_equal(result.trials, repeated.trials)
