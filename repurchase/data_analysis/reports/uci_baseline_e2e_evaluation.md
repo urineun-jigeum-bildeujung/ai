@@ -176,6 +176,16 @@
 - 사용자를 복원추출할 때 해당 사용자의 평가 행 전체를 함께 이동해 사용자 내부 상관을 보존했습니다.
 - 95% 구간이 0을 포함하면 사용자 구성이 달라졌을 때 개선 방향이 바뀔 수 있으므로 안정적인 개선으로 확정하지 않습니다.
 
+### 고정 k=8의 1회 Test 평가
+
+| 후보 | 재학습 전체 확률 | 상품 확률 적용률 | IPCW Brier | 전체 확률 Brier | Brier Skill Score | ECE | 최대 구간 오차 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 전체 확률 기준선 | 11.10% | 0.00% | 0.134747 | 0.134747 | 0.00% | 4.63% | 4.63% |
+| 고정 상품 확률 k=8 | 11.10% | 88.21% | 0.134022 | 0.134747 | 0.54% | 4.11% | 44.33% |
+
+- k=8은 Validation 결과만으로 미리 고정한 뒤 Test를 평가했습니다.
+- Test 결과를 보고 k를 다시 선택하지 않으며, 성능이 낮더라도 그대로 일반화 결과로 기록합니다.
+
 ## Validation 월별 라벨 성숙도와 조건부 오차
 
 | 구매 기준 월 | 전체 표본 | 성숙 표본 | 미성숙·검열 | 성숙률 | 관찰 가능 기간 중앙값(일) | 실제 간격 평균(일) | 실제 간격 중앙값(일) | MAE(일) | 중앙 절대오차(일) |
@@ -502,6 +512,9 @@
 - [x] `ipcw_probability_calibration_weight_share_balanced`
 - [x] `ipcw_probability_bootstrap_trial_count_preserved`
 - [x] `ipcw_probability_bootstrap_interval_ordered`
+- [x] `test_ipcw_probability_population_preserved`
+- [x] `test_ipcw_probability_reference_scores_consistent`
+- [x] `test_ipcw_probability_calibration_population_preserved`
 - [x] `product_sample_count_detail_population_preserved`
 - [x] `product_sample_count_detail_tail_preserved`
 - [x] `product_sample_count_bucket_population_preserved`

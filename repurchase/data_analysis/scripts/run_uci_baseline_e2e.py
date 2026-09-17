@@ -414,6 +414,20 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     )
     if validation_ipcw_probability_user_bootstrap is None:
         raise RuntimeError("요청한 확률 후보의 사용자 Bootstrap 결과가 없습니다.")
+    probability_refit_population = build_probability_refit_population(
+        samples,
+        trained_until=split.validation_end_at,
+    )
+    test_population = samples.loc[samples["split"].eq("test")].copy()
+    test_ipcw_probability_evaluation = evaluate_ipcw_probability_candidates(
+        probability_refit_population,
+        test_population,
+        product_smoothing_strengths=(IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH,),
+        horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+        calibration_bin_count=CALIBRATION_BIN_COUNT,
+    )
+    test_ipcw_probability_comparison = test_ipcw_probability_evaluation.comparison
+    test_ipcw_probability_calibration = test_ipcw_probability_evaluation.calibration
     # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
     validation_rows = validation_population.loc[
         validation_population["outcome_available_by_split_end"]
@@ -661,7 +675,7 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             .all()
         ),
         "ipcw_probability_validation_population_preserved": bool(
-            validation_ipcw_probability_comparison["validation_sample_count"]
+            validation_ipcw_probability_comparison["evaluation_sample_count"]
             .eq(len(validation_population))
             .all()
         ),
@@ -719,6 +733,33 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             <= validation_ipcw_probability_user_bootstrap.summary[
                 "bootstrap_upper_95_brier_improvement"
             ]
+        ),
+        "test_ipcw_probability_population_preserved": bool(
+            test_ipcw_probability_comparison["evaluation_sample_count"]
+            .eq(len(test_population))
+            .all()
+        ),
+        "test_ipcw_probability_reference_scores_consistent": bool(
+            math.isclose(
+                test_ipcw_probability_comparison.iloc[0]["ipcw_brier_score"],
+                test_ipcw_probability_comparison.iloc[0]["ipcw_reference_brier_score"],
+            )
+            and (
+                pd.isna(test_ipcw_probability_comparison.iloc[0]["brier_skill_score"])
+                or math.isclose(
+                    test_ipcw_probability_comparison.iloc[0]["brier_skill_score"],
+                    0.0,
+                )
+            )
+        ),
+        "test_ipcw_probability_calibration_population_preserved": bool(
+            test_ipcw_probability_calibration.groupby(
+                ["model_candidate", "product_smoothing_strength"],
+                dropna=False,
+            )["sample_count"]
+            .sum()
+            .eq(test_ipcw_probability_comparison.iloc[0]["outcome_known_count"])
+            .all()
         ),
         "product_sample_count_detail_population_preserved": bool(
             validation_product_sample_count_analysis["overall_sample_count"].sum()
@@ -858,6 +899,12 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             ),
             **validation_ipcw_probability_user_bootstrap.summary,
         },
+        "test_ipcw_probability_comparison": dataframe_to_nullable_records(
+            test_ipcw_probability_comparison
+        ),
+        "test_ipcw_probability_calibration": dataframe_to_nullable_records(
+            test_ipcw_probability_calibration
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -914,6 +961,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ipcw_probability_user_bootstrap = summary[
         "validation_ipcw_probability_user_bootstrap"
     ]
+    test_ipcw_probability_comparison = summary["test_ipcw_probability_comparison"]
     ipcw_candidate_comparison_lines = []
     for candidate in ipcw_candidate_comparison:
         candidate_label = (
@@ -978,6 +1026,23 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"{_format_optional_percentage_point(row['calibration_gap'])} |"
         for row in best_calibration_rows
     ]
+    test_ipcw_probability_comparison_lines = []
+    for candidate in test_ipcw_probability_comparison:
+        candidate_label = (
+            "전체 확률 기준선"
+            if candidate["product_smoothing_strength"] is None
+            else f"고정 상품 확률 k={float(candidate['product_smoothing_strength']):g}"
+        )
+        test_ipcw_probability_comparison_lines.append(
+            f"| {candidate_label} | "
+            f"{candidate['training_global_event_probability']:.2%} | "
+            f"{candidate['product_prediction_rate']:.2%} | "
+            f"{candidate['ipcw_brier_score']:.6f} | "
+            f"{candidate['ipcw_reference_brier_score']:.6f} | "
+            f"{_format_optional_rate(candidate['brier_skill_score'])} | "
+            f"{candidate['expected_calibration_error']:.2%} | "
+            f"{candidate['maximum_calibration_error']:.2%} |"
+        )
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -1245,6 +1310,17 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "사용자 내부 상관을 보존했습니다.",
             "- 95% 구간이 0을 포함하면 사용자 구성이 달라졌을 때 개선 방향이 "
             "바뀔 수 있으므로 안정적인 개선으로 확정하지 않습니다.",
+            "",
+            "### 고정 k=8의 1회 Test 평가",
+            "",
+            "| 후보 | 재학습 전체 확률 | 상품 확률 적용률 | IPCW Brier | "
+            "전체 확률 Brier | Brier Skill Score | ECE | 최대 구간 오차 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            *test_ipcw_probability_comparison_lines,
+            "",
+            "- k=8은 Validation 결과만으로 미리 고정한 뒤 Test를 평가했습니다.",
+            "- Test 결과를 보고 k를 다시 선택하지 않으며, 성능이 낮더라도 그대로 "
+            "일반화 결과로 기록합니다.",
         ]
     )
 

@@ -350,7 +350,7 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
     assert probability_comparison[0]["brier_skill_score"] is None
     assert all(
-        candidate["validation_sample_count"] == validation_sample_count
+        candidate["evaluation_sample_count"] == validation_sample_count
         for candidate in probability_comparison
     )
     probability_calibration = summary["validation_ipcw_probability_calibration"]
@@ -378,6 +378,19 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         <= probability_bootstrap["bootstrap_mean_brier_improvement"]
         <= probability_bootstrap["bootstrap_upper_95_brier_improvement"]
     )
+    test_probability_comparison = summary["test_ipcw_probability_comparison"]
+    assert len(test_probability_comparison) == 2
+    assert test_probability_comparison[0]["model_candidate"] == (
+        "global_event_probability"
+    )
+    assert test_probability_comparison[1]["product_smoothing_strength"] == 8.0
+    assert all(
+        candidate["evaluation_sample_count"]
+        == summary["split_summary"]["test"]["sample_count"]
+        for candidate in test_probability_comparison
+    )
+    test_probability_calibration = summary["test_ipcw_probability_calibration"]
+    assert test_probability_calibration
     assert all(
         sum(float(row["ipcw_weight_share"]) for row in group_rows) == pytest.approx(1.0)
         for group_rows in calibration_groups.values()
@@ -479,6 +492,8 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "Test 확인 전까지 최종 모델로 확정하지 않습니다" in markdown
     assert "k=8 사용자 단위 Bootstrap" in markdown
     assert "사용자 내부 상관을 보존" in markdown
+    assert "고정 k=8의 1회 Test 평가" in markdown
+    assert "Test 결과를 보고 k를 다시 선택하지 않으며" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown

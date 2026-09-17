@@ -218,7 +218,7 @@ def evaluate_ipcw_probability_candidates(
                 "training_global_event_probability": (
                     global_model.global_event_probability
                 ),
-                "validation_sample_count": int(metrics["validation_sample_count"]),
+                "evaluation_sample_count": int(metrics["validation_sample_count"]),
                 "outcome_known_count": int(metrics["outcome_known_count"]),
                 "product_prediction_rate": product_prediction_rate,
                 "ipcw_brier_score": float(metrics["ipcw_brier_score"]),

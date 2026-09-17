@@ -173,7 +173,7 @@ def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation()
         False,
         False,
     ]
-    assert result["validation_sample_count"].tolist() == [4, 4, 4]
+    assert result["evaluation_sample_count"].tolist() == [4, 4, 4]
     assert result["outcome_known_count"].nunique() == 1
     assert result["horizon_days"].tolist() == [4, 4, 4]
     assert result.iloc[0]["product_prediction_rate"] == pytest.approx(0.0)
