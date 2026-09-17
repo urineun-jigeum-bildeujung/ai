@@ -9,6 +9,7 @@ from scripts.modeling.baseline import HierarchicalMedianModel
 from scripts.modeling.model_selection import (
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
+    evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
 )
 
@@ -79,6 +80,10 @@ def make_ipcw_probability_samples(split: str) -> pd.DataFrame:
             "split_end_at": pd.to_datetime([split_end] * 4),
             "outcome_available_by_split_end": [True, False, True, False],
             "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
+            "history_interval_count": [0, 1, 2, 3],
+            "history_median_days": [float("nan"), 2.0, 3.0, 4.0],
+            "history_relative_mad": [float("nan"), float("nan"), 0.2, 0.1],
+            "user_prior_order_count": [0, 2, 3, 4],
         }
     )
 
@@ -212,6 +217,31 @@ def test_evaluate_ipcw_probability_candidates_rejects_unknown_bootstrap_strength
             horizon_days=4,
             bootstrap_product_smoothing_strength=8.0,
         )
+
+
+def test_evaluate_lightgbm_probability_candidate_uses_train_and_validation() -> None:
+    """Train으로만 학습한 LightGBM을 동일한 Validation IPCW 기준으로 평가합니다."""
+    evaluation = evaluate_lightgbm_probability_candidate(
+        make_ipcw_probability_samples("train"),
+        make_ipcw_probability_samples("validation"),
+        horizon_days=4,
+        calibration_bin_count=2,
+    )
+    result = evaluation.comparison.iloc[0]
+
+    assert result["model_candidate"] == "lightgbm_probability"
+    assert pd.isna(result["product_smoothing_strength"])
+    assert result["evaluation_sample_count"] == 4
+    assert result["outcome_known_count"] == 3
+    assert result["horizon_days"] == 4
+    assert 0 <= result["ipcw_brier_score"] <= 1
+    assert 0 <= result["expected_calibration_error"] <= 1
+
+    calibration = evaluation.calibration
+    assert calibration["model_candidate"].eq("lightgbm_probability").all()
+    assert calibration["sample_count"].sum() == 3
+    assert calibration["ipcw_weight_share"].sum() == pytest.approx(1.0)
+    assert evaluation.user_bootstrap is None
 
 
 @pytest.mark.parametrize(

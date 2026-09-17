@@ -30,6 +30,11 @@ from .evaluation import (
     evaluate_predictions,
     summarize_ipcw_calibration,
 )
+from .lightgbm_baseline import (
+    build_lightgbm_training_data,
+    predict_lightgbm_repurchase_probability,
+    train_lightgbm_classifier,
+)
 from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
 from .probability_baseline import (
     fit_global_event_probability_baseline,
@@ -98,6 +103,87 @@ def _attach_probability_candidate_predictions(
         "predicted_event_probability"
     ].to_numpy(copy=True)
     return evaluation_rows
+
+
+def evaluate_lightgbm_probability_candidate(
+    training_samples: pd.DataFrame,
+    validation_samples: pd.DataFrame,
+    *,
+    horizon_days: int,
+    calibration_bin_count: int = 10,
+) -> IPCWProbabilityCandidateEvaluation:
+    """Train으로 LightGBM을 학습하고 동일한 Validation IPCW 기준으로 평가합니다."""
+    if training_samples.empty or validation_samples.empty:
+        raise ValueError("LightGBM 평가에는 Train과 Validation 표본이 모두 필요합니다.")
+
+    weighted_training = add_split_ipcw_weights(
+        training_samples,
+        horizon_days=horizon_days,
+    )
+    weighted_validation = add_split_ipcw_weights(
+        validation_samples,
+        horizon_days=horizon_days,
+    )
+    training_data = build_lightgbm_training_data(weighted_training)
+    model = train_lightgbm_classifier(training_data)
+    probabilities = predict_lightgbm_repurchase_probability(
+        model,
+        validation_samples,
+    )
+
+    predictions = validation_samples.loc[:, IPCW_CANDIDATE_ID_COLUMNS].copy()
+    predictions["predicted_event_probability"] = probabilities.to_numpy(copy=True)
+    evaluation_rows = _attach_probability_candidate_predictions(
+        weighted_validation,
+        predictions,
+    )
+    global_model = fit_global_event_probability_baseline(weighted_training)
+    metrics = evaluate_ipcw_brier_score(
+        evaluation_rows,
+        reference_probability=global_model.global_event_probability,
+    )
+    calibration = summarize_ipcw_calibration(
+        evaluation_rows,
+        bin_count=calibration_bin_count,
+    )
+    calibration.insert(0, "model_candidate", "lightgbm_probability")
+    calibration.insert(
+        1,
+        "product_smoothing_strength",
+        pd.Series([None] * len(calibration), dtype="Float64"),
+    )
+    expected_calibration_error = float(
+        calibration["weighted_absolute_gap_contribution"].sum()
+    )
+    maximum_calibration_error = float(calibration["absolute_calibration_gap"].max())
+    comparison = pd.DataFrame(
+        [
+            {
+                "model_candidate": "lightgbm_probability",
+                "product_smoothing_strength": None,
+                "horizon_days": int(metrics["horizon_days"]),
+                "training_global_event_probability": (
+                    global_model.global_event_probability
+                ),
+                "evaluation_sample_count": int(metrics["validation_sample_count"]),
+                "outcome_known_count": int(metrics["outcome_known_count"]),
+                "product_prediction_rate": None,
+                "ipcw_brier_score": float(metrics["ipcw_brier_score"]),
+                "ipcw_reference_brier_score": float(
+                    metrics["ipcw_reference_brier_score"]
+                ),
+                "brier_skill_score": metrics["brier_skill_score"],
+                "expected_calibration_error": expected_calibration_error,
+                "maximum_calibration_error": maximum_calibration_error,
+                "nonempty_calibration_bin_count": int(len(calibration)),
+            }
+        ]
+    )
+    return IPCWProbabilityCandidateEvaluation(
+        comparison=comparison,
+        calibration=calibration,
+        user_bootstrap=None,
+    )
 
 
 def evaluate_ipcw_probability_candidates(
