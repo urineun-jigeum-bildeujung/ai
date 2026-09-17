@@ -22,6 +22,8 @@ from .error_analysis import (
     summarize_largest_error_tail,
 )
 from .evaluation import (
+    IPCWUserBootstrapResult,
+    bootstrap_ipcw_brier_difference_by_user,
     evaluate_ipcw_binary_predictions,
     evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
@@ -53,6 +55,7 @@ class IPCWProbabilityCandidateEvaluation:
 
     comparison: pd.DataFrame
     calibration: pd.DataFrame
+    user_bootstrap: IPCWUserBootstrapResult | None
 
 
 def _validate_candidate_alignment(
@@ -104,8 +107,11 @@ def evaluate_ipcw_probability_candidates(
     product_smoothing_strengths: Sequence[float],
     horizon_days: int,
     calibration_bin_count: int = 10,
+    bootstrap_product_smoothing_strength: float | None = None,
+    bootstrap_replicates: int = 1_000,
+    bootstrap_random_seed: int = 42,
 ) -> IPCWProbabilityCandidateEvaluation:
-    """Train으로 확률 후보를 학습하고 동일한 Validation Brier Score로 비교합니다."""
+    """Train으로 확률 후보를 학습하고 Validation 성능과 불확실성을 비교합니다."""
     if training_samples.empty or validation_samples.empty:
         raise ValueError(
             "확률 후보 비교에는 Train과 Validation 표본이 모두 필요합니다."
@@ -116,6 +122,16 @@ def evaluate_ipcw_probability_candidates(
     normalized_strengths = [float(value) for value in product_smoothing_strengths]
     if len(normalized_strengths) != len(set(normalized_strengths)):
         raise ValueError("중복된 상품 확률 수축 강도 후보입니다.")
+    normalized_bootstrap_strength = (
+        None
+        if bootstrap_product_smoothing_strength is None
+        else float(bootstrap_product_smoothing_strength)
+    )
+    if (
+        normalized_bootstrap_strength is not None
+        and normalized_bootstrap_strength not in normalized_strengths
+    ):
+        raise ValueError("Bootstrap 대상 상품 확률 수축 강도가 후보 집합에 없습니다.")
 
     weighted_training = add_split_ipcw_weights(
         training_samples,
@@ -148,6 +164,7 @@ def evaluate_ipcw_probability_candidates(
 
     results: list[dict[str, float | int | str | None]] = []
     calibration_results: list[pd.DataFrame] = []
+    user_bootstrap: IPCWUserBootstrapResult | None = None
     for candidate_name, smoothing_strength, model in candidates:
         predictions = predict_hierarchical_event_probability_baseline(
             model,
@@ -176,6 +193,16 @@ def evaluate_ipcw_probability_candidates(
             ),
         )
         calibration_results.append(calibration)
+        if (
+            normalized_bootstrap_strength is not None
+            and smoothing_strength == normalized_bootstrap_strength
+        ):
+            user_bootstrap = bootstrap_ipcw_brier_difference_by_user(
+                evaluation_rows,
+                reference_probability=global_model.global_event_probability,
+                bootstrap_replicates=bootstrap_replicates,
+                random_seed=bootstrap_random_seed,
+            )
         expected_calibration_error = float(
             calibration["weighted_absolute_gap_contribution"].sum()
         )
@@ -208,6 +235,7 @@ def evaluate_ipcw_probability_candidates(
     return IPCWProbabilityCandidateEvaluation(
         comparison=pd.DataFrame(results),
         calibration=pd.concat(calibration_results, ignore_index=True),
+        user_bootstrap=user_bootstrap,
     )
 
 

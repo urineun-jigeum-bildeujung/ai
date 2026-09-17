@@ -11,10 +11,12 @@ import pytest
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_baseline_e2e import (
     COMMON_FOLLOWUP_HORIZON_CANDIDATES,
+    IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
     PRIMARY_IPCW_HORIZON_DAYS,
     PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES,
     SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
+    build_ipcw_probability_bootstrap_trials_report,
     build_product_concentration_trials_report,
     render_markdown,
     run_baseline_cycle,
@@ -335,6 +337,19 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         == ipcw_binary_evaluation["outcome_known_count"]
         for group_rows in calibration_groups.values()
     )
+    probability_bootstrap = summary["validation_ipcw_probability_user_bootstrap"]
+    assert probability_bootstrap["product_smoothing_strength"] == 8.0
+    assert probability_bootstrap["bootstrap_replicates"] == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert len(result.probability_bootstrap_trials) == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert (
+        probability_bootstrap["bootstrap_lower_95_brier_improvement"]
+        <= probability_bootstrap["bootstrap_mean_brier_improvement"]
+        <= probability_bootstrap["bootstrap_upper_95_brier_improvement"]
+    )
     assert all(
         sum(float(row["ipcw_weight_share"]) for row in group_rows) == pytest.approx(1.0)
         for group_rows in calibration_groups.values()
@@ -373,6 +388,7 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert all(summary["invariants"].values())
 
     random_trials_report = build_product_concentration_trials_report(result)
+    bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
     assert random_trials_report["dataset"] == "uci_online_retail_ii"
     assert random_trials_report["evaluation_split"] == "validation"
     assert (
@@ -394,6 +410,12 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         allow_nan=False,
     )
     assert json.loads(serialized_trials_report) == random_trials_report
+    serialized_bootstrap_trials_report = json.dumps(
+        bootstrap_trials_report,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert json.loads(serialized_bootstrap_trials_report) == bootstrap_trials_report
 
     markdown = render_markdown(summary)
 
@@ -427,6 +449,8 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "Brier 기준 현재 최저 후보 Calibration" in markdown
     assert "예측-실제 차이가 양수이면 과대평가" in markdown
     assert "Test 확인 전까지 최종 모델로 확정하지 않습니다" in markdown
+    assert "k=8 사용자 단위 Bootstrap" in markdown
+    assert "사용자 내부 상관을 보존" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown

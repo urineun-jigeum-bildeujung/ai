@@ -157,6 +157,9 @@ def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation()
         product_smoothing_strengths=(1.0, 4.0),
         horizon_days=4,
         calibration_bin_count=2,
+        bootstrap_product_smoothing_strength=4.0,
+        bootstrap_replicates=100,
+        bootstrap_random_seed=42,
     )
     result = evaluation.comparison
 
@@ -191,6 +194,24 @@ def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation()
         ["model_candidate", "product_smoothing_strength"],
         dropna=False,
     )["ipcw_weight_share"].sum().tolist() == pytest.approx([1.0, 1.0, 1.0])
+    assert evaluation.user_bootstrap is not None
+    assert evaluation.user_bootstrap.summary["bootstrap_replicates"] == 100
+    assert evaluation.user_bootstrap.summary["user_count"] == 3
+    assert len(evaluation.user_bootstrap.trials) == 100
+
+
+def test_evaluate_ipcw_probability_candidates_rejects_unknown_bootstrap_strength() -> (
+    None
+):
+    """비교하지 않은 수축 강도의 Bootstrap을 요청하면 명확히 거절합니다."""
+    with pytest.raises(ValueError, match="후보 집합"):
+        evaluate_ipcw_probability_candidates(
+            make_ipcw_probability_samples("train"),
+            make_ipcw_probability_samples("validation"),
+            product_smoothing_strengths=(1.0, 4.0),
+            horizon_days=4,
+            bootstrap_product_smoothing_strength=8.0,
+        )
 
 
 @pytest.mark.parametrize(

@@ -10021,6 +10021,21 @@
       "weighted_absolute_gap_contribution": 8.667555243188853e-06
     }
   ],
+  "validation_ipcw_probability_user_bootstrap": {
+    "model_candidate": "hierarchical_event_probability",
+    "product_smoothing_strength": 8.0,
+    "bootstrap_replicates": 1000,
+    "random_seed": 42,
+    "user_count": 1926,
+    "outcome_known_count": 73542,
+    "point_candidate_brier_score": 0.09780985253360536,
+    "point_reference_brier_score": 0.09929894291432002,
+    "point_brier_improvement": 0.0014890903807146666,
+    "bootstrap_mean_brier_improvement": 0.001463679829356434,
+    "bootstrap_lower_95_brier_improvement": 4.9848434632902844e-05,
+    "bootstrap_upper_95_brier_improvement": 0.0032230611816096533,
+    "bootstrap_positive_improvement_rate": 0.979
+  },
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {
@@ -15143,6 +15158,8 @@
     "ipcw_probability_reference_scores_consistent": true,
     "ipcw_probability_calibration_population_preserved": true,
     "ipcw_probability_calibration_weight_share_balanced": true,
+    "ipcw_probability_bootstrap_trial_count_preserved": true,
+    "ipcw_probability_bootstrap_interval_ordered": true,
     "product_sample_count_detail_population_preserved": true,
     "product_sample_count_detail_tail_preserved": true,
     "product_sample_count_bucket_population_preserved": true,

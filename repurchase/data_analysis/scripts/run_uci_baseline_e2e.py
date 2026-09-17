@@ -72,6 +72,9 @@ MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_baseline_e2e_evaluation.md"
 PRODUCT_CONCENTRATION_TRIALS_REPORT_PATH = (
     REPORT_DIR / "uci_baseline_e2e_product_concentration_trials.json"
 )
+IPCW_PROBABILITY_BOOTSTRAP_TRIALS_REPORT_PATH = (
+    REPORT_DIR / "uci_baseline_e2e_ipcw_probability_bootstrap_trials.json"
+)
 TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
 # 1% 결과가 극소수 표본에만 좌우되는지 확인하기 위해 5% 결과도 함께 비교합니다.
 TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
@@ -98,14 +101,19 @@ COMMON_FOLLOWUP_HORIZON_CANDIDATES: Final[tuple[int, ...]] = (14, 28, 30, 60, 90
 PRIMARY_IPCW_HORIZON_DAYS: Final[int] = 30
 # 0~100% 확률을 10%p 단위로 나눠 확률 보정 상태를 확인합니다.
 CALIBRATION_BIN_COUNT: Final[int] = 10
+# Validation에서 가장 낮은 Brier를 보인 k=8 후보의 사용자 구성 불확실성을 검증합니다.
+IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH: Final[float] = 8.0
+IPCW_PROBABILITY_BOOTSTRAP_REPLICATES: Final[int] = 1_000
+IPCW_PROBABILITY_BOOTSTRAP_RANDOM_SEED: Final[int] = 42
 
 
 @dataclass(frozen=True)
 class BaselineCycleResult:
-    """E2E 요약과 별도 보존할 무작위 분석 원자료를 함께 전달합니다."""
+    """E2E 요약과 별도 보존할 반복 실험 원자료를 함께 전달합니다."""
 
     summary: dict[str, Any]
     product_concentration_trials: pd.DataFrame
+    probability_bootstrap_trials: pd.DataFrame
 
 
 def _isoformat(timestamp: pd.Timestamp) -> str:
@@ -330,6 +338,11 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         product_smoothing_strengths=(PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES),
         horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
         calibration_bin_count=CALIBRATION_BIN_COUNT,
+        bootstrap_product_smoothing_strength=(
+            IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH
+        ),
+        bootstrap_replicates=IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
+        bootstrap_random_seed=IPCW_PROBABILITY_BOOTSTRAP_RANDOM_SEED,
     )
     validation_ipcw_probability_comparison = (
         validation_ipcw_probability_evaluation.comparison
@@ -337,6 +350,11 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     validation_ipcw_probability_calibration = (
         validation_ipcw_probability_evaluation.calibration
     )
+    validation_ipcw_probability_user_bootstrap = (
+        validation_ipcw_probability_evaluation.user_bootstrap
+    )
+    if validation_ipcw_probability_user_bootstrap is None:
+        raise RuntimeError("요청한 확률 후보의 사용자 Bootstrap 결과가 없습니다.")
     # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
     validation_rows = validation_population.loc[
         validation_population["outcome_available_by_split_end"]
@@ -628,6 +646,21 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             .map(lambda value: math.isclose(value, 1.0))
             .all()
         ),
+        "ipcw_probability_bootstrap_trial_count_preserved": bool(
+            len(validation_ipcw_probability_user_bootstrap.trials)
+            == IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+        ),
+        "ipcw_probability_bootstrap_interval_ordered": bool(
+            validation_ipcw_probability_user_bootstrap.summary[
+                "bootstrap_lower_95_brier_improvement"
+            ]
+            <= validation_ipcw_probability_user_bootstrap.summary[
+                "bootstrap_mean_brier_improvement"
+            ]
+            <= validation_ipcw_probability_user_bootstrap.summary[
+                "bootstrap_upper_95_brier_improvement"
+            ]
+        ),
         "product_sample_count_detail_population_preserved": bool(
             validation_product_sample_count_analysis["overall_sample_count"].sum()
             == validation_product_concentration_analysis["overall_personalized"][
@@ -759,6 +792,13 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "validation_ipcw_probability_calibration": dataframe_to_nullable_records(
             validation_ipcw_probability_calibration
         ),
+        "validation_ipcw_probability_user_bootstrap": {
+            "model_candidate": "hierarchical_event_probability",
+            "product_smoothing_strength": (
+                IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH
+            ),
+            **validation_ipcw_probability_user_bootstrap.summary,
+        },
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -775,6 +815,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         summary=summary,
         product_concentration_trials=(
             validation_product_concentration_random_trials.copy()
+        ),
+        probability_bootstrap_trials=(
+            validation_ipcw_probability_user_bootstrap.trials.copy()
         ),
     )
 
@@ -809,6 +852,9 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ipcw_candidate_comparison = summary["validation_ipcw_candidate_comparison"]
     ipcw_probability_comparison = summary["validation_ipcw_probability_comparison"]
     ipcw_probability_calibration = summary["validation_ipcw_probability_calibration"]
+    ipcw_probability_user_bootstrap = summary[
+        "validation_ipcw_probability_user_bootstrap"
+    ]
     ipcw_candidate_comparison_lines = []
     for candidate in ipcw_candidate_comparison:
         candidate_label = (
@@ -1120,6 +1166,26 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "반드시 표본 수와 IPCW 비중을 함께 확인합니다.",
             "- 현재 최저 Brier 후보는 Validation 기준 결과이며 Test 확인 전까지 "
             "최종 모델로 확정하지 않습니다.",
+            "",
+            "#### k=8 사용자 단위 Bootstrap",
+            "",
+            f"- 반복 횟수: `{ipcw_probability_user_bootstrap['bootstrap_replicates']:,}`회",
+            f"- 사용자 수: `{ipcw_probability_user_bootstrap['user_count']:,}`명",
+            f"- 기준선 대비 점 추정 Brier 개선: "
+            f"`{ipcw_probability_user_bootstrap['point_brier_improvement']:.6f}`",
+            f"- Bootstrap 평균 Brier 개선: "
+            f"`{ipcw_probability_user_bootstrap['bootstrap_mean_brier_improvement']:.6f}`",
+            f"- 95% Bootstrap 구간: "
+            f"`{ipcw_probability_user_bootstrap['bootstrap_lower_95_brier_improvement']:.6f}`"
+            " ~ "
+            f"`{ipcw_probability_user_bootstrap['bootstrap_upper_95_brier_improvement']:.6f}`",
+            f"- 후보가 기준선보다 개선된 반복 비율: "
+            f"`{ipcw_probability_user_bootstrap['bootstrap_positive_improvement_rate']:.2%}`",
+            "",
+            "- 사용자를 복원추출할 때 해당 사용자의 평가 행 전체를 함께 이동해 "
+            "사용자 내부 상관을 보존했습니다.",
+            "- 95% 구간이 0을 포함하면 사용자 구성이 달라졌을 때 개선 방향이 "
+            "바뀔 수 있으므로 안정적인 개선으로 확정하지 않습니다.",
         ]
     )
 
@@ -1703,6 +1769,25 @@ def build_product_concentration_trials_report(
     }
 
 
+def build_ipcw_probability_bootstrap_trials_report(
+    result: BaselineCycleResult,
+) -> dict[str, object]:
+    """사용자 Bootstrap 반복별 Brier 결과를 재현 정보와 함께 저장합니다."""
+    summary = result.summary
+    bootstrap = summary["validation_ipcw_probability_user_bootstrap"]
+
+    return {
+        "dataset": summary["dataset"],
+        "evaluation_split": "validation",
+        "model_candidate": bootstrap["model_candidate"],
+        "product_smoothing_strength": bootstrap["product_smoothing_strength"],
+        "bootstrap_replicates": bootstrap["bootstrap_replicates"],
+        "random_seed": bootstrap["random_seed"],
+        "summary": bootstrap,
+        "trials": result.probability_bootstrap_trials.to_dict(orient="records"),
+    }
+
+
 def main() -> None:
     """실제 UCI 원본을 읽어 모델 E2E를 실행하고 JSON·Markdown을 저장합니다."""
     source = load_uci_online_retail_ii()
@@ -1715,6 +1800,7 @@ def main() -> None:
     result = run_baseline_cycle(labels)
     summary = result.summary
     random_trials_report = build_product_concentration_trials_report(result)
+    bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
     write_text_atomically(
         JSON_REPORT_PATH,
         json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
@@ -1723,6 +1809,16 @@ def main() -> None:
         PRODUCT_CONCENTRATION_TRIALS_REPORT_PATH,
         json.dumps(
             random_trials_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n",
+    )
+    write_text_atomically(
+        IPCW_PROBABILITY_BOOTSTRAP_TRIALS_REPORT_PATH,
+        json.dumps(
+            bootstrap_trials_report,
             ensure_ascii=False,
             indent=2,
             allow_nan=False,

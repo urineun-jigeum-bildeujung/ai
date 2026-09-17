@@ -164,6 +164,18 @@
 - 최대 구간 오차는 표본이 매우 적은 구간에서 크게 흔들릴 수 있으므로 반드시 표본 수와 IPCW 비중을 함께 확인합니다.
 - 현재 최저 Brier 후보는 Validation 기준 결과이며 Test 확인 전까지 최종 모델로 확정하지 않습니다.
 
+#### k=8 사용자 단위 Bootstrap
+
+- 반복 횟수: `1,000`회
+- 사용자 수: `1,926`명
+- 기준선 대비 점 추정 Brier 개선: `0.001489`
+- Bootstrap 평균 Brier 개선: `0.001464`
+- 95% Bootstrap 구간: `0.000050` ~ `0.003223`
+- 후보가 기준선보다 개선된 반복 비율: `97.90%`
+
+- 사용자를 복원추출할 때 해당 사용자의 평가 행 전체를 함께 이동해 사용자 내부 상관을 보존했습니다.
+- 95% 구간이 0을 포함하면 사용자 구성이 달라졌을 때 개선 방향이 바뀔 수 있으므로 안정적인 개선으로 확정하지 않습니다.
+
 ## Validation 월별 라벨 성숙도와 조건부 오차
 
 | 구매 기준 월 | 전체 표본 | 성숙 표본 | 미성숙·검열 | 성숙률 | 관찰 가능 기간 중앙값(일) | 실제 간격 평균(일) | 실제 간격 중앙값(일) | MAE(일) | 중앙 절대오차(일) |
@@ -488,6 +500,8 @@
 - [x] `ipcw_probability_reference_scores_consistent`
 - [x] `ipcw_probability_calibration_population_preserved`
 - [x] `ipcw_probability_calibration_weight_share_balanced`
+- [x] `ipcw_probability_bootstrap_trial_count_preserved`
+- [x] `ipcw_probability_bootstrap_interval_ordered`
 - [x] `product_sample_count_detail_population_preserved`
 - [x] `product_sample_count_detail_tail_preserved`
 - [x] `product_sample_count_bucket_population_preserved`
