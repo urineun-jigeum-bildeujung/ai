@@ -8,6 +8,7 @@ Brier Score와 Calibration 같은 평가는 evaluation.py에서 처리합니다.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 from typing import Final
 
 import numpy as np
@@ -29,6 +30,10 @@ PROBABILITY_FIT_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
         "ipcw_weight",
     }
 )
+HIERARCHICAL_PROBABILITY_FIT_REQUIRED_COLUMNS: Final[frozenset[str]] = (
+    PROBABILITY_FIT_REQUIRED_COLUMNS | {"product_id"}
+)
+PROBABILITY_PREDICT_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset({"product_id"})
 
 
 @dataclass(frozen=True)
@@ -40,6 +45,83 @@ class HierarchicalEventProbabilityModel:
     global_event_probability: float
     global_outcome_known_count: int
     global_ipcw_weight_sum: float
+    product_event_probabilities: dict[object, float]
+    product_outcome_known_counts: dict[object, int]
+    product_ipcw_weight_sums: dict[object, float]
+    product_smoothing_strength: float | None
+
+
+def _normalize_probability(value: object, *, field_name: str) -> float:
+    """확률 입력을 0부터 1 사이의 유한한 실수로 정규화합니다."""
+    if isinstance(value, (bool, str, bytes)):
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+    try:
+        normalized_value = float(value)
+    except (TypeError, ValueError) as error:
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0부터 1 사이의 유한한 숫자여야 합니다."
+        ) from error
+    if not isfinite(normalized_value) or not 0 <= normalized_value <= 1:
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+    return normalized_value
+
+
+def _normalize_positive_weight(value: object, *, field_name: str) -> float:
+    """근거량과 수축 강도를 0보다 큰 유한한 실수로 정규화합니다."""
+    if isinstance(value, (bool, str, bytes)):
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0보다 큰 유한한 숫자여야 합니다."
+        )
+    try:
+        normalized_value = float(value)
+    except (TypeError, ValueError) as error:
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0보다 큰 유한한 숫자여야 합니다."
+        ) from error
+    if not isfinite(normalized_value) or normalized_value <= 0:
+        raise ProbabilityBaselineError(
+            f"{field_name}은 0보다 큰 유한한 숫자여야 합니다."
+        )
+    return normalized_value
+
+
+def blend_event_probability_with_prior(
+    *,
+    observed_probability: float,
+    observed_weight_sum: float,
+    prior_probability: float,
+    smoothing_strength: float,
+) -> float:
+    """관측 근거량에 따라 하위 집단 확률과 상위 prior 확률을 혼합합니다."""
+    normalized_observed_probability = _normalize_probability(
+        observed_probability,
+        field_name="관측 사건 확률",
+    )
+    normalized_observed_weight = _normalize_positive_weight(
+        observed_weight_sum,
+        field_name="관측 근거량",
+    )
+    normalized_prior_probability = _normalize_probability(
+        prior_probability,
+        field_name="상위 prior 확률",
+    )
+    normalized_strength = _normalize_positive_weight(
+        smoothing_strength,
+        field_name="확률 수축 강도",
+    )
+
+    observed_weight = normalized_observed_weight / (
+        normalized_observed_weight + normalized_strength
+    )
+    prior_weight = 1.0 - observed_weight
+    return (
+        observed_weight * normalized_observed_probability
+        + prior_weight * normalized_prior_probability
+    )
 
 
 def calculate_weighted_event_probability(
@@ -126,4 +208,135 @@ def fit_global_event_probability_baseline(
         global_event_probability=event_probability,
         global_outcome_known_count=int(len(known_rows)),
         global_ipcw_weight_sum=float(known_rows["ipcw_weight"].sum()),
+        product_event_probabilities={},
+        product_outcome_known_counts={},
+        product_ipcw_weight_sums={},
+        product_smoothing_strength=None,
     )
+
+
+def fit_hierarchical_event_probability_baseline(
+    weighted_training_rows: pd.DataFrame,
+    *,
+    product_smoothing_strength: float,
+) -> HierarchicalEventProbabilityModel:
+    """Train의 전체·상품 확률을 학습하고 희소 상품 확률을 수축합니다."""
+    missing_columns = HIERARCHICAL_PROBABILITY_FIT_REQUIRED_COLUMNS - set(
+        weighted_training_rows.columns
+    )
+    if missing_columns:
+        raise ProbabilityBaselineError(
+            f"계층형 확률 학습 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if weighted_training_rows["product_id"].isna().any():
+        raise ProbabilityBaselineError(
+            "확률 학습의 상품 ID에는 결측값을 사용할 수 없습니다."
+        )
+    normalized_strength = _normalize_positive_weight(
+        product_smoothing_strength,
+        field_name="상품 확률 수축 강도",
+    )
+
+    global_model = fit_global_event_probability_baseline(weighted_training_rows)
+    known_rows = weighted_training_rows.loc[
+        weighted_training_rows["ipcw_outcome_known"]
+    ].copy()
+    known_rows["weighted_event_mass"] = (
+        known_rows["ipcw_event_within_horizon"]
+        .astype("float64")
+        .mul(known_rows["ipcw_weight"])
+    )
+    product_summary = known_rows.groupby(
+        "product_id",
+        observed=True,
+        sort=False,
+    ).agg(
+        outcome_known_count=("product_id", "size"),
+        ipcw_weight_sum=("ipcw_weight", "sum"),
+        weighted_event_mass=("weighted_event_mass", "sum"),
+    )
+    product_summary["observed_event_probability"] = product_summary[
+        "weighted_event_mass"
+    ].div(product_summary["ipcw_weight_sum"])
+    observed_weight = product_summary["ipcw_weight_sum"].div(
+        product_summary["ipcw_weight_sum"] + normalized_strength
+    )
+    product_summary["smoothed_event_probability"] = (
+        observed_weight * product_summary["observed_event_probability"]
+        + (1.0 - observed_weight) * global_model.global_event_probability
+    )
+
+    return HierarchicalEventProbabilityModel(
+        trained_until=global_model.trained_until,
+        horizon_days=global_model.horizon_days,
+        global_event_probability=global_model.global_event_probability,
+        global_outcome_known_count=global_model.global_outcome_known_count,
+        global_ipcw_weight_sum=global_model.global_ipcw_weight_sum,
+        product_event_probabilities=product_summary[
+            "smoothed_event_probability"
+        ].to_dict(),
+        product_outcome_known_counts=product_summary["outcome_known_count"]
+        .astype("int64")
+        .to_dict(),
+        product_ipcw_weight_sums=product_summary["ipcw_weight_sum"]
+        .astype("float64")
+        .to_dict(),
+        product_smoothing_strength=normalized_strength,
+    )
+
+
+def predict_hierarchical_event_probability_baseline(
+    model: HierarchicalEventProbabilityModel,
+    samples: pd.DataFrame,
+) -> pd.DataFrame:
+    """상품 확률을 적용하고 학습 이력이 없는 상품은 전체 확률로 대체합니다."""
+    missing_columns = PROBABILITY_PREDICT_REQUIRED_COLUMNS - set(samples.columns)
+    if missing_columns:
+        raise ProbabilityBaselineError(
+            f"확률 베이스라인 예측 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if samples.empty:
+        raise ProbabilityBaselineError("재구매 확률을 예측할 표본이 없습니다.")
+    if samples["product_id"].isna().any():
+        raise ProbabilityBaselineError(
+            "확률 예측의 상품 ID에는 결측값을 사용할 수 없습니다."
+        )
+
+    predictions = samples.copy()
+    predictions["predicted_event_probability"] = model.global_event_probability
+    predictions["probability_prediction_source"] = "global_history"
+    predictions["probability_observation_count"] = model.global_outcome_known_count
+    predictions["probability_ipcw_weight_sum"] = model.global_ipcw_weight_sum
+
+    product_probability = predictions["product_id"].map(
+        model.product_event_probabilities
+    )
+    product_count = predictions["product_id"].map(model.product_outcome_known_counts)
+    product_weight_sum = predictions["product_id"].map(model.product_ipcw_weight_sums)
+    has_product_history = product_probability.notna()
+    predictions.loc[
+        has_product_history,
+        "predicted_event_probability",
+    ] = product_probability
+    predictions.loc[has_product_history, "probability_prediction_source"] = (
+        "product_history"
+    )
+    predictions.loc[
+        has_product_history,
+        "probability_observation_count",
+    ] = product_count
+    predictions.loc[
+        has_product_history,
+        "probability_ipcw_weight_sum",
+    ] = product_weight_sum
+
+    probabilities = predictions["predicted_event_probability"]
+    if probabilities.isna().any() or not probabilities.between(0, 1).all():
+        raise ProbabilityBaselineError("예측된 재구매 확률은 0부터 1 사이여야 합니다.")
+    predictions["probability_observation_count"] = predictions[
+        "probability_observation_count"
+    ].astype("int64")
+    predictions["probability_ipcw_weight_sum"] = predictions[
+        "probability_ipcw_weight_sum"
+    ].astype("float64")
+    return predictions

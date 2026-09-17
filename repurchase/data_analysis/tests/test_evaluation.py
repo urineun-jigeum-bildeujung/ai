@@ -11,6 +11,7 @@ from scripts.modeling.evaluation import (
     calculate_ipcw_concordance_pair_weight,
     calculate_pair_concordance_credit,
     evaluate_ipcw_binary_predictions,
+    evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
     is_ipcw_concordance_pair_comparable,
 )
@@ -205,3 +206,58 @@ def test_ipcw_binary_evaluation_rejects_multiple_horizons() -> None:
 
     with pytest.raises(RepurchaseEvaluationError, match="하나의 고정 시점"):
         evaluate_ipcw_binary_predictions(rows)
+
+
+def test_evaluate_ipcw_brier_score_compares_probability_reference() -> None:
+    """확률 제곱 오차를 IPCW로 보정하고 전체 확률 기준선과 비교합니다."""
+    rows = pd.DataFrame(
+        {
+            "predicted_event_probability": [0.8, 0.2, 0.6, 0.3],
+            "ipcw_event_within_horizon": pd.Series(
+                [True, pd.NA, True, False],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [4, 4, 4, 4],
+            "ipcw_outcome_known": [True, False, True, True],
+            "ipcw_weight": [1.0, 0.0, 1.5, 1.5],
+        }
+    )
+
+    result = evaluate_ipcw_brier_score(
+        rows,
+        reference_probability=0.625,
+    )
+
+    assert result == {
+        "horizon_days": 4,
+        "validation_sample_count": 4,
+        "outcome_known_count": 3,
+        "ipcw_weight_sum": pytest.approx(4.0),
+        "unweighted_brier_score": pytest.approx((0.04 + 0.16 + 0.09) / 3),
+        "ipcw_brier_score": pytest.approx(0.10375),
+        "reference_probability": pytest.approx(0.625),
+        "ipcw_reference_brier_score": pytest.approx(0.234375),
+        "brier_skill_score": pytest.approx(1 - 0.10375 / 0.234375),
+    }
+
+
+@pytest.mark.parametrize(
+    "invalid_probability",
+    [-0.1, 1.1, float("nan")],
+)
+def test_evaluate_ipcw_brier_score_rejects_invalid_probability(
+    invalid_probability: float,
+) -> None:
+    """확률 범위를 벗어난 예측값은 잘못된 점수로 계산하지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "predicted_event_probability": [invalid_probability],
+            "ipcw_event_within_horizon": pd.Series([True], dtype="boolean"),
+            "ipcw_horizon_days": [30],
+            "ipcw_outcome_known": [True],
+            "ipcw_weight": [1.0],
+        }
+    )
+
+    with pytest.raises(RepurchaseEvaluationError, match="예측 사건 확률"):
+        evaluate_ipcw_brier_score(rows, reference_probability=0.5)

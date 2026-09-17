@@ -41,6 +41,16 @@ IPCW_CONCORDANCE_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
+IPCW_BRIER_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
+    {
+        "predicted_event_probability",
+        "ipcw_event_within_horizon",
+        "ipcw_horizon_days",
+        "ipcw_outcome_known",
+        "ipcw_weight",
+    }
+)
+
 
 class _FenwickCountTree:
     """예측 순위별 누적 표본 수를 로그 시간에 저장하고 조회합니다."""
@@ -462,4 +472,108 @@ def evaluate_ipcw_binary_predictions(
         "always_no_event_accuracy": always_no_event_accuracy,
         "accuracy_difference_vs_always_no_event": weighted_accuracy
         - always_no_event_accuracy,
+    }
+
+
+def evaluate_ipcw_brier_score(
+    rows: pd.DataFrame,
+    *,
+    reference_probability: float,
+) -> dict[str, float | int | None]:
+    """확률 예측의 제곱 오차를 IPCW로 보정하고 전체 확률 기준선과 비교합니다."""
+    missing_columns = IPCW_BRIER_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        raise RepurchaseEvaluationError(
+            f"IPCW Brier Score 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if rows.empty:
+        raise RepurchaseEvaluationError("IPCW Brier Score를 계산할 표본이 없습니다.")
+
+    outcome_known = rows["ipcw_outcome_known"]
+    if outcome_known.isna().any() or not is_bool_dtype(outcome_known.dtype):
+        raise RepurchaseEvaluationError(
+            "Brier Score 정답 확인 여부에는 결측값 없는 boolean만 사용할 수 있습니다."
+        )
+    known_rows = rows.loc[outcome_known].copy()
+    if known_rows.empty:
+        raise RepurchaseEvaluationError("Brier Score의 정답 확인 표본이 없습니다.")
+
+    actual_event = known_rows["ipcw_event_within_horizon"]
+    if actual_event.isna().any() or not is_bool_dtype(actual_event.dtype):
+        raise RepurchaseEvaluationError(
+            "Brier Score의 실제 사건 여부에는 결측값 없는 boolean만 사용할 수 있습니다."
+        )
+    predicted_probability = known_rows["predicted_event_probability"]
+    if (
+        not is_numeric_dtype(predicted_probability.dtype)
+        or not np.isfinite(
+            predicted_probability.to_numpy(dtype="float64", copy=False)
+        ).all()
+        or not predicted_probability.between(0, 1).all()
+    ):
+        raise RepurchaseEvaluationError(
+            "예측 사건 확률은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+    if (
+        isinstance(reference_probability, (bool, np.bool_))
+        or not isinstance(
+            reference_probability,
+            (int, float, np.integer, np.floating),
+        )
+        or not np.isfinite(reference_probability)
+        or not 0 <= float(reference_probability) <= 1
+    ):
+        raise RepurchaseEvaluationError(
+            "Brier Score 기준 확률은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+
+    weights = known_rows["ipcw_weight"]
+    if (
+        not is_numeric_dtype(weights.dtype)
+        or not np.isfinite(weights.to_numpy(dtype="float64", copy=False)).all()
+        or weights.le(0).any()
+    ):
+        raise RepurchaseEvaluationError(
+            "Brier Score의 IPCW 가중치는 0보다 큰 유한한 숫자여야 합니다."
+        )
+    horizons = known_rows["ipcw_horizon_days"].drop_duplicates()
+    if len(horizons) != 1:
+        raise RepurchaseEvaluationError(
+            "한 번의 IPCW Brier Score 평가는 하나의 고정 시점만 사용합니다."
+        )
+    horizon_value = horizons.iloc[0]
+    if (
+        isinstance(horizon_value, (bool, np.bool_))
+        or not isinstance(horizon_value, (int, np.integer))
+        or int(horizon_value) <= 0
+    ):
+        raise RepurchaseEvaluationError(
+            "IPCW Brier Score의 고정 시점은 양의 정수 일수여야 합니다."
+        )
+
+    actual_value = actual_event.astype("float64")
+    squared_error = predicted_probability.sub(actual_value).pow(2)
+    normalized_reference_probability = float(reference_probability)
+    reference_squared_error = actual_value.sub(normalized_reference_probability).pow(2)
+    weight_sum = float(weights.sum())
+    weighted_brier_score = float(squared_error.mul(weights).sum() / weight_sum)
+    weighted_reference_brier_score = float(
+        reference_squared_error.mul(weights).sum() / weight_sum
+    )
+    brier_skill_score = (
+        None
+        if weighted_reference_brier_score == 0
+        else 1.0 - weighted_brier_score / weighted_reference_brier_score
+    )
+
+    return {
+        "horizon_days": int(horizon_value),
+        "validation_sample_count": int(len(rows)),
+        "outcome_known_count": int(len(known_rows)),
+        "ipcw_weight_sum": weight_sum,
+        "unweighted_brier_score": float(squared_error.mean()),
+        "ipcw_brier_score": weighted_brier_score,
+        "reference_probability": normalized_reference_probability,
+        "ipcw_reference_brier_score": weighted_reference_brier_score,
+        "brier_skill_score": brier_skill_score,
     }
