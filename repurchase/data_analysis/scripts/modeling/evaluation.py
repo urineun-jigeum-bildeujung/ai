@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Final
 
 import numpy as np
@@ -11,6 +12,14 @@ from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
 class RepurchaseEvaluationError(ValueError):
     """평가 입력에 정답이나 예측값이 없을 때 발생합니다."""
+
+
+@dataclass(frozen=True)
+class IPCWUserBootstrapResult:
+    """사용자 단위 Bootstrap 요약과 반복별 원자료를 함께 보관합니다."""
+
+    summary: dict[str, float | int]
+    trials: pd.DataFrame
 
 
 EVALUATION_REQUIRED_COLUMNS: Final[tuple[str, ...]] = (
@@ -685,3 +694,109 @@ def summarize_ipcw_calibration(
             "weighted_absolute_gap_contribution",
         ],
     ]
+
+
+def bootstrap_ipcw_brier_difference_by_user(
+    rows: pd.DataFrame,
+    *,
+    reference_probability: float,
+    bootstrap_replicates: int,
+    random_seed: int,
+) -> IPCWUserBootstrapResult:
+    """사용자를 복원추출해 후보와 전체 확률 기준선의 Brier 차이를 추정합니다."""
+    if "user_id" not in rows.columns:
+        raise RepurchaseEvaluationError("사용자 Bootstrap에는 user_id가 필요합니다.")
+    if rows["user_id"].isna().any():
+        raise RepurchaseEvaluationError(
+            "사용자 Bootstrap의 user_id에는 결측값을 사용할 수 없습니다."
+        )
+    if (
+        isinstance(bootstrap_replicates, bool)
+        or not isinstance(bootstrap_replicates, int)
+        or bootstrap_replicates <= 0
+    ):
+        raise RepurchaseEvaluationError("Bootstrap 반복 수는 양의 정수여야 합니다.")
+    if isinstance(random_seed, bool) or not isinstance(random_seed, int):
+        raise RepurchaseEvaluationError("Bootstrap 무작위 시드는 정수여야 합니다.")
+
+    point_metrics = evaluate_ipcw_brier_score(
+        rows,
+        reference_probability=reference_probability,
+    )
+    known_rows = rows.loc[rows["ipcw_outcome_known"]].copy()
+    actual_event = known_rows["ipcw_event_within_horizon"].astype("float64")
+    weights = known_rows["ipcw_weight"].astype("float64")
+    candidate_squared_error = (
+        known_rows["predicted_event_probability"].sub(actual_event).pow(2)
+    )
+    reference_squared_error = actual_event.sub(reference_probability).pow(2)
+    known_rows["candidate_weighted_error"] = candidate_squared_error.mul(weights)
+    known_rows["reference_weighted_error"] = reference_squared_error.mul(weights)
+
+    user_summary = (
+        known_rows.groupby("user_id", observed=True, sort=False)
+        .agg(
+            row_count=("user_id", "size"),
+            ipcw_weight_sum=("ipcw_weight", "sum"),
+            candidate_weighted_error=("candidate_weighted_error", "sum"),
+            reference_weighted_error=("reference_weighted_error", "sum"),
+        )
+        .reset_index(drop=True)
+    )
+    user_count = len(user_summary)
+    if user_count < 2:
+        raise RepurchaseEvaluationError(
+            "사용자 Bootstrap에는 서로 다른 사용자가 2명 이상 필요합니다."
+        )
+
+    random_generator = np.random.default_rng(random_seed)
+    trials: list[dict[str, float | int]] = []
+    for replicate_index in range(bootstrap_replicates):
+        sampled_indices = random_generator.integers(
+            0,
+            user_count,
+            size=user_count,
+        )
+        sampled_users = user_summary.iloc[sampled_indices]
+        sampled_weight_sum = float(sampled_users["ipcw_weight_sum"].sum())
+        candidate_brier_score = float(
+            sampled_users["candidate_weighted_error"].sum() / sampled_weight_sum
+        )
+        reference_brier_score = float(
+            sampled_users["reference_weighted_error"].sum() / sampled_weight_sum
+        )
+        trials.append(
+            {
+                "replicate_index": replicate_index,
+                "sampled_user_count": user_count,
+                "represented_unique_user_count": int(np.unique(sampled_indices).size),
+                "resampled_row_count": int(sampled_users["row_count"].sum()),
+                "candidate_brier_score": candidate_brier_score,
+                "reference_brier_score": reference_brier_score,
+                "brier_improvement": (reference_brier_score - candidate_brier_score),
+            }
+        )
+
+    trial_rows = pd.DataFrame(trials)
+    improvement = trial_rows["brier_improvement"]
+    return IPCWUserBootstrapResult(
+        summary={
+            "bootstrap_replicates": bootstrap_replicates,
+            "random_seed": random_seed,
+            "user_count": user_count,
+            "outcome_known_count": int(point_metrics["outcome_known_count"]),
+            "point_candidate_brier_score": float(point_metrics["ipcw_brier_score"]),
+            "point_reference_brier_score": float(
+                point_metrics["ipcw_reference_brier_score"]
+            ),
+            "point_brier_improvement": float(
+                point_metrics["ipcw_reference_brier_score"]
+                - point_metrics["ipcw_brier_score"]
+            ),
+            "bootstrap_mean_brier_improvement": float(improvement.mean()),
+            "bootstrap_lower_95_brier_improvement": float(improvement.quantile(0.025)),
+            "bootstrap_upper_95_brier_improvement": float(improvement.quantile(0.975)),
+            "bootstrap_positive_improvement_rate": float(improvement.gt(0).mean()),
+        },
+        trials=trial_rows,
+    )

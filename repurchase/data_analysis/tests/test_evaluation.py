@@ -8,6 +8,7 @@ import pytest
 from scripts.modeling.evaluation import (
     RepurchaseEvaluationError,
     _FenwickCountTree,
+    bootstrap_ipcw_brier_difference_by_user,
     calculate_ipcw_concordance_pair_weight,
     calculate_pair_concordance_credit,
     evaluate_ipcw_binary_predictions,
@@ -309,3 +310,72 @@ def test_summarize_ipcw_calibration_rejects_invalid_bin_count(
 
     with pytest.raises(RepurchaseEvaluationError, match="구간 수"):
         summarize_ipcw_calibration(rows, bin_count=invalid_bin_count)  # type: ignore[arg-type]
+
+
+def test_bootstrap_ipcw_brier_difference_resamples_complete_user_clusters() -> None:
+    """사용자를 다시 뽑을 때 그 사용자의 평가 행 전체를 함께 복제합니다."""
+    rows = pd.DataFrame(
+        {
+            # U1은 1행, U2는 3행이므로 사용자 2명을 복원추출한 행 수는 2·4·6뿐입니다.
+            "user_id": ["U1", "U2", "U2", "U2"],
+            "predicted_event_probability": [0.8, 0.2, 0.7, 0.3],
+            "ipcw_event_within_horizon": pd.Series(
+                [True, False, True, False],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [30, 30, 30, 30],
+            "ipcw_outcome_known": [True, True, True, True],
+            "ipcw_weight": [1.0, 1.0, 2.0, 2.0],
+        }
+    )
+
+    result = bootstrap_ipcw_brier_difference_by_user(
+        rows,
+        reference_probability=0.5,
+        bootstrap_replicates=100,
+        random_seed=42,
+    )
+    repeated = bootstrap_ipcw_brier_difference_by_user(
+        rows,
+        reference_probability=0.5,
+        bootstrap_replicates=100,
+        random_seed=42,
+    )
+    point_metrics = evaluate_ipcw_brier_score(
+        rows,
+        reference_probability=0.5,
+    )
+
+    assert len(result.trials) == 100
+    assert result.trials["sampled_user_count"].eq(2).all()
+    assert set(result.trials["resampled_row_count"]) <= {2, 4, 6}
+    assert result.summary["user_count"] == 2
+    assert result.summary["point_brier_improvement"] == pytest.approx(
+        point_metrics["ipcw_reference_brier_score"] - point_metrics["ipcw_brier_score"]
+    )
+    pd.testing.assert_frame_equal(result.trials, repeated.trials)
+
+
+def test_bootstrap_ipcw_brier_difference_rejects_single_user() -> None:
+    """한 사용자만 있으면 사용자 간 표본 변동을 추정할 수 없어 거절합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U1"],
+            "predicted_event_probability": [0.8, 0.2],
+            "ipcw_event_within_horizon": pd.Series(
+                [True, False],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [30, 30],
+            "ipcw_outcome_known": [True, True],
+            "ipcw_weight": [1.0, 1.0],
+        }
+    )
+
+    with pytest.raises(RepurchaseEvaluationError, match="2명 이상"):
+        bootstrap_ipcw_brier_difference_by_user(
+            rows,
+            reference_probability=0.5,
+            bootstrap_replicates=100,
+            random_seed=42,
+        )
