@@ -8,6 +8,7 @@ import pytest
 
 from scripts.modeling.error_analysis import (
     add_error_columns,
+    add_product_sample_count,
     build_fixed_cohort_comparison_rows,
     build_random_product_concentration_trials,
     compare_error_on_fixed_cohort,
@@ -27,6 +28,10 @@ from scripts.modeling.error_analysis import (
     summarize_user_product_errors_by_history_count,
     summarize_user_product_errors_by_prior_count,
     summarize_user_product_errors_by_product,
+    summarize_user_product_errors_by_product_sample_count,
+    summarize_user_product_errors_by_product_sample_count_bucket,
+    summarize_user_product_errors_by_user_prior_order_count,
+    summarize_user_product_errors_by_user_prior_order_count_bucket,
 )
 
 
@@ -370,6 +375,188 @@ def test_summarize_product_frequency_counts_rows_by_product() -> None:
     assert result["sample_count"].tolist() == [3, 2, 1]
     assert result["sample_share"].tolist() == pytest.approx([3 / 6, 2 / 6, 1 / 6])
     assert result["sample_share"].sum() == pytest.approx(1.0)
+
+
+def test_add_product_sample_count_without_mutating_input() -> None:
+    """상품별 전체 표본 수를 각 행에 연결하되 원본은 변경하지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "product_id": ["P1", "P1", "P1", "P2", "P2", "P3"],
+            "absolute_error_days": [120.0, 90.0, 70.0, 80.0, 60.0, 50.0],
+        }
+    )
+
+    result = add_product_sample_count(rows)
+
+    assert result["product_sample_count"].tolist() == [3, 3, 3, 2, 2, 1]
+    assert "product_sample_count" not in rows.columns
+
+
+def test_add_product_sample_count_rejects_existing_output_column() -> None:
+    """이미 존재하는 결과 열을 덮어써서 원래 의미를 잃지 않도록 거부합니다."""
+    rows = pd.DataFrame(
+        {
+            "product_id": ["P1"],
+            "product_sample_count": [999],
+        }
+    )
+
+    with pytest.raises(ValueError, match="product_sample_count 열이 이미 존재합니다"):
+        add_product_sample_count(rows)
+
+
+def test_summarize_user_product_errors_by_product_sample_count() -> None:
+    """상품 표본 수별 오차와 최악 표본 과대표집을 같은 모집단에서 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "product_history",
+            ],
+            "product_id": ["P1", "P1", "P1", "P1", "P2", "P2", "P3", "P3", "P4"],
+            "target_duration_days": [30.0] * 9,
+            "predicted_duration_days": [
+                130.0,
+                120.0,
+                31.0,
+                31.0,
+                40.0,
+                39.0,
+                38.0,
+                37.0,
+                500.0,
+            ],
+        }
+    )
+
+    result = summarize_user_product_errors_by_product_sample_count(
+        rows,
+        tail_rate=0.25,
+    ).set_index("product_sample_count")
+
+    assert result.loc[2, "unique_product_count"] == 2
+    assert result.loc[2, "overall_sample_count"] == 4
+    assert result.loc[2, "tail_sample_count"] == 0
+    assert result.loc[2, "tail_overrepresentation_ratio"] == pytest.approx(0.0)
+    assert result.loc[4, "unique_product_count"] == 1
+    assert result.loc[4, "overall_sample_count"] == 4
+    assert result.loc[4, "tail_unique_product_count"] == 1
+    assert result.loc[4, "tail_sample_count"] == 2
+    assert result.loc[4, "tail_membership_rate"] == pytest.approx(0.5)
+    assert result.loc[4, "tail_overrepresentation_ratio"] == pytest.approx(2.0)
+    assert result["overall_sample_count"].sum() == 8
+    assert result["tail_sample_count"].sum() == 2
+
+
+def test_summarize_user_product_errors_by_product_sample_count_bucket() -> None:
+    """상세 중앙값을 평균하지 않고 원본 행에서 로그 구간 지표를 계산합니다."""
+    product_ids = (
+        ["P1"] + ["P2"] * 2 + ["P3"] * 3 + ["P4"] * 4 + ["P5"] * 7 + ["P6"] * 8
+    )
+    rows = pd.DataFrame(
+        {
+            "prediction_source": ["user_product_history"] * len(product_ids),
+            "product_id": product_ids,
+            "target_duration_days": [0.0] * len(product_ids),
+            "predicted_duration_days": list(range(1, len(product_ids) + 1)),
+        }
+    )
+
+    result = summarize_user_product_errors_by_product_sample_count_bucket(
+        rows,
+        tail_rate=0.2,
+    ).set_index("product_sample_count_bucket")
+
+    assert result.index.astype("string").tolist() == ["1", "2-3", "4-7", "8-15"]
+    assert result.loc["1", "overall_sample_count"] == 1
+    assert result.loc["2-3", "overall_sample_count"] == 5
+    assert result.loc["4-7", "overall_sample_count"] == 11
+    assert result.loc["8-15", "overall_sample_count"] == 8
+    assert result.loc["2-3", "unique_product_count"] == 2
+    assert result.loc["2-3", "median_absolute_error_days"] == pytest.approx(4.0)
+    assert result.loc["8-15", "tail_sample_count"] == 5
+    assert result.loc["8-15", "tail_membership_rate"] == pytest.approx(5 / 8)
+    assert result.loc["8-15", "tail_overrepresentation_ratio"] == pytest.approx(25 / 8)
+    assert result["overall_sample_count"].sum() == 25
+    assert result["tail_sample_count"].sum() == 5
+
+
+def test_summarize_user_product_errors_by_user_prior_order_count() -> None:
+    """사용자의 과거 고유 주문 수별 오차와 꼬리 과대표집을 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2", "U1", "U2", "U3", "U3", "U4", "U4", "U5"],
+            "prediction_source": [
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "shrunk_user_product_history",
+                "product_history",
+            ],
+            "user_prior_order_count": [1, 1, 2, 2, 4, 4, 4, 4, 10],
+            "target_duration_days": [30.0] * 9,
+            "predicted_duration_days": [
+                130.0,
+                120.0,
+                40.0,
+                39.0,
+                38.0,
+                37.0,
+                36.0,
+                35.0,
+                500.0,
+            ],
+        }
+    )
+
+    result = summarize_user_product_errors_by_user_prior_order_count(
+        rows,
+        tail_rate=0.25,
+    ).set_index("user_prior_order_count")
+
+    assert result.loc[1, "unique_user_count"] == 2
+    assert result.loc[1, "overall_sample_count"] == 2
+    assert result.loc[1, "tail_unique_user_count"] == 2
+    assert result.loc[1, "tail_sample_count"] == 2
+    assert result.loc[1, "tail_overrepresentation_ratio"] == pytest.approx(4.0)
+    assert result.loc[4, "unique_user_count"] == 2
+    assert result["overall_sample_count"].sum() == 8
+    assert result["tail_sample_count"].sum() == 2
+
+
+def test_summarize_user_product_errors_by_user_prior_order_count_bucket() -> None:
+    """사용자 주문 수 로그 구간의 Median AE를 원본 행에서 다시 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2", "U3", "U4", "U5"],
+            "prediction_source": ["user_product_history"] * 5,
+            "user_prior_order_count": [2, 2, 3, 3, 3],
+            "target_duration_days": [0.0] * 5,
+            "predicted_duration_days": [1.0, 100.0, 2.0, 3.0, 4.0],
+        }
+    )
+
+    result = summarize_user_product_errors_by_user_prior_order_count_bucket(
+        rows,
+        tail_rate=0.2,
+    ).set_index("user_prior_order_count_bucket")
+
+    assert result.loc["2-3", "unique_user_count"] == 5
+    assert result.loc["2-3", "overall_sample_count"] == 5
+    assert result.loc["2-3", "median_absolute_error_days"] == pytest.approx(3.0)
+    assert result.loc["2-3", "tail_sample_count"] == 1
+    assert result.loc["2-3", "tail_membership_rate"] == pytest.approx(0.2)
 
 
 def test_summarize_product_concentration_calculates_top1_share() -> None:
