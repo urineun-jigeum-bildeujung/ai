@@ -7,6 +7,7 @@ LightGBM과 XGBoost AFT가 서로 다른 입력 정보를 사용하면 모델 �
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Final
 
 import numpy as np
@@ -43,6 +44,8 @@ OPTIONAL_CONTINUOUS_FEATURE_COLUMNS: Final[tuple[str, ...]] = (
 def _validate_count_features(features: pd.DataFrame) -> None:
     """개수 피처가 결측값 없는 0 이상의 정수인지 검사합니다."""
     for column in COUNT_FEATURE_COLUMNS:
+        if column not in features.columns:
+            continue
         values = features[column]
         if (
             is_bool_dtype(values.dtype)
@@ -56,6 +59,8 @@ def _validate_count_features(features: pd.DataFrame) -> None:
 def _validate_optional_continuous_features(features: pd.DataFrame) -> None:
     """연속형 피처는 결측을 허용하되 관측값은 0 이상의 유한한 수로 제한합니다."""
     for column in OPTIONAL_CONTINUOUS_FEATURE_COLUMNS:
+        if column not in features.columns:
+            continue
         values = features[column]
         if is_bool_dtype(values.dtype) or not is_numeric_dtype(values.dtype):
             raise ModelFeatureError(f"{column}은 숫자 또는 결측값이어야 합니다.")
@@ -67,14 +72,36 @@ def _validate_optional_continuous_features(features: pd.DataFrame) -> None:
             )
 
 
-def select_minimal_model_features(rows: pd.DataFrame) -> pd.DataFrame:
-    """허용된 과거 이력 열만 선택해 독립적인 모델 입력표를 반환합니다."""
-    missing_columns = set(MINIMAL_MODEL_FEATURE_COLUMNS) - set(rows.columns)
+def select_minimal_model_features(
+    rows: pd.DataFrame,
+    *,
+    feature_columns: Sequence[str] = MINIMAL_MODEL_FEATURE_COLUMNS,
+) -> pd.DataFrame:
+    """최소 피처의 허용 목록 안에서 실험에 사용할 열을 순서대로 선택합니다."""
+    if isinstance(feature_columns, str) or not isinstance(feature_columns, Sequence):
+        raise ModelFeatureError("피처 목록은 순서가 있는 열 이름 목록이어야 합니다.")
+    selected_columns = tuple(feature_columns)
+    if not selected_columns or any(
+        not isinstance(column, str) for column in selected_columns
+    ):
+        raise ModelFeatureError(
+            "피처 목록에는 하나 이상의 문자열 열 이름이 필요합니다."
+        )
+    if len(selected_columns) != len(set(selected_columns)):
+        raise ModelFeatureError("피처 목록에 중복된 열 이름이 있습니다.")
+    unknown_columns = set(selected_columns) - set(MINIMAL_MODEL_FEATURE_COLUMNS)
+    if unknown_columns:
+        raise ModelFeatureError(
+            f"허용하지 않은 모델 피처입니다: {sorted(unknown_columns)}"
+        )
+    if not rows.columns.is_unique:
+        raise ModelFeatureError("입력 데이터에 중복된 열 이름이 있습니다.")
+    missing_columns = set(selected_columns) - set(rows.columns)
     if missing_columns:
         raise ModelFeatureError(f"모델 피처가 누락됐습니다: {sorted(missing_columns)}")
 
     # 열 허용 목록을 사용하므로 정답·미래 시각 열이 원본에 있어도 선택되지 않습니다.
-    features = rows.loc[:, list(MINIMAL_MODEL_FEATURE_COLUMNS)].copy()
+    features = rows.loc[:, list(selected_columns)].copy()
     _validate_count_features(features)
     _validate_optional_continuous_features(features)
     return features

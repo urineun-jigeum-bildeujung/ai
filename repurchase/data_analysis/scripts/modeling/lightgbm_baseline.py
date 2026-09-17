@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
 from typing import Final
@@ -37,7 +38,6 @@ def create_lightgbm_classifier() -> LGBMClassifier:
 
 LIGHTGBM_TRAINING_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     {
-        *MINIMAL_MODEL_FEATURE_COLUMNS,
         "split",
         "ipcw_horizon_days",
         "ipcw_outcome_known",
@@ -80,7 +80,11 @@ def _validate_training_rows(rows: pd.DataFrame) -> int:
     return int(horizon_value)
 
 
-def build_lightgbm_training_data(rows: pd.DataFrame) -> LightGBMTrainingData:
+def build_lightgbm_training_data(
+    rows: pd.DataFrame,
+    *,
+    feature_columns: Sequence[str] = MINIMAL_MODEL_FEATURE_COLUMNS,
+) -> LightGBMTrainingData:
     """정답을 확인할 수 있는 Train 행으로 LightGBM 학습 입력을 만듭니다."""
     horizon_days = _validate_training_rows(rows)
 
@@ -111,7 +115,9 @@ def build_lightgbm_training_data(rows: pd.DataFrame) -> LightGBMTrainingData:
             "학습 표본의 IPCW 가중치는 0보다 큰 유한한 숫자여야 합니다."
         )
 
-    features = select_minimal_model_features(known_rows)
+    features = select_minimal_model_features(
+        known_rows, feature_columns=feature_columns
+    )
     encoded_target = target.astype("int8").copy()
     normalized_weight = sample_weight.astype("float64").copy()
     if not (
@@ -148,7 +154,8 @@ def predict_lightgbm_repurchase_probability(
     rows: pd.DataFrame,
 ) -> pd.Series:
     """각 행의 기간 내 재구매 정답 1에 해당하는 확률을 반환합니다."""
-    features = select_minimal_model_features(rows)
+    # 학습된 모델의 열 이름과 순서를 재사용해 실험별 입력 불일치를 방지합니다.
+    features = select_minimal_model_features(rows, feature_columns=model.feature_name_)
     probability_matrix = np.asarray(model.predict_proba(features), dtype="float64")
     expected_shape = (len(features), 2)
     if probability_matrix.shape != expected_shape:

@@ -99,7 +99,7 @@ def test_predict_lightgbm_probability_selects_positive_class(
 ) -> None:
     """모든 행에서 재구매 정답 1에 해당하는 두 번째 확률만 반환합니다."""
     rows = make_lightgbm_rows()
-    model = create_lightgbm_classifier()
+    model = train_lightgbm_classifier(build_lightgbm_training_data(rows))
     probability_matrix = np.array(
         [
             [0.70, 0.30],
@@ -130,7 +130,9 @@ def test_predict_lightgbm_probability_rejects_wrong_matrix_shape(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """이진분류 확률이 2열이 아니면 잘못된 모델 출력으로 거절합니다."""
-    model = create_lightgbm_classifier()
+    model = train_lightgbm_classifier(
+        build_lightgbm_training_data(make_lightgbm_rows())
+    )
     monkeypatch.setattr(
         LGBMClassifier,
         "predict_proba",
@@ -145,7 +147,9 @@ def test_predict_lightgbm_probability_rejects_out_of_range_value(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """0부터 1 사이를 벗어난 값은 사용자에게 전달할 확률로 허용하지 않습니다."""
-    model = create_lightgbm_classifier()
+    model = train_lightgbm_classifier(
+        build_lightgbm_training_data(make_lightgbm_rows())
+    )
     monkeypatch.setattr(
         LGBMClassifier,
         "predict_proba",
@@ -166,6 +170,33 @@ def test_build_lightgbm_training_data_keeps_only_known_outcomes() -> None:
     assert training_data.sample_weight.index.tolist() == [10, 30]
     assert training_data.target.tolist() == [1, 0]
     assert training_data.sample_weight.tolist() == [1.25, 2.0]
+
+
+def test_subset_model_predicts_with_training_columns_and_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """예측 원본의 열 순서와 추가 열에 관계없이 학습 피처 순서를 재사용합니다."""
+    columns = ("user_prior_order_count", "history_interval_count")
+    rows = make_lightgbm_rows().drop(
+        columns=["history_median_days", "history_relative_mad"]
+    )
+    training_data = build_lightgbm_training_data(rows, feature_columns=columns)
+    model = train_lightgbm_classifier(training_data)
+    assert model.feature_name_ == list(columns)
+    assert training_data.features.index.tolist() == [10, 30]
+    assert training_data.sample_weight.tolist() == [1.25, 2.0]
+    original_predict = model.predict_proba
+
+    def check_prediction_features(features: pd.DataFrame) -> np.ndarray:
+        """실제 예측 직전에 학습 열 순서와 각 값의 대응을 검사합니다."""
+        pd.testing.assert_frame_equal(features, rows.loc[:, list(columns)])
+        return original_predict(features)
+
+    monkeypatch.setattr(model, "predict_proba", check_prediction_features)
+    probabilities = predict_lightgbm_repurchase_probability(model, rows.iloc[:, ::-1])
+
+    assert probabilities.index.equals(rows.index)
+    assert probabilities.between(0, 1).all()
 
 
 def test_build_lightgbm_training_data_preserves_missing_history_features() -> None:

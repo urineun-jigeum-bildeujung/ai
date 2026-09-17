@@ -65,6 +65,46 @@ def test_select_minimal_model_features_rejects_missing_column() -> None:
         select_minimal_model_features(rows)
 
 
+def test_select_subset_preserves_requested_order_and_rows() -> None:
+    """선택하지 않은 피처 없이도 요청한 열 순서와 모든 표본을 보존합니다."""
+    rows = make_model_rows().drop(
+        columns=["history_median_days", "history_relative_mad"]
+    )
+    columns = ("user_prior_order_count", "history_interval_count")
+
+    features = select_minimal_model_features(rows, feature_columns=columns)
+
+    pd.testing.assert_frame_equal(features, rows.loc[:, list(columns)])
+
+
+@pytest.mark.parametrize(
+    ("columns", "message"),
+    [
+        ((), "하나 이상"),
+        (("history_interval_count",) * 2, "중복"),
+        (("duration_days",), "허용하지 않은"),
+        (("history_interval_count", None), "문자열"),
+        ("history_interval_count", "순서가 있는"),
+        ({"history_interval_count"}, "순서가 있는"),
+    ],
+)
+def test_select_subset_rejects_invalid_feature_requests(
+    columns: object, message: str
+) -> None:
+    """정답 유입·중복·순서 불명확성이 있는 피처 선택을 거절합니다."""
+    with pytest.raises(ModelFeatureError, match=message):
+        select_minimal_model_features(make_model_rows(), feature_columns=columns)
+
+
+def test_select_subset_rejects_duplicate_source_columns() -> None:
+    """원본의 동일 열 이름이 두 열을 선택하게 만드는 모호성을 거절합니다."""
+    rows = make_model_rows()
+    rows = pd.concat([rows, rows[["history_interval_count"]]], axis=1)
+
+    with pytest.raises(ModelFeatureError, match="중복된 열"):
+        select_minimal_model_features(rows, feature_columns=("history_interval_count",))
+
+
 @pytest.mark.parametrize(
     ("column", "invalid_value", "message"),
     [
