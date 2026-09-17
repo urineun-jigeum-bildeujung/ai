@@ -80,6 +80,8 @@ def _validate_candidate_alignment(
     predictions: pd.DataFrame,
 ) -> None:
     """후보 비교 전 표본 식별자·개수·순서가 같은지 공통 검증합니다."""
+    if not weighted_samples.columns.is_unique or not predictions.columns.is_unique:
+        raise ValueError("IPCW 표본과 예측 데이터의 열 이름은 중복될 수 없습니다.")
     missing_columns = set(IPCW_CANDIDATE_ID_COLUMNS) - set(weighted_samples.columns)
     missing_columns |= set(IPCW_CANDIDATE_ID_COLUMNS) - set(predictions.columns)
     if missing_columns:
@@ -88,6 +90,9 @@ def _validate_candidate_alignment(
         )
     if len(weighted_samples) != len(predictions):
         raise ValueError("IPCW 기준 표본 수와 후보 예측 표본 수가 다릅니다.")
+    for rows in (weighted_samples, predictions):
+        if rows.loc[:, list(IPCW_CANDIDATE_ID_COLUMNS)].isna().any(axis=None):
+            raise ValueError("IPCW 표본 식별자에는 결측값을 사용할 수 없습니다.")
     if weighted_samples.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
         raise ValueError("IPCW 기준 표본 식별자가 중복됐습니다.")
     if predictions.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
@@ -115,6 +120,34 @@ def _attach_probability_candidate_predictions(
         "predicted_event_probability"
     ].to_numpy(copy=True)
     return evaluation_rows
+
+
+def build_paired_probability_predictions(
+    weighted_samples: pd.DataFrame,
+    reference_predictions: pd.DataFrame,
+    candidate_predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """같은 구매 표본의 정답·가중치를 보존하며 기준·후보 확률을 연결합니다.
+
+    인덱스 번호 대신 구매 식별자와 순서를 검증합니다. 확률값 범위와 IPCW
+    값의 유효성은 이후 공통 평가 함수에서 검사합니다. 호출부는 두 예측의
+    사건 정의·예측 기간·기준 시점이 같음을 보장해야 합니다.
+    """
+    paired_rows = weighted_samples.copy()
+    for role, predictions in (
+        ("reference", reference_predictions),
+        ("candidate", candidate_predictions),
+    ):
+        _validate_candidate_alignment(weighted_samples, predictions)
+        if "predicted_event_probability" not in predictions.columns:
+            raise ValueError(
+                f"{role} 예측에 predicted_event_probability 열이 없습니다."
+            )
+        # 키 순서를 확인했으므로 서로 다른 인덱스 번호에 의한 자동 정렬을 막습니다.
+        paired_rows[f"{role}_predicted_event_probability"] = predictions[
+            "predicted_event_probability"
+        ].to_numpy(copy=True)
+    return paired_rows
 
 
 def evaluate_lightgbm_probability_candidate(
@@ -189,13 +222,10 @@ def evaluate_lightgbm_probability_candidate(
             reference_model,
             validation_samples,
         )
-        _validate_candidate_alignment(weighted_validation, reference_predictions)
-        pair_rows = weighted_validation.copy()
-        pair_rows["reference_predicted_event_probability"] = reference_predictions[
-            "predicted_event_probability"
-        ].to_numpy(copy=True)
-        pair_rows["candidate_predicted_event_probability"] = probabilities.to_numpy(
-            copy=True
+        pair_rows = build_paired_probability_predictions(
+            weighted_validation,
+            reference_predictions,
+            predictions,
         )
         user_bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
             pair_rows,

@@ -9,6 +9,7 @@ from scripts.modeling import model_selection
 from scripts.modeling.baseline import HierarchicalMedianModel
 from scripts.modeling.model_selection import (
     LIGHTGBM_FEATURE_SETS,
+    build_paired_probability_predictions,
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
     evaluate_lightgbm_feature_sets,
@@ -89,6 +90,105 @@ def make_ipcw_probability_samples(split: str) -> pd.DataFrame:
             "user_prior_order_count": [0, 2, 3, 4],
         }
     )
+
+
+def make_probability_pair_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """인덱스는 다르지만 구매 키 순서가 같은 두 모델의 예측표를 만듭니다."""
+    weighted = pd.DataFrame(
+        {
+            "user_id": ["u1", "u1", "u2"],
+            "order_id": ["o1", "o2", "o3"],
+            "product_id": ["p1", "p2", "p1"],
+            "ipcw_outcome_known": [True, True, False],
+            "ipcw_event_within_horizon": pd.array(
+                [True, False, pd.NA], dtype="boolean"
+            ),
+            "ipcw_weight": [1.2, 1.0, 0.0],
+        },
+        index=[10, 20, 30],
+    )
+    reference = weighted[["user_id", "order_id", "product_id"]].copy()
+    candidate = reference.copy()
+    reference.index = [100, 200, 300]
+    candidate.index = [1000, 2000, 3000]
+    reference["predicted_event_probability"] = [0.6, 0.3, 0.4]
+    candidate["predicted_event_probability"] = [0.7, 0.2, 0.5]
+    return weighted, reference, candidate
+
+
+def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:
+    """인덱스가 달라도 같은 구매에 확률을 붙이고 미관측 정답과 원본을 보존합니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    originals = [rows.copy(deep=True) for rows in (weighted, reference, candidate)]
+
+    paired = build_paired_probability_predictions(weighted, reference, candidate)
+
+    pd.testing.assert_frame_equal(paired.loc[:, weighted.columns], weighted)
+    assert paired["reference_predicted_event_probability"].tolist() == [0.6, 0.3, 0.4]
+    assert paired["candidate_predicted_event_probability"].tolist() == [0.7, 0.2, 0.5]
+    paired.loc[10, "ipcw_weight"] = 9.0
+    paired.loc[10, "reference_predicted_event_probability"] = 0.0
+    for rows, original in zip((weighted, reference, candidate), originals, strict=True):
+        pd.testing.assert_frame_equal(rows, original)
+
+
+@pytest.mark.parametrize("role", ["reference", "candidate"])
+@pytest.mark.parametrize(
+    ("problem", "message"),
+    [
+        ("reordered", "순서"),
+        ("missing_row", "표본 수"),
+        ("duplicate_key", "중복"),
+        ("missing_probability", "predicted_event_probability"),
+        ("missing_key", "누락"),
+    ],
+)
+def test_probability_pair_rejects_misaligned_predictions(
+    role: str, problem: str, message: str
+) -> None:
+    """어느 모델이든 구매 누락·중복·순서 불일치가 있으면 자동 병합하지 않습니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    predictions = {"reference": reference, "candidate": candidate}
+    rows = predictions[role]
+    if problem == "reordered":
+        rows = rows.iloc[::-1]
+    elif problem == "missing_row":
+        rows = rows.iloc[:-1]
+    elif problem == "duplicate_key":
+        rows = rows.iloc[[0, 0, 2]]
+    elif problem == "missing_probability":
+        rows = rows.drop(columns="predicted_event_probability")
+    else:
+        rows = rows.drop(columns="order_id")
+    predictions[role] = rows
+
+    with pytest.raises(ValueError, match=message):
+        build_paired_probability_predictions(
+            weighted,
+            predictions["reference"],
+            predictions["candidate"],
+        )
+
+
+def test_probability_pair_rejects_matching_missing_keys() -> None:
+    """모든 표의 같은 위치에 결측 키가 있어도 유효한 구매 식별자로 인정하지 않습니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    for rows in (weighted, reference, candidate):
+        rows.loc[rows.index[0], "order_id"] = None
+
+    with pytest.raises(ValueError, match="식별자.*결측"):
+        build_paired_probability_predictions(weighted, reference, candidate)
+
+
+def test_probability_pair_rejects_duplicate_probability_columns() -> None:
+    """같은 확률 이름이 두 열을 가리키는 모호한 입력을 거절합니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    candidate = pd.concat(
+        [candidate, candidate[["predicted_event_probability"]]], axis=1
+    )
+
+    with pytest.raises(ValueError, match="열 이름.*중복"):
+        build_paired_probability_predictions(weighted, reference, candidate)
 
 
 def test_evaluate_shrinkage_candidates_preserves_candidates_and_metrics() -> None:
