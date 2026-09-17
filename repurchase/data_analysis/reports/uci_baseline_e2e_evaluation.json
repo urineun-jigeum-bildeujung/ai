@@ -10175,6 +10175,20 @@
       "weighted_absolute_gap_contribution": 1.846616570008923e-05
     }
   ],
+  "offline_evaluation_policy": {
+    "horizon_days": 30,
+    "primary_metric": "ipcw_brier_score",
+    "reference_metric": "brier_skill_score_vs_global_event_probability",
+    "secondary_metrics": [
+      "expected_calibration_error",
+      "ipcw_concordance_index"
+    ],
+    "diagnostic_metric": "conditional_mae_on_observed_outcomes",
+    "uncertainty_method": "user_cluster_bootstrap",
+    "model_selection_split": "validation",
+    "final_test_policy": "single_evaluation_without_reselection",
+    "selected_product_smoothing_strength": 8.0
+  },
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {

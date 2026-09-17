@@ -391,6 +391,21 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     )
     test_probability_calibration = summary["test_ipcw_probability_calibration"]
     assert test_probability_calibration
+    evaluation_policy = summary["offline_evaluation_policy"]
+    assert evaluation_policy == {
+        "horizon_days": PRIMARY_IPCW_HORIZON_DAYS,
+        "primary_metric": "ipcw_brier_score",
+        "reference_metric": "brier_skill_score_vs_global_event_probability",
+        "secondary_metrics": [
+            "expected_calibration_error",
+            "ipcw_concordance_index",
+        ],
+        "diagnostic_metric": "conditional_mae_on_observed_outcomes",
+        "uncertainty_method": "user_cluster_bootstrap",
+        "model_selection_split": "validation",
+        "final_test_policy": "single_evaluation_without_reselection",
+        "selected_product_smoothing_strength": 8.0,
+    }
     assert all(
         sum(float(row["ipcw_weight_share"]) for row in group_rows) == pytest.approx(1.0)
         for group_rows in calibration_groups.values()
@@ -494,6 +509,8 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "사용자 내부 상관을 보존" in markdown
     assert "고정 k=8의 1회 Test 평가" in markdown
     assert "Test 결과를 보고 k를 다시 선택하지 않으며" in markdown
+    assert "확정한 오프라인 평가 규칙" in markdown
+    assert "조건부 MAE는 다음 구매 정답이 확인된 표본" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown

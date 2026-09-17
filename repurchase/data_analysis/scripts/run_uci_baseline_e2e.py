@@ -905,6 +905,22 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "test_ipcw_probability_calibration": dataframe_to_nullable_records(
             test_ipcw_probability_calibration
         ),
+        "offline_evaluation_policy": {
+            "horizon_days": PRIMARY_IPCW_HORIZON_DAYS,
+            "primary_metric": "ipcw_brier_score",
+            "reference_metric": "brier_skill_score_vs_global_event_probability",
+            "secondary_metrics": [
+                "expected_calibration_error",
+                "ipcw_concordance_index",
+            ],
+            "diagnostic_metric": "conditional_mae_on_observed_outcomes",
+            "uncertainty_method": "user_cluster_bootstrap",
+            "model_selection_split": "validation",
+            "final_test_policy": "single_evaluation_without_reselection",
+            "selected_product_smoothing_strength": (
+                IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH
+            ),
+        },
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -1321,6 +1337,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "- k=8은 Validation 결과만으로 미리 고정한 뒤 Test를 평가했습니다.",
             "- Test 결과를 보고 k를 다시 선택하지 않으며, 성능이 낮더라도 그대로 "
             "일반화 결과로 기록합니다.",
+            "",
+            "### 확정한 오프라인 평가 규칙",
+            "",
+            "- 30일 시점의 `IPCW Brier Score`를 주 지표로 사용하고, Train 전체 "
+            "확률 기준선 대비 `Brier Skill Score`를 함께 확인합니다.",
+            "- Calibration은 ECE와 확률 구간별 표본 수·IPCW 비중을 함께 보고, "
+            "IPCW C-index는 재구매 순서 판별 성능을 보조적으로 확인합니다.",
+            "- 조건부 MAE는 다음 구매 정답이 확인된 표본의 오차 원인 진단에만 "
+            "사용하며 전체 모집단 성능으로 해석하지 않습니다.",
+            "- 지표 불확실성은 동일 사용자의 행을 묶은 사용자 단위 Bootstrap으로 "
+            "확인합니다.",
+            "- 모델 선택은 Validation에서만 수행하고, 고정 후보의 Test 결과는 "
+            "한 번만 확인한 뒤 재선택에 사용하지 않습니다.",
         ]
     )
 
