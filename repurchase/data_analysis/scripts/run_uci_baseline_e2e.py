@@ -96,6 +96,8 @@ PRODUCT_CONCENTRATION_SIGNIFICANCE_LEVEL: Final[float] = 0.05
 COMMON_FOLLOWUP_HORIZON_CANDIDATES: Final[tuple[int, ...]] = (14, 28, 30, 60, 90)
 # 후보 비교 결과를 바탕으로 IPCW의 1차 고정 평가 시점을 30일로 설정합니다.
 PRIMARY_IPCW_HORIZON_DAYS: Final[int] = 30
+# 0~100% 확률을 10%p 단위로 나눠 확률 보정 상태를 확인합니다.
+CALIBRATION_BIN_COUNT: Final[int] = 10
 
 
 @dataclass(frozen=True)
@@ -322,11 +324,18 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
     )
     training_population = samples.loc[samples["split"].eq("train")].copy()
-    validation_ipcw_probability_comparison = evaluate_ipcw_probability_candidates(
+    validation_ipcw_probability_evaluation = evaluate_ipcw_probability_candidates(
         training_population,
         validation_population,
         product_smoothing_strengths=(PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES),
         horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+        calibration_bin_count=CALIBRATION_BIN_COUNT,
+    )
+    validation_ipcw_probability_comparison = (
+        validation_ipcw_probability_evaluation.comparison
+    )
+    validation_ipcw_probability_calibration = (
+        validation_ipcw_probability_evaluation.calibration
     )
     # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
     validation_rows = validation_population.loc[
@@ -601,6 +610,24 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
                 )
             )
         ),
+        "ipcw_probability_calibration_population_preserved": bool(
+            validation_ipcw_probability_calibration.groupby(
+                ["model_candidate", "product_smoothing_strength"],
+                dropna=False,
+            )["sample_count"]
+            .sum()
+            .eq(validation_ipcw_binary_evaluation["outcome_known_count"])
+            .all()
+        ),
+        "ipcw_probability_calibration_weight_share_balanced": bool(
+            validation_ipcw_probability_calibration.groupby(
+                ["model_candidate", "product_smoothing_strength"],
+                dropna=False,
+            )["ipcw_weight_share"]
+            .sum()
+            .map(lambda value: math.isclose(value, 1.0))
+            .all()
+        ),
         "product_sample_count_detail_population_preserved": bool(
             validation_product_sample_count_analysis["overall_sample_count"].sum()
             == validation_product_concentration_analysis["overall_personalized"][
@@ -729,6 +756,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "validation_ipcw_probability_comparison": dataframe_to_nullable_records(
             validation_ipcw_probability_comparison
         ),
+        "validation_ipcw_probability_calibration": dataframe_to_nullable_records(
+            validation_ipcw_probability_calibration
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -778,6 +808,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ipcw_concordance_evaluation = summary["validation_ipcw_concordance_evaluation"]
     ipcw_candidate_comparison = summary["validation_ipcw_candidate_comparison"]
     ipcw_probability_comparison = summary["validation_ipcw_probability_comparison"]
+    ipcw_probability_calibration = summary["validation_ipcw_probability_calibration"]
     ipcw_candidate_comparison_lines = []
     for candidate in ipcw_candidate_comparison:
         candidate_label = (
@@ -808,8 +839,40 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"{candidate['product_prediction_rate']:.2%} | "
             f"{candidate['ipcw_brier_score']:.6f} | "
             f"{candidate['ipcw_reference_brier_score']:.6f} | "
-            f"{_format_optional_rate(candidate['brier_skill_score'])} |"
+            f"{_format_optional_rate(candidate['brier_skill_score'])} | "
+            f"{candidate['expected_calibration_error']:.2%} | "
+            f"{candidate['maximum_calibration_error']:.2%} |"
         )
+    best_probability_candidate = min(
+        ipcw_probability_comparison,
+        key=lambda candidate: candidate["ipcw_brier_score"],
+    )
+    best_smoothing_strength = best_probability_candidate["product_smoothing_strength"]
+    best_probability_candidate_label = (
+        "전체 확률 기준선"
+        if best_smoothing_strength is None
+        else f"상품 확률 k={float(best_smoothing_strength):g}"
+    )
+    best_calibration_rows = [
+        row
+        for row in ipcw_probability_calibration
+        if row["model_candidate"] == best_probability_candidate["model_candidate"]
+        and (
+            row["product_smoothing_strength"] == best_smoothing_strength
+            or (
+                row["product_smoothing_strength"] is None
+                and best_smoothing_strength is None
+            )
+        )
+    ]
+    best_calibration_lines = [
+        f"| {row['bin_lower_bound']:.0%}~{row['bin_upper_bound']:.0%} | "
+        f"{row['sample_count']:,} | {row['ipcw_weight_share']:.2%} | "
+        f"{row['mean_predicted_probability']:.2%} | "
+        f"{row['observed_event_rate']:.2%} | "
+        f"{_format_optional_percentage_point(row['calibration_gap'])} |"
+        for row in best_calibration_rows
+    ]
     current = summary["current_prediction_example"]
     lines = [
         "# UCI 재구매 예측 1차 학습 E2E 결과",
@@ -1033,8 +1096,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "### 30일 재구매 확률 후보의 IPCW Brier Score",
             "",
             "| 후보 | Train 전체 확률 | 상품 확률 적용률 | IPCW Brier | "
-            "전체 확률 Brier | Brier Skill Score |",
-            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            "전체 확률 Brier | Brier Skill Score | ECE | 최대 구간 오차 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
             *ipcw_probability_comparison_lines,
             "",
             "- 모든 확률 후보는 Train에서만 학습하고 동일한 Validation 표본과 "
@@ -1042,6 +1105,21 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "- Brier Score는 0에 가까울수록 확률 예측이 실제 결과에 가깝습니다.",
             "- Brier Skill Score가 양수이면 Train 전체 재구매율만 사용하는 "
             "기준선보다 개선됐고, 음수이면 기준선보다 나쁩니다.",
+            "",
+            f"#### Brier 기준 현재 최저 후보 Calibration: {best_probability_candidate_label}",
+            "",
+            "| 예측 확률 구간 | 표본 수 | IPCW 비중 | 평균 예측 확률 | "
+            "실제 재구매율 | 예측-실제 차이 |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            *best_calibration_lines,
+            "",
+            "- 예측-실제 차이가 양수이면 과대평가, 음수이면 과소평가입니다.",
+            "- ECE는 각 구간의 절대 차이에 전체 IPCW 비중을 곱해 합산한 "
+            "평균 Calibration 오차입니다.",
+            "- 최대 구간 오차는 표본이 매우 적은 구간에서 크게 흔들릴 수 있으므로 "
+            "반드시 표본 수와 IPCW 비중을 함께 확인합니다.",
+            "- 현재 최저 Brier 후보는 Validation 기준 결과이며 Test 확인 전까지 "
+            "최종 모델로 확정하지 않습니다.",
         ]
     )
 

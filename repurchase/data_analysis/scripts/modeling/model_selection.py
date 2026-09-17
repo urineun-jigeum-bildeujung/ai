@@ -26,6 +26,7 @@ from .evaluation import (
     evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
     evaluate_predictions,
+    summarize_ipcw_calibration,
 )
 from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
 from .probability_baseline import (
@@ -44,6 +45,14 @@ class IPCWShrinkageCandidateEvaluation:
     comparison: pd.DataFrame
     reference_binary_evaluation: dict[str, float | int | None]
     reference_concordance_evaluation: dict[str, float | int]
+
+
+@dataclass(frozen=True)
+class IPCWProbabilityCandidateEvaluation:
+    """확률 후보 비교표와 후보별 Calibration 구간 상세를 함께 보관합니다."""
+
+    comparison: pd.DataFrame
+    calibration: pd.DataFrame
 
 
 def _validate_candidate_alignment(
@@ -94,7 +103,8 @@ def evaluate_ipcw_probability_candidates(
     *,
     product_smoothing_strengths: Sequence[float],
     horizon_days: int,
-) -> pd.DataFrame:
+    calibration_bin_count: int = 10,
+) -> IPCWProbabilityCandidateEvaluation:
     """Train으로 확률 후보를 학습하고 동일한 Validation Brier Score로 비교합니다."""
     if training_samples.empty or validation_samples.empty:
         raise ValueError(
@@ -137,6 +147,7 @@ def evaluate_ipcw_probability_candidates(
     )
 
     results: list[dict[str, float | int | str | None]] = []
+    calibration_results: list[pd.DataFrame] = []
     for candidate_name, smoothing_strength, model in candidates:
         predictions = predict_hierarchical_event_probability_baseline(
             model,
@@ -150,6 +161,25 @@ def evaluate_ipcw_probability_candidates(
             evaluation_rows,
             reference_probability=global_model.global_event_probability,
         )
+        calibration = summarize_ipcw_calibration(
+            evaluation_rows,
+            bin_count=calibration_bin_count,
+        )
+        calibration.insert(0, "model_candidate", candidate_name)
+        calibration.insert(
+            1,
+            "product_smoothing_strength",
+            pd.Series(
+                [smoothing_strength] * len(calibration),
+                index=calibration.index,
+                dtype="Float64",
+            ),
+        )
+        calibration_results.append(calibration)
+        expected_calibration_error = float(
+            calibration["weighted_absolute_gap_contribution"].sum()
+        )
+        maximum_calibration_error = float(calibration["absolute_calibration_gap"].max())
         product_prediction_rate = float(
             predictions["probability_prediction_source"].eq("product_history").mean()
         )
@@ -169,10 +199,16 @@ def evaluate_ipcw_probability_candidates(
                     metrics["ipcw_reference_brier_score"]
                 ),
                 "brier_skill_score": metrics["brier_skill_score"],
+                "expected_calibration_error": expected_calibration_error,
+                "maximum_calibration_error": maximum_calibration_error,
+                "nonempty_calibration_bin_count": int(len(calibration)),
             }
         )
 
-    return pd.DataFrame(results)
+    return IPCWProbabilityCandidateEvaluation(
+        comparison=pd.DataFrame(results),
+        calibration=pd.concat(calibration_results, ignore_index=True),
+    )
 
 
 def _attach_candidate_predictions(

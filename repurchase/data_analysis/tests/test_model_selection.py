@@ -151,12 +151,14 @@ def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation()
     None
 ):
     """Train 확률만 학습하고 모든 후보를 같은 Validation·기준선으로 비교합니다."""
-    result = evaluate_ipcw_probability_candidates(
+    evaluation = evaluate_ipcw_probability_candidates(
         make_ipcw_probability_samples("train"),
         make_ipcw_probability_samples("validation"),
         product_smoothing_strengths=(1.0, 4.0),
         horizon_days=4,
+        calibration_bin_count=2,
     )
+    result = evaluation.comparison
 
     assert result["model_candidate"].tolist() == [
         "global_event_probability",
@@ -174,6 +176,21 @@ def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation()
     assert result.iloc[0]["product_prediction_rate"] == pytest.approx(0.0)
     assert result.iloc[1:]["product_prediction_rate"].tolist() == [1.0, 1.0]
     assert result.iloc[0]["brier_skill_score"] == pytest.approx(0.0)
+    assert result["nonempty_calibration_bin_count"].between(1, 2).all()
+
+    calibration = evaluation.calibration
+    assert set(calibration["model_candidate"]) == {
+        "global_event_probability",
+        "hierarchical_event_probability",
+    }
+    assert calibration.groupby(
+        ["model_candidate", "product_smoothing_strength"],
+        dropna=False,
+    )["sample_count"].sum().tolist() == [3, 3, 3]
+    assert calibration.groupby(
+        ["model_candidate", "product_smoothing_strength"],
+        dropna=False,
+    )["ipcw_weight_share"].sum().tolist() == pytest.approx([1.0, 1.0, 1.0])
 
 
 @pytest.mark.parametrize(

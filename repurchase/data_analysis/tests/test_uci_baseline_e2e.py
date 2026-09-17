@@ -323,6 +323,22 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         candidate["validation_sample_count"] == validation_sample_count
         for candidate in probability_comparison
     )
+    probability_calibration = summary["validation_ipcw_probability_calibration"]
+    assert probability_calibration
+    calibration_groups: dict[tuple[str, object], list[dict[str, object]]] = {}
+    for row in probability_calibration:
+        key = (row["model_candidate"], row["product_smoothing_strength"])
+        calibration_groups.setdefault(key, []).append(row)
+    assert len(calibration_groups) == len(probability_comparison)
+    assert all(
+        sum(int(row["sample_count"]) for row in group_rows)
+        == ipcw_binary_evaluation["outcome_known_count"]
+        for group_rows in calibration_groups.values()
+    )
+    assert all(
+        sum(float(row["ipcw_weight_share"]) for row in group_rows) == pytest.approx(1.0)
+        for group_rows in calibration_groups.values()
+    )
     assert "product_concentration_analysis" not in summary["test_evaluation"]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
@@ -407,6 +423,10 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "상품 확률 k=8" in markdown
     assert "Brier Score는 0에 가까울수록" in markdown
     assert "Train에서만 학습" in markdown
+    assert "ECE" in markdown
+    assert "Brier 기준 현재 최저 후보 Calibration" in markdown
+    assert "예측-실제 차이가 양수이면 과대평가" in markdown
+    assert "Test 확인 전까지 최종 모델로 확정하지 않습니다" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown
