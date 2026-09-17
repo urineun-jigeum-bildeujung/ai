@@ -7,6 +7,7 @@ import pytest
 
 from scripts.modeling.maturity_analysis import (
     add_available_followup_days,
+    add_split_ipcw_weights,
     add_validation_common_followup_eligibility,
     add_validation_event_within_horizon,
     add_validation_ipcw_weights,
@@ -166,6 +167,48 @@ def test_add_validation_ipcw_weights_distinguishes_known_and_unknown_outcomes() 
     ]
     assert result["ipcw_weight"].tolist() == pytest.approx([1.0, 0.0, 1.5, 1.5])
     assert "ipcw_weight" not in rows.columns
+
+
+def test_add_split_ipcw_weights_supports_training_rows() -> None:
+    """Validation과 같은 계산을 Train에도 재사용해 확률 학습 입력을 만듭니다."""
+    rows = pd.DataFrame(
+        {
+            "split": ["train"] * 4,
+            "anchor_at": pd.to_datetime(
+                ["2026-01-18", "2026-01-17", "2026-01-16", "2026-01-15"]
+            ),
+            "split_end_at": pd.to_datetime(["2026-01-20"] * 4),
+            "outcome_available_by_split_end": [True, False, True, False],
+            "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
+        }
+    )
+
+    result = add_split_ipcw_weights(rows, horizon_days=4)
+
+    assert result["ipcw_event_within_horizon"].tolist() == [
+        True,
+        pd.NA,
+        True,
+        False,
+    ]
+    assert result["ipcw_outcome_known"].tolist() == [True, False, True, True]
+    assert result["ipcw_weight"].tolist() == pytest.approx([1.0, 0.0, 1.5, 1.5])
+
+
+def test_add_split_ipcw_weights_rejects_mixed_time_splits() -> None:
+    """서로 다른 분할의 검열 분포를 하나로 섞어 추정하지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "split": ["train", "validation"],
+            "anchor_at": pd.to_datetime(["2026-01-18", "2026-02-18"]),
+            "split_end_at": pd.to_datetime(["2026-01-20", "2026-02-20"]),
+            "outcome_available_by_split_end": [True, True],
+            "target_duration_days": [2.0, 2.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match="하나의 시간 분할"):
+        add_split_ipcw_weights(rows, horizon_days=4)
 
 
 def test_summarize_validation_ipcw_weight_stability() -> None:

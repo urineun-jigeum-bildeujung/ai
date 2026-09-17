@@ -135,8 +135,26 @@ def add_available_followup_days(rows: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def add_validation_survival_observation(rows: pd.DataFrame) -> pd.DataFrame:
-    """Validation 종료 시점에서 확인 가능한 사건·검열 시간만 구성합니다.
+def _require_single_split(
+    rows: pd.DataFrame,
+    *,
+    expected_split: str | None = None,
+) -> str:
+    """한 계산에 하나의 시간 분할만 들어왔는지 확인해 이름을 반환합니다."""
+    split_values = rows["split"]
+    if split_values.isna().any() or split_values.nunique() != 1:
+        raise ValueError("생존분석 계산에는 하나의 시간 분할만 사용할 수 있습니다.")
+
+    split_name = str(split_values.iloc[0])
+    if expected_split is not None and split_name != expected_split:
+        raise ValueError(
+            f"생존분석 관측값에는 {expected_split} 표본만 사용할 수 있습니다."
+        )
+    return split_name
+
+
+def add_split_survival_observation(rows: pd.DataFrame) -> pd.DataFrame:
+    """한 시간 분할의 종료 시점에서 확인 가능한 사건·검열 시간을 구성합니다.
 
     분할 종료 전에 재구매가 확인된 표본은 실제 재구매 간격을 사용합니다.
     그 밖의 표본은 미래의 실제 재구매 간격을 보지 않고, 분할 종료일까지
@@ -146,8 +164,7 @@ def add_validation_survival_observation(rows: pd.DataFrame) -> pd.DataFrame:
     if missing_columns:
         missing_text = ", ".join(sorted(missing_columns))
         raise ValueError(f"생존분석 관측값 구성에 필요한 열이 없습니다: {missing_text}")
-    if not rows["split"].eq("validation").all():
-        raise ValueError("생존분석 관측값에는 Validation 표본만 사용할 수 있습니다.")
+    _require_single_split(rows)
 
     result = add_available_followup_days(rows)
     event_observed = result["outcome_available_by_split_end"]
@@ -182,15 +199,25 @@ def add_validation_survival_observation(rows: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def estimate_validation_censoring_survival_curve(
+def add_validation_survival_observation(rows: pd.DataFrame) -> pd.DataFrame:
+    """기존 Validation 호출 규칙을 유지하며 공통 생존 관측값을 생성합니다."""
+    missing_columns = SURVIVAL_OBSERVATION_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"생존분석 관측값 구성에 필요한 열이 없습니다: {missing_text}")
+    _require_single_split(rows, expected_split="validation")
+    return add_split_survival_observation(rows)
+
+
+def estimate_split_censoring_survival_curve(
     rows: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Validation의 검열 생존확률을 Kaplan-Meier 방식으로 추정합니다.
+    """한 시간 분할의 검열 생존확률을 Kaplan-Meier 방식으로 추정합니다.
 
     재구매 사건이 아니라 관찰 중단을 관심 사건으로 뒤집어 계산합니다.
     결과는 이후 IPCW 분모로 사용할 검열 생존확률의 시점별 근거가 됩니다.
     """
-    observed_rows = add_validation_survival_observation(rows)
+    observed_rows = add_split_survival_observation(rows)
     timeline = (
         observed_rows.groupby(
             "survival_observed_duration_days",
@@ -237,20 +264,32 @@ def estimate_validation_censoring_survival_curve(
     ]
 
 
-def add_validation_ipcw_weights(
+def estimate_validation_censoring_survival_curve(
+    rows: pd.DataFrame,
+) -> pd.DataFrame:
+    """기존 Validation 호출 규칙을 유지하며 검열 생존곡선을 추정합니다."""
+    missing_columns = SURVIVAL_OBSERVATION_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"생존분석 관측값 구성에 필요한 열이 없습니다: {missing_text}")
+    _require_single_split(rows, expected_split="validation")
+    return estimate_split_censoring_survival_curve(rows)
+
+
+def add_split_ipcw_weights(
     rows: pd.DataFrame,
     *,
     horizon_days: int,
 ) -> pd.DataFrame:
-    """고정 평가 시점의 재구매 여부와 원시 IPCW 가중치를 추가합니다.
+    """한 시간 분할에 고정 시점 재구매 여부와 원시 IPCW 가중치를 추가합니다.
 
     평가 시점 전에 확인된 재구매에는 사건 시점 직전의 검열 생존확률을,
     평가 시점까지 재구매가 없었던 표본에는 해당 시점의 검열 생존확률을
     사용합니다. 평가 시점 전에 검열된 표본은 결과가 불명이므로 가중치 0입니다.
     """
     _validate_common_followup_horizon_days(horizon_days)
-    result = add_validation_survival_observation(rows)
-    curve = estimate_validation_censoring_survival_curve(rows)
+    result = add_split_survival_observation(rows)
+    curve = estimate_split_censoring_survival_curve(rows)
 
     observed_duration = result["survival_observed_duration_days"]
     event_by_horizon = result["survival_event_observed"] & observed_duration.le(
@@ -311,6 +350,20 @@ def add_validation_ipcw_weights(
         "float64"
     )
     return result
+
+
+def add_validation_ipcw_weights(
+    rows: pd.DataFrame,
+    *,
+    horizon_days: int,
+) -> pd.DataFrame:
+    """기존 Validation 호출 규칙을 유지하며 원시 IPCW 가중치를 추가합니다."""
+    missing_columns = SURVIVAL_OBSERVATION_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        missing_text = ", ".join(sorted(missing_columns))
+        raise ValueError(f"생존분석 관측값 구성에 필요한 열이 없습니다: {missing_text}")
+    _require_single_split(rows, expected_split="validation")
+    return add_split_ipcw_weights(rows, horizon_days=horizon_days)
 
 
 def summarize_validation_ipcw_weight_stability(
