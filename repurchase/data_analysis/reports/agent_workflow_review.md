@@ -48,4 +48,4 @@
 - 메인 에이전트가 구현을 통합하고 검토 에이전트는 읽기 전용으로 유지한다.
 - 이번 역할은 매 단계 상시 실행되거나 다른 에이전트를 자동 감독하는 백그라운드 작업이 아니다.
 
-관련 기록: [이력서 수치·근거](repurchase_portfolio_evidence.md).
+관련 기록: [실험 수치·판단 근거](repurchase_experiment_evidence.md).
