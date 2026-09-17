@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import pandas as pd
 
@@ -20,7 +21,335 @@ from .error_analysis import (
     select_largest_error_rows,
     summarize_largest_error_tail,
 )
-from .evaluation import evaluate_predictions
+from .evaluation import (
+    IPCWUserBootstrapResult,
+    bootstrap_ipcw_brier_difference_by_user,
+    evaluate_ipcw_binary_predictions,
+    evaluate_ipcw_brier_score,
+    evaluate_ipcw_concordance_index,
+    evaluate_predictions,
+    summarize_ipcw_calibration,
+)
+from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
+from .probability_baseline import (
+    fit_global_event_probability_baseline,
+    fit_hierarchical_event_probability_baseline,
+    predict_hierarchical_event_probability_baseline,
+)
+
+IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
+
+
+@dataclass(frozen=True)
+class IPCWShrinkageCandidateEvaluation:
+    """후보 비교표와 기존 계층형 모델의 상세 IPCW 결과를 함께 보관합니다."""
+
+    comparison: pd.DataFrame
+    reference_binary_evaluation: dict[str, float | int | None]
+    reference_concordance_evaluation: dict[str, float | int]
+
+
+@dataclass(frozen=True)
+class IPCWProbabilityCandidateEvaluation:
+    """확률 후보 비교표와 후보별 Calibration 구간 상세를 함께 보관합니다."""
+
+    comparison: pd.DataFrame
+    calibration: pd.DataFrame
+    user_bootstrap: IPCWUserBootstrapResult | None
+
+
+def _validate_candidate_alignment(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> None:
+    """후보 비교 전 표본 식별자·개수·순서가 같은지 공통 검증합니다."""
+    missing_columns = set(IPCW_CANDIDATE_ID_COLUMNS) - set(weighted_samples.columns)
+    missing_columns |= set(IPCW_CANDIDATE_ID_COLUMNS) - set(predictions.columns)
+    if missing_columns:
+        raise ValueError(
+            f"IPCW 후보 정렬 확인 열이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if len(weighted_samples) != len(predictions):
+        raise ValueError("IPCW 기준 표본 수와 후보 예측 표본 수가 다릅니다.")
+    if weighted_samples.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
+        raise ValueError("IPCW 기준 표본 식별자가 중복됐습니다.")
+    if predictions.duplicated(subset=list(IPCW_CANDIDATE_ID_COLUMNS)).any():
+        raise ValueError("후보 예측 표본 식별자가 중복됐습니다.")
+
+    weighted_ids = weighted_samples.loc[:, IPCW_CANDIDATE_ID_COLUMNS].reset_index(
+        drop=True
+    )
+    prediction_ids = predictions.loc[:, IPCW_CANDIDATE_ID_COLUMNS].reset_index(
+        drop=True
+    )
+    if not weighted_ids.equals(prediction_ids):
+        raise ValueError("IPCW 기준 표본과 후보 예측 표본의 순서가 다릅니다.")
+
+
+def _attach_probability_candidate_predictions(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """검증된 동일 표본에 확률 예측값만 연결합니다."""
+    _validate_candidate_alignment(weighted_samples, predictions)
+
+    evaluation_rows = weighted_samples.copy()
+    evaluation_rows["predicted_event_probability"] = predictions[
+        "predicted_event_probability"
+    ].to_numpy(copy=True)
+    return evaluation_rows
+
+
+def evaluate_ipcw_probability_candidates(
+    training_samples: pd.DataFrame,
+    validation_samples: pd.DataFrame,
+    *,
+    product_smoothing_strengths: Sequence[float],
+    horizon_days: int,
+    calibration_bin_count: int = 10,
+    bootstrap_product_smoothing_strength: float | None = None,
+    bootstrap_replicates: int = 1_000,
+    bootstrap_random_seed: int = 42,
+) -> IPCWProbabilityCandidateEvaluation:
+    """Train으로 확률 후보를 학습하고 Validation 성능과 불확실성을 비교합니다."""
+    if training_samples.empty or validation_samples.empty:
+        raise ValueError(
+            "확률 후보 비교에는 Train과 Validation 표본이 모두 필요합니다."
+        )
+    if not product_smoothing_strengths:
+        raise ValueError("비교할 상품 확률 수축 강도 후보가 없습니다.")
+
+    normalized_strengths = [float(value) for value in product_smoothing_strengths]
+    if len(normalized_strengths) != len(set(normalized_strengths)):
+        raise ValueError("중복된 상품 확률 수축 강도 후보입니다.")
+    normalized_bootstrap_strength = (
+        None
+        if bootstrap_product_smoothing_strength is None
+        else float(bootstrap_product_smoothing_strength)
+    )
+    if (
+        normalized_bootstrap_strength is not None
+        and normalized_bootstrap_strength not in normalized_strengths
+    ):
+        raise ValueError("Bootstrap 대상 상품 확률 수축 강도가 후보 집합에 없습니다.")
+
+    weighted_training = add_split_ipcw_weights(
+        training_samples,
+        horizon_days=horizon_days,
+    )
+    weighted_validation = add_split_ipcw_weights(
+        validation_samples,
+        horizon_days=horizon_days,
+    )
+    global_model = fit_global_event_probability_baseline(weighted_training)
+
+    candidates = [
+        (
+            "global_event_probability",
+            None,
+            global_model,
+        )
+    ]
+    candidates.extend(
+        (
+            "hierarchical_event_probability",
+            smoothing_strength,
+            fit_hierarchical_event_probability_baseline(
+                weighted_training,
+                product_smoothing_strength=smoothing_strength,
+            ),
+        )
+        for smoothing_strength in normalized_strengths
+    )
+
+    results: list[dict[str, float | int | str | None]] = []
+    calibration_results: list[pd.DataFrame] = []
+    user_bootstrap: IPCWUserBootstrapResult | None = None
+    for candidate_name, smoothing_strength, model in candidates:
+        predictions = predict_hierarchical_event_probability_baseline(
+            model,
+            validation_samples,
+        )
+        evaluation_rows = _attach_probability_candidate_predictions(
+            weighted_validation,
+            predictions,
+        )
+        metrics = evaluate_ipcw_brier_score(
+            evaluation_rows,
+            reference_probability=global_model.global_event_probability,
+        )
+        calibration = summarize_ipcw_calibration(
+            evaluation_rows,
+            bin_count=calibration_bin_count,
+        )
+        calibration.insert(0, "model_candidate", candidate_name)
+        calibration.insert(
+            1,
+            "product_smoothing_strength",
+            pd.Series(
+                [smoothing_strength] * len(calibration),
+                index=calibration.index,
+                dtype="Float64",
+            ),
+        )
+        calibration_results.append(calibration)
+        if (
+            normalized_bootstrap_strength is not None
+            and smoothing_strength == normalized_bootstrap_strength
+        ):
+            user_bootstrap = bootstrap_ipcw_brier_difference_by_user(
+                evaluation_rows,
+                reference_probability=global_model.global_event_probability,
+                bootstrap_replicates=bootstrap_replicates,
+                random_seed=bootstrap_random_seed,
+            )
+        expected_calibration_error = float(
+            calibration["weighted_absolute_gap_contribution"].sum()
+        )
+        maximum_calibration_error = float(calibration["absolute_calibration_gap"].max())
+        product_prediction_rate = float(
+            predictions["probability_prediction_source"].eq("product_history").mean()
+        )
+        results.append(
+            {
+                "model_candidate": candidate_name,
+                "product_smoothing_strength": smoothing_strength,
+                "horizon_days": int(metrics["horizon_days"]),
+                "training_global_event_probability": (
+                    global_model.global_event_probability
+                ),
+                "evaluation_sample_count": int(metrics["validation_sample_count"]),
+                "outcome_known_count": int(metrics["outcome_known_count"]),
+                "product_prediction_rate": product_prediction_rate,
+                "ipcw_brier_score": float(metrics["ipcw_brier_score"]),
+                "ipcw_reference_brier_score": float(
+                    metrics["ipcw_reference_brier_score"]
+                ),
+                "brier_skill_score": metrics["brier_skill_score"],
+                "expected_calibration_error": expected_calibration_error,
+                "maximum_calibration_error": maximum_calibration_error,
+                "nonempty_calibration_bin_count": int(len(calibration)),
+            }
+        )
+
+    return IPCWProbabilityCandidateEvaluation(
+        comparison=pd.DataFrame(results),
+        calibration=pd.concat(calibration_results, ignore_index=True),
+        user_bootstrap=user_bootstrap,
+    )
+
+
+def _attach_candidate_predictions(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """같은 표본 순서인지 확인한 뒤 후보 예측값만 IPCW 평가 행에 연결합니다."""
+    _validate_candidate_alignment(weighted_samples, predictions)
+
+    evaluation_rows = weighted_samples.copy()
+    evaluation_rows["predicted_duration_days"] = predictions[
+        "predicted_duration_days"
+    ].to_numpy(copy=True)
+    return evaluation_rows
+
+
+def evaluate_ipcw_shrinkage_candidates(
+    samples: pd.DataFrame,
+    model: HierarchicalMedianModel,
+    *,
+    shrinkage_strengths: Sequence[float],
+    horizon_days: int,
+) -> IPCWShrinkageCandidateEvaluation:
+    """동일한 IPCW 조건에서 기존 계층형 모델과 수축 후보를 직접 비교합니다."""
+    if samples.empty:
+        raise ValueError("IPCW로 비교할 Validation 표본이 없습니다.")
+    if not shrinkage_strengths:
+        raise ValueError("IPCW로 평가할 수축 강도 후보가 없습니다.")
+
+    weighted_samples = add_validation_ipcw_weights(
+        samples,
+        horizon_days=horizon_days,
+    )
+    candidate_predictions: list[tuple[str, float | None, pd.DataFrame]] = [
+        (
+            "hierarchical_median",
+            None,
+            predict_hierarchical_median_baseline(model, samples),
+        )
+    ]
+    evaluated_strengths: set[float] = set()
+    for shrinkage_strength in shrinkage_strengths:
+        predictions = predict_shrunk_hierarchical_median_baseline(
+            model,
+            samples,
+            shrinkage_strength=shrinkage_strength,
+        )
+        normalized_strength = float(predictions["shrinkage_strength"].iat[0])
+        if normalized_strength in evaluated_strengths:
+            raise ValueError(f"중복된 수축 강도 후보입니다: {normalized_strength}")
+        evaluated_strengths.add(normalized_strength)
+        candidate_predictions.append(
+            (
+                "shrunk_hierarchical_median",
+                normalized_strength,
+                predictions,
+            )
+        )
+
+    results: list[dict[str, float | int | str | None]] = []
+    reference_binary_evaluation: dict[str, float | int | None] | None = None
+    reference_concordance_evaluation: dict[str, float | int] | None = None
+    for candidate_name, shrinkage_strength, predictions in candidate_predictions:
+        evaluation_rows = _attach_candidate_predictions(
+            weighted_samples,
+            predictions,
+        )
+        binary_evaluation = evaluate_ipcw_binary_predictions(evaluation_rows)
+        concordance_evaluation = evaluate_ipcw_concordance_index(evaluation_rows)
+        if shrinkage_strength is None:
+            reference_binary_evaluation = binary_evaluation
+            reference_concordance_evaluation = concordance_evaluation
+        results.append(
+            {
+                "model_candidate": candidate_name,
+                "shrinkage_strength": shrinkage_strength,
+                "validation_sample_count": int(
+                    binary_evaluation["validation_sample_count"]
+                ),
+                "outcome_known_count": int(binary_evaluation["outcome_known_count"]),
+                "ipcw_weighted_binary_accuracy": float(
+                    binary_evaluation["ipcw_weighted_binary_accuracy"]
+                ),
+                "ipcw_weighted_precision": binary_evaluation["ipcw_weighted_precision"],
+                "ipcw_weighted_recall": binary_evaluation["ipcw_weighted_recall"],
+                "ipcw_weighted_specificity": binary_evaluation[
+                    "ipcw_weighted_specificity"
+                ],
+                "ipcw_weighted_balanced_accuracy": binary_evaluation[
+                    "ipcw_weighted_balanced_accuracy"
+                ],
+                "ipcw_weighted_f1": binary_evaluation["ipcw_weighted_f1"],
+                "ipcw_concordance_index": float(
+                    concordance_evaluation["ipcw_concordance_index"]
+                ),
+            }
+        )
+
+    result = pd.DataFrame(results)
+    reference = result.iloc[0]
+    for metric in (
+        "ipcw_weighted_binary_accuracy",
+        "ipcw_weighted_balanced_accuracy",
+        "ipcw_concordance_index",
+    ):
+        result[f"{metric}_difference_vs_reference"] = result[metric] - reference[metric]
+    if reference_binary_evaluation is None or reference_concordance_evaluation is None:
+        raise RuntimeError("기존 계층형 모델의 IPCW 기준 결과가 생성되지 않았습니다.")
+    return IPCWShrinkageCandidateEvaluation(
+        comparison=result,
+        reference_binary_evaluation=reference_binary_evaluation,
+        reference_concordance_evaluation=reference_concordance_evaluation,
+    )
 
 
 def evaluate_shrinkage_candidates(

@@ -3,17 +3,52 @@
 from __future__ import annotations
 
 import json
+from itertools import pairwise
 
 import pandas as pd
 import pytest
 
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_baseline_e2e import (
+    COMMON_FOLLOWUP_HORIZON_CANDIDATES,
+    IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
+    PRIMARY_IPCW_HORIZON_DAYS,
+    PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES,
+    SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
+    build_ipcw_probability_bootstrap_trials_report,
+    build_probability_refit_population,
     build_product_concentration_trials_report,
     render_markdown,
     run_baseline_cycle,
 )
+
+
+def test_build_probability_refit_population_hides_future_outcomes() -> None:
+    """재학습 기준 시점 이후에 확인된 구매 정답은 학습 전에 가립니다."""
+    samples = pd.DataFrame(
+        {
+            "anchor_at": pd.to_datetime(["2026-01-01", "2026-01-05", "2026-02-01"]),
+            "next_same_product_at": pd.to_datetime(
+                ["2026-01-10", "2026-02-10", "2026-02-10"]
+            ),
+            "target_duration_days": [9.0, 36.0, 9.0],
+            "event_observed": pd.Series([True, True, True], dtype="boolean"),
+        }
+    )
+
+    result = build_probability_refit_population(
+        samples,
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+
+    assert len(result) == 2
+    assert result["split"].eq("train").all()
+    assert result["split_end_at"].eq(pd.Timestamp("2026-01-31")).all()
+    assert result["outcome_available_by_split_end"].tolist() == [True, False]
+    assert result["event_observed"].tolist() == [True, False]
+    assert result["next_same_product_at"].notna().tolist() == [True, False]
+    assert result["target_duration_days"].notna().tolist() == [True, False]
 
 
 def make_purchase_events() -> pd.DataFrame:
@@ -105,6 +140,63 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         tail_concentration["total_sample_count"]
         / overall_concentration["total_sample_count"]
     )
+    product_sample_count_analysis = summary["validation_product_sample_count_analysis"]
+    product_sample_count_bucket_analysis = summary[
+        "validation_product_sample_count_bucket_analysis"
+    ]
+    assert product_sample_count_analysis
+    assert product_sample_count_bucket_analysis
+    assert (
+        sum(row["overall_sample_count"] for row in product_sample_count_analysis)
+        == overall_concentration["total_sample_count"]
+    )
+    assert (
+        sum(row["tail_sample_count"] for row in product_sample_count_analysis)
+        == tail_concentration["total_sample_count"]
+    )
+    assert (
+        sum(row["overall_sample_count"] for row in product_sample_count_bucket_analysis)
+        == overall_concentration["total_sample_count"]
+    )
+    assert (
+        sum(row["tail_sample_count"] for row in product_sample_count_bucket_analysis)
+        == tail_concentration["total_sample_count"]
+    )
+    assert all(
+        isinstance(row["product_sample_count_bucket"], str)
+        for row in product_sample_count_bucket_analysis
+    )
+    user_prior_order_count_analysis = summary[
+        "validation_user_prior_order_count_analysis"
+    ]
+    user_prior_order_count_bucket_analysis = summary[
+        "validation_user_prior_order_count_bucket_analysis"
+    ]
+    assert user_prior_order_count_analysis
+    assert user_prior_order_count_bucket_analysis
+    assert (
+        sum(row["overall_sample_count"] for row in user_prior_order_count_analysis)
+        == overall_concentration["total_sample_count"]
+    )
+    assert (
+        sum(row["tail_sample_count"] for row in user_prior_order_count_analysis)
+        == tail_concentration["total_sample_count"]
+    )
+    assert (
+        sum(
+            row["overall_sample_count"]
+            for row in user_prior_order_count_bucket_analysis
+        )
+        == overall_concentration["total_sample_count"]
+    )
+    assert (
+        sum(row["tail_sample_count"] for row in user_prior_order_count_bucket_analysis)
+        == tail_concentration["total_sample_count"]
+    )
+    assert all(
+        isinstance(row["user_prior_order_count_bucket"], str)
+        for row in user_prior_order_count_bucket_analysis
+    )
     random_baseline = summary["validation_product_concentration_random_baseline"]
     assert (
         random_baseline["sample_count_per_trial"]
@@ -137,6 +229,187 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         for row in maturity_analysis
     )
     assert all(0.0 <= row["maturity_rate"] <= 1.0 for row in maturity_analysis)
+    followup_distribution = summary["validation_followup_distribution"]
+    assert [row["quantile"] for row in followup_distribution] == [
+        0.0,
+        0.1,
+        0.25,
+        0.5,
+        0.75,
+        0.9,
+        1.0,
+    ]
+    assert all(
+        left["available_followup_days"] <= right["available_followup_days"]
+        for left, right in pairwise(followup_distribution)
+    )
+    common_followup_candidates = summary["validation_common_followup_candidates"]
+    assert [row["horizon_days"] for row in common_followup_candidates] == list(
+        COMMON_FOLLOWUP_HORIZON_CANDIDATES
+    )
+    validation_sample_count = summary["split_summary"]["validation"]["sample_count"]
+    assert all(
+        row["validation_sample_count"] == validation_sample_count
+        for row in common_followup_candidates
+    )
+    assert all(
+        row["eligible_sample_count"] + row["ineligible_sample_count"]
+        == validation_sample_count
+        for row in common_followup_candidates
+    )
+    assert all(
+        row["event_within_horizon_count"] + row["no_event_within_horizon_count"]
+        == row["eligible_sample_count"]
+        for row in common_followup_candidates
+    )
+    monthly_composition = summary["validation_common_followup_monthly_composition"]
+    assert sorted({row["horizon_days"] for row in monthly_composition}) == list(
+        COMMON_FOLLOWUP_HORIZON_CANDIDATES
+    )
+    assert all(
+        row["validation_sample_count"]
+        == row["eligible_sample_count"] + row["ineligible_sample_count"]
+        for row in monthly_composition
+    )
+    ipcw_weight_stability = summary["validation_ipcw_weight_stability"][0]
+    assert ipcw_weight_stability["horizon_days"] == PRIMARY_IPCW_HORIZON_DAYS
+    assert (
+        ipcw_weight_stability["outcome_known_count"]
+        + ipcw_weight_stability["outcome_unknown_count"]
+        == validation_sample_count
+    )
+    assert (
+        ipcw_weight_stability["event_within_horizon_count"]
+        + ipcw_weight_stability["no_event_within_horizon_count"]
+        == ipcw_weight_stability["outcome_known_count"]
+    )
+    assert (
+        ipcw_weight_stability["ipcw_weight_max"]
+        >= ipcw_weight_stability["ipcw_weight_median"]
+    )
+    assert ipcw_weight_stability["ipcw_weighted_event_mass"] + ipcw_weight_stability[
+        "ipcw_weighted_no_event_mass"
+    ] == pytest.approx(ipcw_weight_stability["ipcw_weight_sum"])
+    assert (
+        ipcw_weight_stability["ipcw_effective_sample_size"]
+        <= ipcw_weight_stability["outcome_known_count"]
+    )
+    ipcw_binary_evaluation = summary["validation_ipcw_binary_evaluation"]
+    assert ipcw_binary_evaluation["horizon_days"] == PRIMARY_IPCW_HORIZON_DAYS
+    assert ipcw_binary_evaluation["validation_sample_count"] == validation_sample_count
+    assert (
+        ipcw_binary_evaluation["outcome_known_count"]
+        == ipcw_weight_stability["outcome_known_count"]
+    )
+    assert ipcw_binary_evaluation[
+        "ipcw_weighted_false_positive_mass"
+    ] + ipcw_binary_evaluation["ipcw_weighted_false_negative_mass"] == pytest.approx(
+        ipcw_binary_evaluation["ipcw_weighted_error_mass"]
+    )
+    assert ipcw_binary_evaluation[
+        "ipcw_weighted_true_positive_mass"
+    ] + ipcw_binary_evaluation[
+        "ipcw_weighted_true_negative_mass"
+    ] + ipcw_binary_evaluation[
+        "ipcw_weighted_false_positive_mass"
+    ] + ipcw_binary_evaluation["ipcw_weighted_false_negative_mass"] == pytest.approx(
+        ipcw_binary_evaluation["ipcw_weight_sum"]
+    )
+    ipcw_concordance_evaluation = summary["validation_ipcw_concordance_evaluation"]
+    assert (
+        ipcw_concordance_evaluation["validation_sample_count"]
+        == validation_sample_count
+    )
+    assert (
+        ipcw_concordance_evaluation["concordant_pair_count"]
+        + ipcw_concordance_evaluation["tied_pair_count"]
+        + ipcw_concordance_evaluation["discordant_pair_count"]
+        == ipcw_concordance_evaluation["comparable_pair_count"]
+    )
+    assert 0 <= ipcw_concordance_evaluation["ipcw_concordance_index"] <= 1
+    ipcw_candidate_comparison = summary["validation_ipcw_candidate_comparison"]
+    assert len(ipcw_candidate_comparison) == 1 + len(SHRINKAGE_STRENGTH_CANDIDATES)
+    assert all(
+        candidate["validation_sample_count"] == validation_sample_count
+        for candidate in ipcw_candidate_comparison
+    )
+    assert (
+        ipcw_candidate_comparison[0][
+            "ipcw_weighted_balanced_accuracy_difference_vs_reference"
+        ]
+        is None
+    )
+    assert ipcw_candidate_comparison[0][
+        "ipcw_concordance_index_difference_vs_reference"
+    ] == pytest.approx(0.0)
+    probability_comparison = summary["validation_ipcw_probability_comparison"]
+    assert len(probability_comparison) == 1 + len(
+        PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES
+    )
+    assert probability_comparison[0]["model_candidate"] == ("global_event_probability")
+    assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
+    assert probability_comparison[0]["brier_skill_score"] is None
+    assert all(
+        candidate["evaluation_sample_count"] == validation_sample_count
+        for candidate in probability_comparison
+    )
+    probability_calibration = summary["validation_ipcw_probability_calibration"]
+    assert probability_calibration
+    calibration_groups: dict[tuple[str, object], list[dict[str, object]]] = {}
+    for row in probability_calibration:
+        key = (row["model_candidate"], row["product_smoothing_strength"])
+        calibration_groups.setdefault(key, []).append(row)
+    assert len(calibration_groups) == len(probability_comparison)
+    assert all(
+        sum(int(row["sample_count"]) for row in group_rows)
+        == ipcw_binary_evaluation["outcome_known_count"]
+        for group_rows in calibration_groups.values()
+    )
+    probability_bootstrap = summary["validation_ipcw_probability_user_bootstrap"]
+    assert probability_bootstrap["product_smoothing_strength"] == 8.0
+    assert probability_bootstrap["bootstrap_replicates"] == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert len(result.probability_bootstrap_trials) == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert (
+        probability_bootstrap["bootstrap_lower_95_brier_improvement"]
+        <= probability_bootstrap["bootstrap_mean_brier_improvement"]
+        <= probability_bootstrap["bootstrap_upper_95_brier_improvement"]
+    )
+    test_probability_comparison = summary["test_ipcw_probability_comparison"]
+    assert len(test_probability_comparison) == 2
+    assert test_probability_comparison[0]["model_candidate"] == (
+        "global_event_probability"
+    )
+    assert test_probability_comparison[1]["product_smoothing_strength"] == 8.0
+    assert all(
+        candidate["evaluation_sample_count"]
+        == summary["split_summary"]["test"]["sample_count"]
+        for candidate in test_probability_comparison
+    )
+    test_probability_calibration = summary["test_ipcw_probability_calibration"]
+    assert test_probability_calibration
+    evaluation_policy = summary["offline_evaluation_policy"]
+    assert evaluation_policy == {
+        "horizon_days": PRIMARY_IPCW_HORIZON_DAYS,
+        "primary_metric": "ipcw_brier_score",
+        "reference_metric": "brier_skill_score_vs_global_event_probability",
+        "secondary_metrics": [
+            "expected_calibration_error",
+            "ipcw_concordance_index",
+        ],
+        "diagnostic_metric": "conditional_mae_on_observed_outcomes",
+        "uncertainty_method": "user_cluster_bootstrap",
+        "model_selection_split": "validation",
+        "final_test_policy": "single_evaluation_without_reselection",
+        "selected_product_smoothing_strength": 8.0,
+    }
+    assert all(
+        sum(float(row["ipcw_weight_share"]) for row in group_rows) == pytest.approx(1.0)
+        for group_rows in calibration_groups.values()
+    )
     assert "product_concentration_analysis" not in summary["test_evaluation"]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
@@ -171,6 +444,7 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert all(summary["invariants"].values())
 
     random_trials_report = build_product_concentration_trials_report(result)
+    bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
     assert random_trials_report["dataset"] == "uci_online_retail_ii"
     assert random_trials_report["evaluation_split"] == "validation"
     assert (
@@ -192,9 +466,51 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         allow_nan=False,
     )
     assert json.loads(serialized_trials_report) == random_trials_report
+    serialized_bootstrap_trials_report = json.dumps(
+        bootstrap_trials_report,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert json.loads(serialized_bootstrap_trials_report) == bootstrap_trials_report
 
     markdown = render_markdown(summary)
 
+    assert "Validation 관찰 가능 기간 분포" in markdown
+    assert "미관측·검열 표본을 제외하지 않은 전체 Validation" in markdown
+    assert "Validation 공통 관찰 기간 후보 비교" in markdown
+    assert "기간 내 재구매율의 분모는 전체 Validation이 아니라" in markdown
+    assert "재구매 간격 중앙값(일)" in markdown
+    assert "Validation 공통 관찰 기간 후보별 구매 월 구성" in markdown
+    assert "적용 전 비중" in markdown
+    assert "적용 후 해당 월이 과대표현" in markdown
+    assert "Validation 30일 IPCW 원시 가중치 안정성" in markdown
+    assert "ESS/결과 확인" in markdown
+    assert "아직 상한을 적용하지 않은 원시 가중치" in markdown
+    assert "IPCW 보정 재구매율" in markdown
+    assert "계층형 중앙값 모델의 30일 IPCW 이진 평가" in markdown
+    assert "Balanced Accuracy" in markdown
+    assert "항상 미재구매 정확도" in markdown
+    assert "정식 Brier Score가 아니라" in markdown
+    assert "계층형 중앙값 모델의 30일 IPCW C-index" in markdown
+    assert "비교 가능 쌍" in markdown
+    assert "0.5는 무작위 순위 수준" in markdown
+    assert "기존 계층형 모델과 수축 후보의 동일 조건 비교" in markdown
+    assert "수축 k=8" in markdown
+    assert "동일한 Validation 표본·30일 시점·검열 가중치" in markdown
+    assert "30일 재구매 확률 후보의 IPCW Brier Score" in markdown
+    assert "상품 확률 k=8" in markdown
+    assert "Brier Score는 0에 가까울수록" in markdown
+    assert "Train에서만 학습" in markdown
+    assert "ECE" in markdown
+    assert "Brier 기준 현재 최저 후보 Calibration" in markdown
+    assert "예측-실제 차이가 양수이면 과대평가" in markdown
+    assert "Test 확인 전까지 최종 모델로 확정하지 않습니다" in markdown
+    assert "k=8 사용자 단위 Bootstrap" in markdown
+    assert "사용자 내부 상관을 보존" in markdown
+    assert "고정 k=8의 1회 Test 평가" in markdown
+    assert "Test 결과를 보고 k를 다시 선택하지 않으며" in markdown
+    assert "확정한 오프라인 평가 규칙" in markdown
+    assert "조건부 MAE는 다음 구매 정답이 확인된 표본" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown
@@ -208,6 +524,12 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "Top-1 점유율" in markdown
     assert "Top-5 점유율" in markdown
     assert "유효 상품 수" in markdown
+    assert "Validation 상품 표본 수 구간별 오차" in markdown
+    assert "꼬리 포함률" in markdown
+    assert "모델 입력 피처가 아닌 사후 진단 기준" in markdown
+    assert "Validation 사용자 과거 주문 수 구간별 오차" in markdown
+    assert "같은 주문의 여러 상품은 한 번만 계산" in markdown
+    assert "소수 사용자의 반복 행" in markdown
     expected_selection_text = (
         f"실제 선택: **{tail_concentration['total_sample_count']:,} / "
         f"{overall_concentration['total_sample_count']:,}건 "
