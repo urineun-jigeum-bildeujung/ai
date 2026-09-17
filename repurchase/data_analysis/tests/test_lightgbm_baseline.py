@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+from lightgbm import LGBMClassifier
 
+from scripts.modeling.features import MINIMAL_MODEL_FEATURE_COLUMNS
 from scripts.modeling.lightgbm_baseline import (
     LightGBMBaselineError,
     build_lightgbm_training_data,
+    create_lightgbm_classifier,
+    train_lightgbm_classifier,
 )
 
 
@@ -33,6 +37,59 @@ def make_lightgbm_rows(*, split: str = "train") -> pd.DataFrame:
         },
         index=[10, 20, 30],
     )
+
+
+def test_create_lightgbm_classifier_uses_reproducible_binary_baseline() -> None:
+    """튜닝 전 기준 모델이 이진분류와 재현성 설정을 명시하는지 검증합니다."""
+    model = create_lightgbm_classifier()
+    parameters = model.get_params()
+
+    assert parameters["objective"] == "binary"
+    assert parameters["random_state"] == 42
+    assert parameters["n_jobs"] == 1
+    assert parameters["deterministic"] is True
+    assert parameters["force_col_wise"] is True
+
+
+def test_train_lightgbm_classifier_forwards_ipcw_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """학습 함수가 피처·정답과 함께 IPCW 가중치를 모델에 전달합니다."""
+    training_data = build_lightgbm_training_data(make_lightgbm_rows())
+    captured: dict[str, object] = {}
+
+    def capture_fit(
+        model: LGBMClassifier,
+        features: pd.DataFrame,
+        target: pd.Series,
+        *,
+        sample_weight: pd.Series,
+    ) -> LGBMClassifier:
+        """실제 학습 대신 fit 호출에 전달된 값을 기록합니다."""
+        captured["model"] = model
+        captured["features"] = features
+        captured["target"] = target
+        captured["sample_weight"] = sample_weight
+        return model
+
+    monkeypatch.setattr(LGBMClassifier, "fit", capture_fit)
+
+    trained_model = train_lightgbm_classifier(training_data)
+
+    assert trained_model is captured["model"]
+    assert captured["features"] is training_data.features
+    assert captured["target"] is training_data.target
+    assert captured["sample_weight"] is training_data.sample_weight
+
+
+def test_train_lightgbm_classifier_fits_real_model() -> None:
+    """작은 계약 표본으로 실제 LightGBM 학습이 완료되는지 검증합니다."""
+    training_data = build_lightgbm_training_data(make_lightgbm_rows())
+
+    trained_model = train_lightgbm_classifier(training_data)
+
+    assert trained_model.classes_.tolist() == [0, 1]
+    assert trained_model.n_features_in_ == len(MINIMAL_MODEL_FEATURE_COLUMNS)
 
 
 def test_build_lightgbm_training_data_keeps_only_known_outcomes() -> None:

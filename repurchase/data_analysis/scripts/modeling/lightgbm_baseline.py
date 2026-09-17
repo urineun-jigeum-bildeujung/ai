@@ -12,6 +12,7 @@ from math import isfinite
 from typing import Final
 
 import pandas as pd
+from lightgbm import LGBMClassifier
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
 from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
@@ -19,6 +20,18 @@ from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_featur
 
 class LightGBMBaselineError(ValueError):
     """LightGBM 학습 입력이 정의한 계약을 위반할 때 발생합니다."""
+
+
+def create_lightgbm_classifier() -> LGBMClassifier:
+    """튜닝 전 비교 기준으로 사용할 결정적 이진분류 모델을 만듭니다."""
+    return LGBMClassifier(
+        objective="binary",
+        random_state=42,
+        n_jobs=1,
+        deterministic=True,
+        force_col_wise=True,
+        verbosity=-1,
+    )
 
 
 LIGHTGBM_TRAINING_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
@@ -114,3 +127,16 @@ def build_lightgbm_training_data(rows: pd.DataFrame) -> LightGBMTrainingData:
         target=encoded_target,
         sample_weight=normalized_weight,
     )
+
+
+def train_lightgbm_classifier(
+    training_data: LightGBMTrainingData,
+) -> LGBMClassifier:
+    """검증된 피처·정답·IPCW 가중치로 기준 분류 모델을 학습합니다."""
+    model = create_lightgbm_classifier()
+    model.fit(
+        training_data.features,
+        training_data.target,
+        sample_weight=training_data.sample_weight,
+    )
+    return model
