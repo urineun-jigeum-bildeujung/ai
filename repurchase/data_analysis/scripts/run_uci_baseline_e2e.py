@@ -52,6 +52,7 @@ from .modeling.maturity_analysis import (
     summarize_validation_label_maturity_by_anchor_month,
 )
 from .modeling.model_selection import (
+    evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
     evaluate_shrinkage_candidates,
 )
@@ -76,6 +77,13 @@ TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
 TAIL_ERROR_RATES: Final[tuple[float, ...]] = (0.01, 0.05)
 # 개인 이력 1~2건 구간의 과신을 완화하는 약한~강한 수축 후보를 비교합니다.
 SHRINKAGE_STRENGTH_CANDIDATES: Final[tuple[float, ...]] = (1.0, 2.0, 4.0, 8.0)
+# 상품별 확률 근거량을 전체 확률과 얼마나 강하게 섞을지 Validation에서 비교합니다.
+PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES: Final[tuple[float, ...]] = (
+    1.0,
+    2.0,
+    4.0,
+    8.0,
+)
 # 모델 후보 비교와 prior 분석이 동일한 기존 최악 표본을 사용하도록 고정합니다.
 MODEL_SELECTION_TAIL_RATE: Final[float] = 0.05
 # 같은 크기의 무작위 표본을 충분히 반복해 HHI 비교 분포를 만듭니다.
@@ -311,6 +319,13 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
     )
     validation_ipcw_weight_stability = summarize_validation_ipcw_weight_stability(
         validation_population,
+        horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+    )
+    training_population = samples.loc[samples["split"].eq("train")].copy()
+    validation_ipcw_probability_comparison = evaluate_ipcw_probability_candidates(
+        training_population,
+        validation_population,
+        product_smoothing_strengths=(PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES),
         horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
     )
     # 실제 오차는 평가 마감일까지 다음 구매 정답이 확인된 표본에서만 계산합니다.
@@ -559,6 +574,33 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             .eq(0)
             .all()
         ),
+        "ipcw_probability_validation_population_preserved": bool(
+            validation_ipcw_probability_comparison["validation_sample_count"]
+            .eq(len(validation_population))
+            .all()
+        ),
+        "ipcw_probability_known_population_preserved": bool(
+            validation_ipcw_probability_comparison["outcome_known_count"]
+            .eq(validation_ipcw_binary_evaluation["outcome_known_count"])
+            .all()
+        ),
+        "ipcw_probability_reference_scores_consistent": bool(
+            math.isclose(
+                validation_ipcw_probability_comparison.iloc[0]["ipcw_brier_score"],
+                validation_ipcw_probability_comparison.iloc[0][
+                    "ipcw_reference_brier_score"
+                ],
+            )
+            and (
+                pd.isna(
+                    validation_ipcw_probability_comparison.iloc[0]["brier_skill_score"]
+                )
+                or math.isclose(
+                    validation_ipcw_probability_comparison.iloc[0]["brier_skill_score"],
+                    0.0,
+                )
+            )
+        ),
         "product_sample_count_detail_population_preserved": bool(
             validation_product_sample_count_analysis["overall_sample_count"].sum()
             == validation_product_concentration_analysis["overall_personalized"][
@@ -684,6 +726,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         "validation_ipcw_candidate_comparison": dataframe_to_nullable_records(
             validation_ipcw_candidate_comparison
         ),
+        "validation_ipcw_probability_comparison": dataframe_to_nullable_records(
+            validation_ipcw_probability_comparison
+        ),
         "validation_evaluation": _evaluate_stage(validation_rows, train_model),
         "test_evaluation": _evaluate_stage(test_rows, test_model),
         "current_prediction_example": _build_current_prediction(
@@ -732,6 +777,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ipcw_binary_evaluation = summary["validation_ipcw_binary_evaluation"]
     ipcw_concordance_evaluation = summary["validation_ipcw_concordance_evaluation"]
     ipcw_candidate_comparison = summary["validation_ipcw_candidate_comparison"]
+    ipcw_probability_comparison = summary["validation_ipcw_probability_comparison"]
     ipcw_candidate_comparison_lines = []
     for candidate in ipcw_candidate_comparison:
         candidate_label = (
@@ -748,6 +794,21 @@ def render_markdown(summary: dict[str, Any]) -> str:
             f"{_format_optional_rate(candidate['ipcw_weighted_f1'])} | "
             f"{_format_optional_rate(candidate['ipcw_concordance_index'])} | "
             f"{_format_optional_percentage_point(candidate['ipcw_concordance_index_difference_vs_reference'])} |"
+        )
+    ipcw_probability_comparison_lines = []
+    for candidate in ipcw_probability_comparison:
+        candidate_label = (
+            "전체 확률 기준선"
+            if candidate["product_smoothing_strength"] is None
+            else f"상품 확률 k={float(candidate['product_smoothing_strength']):g}"
+        )
+        ipcw_probability_comparison_lines.append(
+            f"| {candidate_label} | "
+            f"{candidate['training_global_event_probability']:.2%} | "
+            f"{candidate['product_prediction_rate']:.2%} | "
+            f"{candidate['ipcw_brier_score']:.6f} | "
+            f"{candidate['ipcw_reference_brier_score']:.6f} | "
+            f"{_format_optional_rate(candidate['brier_skill_score'])} |"
         )
     current = summary["current_prediction_example"]
     lines = [
@@ -968,6 +1029,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "- 기준 대비 값은 기존 계층형 중앙값 모델과의 퍼센트포인트 차이입니다.",
             "- 단일 지표만으로 후보를 확정하지 않고 순위 성능과 이진 판별 성능의 "
             "변화를 함께 확인합니다.",
+            "",
+            "### 30일 재구매 확률 후보의 IPCW Brier Score",
+            "",
+            "| 후보 | Train 전체 확률 | 상품 확률 적용률 | IPCW Brier | "
+            "전체 확률 Brier | Brier Skill Score |",
+            "| --- | ---: | ---: | ---: | ---: | ---: |",
+            *ipcw_probability_comparison_lines,
+            "",
+            "- 모든 확률 후보는 Train에서만 학습하고 동일한 Validation 표본과 "
+            "IPCW 가중치로 비교했습니다.",
+            "- Brier Score는 0에 가까울수록 확률 예측이 실제 결과에 가깝습니다.",
+            "- Brier Skill Score가 양수이면 Train 전체 재구매율만 사용하는 "
+            "기준선보다 개선됐고, 음수이면 기준선보다 나쁩니다.",
         ]
     )
 

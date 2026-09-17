@@ -7,6 +7,7 @@ import pytest
 
 from scripts.modeling.baseline import HierarchicalMedianModel
 from scripts.modeling.model_selection import (
+    evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
     evaluate_shrinkage_candidates,
 )
@@ -51,6 +52,31 @@ def make_ipcw_validation_samples() -> pd.DataFrame:
                 ["2026-08-18", "2026-08-17", "2026-08-16", "2026-08-15"]
             ),
             "split_end_at": pd.to_datetime(["2026-08-20"] * 4),
+            "outcome_available_by_split_end": [True, False, True, False],
+            "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
+        }
+    )
+
+
+def make_ipcw_probability_samples(split: str) -> pd.DataFrame:
+    """Train 학습과 Validation 평가에 공통으로 사용할 작은 확률 표본을 만듭니다."""
+    split_end = "2026-01-20" if split == "train" else "2026-02-20"
+    anchor_month = "2026-01" if split == "train" else "2026-02"
+    return pd.DataFrame(
+        {
+            "user_id": ["u1", "u2", "u3", "u4"],
+            "order_id": [f"{split}-o1", f"{split}-o2", f"{split}-o3", f"{split}-o4"],
+            "product_id": ["p1", "p2", "p1", "p2"],
+            "split": [split] * 4,
+            "anchor_at": pd.to_datetime(
+                [
+                    f"{anchor_month}-18",
+                    f"{anchor_month}-17",
+                    f"{anchor_month}-16",
+                    f"{anchor_month}-15",
+                ]
+            ),
+            "split_end_at": pd.to_datetime([split_end] * 4),
             "outcome_available_by_split_end": [True, False, True, False],
             "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
         }
@@ -119,6 +145,35 @@ def test_evaluate_ipcw_shrinkage_candidates_uses_same_population_and_reference()
     ] == pytest.approx(0.0)
     assert evaluation.reference_binary_evaluation["validation_sample_count"] == 4
     assert evaluation.reference_concordance_evaluation["validation_sample_count"] == 4
+
+
+def test_evaluate_ipcw_probability_candidates_uses_train_and_shared_validation() -> (
+    None
+):
+    """Train 확률만 학습하고 모든 후보를 같은 Validation·기준선으로 비교합니다."""
+    result = evaluate_ipcw_probability_candidates(
+        make_ipcw_probability_samples("train"),
+        make_ipcw_probability_samples("validation"),
+        product_smoothing_strengths=(1.0, 4.0),
+        horizon_days=4,
+    )
+
+    assert result["model_candidate"].tolist() == [
+        "global_event_probability",
+        "hierarchical_event_probability",
+        "hierarchical_event_probability",
+    ]
+    assert result["product_smoothing_strength"].isna().tolist() == [
+        True,
+        False,
+        False,
+    ]
+    assert result["validation_sample_count"].tolist() == [4, 4, 4]
+    assert result["outcome_known_count"].nunique() == 1
+    assert result["horizon_days"].tolist() == [4, 4, 4]
+    assert result.iloc[0]["product_prediction_rate"] == pytest.approx(0.0)
+    assert result.iloc[1:]["product_prediction_rate"].tolist() == [1.0, 1.0]
+    assert result.iloc[0]["brier_skill_score"] == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize(

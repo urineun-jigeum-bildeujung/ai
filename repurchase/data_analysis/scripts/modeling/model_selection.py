@@ -23,10 +23,16 @@ from .error_analysis import (
 )
 from .evaluation import (
     evaluate_ipcw_binary_predictions,
+    evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
     evaluate_predictions,
 )
-from .maturity_analysis import add_validation_ipcw_weights
+from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
+from .probability_baseline import (
+    fit_global_event_probability_baseline,
+    fit_hierarchical_event_probability_baseline,
+    predict_hierarchical_event_probability_baseline,
+)
 
 IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
 
@@ -40,11 +46,11 @@ class IPCWShrinkageCandidateEvaluation:
     reference_concordance_evaluation: dict[str, float | int]
 
 
-def _attach_candidate_predictions(
+def _validate_candidate_alignment(
     weighted_samples: pd.DataFrame,
     predictions: pd.DataFrame,
-) -> pd.DataFrame:
-    """같은 표본 순서인지 확인한 뒤 후보 예측값만 IPCW 평가 행에 연결합니다."""
+) -> None:
+    """후보 비교 전 표본 식별자·개수·순서가 같은지 공통 검증합니다."""
     missing_columns = set(IPCW_CANDIDATE_ID_COLUMNS) - set(weighted_samples.columns)
     missing_columns |= set(IPCW_CANDIDATE_ID_COLUMNS) - set(predictions.columns)
     if missing_columns:
@@ -66,6 +72,115 @@ def _attach_candidate_predictions(
     )
     if not weighted_ids.equals(prediction_ids):
         raise ValueError("IPCW 기준 표본과 후보 예측 표본의 순서가 다릅니다.")
+
+
+def _attach_probability_candidate_predictions(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """검증된 동일 표본에 확률 예측값만 연결합니다."""
+    _validate_candidate_alignment(weighted_samples, predictions)
+
+    evaluation_rows = weighted_samples.copy()
+    evaluation_rows["predicted_event_probability"] = predictions[
+        "predicted_event_probability"
+    ].to_numpy(copy=True)
+    return evaluation_rows
+
+
+def evaluate_ipcw_probability_candidates(
+    training_samples: pd.DataFrame,
+    validation_samples: pd.DataFrame,
+    *,
+    product_smoothing_strengths: Sequence[float],
+    horizon_days: int,
+) -> pd.DataFrame:
+    """Train으로 확률 후보를 학습하고 동일한 Validation Brier Score로 비교합니다."""
+    if training_samples.empty or validation_samples.empty:
+        raise ValueError(
+            "확률 후보 비교에는 Train과 Validation 표본이 모두 필요합니다."
+        )
+    if not product_smoothing_strengths:
+        raise ValueError("비교할 상품 확률 수축 강도 후보가 없습니다.")
+
+    normalized_strengths = [float(value) for value in product_smoothing_strengths]
+    if len(normalized_strengths) != len(set(normalized_strengths)):
+        raise ValueError("중복된 상품 확률 수축 강도 후보입니다.")
+
+    weighted_training = add_split_ipcw_weights(
+        training_samples,
+        horizon_days=horizon_days,
+    )
+    weighted_validation = add_validation_ipcw_weights(
+        validation_samples,
+        horizon_days=horizon_days,
+    )
+    global_model = fit_global_event_probability_baseline(weighted_training)
+
+    candidates = [
+        (
+            "global_event_probability",
+            None,
+            global_model,
+        )
+    ]
+    candidates.extend(
+        (
+            "hierarchical_event_probability",
+            smoothing_strength,
+            fit_hierarchical_event_probability_baseline(
+                weighted_training,
+                product_smoothing_strength=smoothing_strength,
+            ),
+        )
+        for smoothing_strength in normalized_strengths
+    )
+
+    results: list[dict[str, float | int | str | None]] = []
+    for candidate_name, smoothing_strength, model in candidates:
+        predictions = predict_hierarchical_event_probability_baseline(
+            model,
+            validation_samples,
+        )
+        evaluation_rows = _attach_probability_candidate_predictions(
+            weighted_validation,
+            predictions,
+        )
+        metrics = evaluate_ipcw_brier_score(
+            evaluation_rows,
+            reference_probability=global_model.global_event_probability,
+        )
+        product_prediction_rate = float(
+            predictions["probability_prediction_source"].eq("product_history").mean()
+        )
+        results.append(
+            {
+                "model_candidate": candidate_name,
+                "product_smoothing_strength": smoothing_strength,
+                "horizon_days": int(metrics["horizon_days"]),
+                "training_global_event_probability": (
+                    global_model.global_event_probability
+                ),
+                "validation_sample_count": int(metrics["validation_sample_count"]),
+                "outcome_known_count": int(metrics["outcome_known_count"]),
+                "product_prediction_rate": product_prediction_rate,
+                "ipcw_brier_score": float(metrics["ipcw_brier_score"]),
+                "ipcw_reference_brier_score": float(
+                    metrics["ipcw_reference_brier_score"]
+                ),
+                "brier_skill_score": metrics["brier_skill_score"],
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
+def _attach_candidate_predictions(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.DataFrame,
+) -> pd.DataFrame:
+    """같은 표본 순서인지 확인한 뒤 후보 예측값만 IPCW 평가 행에 연결합니다."""
+    _validate_candidate_alignment(weighted_samples, predictions)
 
     evaluation_rows = weighted_samples.copy()
     evaluation_rows["predicted_duration_days"] = predictions[

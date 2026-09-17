@@ -9477,6 +9477,68 @@
       "ipcw_concordance_index_difference_vs_reference": -0.041129375245796185
     }
   ],
+  "validation_ipcw_probability_comparison": [
+    {
+      "model_candidate": "global_event_probability",
+      "product_smoothing_strength": null,
+      "horizon_days": 30,
+      "training_global_event_probability": 0.11113303061996412,
+      "validation_sample_count": 97340,
+      "outcome_known_count": 73542,
+      "product_prediction_rate": 0.0,
+      "ipcw_brier_score": 0.09929894291432002,
+      "ipcw_reference_brier_score": 0.09929894291432002,
+      "brier_skill_score": 0.0
+    },
+    {
+      "model_candidate": "hierarchical_event_probability",
+      "product_smoothing_strength": 1.0,
+      "horizon_days": 30,
+      "training_global_event_probability": 0.11113303061996412,
+      "validation_sample_count": 97340,
+      "outcome_known_count": 73542,
+      "product_prediction_rate": 0.8341586192726526,
+      "ipcw_brier_score": 0.10259602843201428,
+      "ipcw_reference_brier_score": 0.09929894291432002,
+      "brier_skill_score": -0.033203631588899496
+    },
+    {
+      "model_candidate": "hierarchical_event_probability",
+      "product_smoothing_strength": 2.0,
+      "horizon_days": 30,
+      "training_global_event_probability": 0.11113303061996412,
+      "validation_sample_count": 97340,
+      "outcome_known_count": 73542,
+      "product_prediction_rate": 0.8341586192726526,
+      "ipcw_brier_score": 0.10030109496678863,
+      "ipcw_reference_brier_score": 0.09929894291432002,
+      "brier_skill_score": -0.010092273120503537
+    },
+    {
+      "model_candidate": "hierarchical_event_probability",
+      "product_smoothing_strength": 4.0,
+      "horizon_days": 30,
+      "training_global_event_probability": 0.11113303061996412,
+      "validation_sample_count": 97340,
+      "outcome_known_count": 73542,
+      "product_prediction_rate": 0.8341586192726526,
+      "ipcw_brier_score": 0.09863115430402732,
+      "ipcw_reference_brier_score": 0.09929894291432002,
+      "brier_skill_score": 0.0067250324192162925
+    },
+    {
+      "model_candidate": "hierarchical_event_probability",
+      "product_smoothing_strength": 8.0,
+      "horizon_days": 30,
+      "training_global_event_probability": 0.11113303061996412,
+      "validation_sample_count": 97340,
+      "outcome_known_count": 73542,
+      "product_prediction_rate": 0.8341586192726526,
+      "ipcw_brier_score": 0.09780985253360536,
+      "ipcw_reference_brier_score": 0.09929894291432002,
+      "brier_skill_score": 0.014996034570071148
+    }
+  ],
   "validation_evaluation": {
     "sample_count": 17676,
     "global_baseline": {
@@ -14594,6 +14656,9 @@
     "ipcw_candidate_validation_population_preserved": true,
     "ipcw_candidate_known_population_preserved": true,
     "ipcw_candidate_reference_differences_zero": true,
+    "ipcw_probability_validation_population_preserved": true,
+    "ipcw_probability_known_population_preserved": true,
+    "ipcw_probability_reference_scores_consistent": true,
     "product_sample_count_detail_population_preserved": true,
     "product_sample_count_detail_tail_preserved": true,
     "product_sample_count_bucket_population_preserved": true,

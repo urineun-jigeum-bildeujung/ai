@@ -133,6 +133,20 @@
 - 기준 대비 값은 기존 계층형 중앙값 모델과의 퍼센트포인트 차이입니다.
 - 단일 지표만으로 후보를 확정하지 않고 순위 성능과 이진 판별 성능의 변화를 함께 확인합니다.
 
+### 30일 재구매 확률 후보의 IPCW Brier Score
+
+| 후보 | Train 전체 확률 | 상품 확률 적용률 | IPCW Brier | 전체 확률 Brier | Brier Skill Score |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 전체 확률 기준선 | 11.11% | 0.00% | 0.099299 | 0.099299 | 0.00% |
+| 상품 확률 k=1 | 11.11% | 83.42% | 0.102596 | 0.099299 | -3.32% |
+| 상품 확률 k=2 | 11.11% | 83.42% | 0.100301 | 0.099299 | -1.01% |
+| 상품 확률 k=4 | 11.11% | 83.42% | 0.098631 | 0.099299 | 0.67% |
+| 상품 확률 k=8 | 11.11% | 83.42% | 0.097810 | 0.099299 | 1.50% |
+
+- 모든 확률 후보는 Train에서만 학습하고 동일한 Validation 표본과 IPCW 가중치로 비교했습니다.
+- Brier Score는 0에 가까울수록 확률 예측이 실제 결과에 가깝습니다.
+- Brier Skill Score가 양수이면 Train 전체 재구매율만 사용하는 기준선보다 개선됐고, 음수이면 기준선보다 나쁩니다.
+
 ## Validation 월별 라벨 성숙도와 조건부 오차
 
 | 구매 기준 월 | 전체 표본 | 성숙 표본 | 미성숙·검열 | 성숙률 | 관찰 가능 기간 중앙값(일) | 실제 간격 평균(일) | 실제 간격 중앙값(일) | MAE(일) | 중앙 절대오차(일) |
@@ -452,6 +466,9 @@
 - [x] `ipcw_candidate_validation_population_preserved`
 - [x] `ipcw_candidate_known_population_preserved`
 - [x] `ipcw_candidate_reference_differences_zero`
+- [x] `ipcw_probability_validation_population_preserved`
+- [x] `ipcw_probability_known_population_preserved`
+- [x] `ipcw_probability_reference_scores_consistent`
 - [x] `product_sample_count_detail_population_preserved`
 - [x] `product_sample_count_detail_tail_preserved`
 - [x] `product_sample_count_bucket_population_preserved`

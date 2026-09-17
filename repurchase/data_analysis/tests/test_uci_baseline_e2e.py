@@ -12,6 +12,7 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_baseline_e2e import (
     COMMON_FOLLOWUP_HORIZON_CANDIDATES,
     PRIMARY_IPCW_HORIZON_DAYS,
+    PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES,
     SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
     build_product_concentration_trials_report,
@@ -311,6 +312,17 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert ipcw_candidate_comparison[0][
         "ipcw_concordance_index_difference_vs_reference"
     ] == pytest.approx(0.0)
+    probability_comparison = summary["validation_ipcw_probability_comparison"]
+    assert len(probability_comparison) == 1 + len(
+        PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES
+    )
+    assert probability_comparison[0]["model_candidate"] == ("global_event_probability")
+    assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
+    assert probability_comparison[0]["brier_skill_score"] is None
+    assert all(
+        candidate["validation_sample_count"] == validation_sample_count
+        for candidate in probability_comparison
+    )
     assert "product_concentration_analysis" not in summary["test_evaluation"]
     assert (
         summary["test_evaluation"]["hierarchical_baseline"]["overall"]["mae_days"] == 0
@@ -391,6 +403,10 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     assert "기존 계층형 모델과 수축 후보의 동일 조건 비교" in markdown
     assert "수축 k=8" in markdown
     assert "동일한 Validation 표본·30일 시점·검열 가중치" in markdown
+    assert "30일 재구매 확률 후보의 IPCW Brier Score" in markdown
+    assert "상품 확률 k=8" in markdown
+    assert "Brier Score는 0에 가까울수록" in markdown
+    assert "Train에서만 학습" in markdown
     assert "Validation 월별 라벨 성숙도와 조건부 오차" in markdown
     assert "관찰 가능 기간 중앙값(일)" in markdown
     assert "성숙 표본에서만 계산한 조건부 결과" in markdown
