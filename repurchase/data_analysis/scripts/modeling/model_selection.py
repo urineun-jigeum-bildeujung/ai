@@ -179,6 +179,14 @@ def evaluate_lightgbm_probability_candidate(
             }
         ]
     )
+    comparison["product_smoothing_strength"] = pd.Series(
+        [float("nan")],
+        dtype="float64",
+    )
+    comparison["product_prediction_rate"] = pd.Series(
+        [float("nan")],
+        dtype="float64",
+    )
     return IPCWProbabilityCandidateEvaluation(
         comparison=comparison,
         calibration=calibration,

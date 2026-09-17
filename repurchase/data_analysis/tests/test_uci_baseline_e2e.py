@@ -343,10 +343,11 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         "ipcw_concordance_index_difference_vs_reference"
     ] == pytest.approx(0.0)
     probability_comparison = summary["validation_ipcw_probability_comparison"]
-    assert len(probability_comparison) == 1 + len(
+    assert len(probability_comparison) == 2 + len(
         PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES
     )
     assert probability_comparison[0]["model_candidate"] == ("global_event_probability")
+    assert probability_comparison[-1]["model_candidate"] == "lightgbm_probability"
     assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
     assert probability_comparison[0]["brier_skill_score"] is None
     assert all(

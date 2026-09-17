@@ -55,6 +55,7 @@ from .modeling.maturity_analysis import (
 from .modeling.model_selection import (
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
+    evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
 )
 from .modeling.samples import (
@@ -199,6 +200,21 @@ def _format_optional_percentage_point(value: object) -> str:
     if value is None:
         return "계산 불가"
     return f"{float(value):+.2%}p"
+
+
+def _probability_candidate_label(
+    candidate: dict[str, object],
+    *,
+    fixed: bool = False,
+) -> str:
+    """확률 후보 유형과 수축 강도를 사람이 읽을 수 있는 이름으로 변환합니다."""
+    if candidate["model_candidate"] == "lightgbm_probability":
+        return "LightGBM"
+    smoothing_strength = candidate["product_smoothing_strength"]
+    if smoothing_strength is None:
+        return "전체 확률 기준선"
+    prefix = "고정 상품 확률" if fixed else "상품 확률"
+    return f"{prefix} k={float(smoothing_strength):g}"
 
 
 def _model_summary(model: HierarchicalMedianModel) -> dict[str, object]:
@@ -403,11 +419,27 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         bootstrap_replicates=IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
         bootstrap_random_seed=IPCW_PROBABILITY_BOOTSTRAP_RANDOM_SEED,
     )
-    validation_ipcw_probability_comparison = (
-        validation_ipcw_probability_evaluation.comparison
+    validation_lightgbm_probability_evaluation = (
+        evaluate_lightgbm_probability_candidate(
+            training_population,
+            validation_population,
+            horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+            calibration_bin_count=CALIBRATION_BIN_COUNT,
+        )
     )
-    validation_ipcw_probability_calibration = (
-        validation_ipcw_probability_evaluation.calibration
+    validation_ipcw_probability_comparison = pd.concat(
+        [
+            validation_ipcw_probability_evaluation.comparison,
+            validation_lightgbm_probability_evaluation.comparison,
+        ],
+        ignore_index=True,
+    )
+    validation_ipcw_probability_calibration = pd.concat(
+        [
+            validation_ipcw_probability_evaluation.calibration,
+            validation_lightgbm_probability_evaluation.calibration,
+        ],
+        ignore_index=True,
     )
     validation_ipcw_probability_user_bootstrap = (
         validation_ipcw_probability_evaluation.user_bootstrap
@@ -997,15 +1029,11 @@ def render_markdown(summary: dict[str, Any]) -> str:
         )
     ipcw_probability_comparison_lines = []
     for candidate in ipcw_probability_comparison:
-        candidate_label = (
-            "전체 확률 기준선"
-            if candidate["product_smoothing_strength"] is None
-            else f"상품 확률 k={float(candidate['product_smoothing_strength']):g}"
-        )
+        candidate_label = _probability_candidate_label(candidate)
         ipcw_probability_comparison_lines.append(
             f"| {candidate_label} | "
             f"{candidate['training_global_event_probability']:.2%} | "
-            f"{candidate['product_prediction_rate']:.2%} | "
+            f"{_format_optional_rate(candidate['product_prediction_rate'])} | "
             f"{candidate['ipcw_brier_score']:.6f} | "
             f"{candidate['ipcw_reference_brier_score']:.6f} | "
             f"{_format_optional_rate(candidate['brier_skill_score'])} | "
@@ -1017,10 +1045,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
         key=lambda candidate: candidate["ipcw_brier_score"],
     )
     best_smoothing_strength = best_probability_candidate["product_smoothing_strength"]
-    best_probability_candidate_label = (
-        "전체 확률 기준선"
-        if best_smoothing_strength is None
-        else f"상품 확률 k={float(best_smoothing_strength):g}"
+    best_probability_candidate_label = _probability_candidate_label(
+        best_probability_candidate
     )
     best_calibration_rows = [
         row
@@ -1044,11 +1070,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     test_ipcw_probability_comparison_lines = []
     for candidate in test_ipcw_probability_comparison:
-        candidate_label = (
-            "전체 확률 기준선"
-            if candidate["product_smoothing_strength"] is None
-            else f"고정 상품 확률 k={float(candidate['product_smoothing_strength']):g}"
-        )
+        candidate_label = _probability_candidate_label(candidate, fixed=True)
         test_ipcw_probability_comparison_lines.append(
             f"| {candidate_label} | "
             f"{candidate['training_global_event_probability']:.2%} | "
