@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 from lightgbm import LGBMClassifier
@@ -11,6 +12,7 @@ from scripts.modeling.lightgbm_baseline import (
     LightGBMBaselineError,
     build_lightgbm_training_data,
     create_lightgbm_classifier,
+    predict_lightgbm_repurchase_probability,
     train_lightgbm_classifier,
 )
 
@@ -90,6 +92,68 @@ def test_train_lightgbm_classifier_fits_real_model() -> None:
 
     assert trained_model.classes_.tolist() == [0, 1]
     assert trained_model.n_features_in_ == len(MINIMAL_MODEL_FEATURE_COLUMNS)
+
+
+def test_predict_lightgbm_probability_selects_positive_class(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """모든 행에서 재구매 정답 1에 해당하는 두 번째 확률만 반환합니다."""
+    rows = make_lightgbm_rows()
+    model = create_lightgbm_classifier()
+    probability_matrix = np.array(
+        [
+            [0.70, 0.30],
+            [0.20, 0.80],
+            [0.55, 0.45],
+        ]
+    )
+
+    def return_probability_matrix(
+        fitted_model: LGBMClassifier,
+        features: pd.DataFrame,
+    ) -> np.ndarray:
+        """확률 열 선택을 검증하도록 정해진 2열 행렬을 반환합니다."""
+        assert fitted_model is model
+        assert features.index.tolist() == [10, 20, 30]
+        return probability_matrix
+
+    monkeypatch.setattr(LGBMClassifier, "predict_proba", return_probability_matrix)
+
+    probabilities = predict_lightgbm_repurchase_probability(model, rows)
+
+    assert probabilities.index.tolist() == [10, 20, 30]
+    assert probabilities.tolist() == pytest.approx([0.30, 0.80, 0.45])
+    assert probabilities.name == "predicted_repurchase_probability"
+
+
+def test_predict_lightgbm_probability_rejects_wrong_matrix_shape(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """이진분류 확률이 2열이 아니면 잘못된 모델 출력으로 거절합니다."""
+    model = create_lightgbm_classifier()
+    monkeypatch.setattr(
+        LGBMClassifier,
+        "predict_proba",
+        lambda _model, _features: np.array([[0.30], [0.80], [0.45]]),
+    )
+
+    with pytest.raises(LightGBMBaselineError, match="2열 행렬"):
+        predict_lightgbm_repurchase_probability(model, make_lightgbm_rows())
+
+
+def test_predict_lightgbm_probability_rejects_out_of_range_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """0부터 1 사이를 벗어난 값은 사용자에게 전달할 확률로 허용하지 않습니다."""
+    model = create_lightgbm_classifier()
+    monkeypatch.setattr(
+        LGBMClassifier,
+        "predict_proba",
+        lambda _model, _features: np.array([[0.70, 0.30], [-0.10, 1.10], [0.55, 0.45]]),
+    )
+
+    with pytest.raises(LightGBMBaselineError, match="0부터 1 사이"):
+        predict_lightgbm_repurchase_probability(model, make_lightgbm_rows())
 
 
 def test_build_lightgbm_training_data_keeps_only_known_outcomes() -> None:

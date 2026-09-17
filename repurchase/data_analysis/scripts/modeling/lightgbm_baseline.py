@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from math import isfinite
 from typing import Final
 
+import numpy as np
 import pandas as pd
 from lightgbm import LGBMClassifier
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
@@ -140,3 +141,34 @@ def train_lightgbm_classifier(
         sample_weight=training_data.sample_weight,
     )
     return model
+
+
+def predict_lightgbm_repurchase_probability(
+    model: LGBMClassifier,
+    rows: pd.DataFrame,
+) -> pd.Series:
+    """각 행의 기간 내 재구매 정답 1에 해당하는 확률을 반환합니다."""
+    features = select_minimal_model_features(rows)
+    probability_matrix = np.asarray(model.predict_proba(features), dtype="float64")
+    expected_shape = (len(features), 2)
+    if probability_matrix.shape != expected_shape:
+        raise LightGBMBaselineError(
+            "LightGBM 이진분류 확률은 입력 행 수와 같은 2열 행렬이어야 합니다."
+        )
+
+    positive_probabilities = probability_matrix[:, 1]
+    if (
+        not np.isfinite(positive_probabilities).all()
+        or (positive_probabilities < 0).any()
+        or (positive_probabilities > 1).any()
+    ):
+        raise LightGBMBaselineError(
+            "LightGBM 재구매 확률은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+
+    return pd.Series(
+        positive_probabilities,
+        index=features.index,
+        name="predicted_repurchase_probability",
+        dtype="float64",
+    )
