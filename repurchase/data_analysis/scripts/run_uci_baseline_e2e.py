@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 import pandas as pd
+from pandas.api.types import is_bool_dtype
 
 from .loaders import load_uci_online_retail_ii
 from .modeling.baseline import (
@@ -133,6 +134,64 @@ def _format_optional_rate(value: object) -> str:
     if value is None:
         return "계산 불가"
     return f"{float(value):.2%}"
+
+
+def build_probability_refit_population(
+    samples: pd.DataFrame,
+    *,
+    trained_until: pd.Timestamp,
+) -> pd.DataFrame:
+    """기준 시점까지 확인된 정보만 남긴 최종 확률 학습 표본을 만듭니다."""
+    required_columns = {
+        "anchor_at",
+        "next_same_product_at",
+        "target_duration_days",
+        "event_observed",
+    }
+    missing_columns = required_columns - set(samples.columns)
+    if missing_columns:
+        raise ValueError(
+            f"확률 재학습 표본 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if samples.empty:
+        raise ValueError("확률 재학습에 사용할 표본이 없습니다.")
+    if samples["event_observed"].isna().any() or not is_bool_dtype(
+        samples["event_observed"].dtype
+    ):
+        raise ValueError("재구매 관측 여부에는 결측값 없는 boolean만 필요합니다.")
+
+    normalized_trained_until = pd.Timestamp(trained_until)
+    anchor_at = pd.to_datetime(samples["anchor_at"], errors="raise")
+    next_purchase_at = pd.to_datetime(
+        samples["next_same_product_at"],
+        errors="raise",
+    )
+    if anchor_at.isna().any() or pd.isna(normalized_trained_until):
+        raise ValueError("예측 기준 시각과 재학습 종료 시각은 유효해야 합니다.")
+
+    refit_rows = samples.loc[anchor_at.le(normalized_trained_until)].copy()
+    if refit_rows.empty:
+        raise ValueError("재학습 종료 시점까지 사용할 수 있는 표본이 없습니다.")
+
+    refit_next_purchase_at = next_purchase_at.loc[refit_rows.index]
+    outcome_observed = (
+        refit_rows["event_observed"].astype(bool)
+        & refit_next_purchase_at.notna()
+        & refit_next_purchase_at.le(normalized_trained_until)
+    )
+    refit_rows["split"] = "train"
+    refit_rows["split_end_at"] = normalized_trained_until
+    refit_rows["outcome_available_by_split_end"] = outcome_observed
+    refit_rows["event_observed"] = outcome_observed
+    # 기준 시점 이후에 확인된 실제 다음 구매 정보는 학습 함수에 도달하기 전에 가립니다.
+    refit_rows["next_same_product_at"] = refit_next_purchase_at.where(
+        outcome_observed,
+        pd.NaT,
+    )
+    refit_rows["target_duration_days"] = refit_rows["target_duration_days"].where(
+        outcome_observed,
+    )
+    return refit_rows
 
 
 def _format_optional_percentage_point(value: object) -> str:

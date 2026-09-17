@@ -137,7 +137,7 @@ def evaluate_ipcw_probability_candidates(
         training_samples,
         horizon_days=horizon_days,
     )
-    weighted_validation = add_validation_ipcw_weights(
+    weighted_validation = add_split_ipcw_weights(
         validation_samples,
         horizon_days=horizon_days,
     )

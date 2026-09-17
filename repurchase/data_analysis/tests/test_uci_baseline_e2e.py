@@ -17,10 +17,38 @@ from scripts.run_uci_baseline_e2e import (
     SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
     build_ipcw_probability_bootstrap_trials_report,
+    build_probability_refit_population,
     build_product_concentration_trials_report,
     render_markdown,
     run_baseline_cycle,
 )
+
+
+def test_build_probability_refit_population_hides_future_outcomes() -> None:
+    """재학습 기준 시점 이후에 확인된 구매 정답은 학습 전에 가립니다."""
+    samples = pd.DataFrame(
+        {
+            "anchor_at": pd.to_datetime(["2026-01-01", "2026-01-05", "2026-02-01"]),
+            "next_same_product_at": pd.to_datetime(
+                ["2026-01-10", "2026-02-10", "2026-02-10"]
+            ),
+            "target_duration_days": [9.0, 36.0, 9.0],
+            "event_observed": pd.Series([True, True, True], dtype="boolean"),
+        }
+    )
+
+    result = build_probability_refit_population(
+        samples,
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+
+    assert len(result) == 2
+    assert result["split"].eq("train").all()
+    assert result["split_end_at"].eq(pd.Timestamp("2026-01-31")).all()
+    assert result["outcome_available_by_split_end"].tolist() == [True, False]
+    assert result["event_observed"].tolist() == [True, False]
+    assert result["next_same_product_at"].notna().tolist() == [True, False]
+    assert result["target_duration_days"].notna().tolist() == [True, False]
 
 
 def make_purchase_events() -> pd.DataFrame:
