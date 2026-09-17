@@ -5,10 +5,13 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.modeling import model_selection
 from scripts.modeling.baseline import HierarchicalMedianModel
 from scripts.modeling.model_selection import (
+    LIGHTGBM_FEATURE_SETS,
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
+    evaluate_lightgbm_feature_sets,
     evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
 )
@@ -248,6 +251,67 @@ def test_evaluate_lightgbm_probability_candidate_uses_train_and_validation() -> 
     assert evaluation.user_bootstrap.summary["bootstrap_replicates"] == 100
     assert evaluation.user_bootstrap.summary["user_count"] == 3
     assert len(evaluation.user_bootstrap.trials) == 100
+
+
+def test_lightgbm_feature_comparison_preserves_rows_targets_and_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """결측이 있는 표본까지 같은 행·정답·가중치로 학습하고 같은 행을 평가합니다."""
+    training = make_ipcw_probability_samples("train")
+    validation = make_ipcw_probability_samples("validation")
+    original_training = training.copy(deep=True)
+    original_validation = validation.copy(deep=True)
+    training_inputs = []
+    prediction_inputs = []
+    original_train = model_selection.train_lightgbm_classifier
+    original_predict = model_selection.predict_lightgbm_repurchase_probability
+
+    def capture_training(data):
+        """실제 학습에 전달되는 표본·정답·가중치를 후보별로 보관합니다."""
+        training_inputs.append(data)
+        return original_train(data)
+
+    def capture_prediction(model, rows):
+        """실제 예측에 전달되는 모든 행의 동일성을 확인하도록 보관합니다."""
+        prediction_inputs.append(rows.copy(deep=True))
+        return original_predict(model, rows)
+
+    monkeypatch.setattr(model_selection, "train_lightgbm_classifier", capture_training)
+    monkeypatch.setattr(
+        model_selection, "predict_lightgbm_repurchase_probability", capture_prediction
+    )
+    result = evaluate_lightgbm_feature_sets(training, validation, horizon_days=4)
+
+    assert result.comparison["feature_set"].tolist() == [
+        name for name, _ in LIGHTGBM_FEATURE_SETS
+    ]
+    assert result.comparison["evaluation_sample_count"].tolist() == [4, 4, 4]
+    assert result.comparison["outcome_known_count"].tolist() == [3, 3, 3]
+    assert pd.isna(result.comparison.iloc[0]["brier_improvement_vs_previous"])
+    assert result.comparison["training_sample_count"].tolist() == [3, 3, 3]
+    assert len(training_inputs) == len(prediction_inputs) == 3
+    for data, (_, columns), predicted_rows in zip(
+        training_inputs, LIGHTGBM_FEATURE_SETS, prediction_inputs, strict=True
+    ):
+        assert list(data.features.columns) == list(columns)
+        assert data.features.index.tolist() == [0, 2, 3]
+        pd.testing.assert_series_equal(data.target, training_inputs[0].target)
+        pd.testing.assert_series_equal(
+            data.sample_weight, training_inputs[0].sample_weight
+        )
+        pd.testing.assert_frame_equal(predicted_rows, original_validation)
+    assert pd.isna(training_inputs[2].features.loc[0, "history_relative_mad"])
+    pd.testing.assert_frame_equal(training, original_training)
+    pd.testing.assert_frame_equal(validation, original_validation)
+
+
+def test_lightgbm_feature_comparison_rejects_test_split() -> None:
+    """피처 선택 실험에 Test 표본을 전달하면 평가 전에 거절합니다."""
+    with pytest.raises(ValueError, match="Validation 표본만"):
+        evaluate_lightgbm_feature_sets(
+            make_ipcw_probability_samples("train"),
+            make_ipcw_probability_samples("test"),
+        )
 
 
 @pytest.mark.parametrize(

@@ -31,6 +31,7 @@ from .evaluation import (
     evaluate_predictions,
     summarize_ipcw_calibration,
 )
+from .features import MINIMAL_MODEL_FEATURE_COLUMNS
 from .lightgbm_baseline import (
     build_lightgbm_training_data,
     predict_lightgbm_repurchase_probability,
@@ -44,6 +45,16 @@ from .probability_baseline import (
 )
 
 IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
+
+# 동일한 표본에 정보를 단계적으로 추가하며, C는 기존 네 피처 기준을 재현합니다.
+LIGHTGBM_FEATURE_SETS = (
+    ("A_counts", ("history_interval_count", "user_prior_order_count")),
+    (
+        "B_counts_median",
+        ("history_interval_count", "history_median_days", "user_prior_order_count"),
+    ),
+    ("C_counts_median_variability", MINIMAL_MODEL_FEATURE_COLUMNS),
+)
 
 
 @dataclass(frozen=True)
@@ -111,6 +122,7 @@ def evaluate_lightgbm_probability_candidate(
     validation_samples: pd.DataFrame,
     *,
     horizon_days: int,
+    feature_columns: Sequence[str] = MINIMAL_MODEL_FEATURE_COLUMNS,
     calibration_bin_count: int = 10,
     bootstrap_reference_product_smoothing_strength: float | None = None,
     bootstrap_replicates: int = 1_000,
@@ -119,6 +131,11 @@ def evaluate_lightgbm_probability_candidate(
     """Train으로 LightGBM을 학습하고 동일한 Validation IPCW 기준으로 평가합니다."""
     if training_samples.empty or validation_samples.empty:
         raise ValueError("LightGBM 평가에는 Train과 Validation 표본이 모두 필요합니다.")
+    if (
+        "split" not in validation_samples
+        or not validation_samples["split"].eq("validation").fillna(False).all()
+    ):
+        raise ValueError("LightGBM 후보 비교에는 Validation 표본만 사용합니다.")
 
     weighted_training = add_split_ipcw_weights(
         training_samples,
@@ -128,7 +145,9 @@ def evaluate_lightgbm_probability_candidate(
         validation_samples,
         horizon_days=horizon_days,
     )
-    training_data = build_lightgbm_training_data(weighted_training)
+    training_data = build_lightgbm_training_data(
+        weighted_training, feature_columns=feature_columns
+    )
     model = train_lightgbm_classifier(training_data)
     probabilities = predict_lightgbm_repurchase_probability(
         model,
@@ -187,6 +206,9 @@ def evaluate_lightgbm_probability_candidate(
         [
             {
                 "model_candidate": "lightgbm_probability",
+                "feature_columns": list(training_data.features.columns),
+                "training_sample_count": len(training_data.features),
+                "training_weight_sum": float(training_data.sample_weight.sum()),
                 "product_smoothing_strength": None,
                 "horizon_days": int(metrics["horizon_days"]),
                 "training_global_event_probability": (
@@ -218,6 +240,50 @@ def evaluate_lightgbm_probability_candidate(
         comparison=comparison,
         calibration=calibration,
         user_bootstrap=user_bootstrap,
+    )
+
+
+def evaluate_lightgbm_feature_sets(
+    training_samples: pd.DataFrame,
+    validation_samples: pd.DataFrame,
+    *,
+    horizon_days: int = 30,
+    calibration_bin_count: int = 10,
+) -> IPCWProbabilityCandidateEvaluation:
+    """동일한 표본과 설정에서 횟수·중앙값·불규칙성을 단계적으로 추가합니다."""
+    comparisons = []
+    calibrations = []
+    for name, columns in LIGHTGBM_FEATURE_SETS:
+        # 결측 피처가 있는 행도 보존하고, 모델에 전달할 열만 변경합니다.
+        evaluation = evaluate_lightgbm_probability_candidate(
+            training_samples,
+            validation_samples,
+            horizon_days=horizon_days,
+            calibration_bin_count=calibration_bin_count,
+            feature_columns=columns,
+        )
+        evaluation.comparison.insert(0, "feature_set", name)
+        evaluation.calibration.insert(0, "feature_set", name)
+        comparisons.append(evaluation.comparison)
+        calibrations.append(evaluation.calibration)
+
+    comparison = pd.concat(comparisons, ignore_index=True)
+    for column in (
+        "training_sample_count",
+        "training_weight_sum",
+        "evaluation_sample_count",
+        "outcome_known_count",
+    ):
+        if comparison[column].nunique(dropna=False) != 1:
+            raise RuntimeError(
+                f"피처 비교 후보의 공통 평가 조건이 달라졌습니다: {column}"
+            )
+    # 양수는 앞 후보보다 Brier 오차가 줄었다는 뜻이며 첫 후보는 비교 대상이 없습니다.
+    comparison["brier_improvement_vs_previous"] = -comparison["ipcw_brier_score"].diff()
+    return IPCWProbabilityCandidateEvaluation(
+        comparison=comparison,
+        calibration=pd.concat(calibrations, ignore_index=True),
+        user_bootstrap=None,
     )
 
 

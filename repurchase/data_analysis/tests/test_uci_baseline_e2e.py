@@ -24,6 +24,10 @@ from scripts.run_uci_baseline_e2e import (
     render_markdown,
     run_baseline_cycle,
 )
+from scripts.run_uci_lightgbm_feature_comparison import (
+    render_feature_comparison,
+    run_feature_comparison,
+)
 
 
 def test_build_probability_refit_population_hides_future_outcomes() -> None:
@@ -71,6 +75,35 @@ def make_purchase_events() -> pd.DataFrame:
                 }
             )
     return pd.DataFrame(rows)
+
+
+def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
+    """네 피처 후보가 기존 단일 평가를 재현하고 보고서는 표준 JSON으로 저장됩니다."""
+    from scripts.modeling.model_selection import evaluate_lightgbm_probability_candidate
+    from scripts.modeling.samples import (
+        assign_temporal_splits,
+        build_historical_interval_features,
+        make_temporal_split,
+    )
+
+    events = make_purchase_events()
+    labels = build_same_product_repurchase_labels(
+        events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
+    )
+    report = run_feature_comparison(labels)
+    samples = build_historical_interval_features(labels)
+    samples = assign_temporal_splits(samples, make_temporal_split(samples))
+    reference = evaluate_lightgbm_probability_candidate(
+        samples.loc[samples["split"].eq("train")],
+        samples.loc[samples["split"].eq("validation")],
+        horizon_days=30,
+    ).comparison.iloc[0]
+    candidate = report["comparison"][-1]
+    for metric in ("ipcw_brier_score", "expected_calibration_error"):
+        assert candidate[metric] == pytest.approx(reference[metric])
+    assert report["evaluation_split"] == "validation"
+    assert "C_counts_median_variability" in render_feature_comparison(report)
+    json.dumps(report, allow_nan=False)
 
 
 def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> None:

@@ -51,11 +51,19 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_events
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.run_uci_baseline_e2e
+.venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 ```
+
+`run_uci_lightgbm_feature_comparison`은 동일 Train·Validation 표본에서 횟수만 사용하는
+A, 구매 간격 중앙값을 추가한 B, 불규칙성까지 추가한 C를 비교합니다. 결측 행은
+보존하며 Test 예측·평가는 실행하지 않습니다. 피처 목록·모델 설정·실행 환경과
+Brier·Calibration 결과는 `reports/uci_lightgbm_feature_comparison.json` 및
+동명의 Markdown에 저장합니다. 단계별 차이는 앞선 피처가 주어진 조건에서의
+효과이며, 개별 피처의 독립적인 인과 효과를 뜻하지 않습니다.
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
