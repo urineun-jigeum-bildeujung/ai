@@ -226,6 +226,9 @@ def test_evaluate_lightgbm_probability_candidate_uses_train_and_validation() -> 
         make_ipcw_probability_samples("validation"),
         horizon_days=4,
         calibration_bin_count=2,
+        bootstrap_reference_product_smoothing_strength=4.0,
+        bootstrap_replicates=100,
+        bootstrap_random_seed=42,
     )
     result = evaluation.comparison.iloc[0]
 
@@ -241,7 +244,10 @@ def test_evaluate_lightgbm_probability_candidate_uses_train_and_validation() -> 
     assert calibration["model_candidate"].eq("lightgbm_probability").all()
     assert calibration["sample_count"].sum() == 3
     assert calibration["ipcw_weight_share"].sum() == pytest.approx(1.0)
-    assert evaluation.user_bootstrap is None
+    assert evaluation.user_bootstrap is not None
+    assert evaluation.user_bootstrap.summary["bootstrap_replicates"] == 100
+    assert evaluation.user_bootstrap.summary["user_count"] == 3
+    assert len(evaluation.user_bootstrap.trials) == 100
 
 
 @pytest.mark.parametrize(

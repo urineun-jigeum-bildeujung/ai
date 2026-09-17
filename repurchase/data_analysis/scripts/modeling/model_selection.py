@@ -24,6 +24,7 @@ from .error_analysis import (
 from .evaluation import (
     IPCWUserBootstrapResult,
     bootstrap_ipcw_brier_difference_by_user,
+    bootstrap_ipcw_brier_pair_difference_by_user,
     evaluate_ipcw_binary_predictions,
     evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
@@ -111,6 +112,9 @@ def evaluate_lightgbm_probability_candidate(
     *,
     horizon_days: int,
     calibration_bin_count: int = 10,
+    bootstrap_reference_product_smoothing_strength: float | None = None,
+    bootstrap_replicates: int = 1_000,
+    bootstrap_random_seed: int = 42,
 ) -> IPCWProbabilityCandidateEvaluation:
     """Train으로 LightGBM을 학습하고 동일한 Validation IPCW 기준으로 평가합니다."""
     if training_samples.empty or validation_samples.empty:
@@ -156,6 +160,29 @@ def evaluate_lightgbm_probability_candidate(
         calibration["weighted_absolute_gap_contribution"].sum()
     )
     maximum_calibration_error = float(calibration["absolute_calibration_gap"].max())
+    user_bootstrap: IPCWUserBootstrapResult | None = None
+    if bootstrap_reference_product_smoothing_strength is not None:
+        reference_model = fit_hierarchical_event_probability_baseline(
+            weighted_training,
+            product_smoothing_strength=(bootstrap_reference_product_smoothing_strength),
+        )
+        reference_predictions = predict_hierarchical_event_probability_baseline(
+            reference_model,
+            validation_samples,
+        )
+        _validate_candidate_alignment(weighted_validation, reference_predictions)
+        pair_rows = weighted_validation.copy()
+        pair_rows["reference_predicted_event_probability"] = reference_predictions[
+            "predicted_event_probability"
+        ].to_numpy(copy=True)
+        pair_rows["candidate_predicted_event_probability"] = probabilities.to_numpy(
+            copy=True
+        )
+        user_bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
+            pair_rows,
+            bootstrap_replicates=bootstrap_replicates,
+            random_seed=bootstrap_random_seed,
+        )
     comparison = pd.DataFrame(
         [
             {
@@ -190,7 +217,7 @@ def evaluate_lightgbm_probability_candidate(
     return IPCWProbabilityCandidateEvaluation(
         comparison=comparison,
         calibration=calibration,
-        user_bootstrap=None,
+        user_bootstrap=user_bootstrap,
     )
 
 

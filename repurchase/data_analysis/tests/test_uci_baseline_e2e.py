@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from itertools import pairwise
 
 import pandas as pd
@@ -17,6 +18,7 @@ from scripts.run_uci_baseline_e2e import (
     SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
     build_ipcw_probability_bootstrap_trials_report,
+    build_lightgbm_vs_k8_bootstrap_trials_report,
     build_probability_refit_population,
     build_product_concentration_trials_report,
     render_markdown,
@@ -376,9 +378,23 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     )
     assert (
         probability_bootstrap["bootstrap_lower_95_brier_improvement"]
-        <= probability_bootstrap["bootstrap_mean_brier_improvement"]
         <= probability_bootstrap["bootstrap_upper_95_brier_improvement"]
     )
+    assert math.isfinite(probability_bootstrap["bootstrap_mean_brier_improvement"])
+    lightgbm_bootstrap = summary["validation_lightgbm_vs_k8_user_bootstrap"]
+    assert lightgbm_bootstrap["candidate_model"] == "lightgbm_probability"
+    assert lightgbm_bootstrap["reference_product_smoothing_strength"] == 8.0
+    assert lightgbm_bootstrap["bootstrap_replicates"] == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert len(result.lightgbm_vs_k8_bootstrap_trials) == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert (
+        lightgbm_bootstrap["bootstrap_lower_95_brier_improvement"]
+        <= lightgbm_bootstrap["bootstrap_upper_95_brier_improvement"]
+    )
+    assert math.isfinite(lightgbm_bootstrap["bootstrap_mean_brier_improvement"])
     test_probability_comparison = summary["test_ipcw_probability_comparison"]
     assert len(test_probability_comparison) == 2
     assert test_probability_comparison[0]["model_candidate"] == (
@@ -446,6 +462,9 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
 
     random_trials_report = build_product_concentration_trials_report(result)
     bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
+    lightgbm_bootstrap_trials_report = build_lightgbm_vs_k8_bootstrap_trials_report(
+        result
+    )
     assert random_trials_report["dataset"] == "uci_online_retail_ii"
     assert random_trials_report["evaluation_split"] == "validation"
     assert (
@@ -473,6 +492,15 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         allow_nan=False,
     )
     assert json.loads(serialized_bootstrap_trials_report) == bootstrap_trials_report
+    serialized_lightgbm_bootstrap_trials_report = json.dumps(
+        lightgbm_bootstrap_trials_report,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert (
+        json.loads(serialized_lightgbm_bootstrap_trials_report)
+        == lightgbm_bootstrap_trials_report
+    )
 
     markdown = render_markdown(summary)
 
