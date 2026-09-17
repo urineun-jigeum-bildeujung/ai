@@ -51,6 +51,8 @@ IPCW_BRIER_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
+IPCW_CALIBRATION_REQUIRED_COLUMNS: Final[frozenset[str]] = IPCW_BRIER_REQUIRED_COLUMNS
+
 
 class _FenwickCountTree:
     """예측 순위별 누적 표본 수를 로그 시간에 저장하고 조회합니다."""
@@ -577,3 +579,109 @@ def evaluate_ipcw_brier_score(
         "ipcw_reference_brier_score": weighted_reference_brier_score,
         "brier_skill_score": brier_skill_score,
     }
+
+
+def summarize_ipcw_calibration(
+    rows: pd.DataFrame,
+    *,
+    bin_count: int = 10,
+) -> pd.DataFrame:
+    """예측 확률 구간별 평균 예측값과 IPCW 보정 실제 사건률을 비교합니다."""
+    missing_columns = IPCW_CALIBRATION_REQUIRED_COLUMNS - set(rows.columns)
+    if missing_columns:
+        raise RepurchaseEvaluationError(
+            f"IPCW Calibration 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if rows.empty:
+        raise RepurchaseEvaluationError("Calibration을 계산할 표본이 없습니다.")
+    if isinstance(bin_count, bool) or not isinstance(bin_count, int) or bin_count <= 0:
+        raise RepurchaseEvaluationError("Calibration 구간 수는 양의 정수여야 합니다.")
+
+    outcome_known = rows["ipcw_outcome_known"]
+    if outcome_known.isna().any() or not is_bool_dtype(outcome_known.dtype):
+        raise RepurchaseEvaluationError(
+            "Calibration 정답 확인 여부에는 결측값 없는 boolean만 사용할 수 있습니다."
+        )
+    known_rows = rows.loc[outcome_known].copy()
+    if known_rows.empty:
+        raise RepurchaseEvaluationError("Calibration의 정답 확인 표본이 없습니다.")
+
+    actual_event = known_rows["ipcw_event_within_horizon"]
+    if actual_event.isna().any() or not is_bool_dtype(actual_event.dtype):
+        raise RepurchaseEvaluationError(
+            "Calibration 실제 사건 여부에는 결측값 없는 boolean만 사용할 수 있습니다."
+        )
+    predicted_probability = known_rows["predicted_event_probability"]
+    if (
+        not is_numeric_dtype(predicted_probability.dtype)
+        or not np.isfinite(
+            predicted_probability.to_numpy(dtype="float64", copy=False)
+        ).all()
+        or not predicted_probability.between(0, 1).all()
+    ):
+        raise RepurchaseEvaluationError(
+            "Calibration 예측 확률은 0부터 1 사이의 유한한 숫자여야 합니다."
+        )
+    weights = known_rows["ipcw_weight"]
+    if (
+        not is_numeric_dtype(weights.dtype)
+        or not np.isfinite(weights.to_numpy(dtype="float64", copy=False)).all()
+        or weights.le(0).any()
+    ):
+        raise RepurchaseEvaluationError(
+            "Calibration IPCW 가중치는 0보다 큰 유한한 숫자여야 합니다."
+        )
+
+    # 확률 1.0도 마지막 구간에 포함되도록 계산된 인덱스를 끝 구간으로 제한합니다.
+    known_rows["calibration_bin_index"] = (
+        predicted_probability.mul(bin_count).astype("int64").clip(upper=bin_count - 1)
+    )
+    known_rows["weighted_prediction"] = predicted_probability.mul(weights)
+    known_rows["weighted_event"] = actual_event.astype("float64").mul(weights)
+
+    calibration = (
+        known_rows.groupby("calibration_bin_index", observed=True, sort=True)
+        .agg(
+            sample_count=("calibration_bin_index", "size"),
+            ipcw_weight_sum=("ipcw_weight", "sum"),
+            weighted_prediction_sum=("weighted_prediction", "sum"),
+            weighted_event_sum=("weighted_event", "sum"),
+        )
+        .reset_index()
+    )
+    calibration["bin_lower_bound"] = calibration["calibration_bin_index"].div(bin_count)
+    calibration["bin_upper_bound"] = (
+        calibration["calibration_bin_index"].add(1).div(bin_count)
+    )
+    calibration["mean_predicted_probability"] = calibration[
+        "weighted_prediction_sum"
+    ].div(calibration["ipcw_weight_sum"])
+    calibration["observed_event_rate"] = calibration["weighted_event_sum"].div(
+        calibration["ipcw_weight_sum"]
+    )
+    calibration["calibration_gap"] = calibration["mean_predicted_probability"].sub(
+        calibration["observed_event_rate"]
+    )
+    calibration["absolute_calibration_gap"] = calibration["calibration_gap"].abs()
+    total_weight = float(calibration["ipcw_weight_sum"].sum())
+    calibration["ipcw_weight_share"] = calibration["ipcw_weight_sum"].div(total_weight)
+    calibration["weighted_absolute_gap_contribution"] = calibration[
+        "absolute_calibration_gap"
+    ].mul(calibration["ipcw_weight_share"])
+
+    return calibration.loc[
+        :,
+        [
+            "calibration_bin_index",
+            "bin_lower_bound",
+            "bin_upper_bound",
+            "sample_count",
+            "ipcw_weight_sum",
+            "ipcw_weight_share",
+            "mean_predicted_probability",
+            "observed_event_rate",
+            "calibration_gap",
+            "absolute_calibration_gap",
+            "weighted_absolute_gap_contribution",
+        ],
+    ]

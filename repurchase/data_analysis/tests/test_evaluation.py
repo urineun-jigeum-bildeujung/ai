@@ -14,6 +14,7 @@ from scripts.modeling.evaluation import (
     evaluate_ipcw_brier_score,
     evaluate_ipcw_concordance_index,
     is_ipcw_concordance_pair_comparable,
+    summarize_ipcw_calibration,
 )
 from scripts.modeling.maturity_analysis import add_validation_ipcw_weights
 
@@ -261,3 +262,50 @@ def test_evaluate_ipcw_brier_score_rejects_invalid_probability(
 
     with pytest.raises(RepurchaseEvaluationError, match="예측 사건 확률"):
         evaluate_ipcw_brier_score(rows, reference_probability=0.5)
+
+
+def test_summarize_ipcw_calibration_compares_predicted_and_observed_rates() -> None:
+    """고정 확률 구간별 과대·과소 예측과 ECE 기여도를 IPCW로 계산합니다."""
+    rows = pd.DataFrame(
+        {
+            "predicted_event_probability": [0.1, 0.2, 0.8, 0.9, 1.0, 0.99],
+            "ipcw_event_within_horizon": pd.Series(
+                [False, True, True, False, True, pd.NA],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [30] * 6,
+            "ipcw_outcome_known": [True, True, True, True, True, False],
+            "ipcw_weight": [1.0, 1.0, 2.0, 2.0, 1.0, 0.0],
+        }
+    )
+
+    result = summarize_ipcw_calibration(rows, bin_count=2)
+
+    assert result["calibration_bin_index"].tolist() == [0, 1]
+    assert result["sample_count"].tolist() == [2, 3]
+    assert result["ipcw_weight_sum"].tolist() == pytest.approx([2.0, 5.0])
+    assert result["mean_predicted_probability"].tolist() == pytest.approx([0.15, 0.88])
+    assert result["observed_event_rate"].tolist() == pytest.approx([0.5, 0.6])
+    assert result["calibration_gap"].tolist() == pytest.approx([-0.35, 0.28])
+    assert result["ipcw_weight_share"].sum() == pytest.approx(1.0)
+    assert result["weighted_absolute_gap_contribution"].sum() == pytest.approx(0.3)
+    assert "calibration_bin_index" not in rows.columns
+
+
+@pytest.mark.parametrize("invalid_bin_count", [0, True, 2.5])
+def test_summarize_ipcw_calibration_rejects_invalid_bin_count(
+    invalid_bin_count: object,
+) -> None:
+    """구간 수가 양의 정수가 아니면 모호한 확률 구간을 만들지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "predicted_event_probability": [0.5],
+            "ipcw_event_within_horizon": pd.Series([True], dtype="boolean"),
+            "ipcw_horizon_days": [30],
+            "ipcw_outcome_known": [True],
+            "ipcw_weight": [1.0],
+        }
+    )
+
+    with pytest.raises(RepurchaseEvaluationError, match="구간 수"):
+        summarize_ipcw_calibration(rows, bin_count=invalid_bin_count)  # type: ignore[arg-type]
