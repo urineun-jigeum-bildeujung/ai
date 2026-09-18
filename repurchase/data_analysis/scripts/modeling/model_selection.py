@@ -43,6 +43,7 @@ from .probability_baseline import (
     fit_hierarchical_event_probability_baseline,
     predict_hierarchical_event_probability_baseline,
 )
+from .xgboost_aft import build_xgboost_aft_evaluation_rows
 
 IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
 
@@ -528,6 +529,24 @@ def _attach_candidate_predictions(
         "predicted_duration_days"
     ].to_numpy(copy=True)
     return evaluation_rows
+
+
+def evaluate_xgboost_aft_ipcw_concordance(
+    weighted_samples: pd.DataFrame,
+    predictions: pd.Series,
+) -> dict[str, float | int]:
+    """AFT 예측을 원본 행에 정렬한 뒤 공통 IPCW C-index로 평가합니다."""
+    evaluation = build_xgboost_aft_evaluation_rows(
+        weighted_samples,
+        predictions,
+    )
+    metrics = evaluate_ipcw_concordance_index(evaluation.rows)
+    return {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **metrics,
+    }
 
 
 def evaluate_ipcw_shrinkage_candidates(

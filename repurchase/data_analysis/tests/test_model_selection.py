@@ -17,6 +17,7 @@ from scripts.modeling.model_selection import (
     evaluate_lightgbm_feature_sets,
     evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
+    evaluate_xgboost_aft_ipcw_concordance,
 )
 
 
@@ -116,6 +117,56 @@ def make_probability_pair_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataF
     reference["predicted_event_probability"] = [0.6, 0.3, 0.4]
     candidate["predicted_event_probability"] = [0.7, 0.2, 0.5]
     return weighted, reference, candidate
+
+
+def make_xgboost_aft_concordance_samples() -> pd.DataFrame:
+    """0일 한 건과 순위를 비교할 수 있는 세 건의 AFT 평가 표본을 만듭니다."""
+    return pd.DataFrame(
+        {
+            "survival_observed_duration_days": [2.0, 0.0, 4.0, 6.0],
+            "survival_event_observed": pd.array(
+                [True, True, False, True],
+                dtype="boolean",
+            ),
+            "ipcw_horizon_days": [6] * 4,
+            "ipcw_censoring_survival_probability": [1.0] * 4,
+        },
+        index=[30, 10, 20, 40],
+    )
+
+
+def test_evaluate_xgboost_aft_ipcw_concordance_reuses_common_metric() -> None:
+    """AFT 예측을 인덱스로 정렬하고 0일 제외 뒤 공통 IPCW C-index를 계산합니다."""
+    samples = make_xgboost_aft_concordance_samples()
+    predictions = pd.Series(
+        [6.0, 4.0, 2.0, 1.0],
+        index=[40, 20, 30, 10],
+        name="predicted_duration_days",
+    )
+
+    result = evaluate_xgboost_aft_ipcw_concordance(samples, predictions)
+
+    assert result["source_validation_sample_count"] == 4
+    assert result["excluded_zero_duration_count"] == 1
+    assert result["aft_evaluation_sample_count"] == 3
+    assert result["validation_sample_count"] == 3
+    assert result["comparable_pair_count"] == 2
+    assert result["ipcw_concordance_index"] == pytest.approx(1.0)
+
+
+def test_evaluate_xgboost_aft_ipcw_concordance_rejects_unmatched_prediction() -> None:
+    """평가 원본에서 한 행이 빠진 AFT 예측을 C-index에 전달하지 않습니다."""
+    predictions = pd.Series(
+        [2.0, 4.0, 6.0],
+        index=[30, 20, 40],
+        name="predicted_duration_days",
+    )
+
+    with pytest.raises(ValueError, match="인덱스 집합"):
+        evaluate_xgboost_aft_ipcw_concordance(
+            make_xgboost_aft_concordance_samples(),
+            predictions,
+        )
 
 
 def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:
