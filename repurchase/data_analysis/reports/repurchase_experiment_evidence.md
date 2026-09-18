@@ -51,13 +51,36 @@ Bootstrap은 학습된 두 모델의 예측을 고정하고 사용자 구성을 
 - Brier 개선량은 A→B +0.0101094994, B→C +0.0005897978이다.
 - 단계적 추가 순서에 조건부인 비교이며 개별 피처의 독립적 인과 효과는 아니다.
 - C의 Brier·ECE·MCE와 시간 분할이 기존 네 피처 실행 결과와 일치했다.
-- B와 C 사이의 개선 안정성은 아직 검증하지 않았다. 다음에 사용자 단위
-  쌍 비교 Bootstrap으로 확인한다.
+- B와 C 사이의 작은 개선은 아래 사용자 단위 쌍 비교 Bootstrap으로 추가
+  검증했다.
 
 증거: [비교표](uci_lightgbm_feature_comparison.md),
 [설정·라이브러리 버전·상세 JSON](uci_lightgbm_feature_comparison.json).
 실행: `python -m scripts.run_uci_lightgbm_feature_comparison`.
 구현 커밋 `39b01c5`, `35a1475`; 결과 커밋 `08326ab`.
+
+### B/C 사용자 단위 쌍 비교 Bootstrap
+
+| 항목 | 결과 |
+| --- | ---: |
+| Validation 사용자 / 정답 확인 표본 | 1,926명 / 73,542행 |
+| 반복 수 / seed | 1,000 / 42 |
+| B / C Brier | 0.0828554197 / 0.0822656220 |
+| 점추정 개선량 `Brier(B) - Brier(C)` | +0.0005897978 |
+| Bootstrap 평균 개선량 | +0.0005855823 |
+| 95% percentile 구간 | +0.0000339616 ~ +0.0014567313 |
+| 개선량이 양수인 반복 | 98.70% |
+
+95% 구간의 하한이 0보다 커 고정된 B/C 예측과 IPCW 가중치 조건에서는
+불규칙성 피처를 추가한 C의 작은 개선이 사용자 구성 변화에도 비교적 일관됐다.
+다만 절대 개선 폭은 작으므로 압도적인 우위로 표현하지 않는다. 모델 재학습,
+검열모형 재추정, 피처 선택과 미래 데이터 분포의 불확실성은 이 구간에 포함되지
+않는다. Validation 탐색 결과이며 최종 Test 성능이 아니다.
+
+증거: [요약 보고서](uci_lightgbm_bc_bootstrap.md),
+[설정·요약 JSON](uci_lightgbm_bc_bootstrap.json),
+[Bootstrap 1,000회 원자료](uci_lightgbm_bc_bootstrap_trials.json).
+실행: `python -m scripts.run_uci_lightgbm_bc_bootstrap`.
 
 ## 구현 검증과 협업 기록
 
@@ -80,7 +103,7 @@ Bootstrap은 학습된 두 모델의 예측을 고정하고 사용자 구성을 
 | 피드백 | 현재 확인된 내용 | 후속 검증 |
 | --- | --- | --- |
 | ECE 악화에 대해 Calibration curve 확인 | 확률 구간별 IPCW 보정 통계를 저장했고 ECE·MCE를 계산함. 곡선 해석은 아직 진행 전 | 동일한 30일 시점·확률 구간에서 k=8·B·C 곡선을 비교하고 과신·과소신뢰 방향 확인 |
-| 횟수 → 구매 간격 → 불규칙성 순으로 추가 | A/B/C 비교 완료. 중앙값 추가 시 Brier 절대 감소 0.0101095, 불규칙성 추가 시 0.0005898 | B/C 사용자 단위 쌍 Bootstrap으로 작은 추가 이득의 안정성 확인 |
+| 횟수 → 구매 간격 → 불규칙성 순으로 추가 | A/B/C 비교 완료. 중앙값 추가 시 Brier 절대 감소 0.0101095, 불규칙성 추가 시 0.0005898. B/C 사용자 Bootstrap 95% 구간은 +0.0000342~+0.0014568 | Calibration curve에서 작은 Brier 개선과 보정 오차 방향을 함께 확인 |
 | 이력과 prior 근거량별 성능 분리 | 기존 중앙값 모델의 오차 원인 분석은 수행함. 새 LightGBM과 k=8의 동일 세그먼트 확률 성능 비교는 아직 진행 전 | 개인 이력 수·사용자 과거 주문 수·상품 prior 관측 수별 Brier와 Calibration 비교 |
 | AFT를 Brier·C-index·Calibration으로 비교 | XGBoost AFT는 후속 별도 실험 | 같은 예측 대상·시간 분할·30일 시점·검열 처리 조건으로 공통 지표 비교 |
 
@@ -103,7 +126,7 @@ AFT는 학습한 생존분포에서 `P(T≤30)`을 산출해 확률 지표를 �
 평가 기간과 검열 가중치, 위험 점수의 방향을 맞춘다. 30일 확률의 순위와
 전체 생존시간 예측의 순위는 의미가 다르므로 어떤 점수를 썼는지 명시한다.
 
-진행 순서: B/C 쌍 비교 입력·Bootstrap → Calibration curve → 이력·prior별
+진행 순서: B/C 쌍 비교 입력·Bootstrap 완료 → Calibration curve → 이력·prior별
 확률 성능 비교 → XGBoost AFT 동일 조건 비교. 각 단계는 기본 코드와
 판단 기준을 먼저 설명한 뒤 작은 구현 단위로 나눠 진행한다.
 

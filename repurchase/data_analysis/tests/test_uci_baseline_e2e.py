@@ -24,6 +24,10 @@ from scripts.run_uci_baseline_e2e import (
     render_markdown,
     run_baseline_cycle,
 )
+from scripts.run_uci_lightgbm_bc_bootstrap import (
+    render_bc_bootstrap,
+    run_bc_bootstrap,
+)
 from scripts.run_uci_lightgbm_feature_comparison import (
     render_feature_comparison,
     run_feature_comparison,
@@ -103,6 +107,26 @@ def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
         assert candidate[metric] == pytest.approx(reference[metric])
     assert report["evaluation_split"] == "validation"
     assert "C_counts_median_variability" in render_feature_comparison(report)
+    json.dumps(report, allow_nan=False)
+
+
+def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json() -> None:
+    """B/C 사용자 재표집 결과가 Validation에 한정되고 표준 JSON으로 저장됩니다."""
+    events = make_purchase_events()
+    labels = build_same_product_repurchase_labels(
+        events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
+    )
+
+    report = run_bc_bootstrap(labels, bootstrap_replicates=20, random_seed=7)
+    summary = report["summary"]
+
+    assert report["evaluation_split"] == "validation"
+    assert report["reference_feature_set"] == "B_counts_median"
+    assert report["candidate_feature_set"] == "C_counts_median_variability"
+    assert summary["bootstrap_replicates"] == 20
+    assert summary["random_seed"] == 7
+    assert len(report["trials"]) == 20
+    assert "95%" in render_bc_bootstrap(report)
     json.dumps(report, allow_nan=False)
 
 

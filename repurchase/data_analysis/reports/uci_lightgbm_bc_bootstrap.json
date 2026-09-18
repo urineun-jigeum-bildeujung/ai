@@ -1,0 +1,32 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "experiment_version": "lightgbm_bc_user_bootstrap_v1",
+  "evaluation_split": "validation",
+  "horizon_days": 30,
+  "reference_feature_set": "B_counts_median",
+  "candidate_feature_set": "C_counts_median_variability",
+  "split": {
+    "start_at": "2009-12-01T07:45:00",
+    "train_end_at": "2011-05-02T01:42:30",
+    "validation_end_at": "2011-08-20T19:16:15",
+    "end_at": "2011-12-09T12:50:00",
+    "train_fraction": 0.7,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.15
+  },
+  "summary": {
+    "bootstrap_replicates": 1000,
+    "random_seed": 42,
+    "user_count": 1926,
+    "outcome_known_count": 73542,
+    "point_candidate_brier_score": 0.08226562195229119,
+    "point_reference_brier_score": 0.08285541973488104,
+    "point_brier_improvement": 0.000589797782589857,
+    "bootstrap_mean_brier_improvement": 0.0005855823193141338,
+    "bootstrap_lower_95_brier_improvement": 3.396163928687766e-05,
+    "bootstrap_upper_95_brier_improvement": 0.0014567312560478263,
+    "bootstrap_positive_improvement_rate": 0.987
+  },
+  "decision": "C의 Brier 개선이 사용자 구성 변화에서도 일관되게 양수였습니다.",
+  "scope": "고정된 B/C 모델 예측과 IPCW 가중치에서 사용자를 재표집한 결과입니다. 모델 재학습·검열모형 재추정·새로운 피처 선택의 불확실성은 포함하지 않습니다."
+}

@@ -52,6 +52,7 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.run_uci_baseline_e2e
 .venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
+.venv/bin/python -m scripts.run_uci_lightgbm_bc_bootstrap
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
@@ -64,6 +65,11 @@ A, 구매 간격 중앙값을 추가한 B, 불규칙성까지 추가한 C를 비
 Brier·Calibration 결과는 `reports/uci_lightgbm_feature_comparison.json` 및
 동명의 Markdown에 저장합니다. 단계별 차이는 앞선 피처가 주어진 조건에서의
 효과이며, 개별 피처의 독립적인 인과 효과를 뜻하지 않습니다.
+
+`run_uci_lightgbm_bc_bootstrap`은 B와 C를 각각 한 번 학습·예측한 뒤 같은
+Validation 사용자를 1,000회 복원추출합니다. `Brier(B) - Brier(C)`의 점추정,
+95% 구간과 양수 비율을 저장하며 Test 표본은 사용하지 않습니다. 이 구간은 고정된
+모델 예측과 IPCW 가중치 아래의 평가 표본 불확실성만 나타냅니다.
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
