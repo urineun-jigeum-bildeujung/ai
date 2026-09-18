@@ -18,6 +18,7 @@ from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_report,
     build_xgboost_aft_round_comparison_report,
     compare_xgboost_aft_boosting_rounds,
+    compare_xgboost_aft_loss_distributions,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_report,
@@ -308,6 +309,104 @@ def test_compare_xgboost_aft_boosting_rounds_rejects_invalid_candidates(
             compare_xgboost_aft_boosting_rounds(
                 prepared,
                 round_candidates=round_candidates,
+            )
+
+
+def test_compare_xgboost_aft_loss_distributions_uses_fixed_evaluation_cohort(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """손실분포 후보마다 같은 반복 수·scale·Validation 표본을 사용합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    evaluation_calls: list[tuple[object, dict[str, object]]] = []
+
+    def record_evaluation_call(
+        prepared_argument: object,
+        **kwargs: object,
+    ) -> object:
+        evaluation_calls.append((prepared_argument, kwargs.copy()))
+        return evaluate_xgboost_aft_candidate(prepared_argument, **kwargs)
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.evaluate_xgboost_aft_candidate",
+        record_evaluation_call,
+    )
+
+    comparison = compare_xgboost_aft_loss_distributions(
+        prepared,
+        distribution_candidates=("normal", "logistic", "extreme"),
+        loss_distribution_scale=1.0,
+        num_boost_round=2,
+    )
+
+    assert comparison["loss_distribution"].tolist() == [
+        "normal",
+        "logistic",
+        "extreme",
+    ]
+    assert len(comparison) == 3
+    for fixed_column in (
+        "loss_distribution_scale",
+        "num_boost_round",
+        "ipcw_reference_brier_score",
+        "aft_evaluation_sample_count",
+        "horizon_days",
+        "validation_sample_count",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "reference_probability",
+    ):
+        assert comparison[fixed_column].nunique() == 1
+    assert comparison["loss_distribution_scale"].iat[0] == 1.0
+    assert comparison["num_boost_round"].iat[0] == 2
+    assert comparison["ipcw_brier_score"].notna().all()
+    assert comparison["ipcw_concordance_index"].notna().all()
+    assert [
+        call_kwargs["loss_distribution"] for _, call_kwargs in evaluation_calls
+    ] == ["normal", "logistic", "extreme"]
+    assert all(
+        prepared_argument is prepared for prepared_argument, _ in evaluation_calls
+    )
+    assert all(
+        call_kwargs["bootstrap_replicates"] is None
+        for _, call_kwargs in evaluation_calls
+    )
+
+
+def test_compare_xgboost_aft_loss_distributions_rejects_invalid_candidates_before_training(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """빈 값·중복·미지원 후보는 일부 후보를 학습하기 전에 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    def fail_if_training_starts(*args: object, **kwargs: object) -> None:
+        raise AssertionError("잘못된 후보를 모두 검사하기 전에 학습이 시작됐습니다.")
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.evaluate_xgboost_aft_candidate",
+        fail_if_training_starts,
+    )
+
+    for distribution_candidates in (
+        (),
+        ("normal", "normal"),
+        ("normal", "unknown"),
+        ("normal", 1),
+    ):
+        with pytest.raises(ValueError):
+            compare_xgboost_aft_loss_distributions(
+                prepared,
+                distribution_candidates=distribution_candidates,
+                num_boost_round=2,
             )
 
 

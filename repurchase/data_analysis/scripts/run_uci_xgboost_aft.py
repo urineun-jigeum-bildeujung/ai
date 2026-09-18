@@ -35,6 +35,7 @@ from .modeling.samples import (
     make_temporal_split,
 )
 from .modeling.xgboost_aft import (
+    AFT_LOSS_DISTRIBUTIONS,
     XGBoostAFTPredictionData,
     XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
@@ -54,6 +55,11 @@ BOOTSTRAP_REPLICATES: Final[int] = 1_000
 BOOTSTRAP_RANDOM_SEED: Final[int] = 42
 AFT_NUM_BOOST_ROUND: Final[int] = 5
 AFT_BOOST_ROUND_CANDIDATES: Final[tuple[int, ...]] = (5, 20, 50, 100)
+AFT_LOSS_DISTRIBUTION_CANDIDATES: Final[tuple[str, ...]] = (
+    "normal",
+    "logistic",
+    "extreme",
+)
 JSON_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.md"
 BOOTSTRAP_TRIALS_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_bootstrap_trials.json"
@@ -231,6 +237,34 @@ def evaluate_xgboost_aft_candidate(
     )
 
 
+def _build_xgboost_aft_comparison_metrics(
+    result: XGBoostAFTExperimentResult,
+) -> dict[str, object]:
+    """AFT 후보 결과에서 모든 비교 실험이 공유할 평가 지표를 추출합니다."""
+    training_loss = result.training_summary["training_aft_nloglik"]
+    if not isinstance(training_loss, list) or not training_loss:
+        raise ValueError("후보 모델의 AFT 학습 손실 이력이 비어 있습니다.")
+
+    probability = result.probability.summary
+    return {
+        "final_training_aft_nloglik": float(training_loss[-1]),
+        "minimum_training_aft_nloglik": float(min(training_loss)),
+        "ipcw_concordance_index": float(result.concordance["ipcw_concordance_index"]),
+        "ipcw_brier_score": float(probability["ipcw_brier_score"]),
+        "ipcw_reference_brier_score": float(probability["ipcw_reference_brier_score"]),
+        "brier_skill_score": probability["brier_skill_score"],
+        "expected_calibration_error": float(probability["expected_calibration_error"]),
+        "maximum_calibration_error": float(probability["maximum_calibration_error"]),
+        "weighted_calibration_gap": float(probability["weighted_calibration_gap"]),
+        "horizon_days": int(probability["horizon_days"]),
+        "validation_sample_count": int(probability["validation_sample_count"]),
+        "outcome_known_count": int(probability["outcome_known_count"]),
+        "ipcw_weight_sum": float(probability["ipcw_weight_sum"]),
+        "reference_probability": float(probability["reference_probability"]),
+        "aft_evaluation_sample_count": int(probability["aft_evaluation_sample_count"]),
+    }
+
+
 def compare_xgboost_aft_boosting_rounds(
     prepared: XGBoostAFTPreparedExperiment,
     *,
@@ -263,40 +297,10 @@ def compare_xgboost_aft_boosting_rounds(
             loss_distribution_scale=loss_distribution_scale,
             num_boost_round=round_count,
         )
-        training_loss = result.training_summary["training_aft_nloglik"]
-        if not isinstance(training_loss, list) or not training_loss:
-            raise ValueError("후보 모델의 AFT 학습 손실 이력이 비어 있습니다.")
-        probability = result.probability.summary
         comparison_rows.append(
             {
                 "num_boost_round": int(round_count),
-                "final_training_aft_nloglik": float(training_loss[-1]),
-                "minimum_training_aft_nloglik": float(min(training_loss)),
-                "ipcw_concordance_index": float(
-                    result.concordance["ipcw_concordance_index"]
-                ),
-                "ipcw_brier_score": float(probability["ipcw_brier_score"]),
-                "ipcw_reference_brier_score": float(
-                    probability["ipcw_reference_brier_score"]
-                ),
-                "brier_skill_score": probability["brier_skill_score"],
-                "expected_calibration_error": float(
-                    probability["expected_calibration_error"]
-                ),
-                "maximum_calibration_error": float(
-                    probability["maximum_calibration_error"]
-                ),
-                "weighted_calibration_gap": float(
-                    probability["weighted_calibration_gap"]
-                ),
-                "horizon_days": int(probability["horizon_days"]),
-                "validation_sample_count": int(probability["validation_sample_count"]),
-                "outcome_known_count": int(probability["outcome_known_count"]),
-                "ipcw_weight_sum": float(probability["ipcw_weight_sum"]),
-                "reference_probability": float(probability["reference_probability"]),
-                "aft_evaluation_sample_count": int(
-                    probability["aft_evaluation_sample_count"]
-                ),
+                **_build_xgboost_aft_comparison_metrics(result),
             }
         )
 
@@ -313,6 +317,71 @@ def compare_xgboost_aft_boosting_rounds(
         if comparison[fixed_column].nunique(dropna=False) != 1:
             raise RuntimeError(
                 f"AFT 반복 횟수 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
+            )
+    return comparison
+
+
+def compare_xgboost_aft_loss_distributions(
+    prepared: XGBoostAFTPreparedExperiment,
+    *,
+    num_boost_round: int,
+    distribution_candidates: Sequence[str] = AFT_LOSS_DISTRIBUTION_CANDIDATES,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+    loss_distribution_scale: float = 1.0,
+) -> pd.DataFrame:
+    """동일한 공통 데이터에서 AFT 손실분포 후보의 Validation 지표를 비교합니다."""
+    candidates = tuple(distribution_candidates)
+    if not candidates:
+        raise ValueError("비교할 AFT 손실분포 후보가 하나 이상 필요합니다.")
+    invalid_candidates = [
+        candidate
+        for candidate in candidates
+        if not isinstance(candidate, str) or candidate not in AFT_LOSS_DISTRIBUTIONS
+    ]
+    if invalid_candidates:
+        raise ValueError(
+            "지원하지 않는 AFT 손실분포 후보가 있습니다: "
+            f"{invalid_candidates}. 허용값: {sorted(AFT_LOSS_DISTRIBUTIONS)}"
+        )
+    if len(set(candidates)) != len(candidates):
+        raise ValueError("AFT 손실분포 후보에는 중복된 값을 사용할 수 없습니다.")
+
+    comparison_rows: list[dict[str, object]] = []
+    for distribution in candidates:
+        result = evaluate_xgboost_aft_candidate(
+            prepared,
+            calibration_bin_count=calibration_bin_count,
+            bootstrap_replicates=None,
+            loss_distribution=distribution,
+            loss_distribution_scale=loss_distribution_scale,
+            num_boost_round=num_boost_round,
+        )
+        comparison_rows.append(
+            {
+                "loss_distribution": distribution,
+                "loss_distribution_scale": result.training_summary[
+                    "loss_distribution_scale"
+                ],
+                "num_boost_round": result.training_summary["num_boost_round"],
+                **_build_xgboost_aft_comparison_metrics(result),
+            }
+        )
+
+    comparison = pd.DataFrame(comparison_rows)
+    for fixed_column in (
+        "loss_distribution_scale",
+        "num_boost_round",
+        "ipcw_reference_brier_score",
+        "aft_evaluation_sample_count",
+        "horizon_days",
+        "validation_sample_count",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "reference_probability",
+    ):
+        if comparison[fixed_column].nunique(dropna=False) != 1:
+            raise RuntimeError(
+                f"AFT 손실분포 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
             )
     return comparison
 
