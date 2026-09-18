@@ -107,8 +107,25 @@ jobs:
         run: python -m ruff format --check .
 
       - name: 전체 테스트 실행
+        id: tests
         if: steps.changes.outputs.run == 'true'
-        run: python -m pytest
+        # 저장소 밖 임시 경로에 결과를 생성하며 표준 출력 로그는 XML에 첨부하지 않습니다.
+        run: >-
+          python -m pytest
+          --junitxml="${RUNNER_TEMP}/repurchase-test-results/junit.xml"
+          -o junit_logging=no
+
+      - name: 테스트 결과 파일 보관
+        # 테스트 실패 후에도 업로드하되, 미실행·취소된 실행은 제외합니다.
+        if: ${{ !cancelled() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure') }}
+        # actions/upload-artifact v7.0.1을 정확한 커밋으로 고정합니다.
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: repurchase-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          # 원본 데이터·모델·전체 로그 대신 테스트 결과 파일 하나만 업로드합니다.
+          path: ${{ runner.temp }}/repurchase-test-results/junit.xml
+          retention-days: 14
+          if-no-files-found: error
 
       - name: 비관련 변경 검사 생략
         if: steps.changes.outputs.run != 'true'
