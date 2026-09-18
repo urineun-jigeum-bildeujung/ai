@@ -32,6 +32,8 @@ from .modeling.samples import (
     make_temporal_split,
 )
 from .modeling.xgboost_aft import (
+    XGBoostAFTPredictionData,
+    XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
     predict_xgboost_aft_duration,
@@ -64,18 +66,29 @@ class XGBoostAFTExperimentResult:
     probability: XGBoostAFTProbabilityEvaluation
 
 
-def run_xgboost_aft_experiment(
+@dataclass(frozen=True)
+class XGBoostAFTPreparedExperiment:
+    """후보 모델들이 공통으로 사용할 시간 분할·학습·평가 데이터를 보관합니다.
+
+    frozen은 필드 교체를 막지만 내부 DataFrame까지 불변으로 만들지는 않으므로,
+    후보 평가 함수는 전달받은 공통 데이터를 직접 수정하지 않아야 합니다.
+    """
+
+    horizon_days: int
+    split: TemporalSplit
+    training_data: XGBoostAFTTrainingData
+    validation: pd.DataFrame
+    prediction_data: XGBoostAFTPredictionData
+    training_reference_probability: float
+    reference_population_sample_count: int
+
+
+def prepare_xgboost_aft_experiment(
     labels: pd.DataFrame,
     *,
     horizon_days: int = HORIZON_DAYS,
-    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
-    bootstrap_replicates: int = BOOTSTRAP_REPLICATES,
-    bootstrap_random_seed: int = BOOTSTRAP_RANDOM_SEED,
-    loss_distribution: str = "normal",
-    loss_distribution_scale: float = 1.0,
-    num_boost_round: int = AFT_NUM_BOOST_ROUND,
-) -> XGBoostAFTExperimentResult:
-    """같은 시간 분할에서 AFT를 학습하고 Validation 성능만 계산합니다."""
+) -> XGBoostAFTPreparedExperiment:
+    """후보마다 반복할 필요가 없는 피처·분할·평가 기준을 한 번만 준비합니다."""
     samples = build_historical_interval_features(labels)
     split = make_temporal_split(samples)
     samples = assign_temporal_splits(samples, split)
@@ -85,28 +98,13 @@ def run_xgboost_aft_experiment(
     # AFT 학습은 고정 시점 IPCW와 분리해 생존시간·검열 정보만 사용합니다.
     survival_training = add_split_survival_observation(training)
     training_data = build_xgboost_aft_training_data(survival_training)
-    training_result = train_xgboost_aft_model(
-        training_data,
-        loss_distribution=loss_distribution,
-        loss_distribution_scale=loss_distribution_scale,
-        num_boost_round=num_boost_round,
-    )
 
-    # 학습 때 확정한 피처 이름과 순서를 그대로 사용해 Validation을 예측합니다.
+    # 모든 후보가 동일한 Validation 행과 피처 이름·순서를 사용하게 고정합니다.
     prediction_data = build_xgboost_aft_prediction_data(
         validation,
-        feature_columns=training_result.feature_columns,
-    )
-    validation_predictions = predict_xgboost_aft_duration(
-        training_result,
-        prediction_data,
+        feature_columns=training_data.feature_columns,
     )
 
-    concordance = evaluate_xgboost_aft_ipcw_concordance(
-        validation,
-        validation_predictions,
-        horizon_days=horizon_days,
-    )
     # AFT와 기준선이 같은 Train 모집단을 보도록 0일 제외 후 IPCW를 재계산합니다.
     reference_training = training.loc[training_data.row_index].copy()
     weighted_reference_training = add_split_ipcw_weights(
@@ -116,14 +114,80 @@ def run_xgboost_aft_experiment(
     global_probability_model = fit_global_event_probability_baseline(
         weighted_reference_training
     )
-    probability = evaluate_xgboost_aft_ipcw_probability(
-        validation,
-        training_result,
-        validation_predictions,
+    return XGBoostAFTPreparedExperiment(
         horizon_days=horizon_days,
+        split=split,
+        training_data=training_data,
+        validation=validation,
+        prediction_data=prediction_data,
         training_reference_probability=(
             global_probability_model.global_event_probability
         ),
+        reference_population_sample_count=len(weighted_reference_training),
+    )
+
+
+def run_xgboost_aft_experiment(
+    labels: pd.DataFrame,
+    *,
+    horizon_days: int = HORIZON_DAYS,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+    bootstrap_replicates: int | None = BOOTSTRAP_REPLICATES,
+    bootstrap_random_seed: int = BOOTSTRAP_RANDOM_SEED,
+    loss_distribution: str = "normal",
+    loss_distribution_scale: float = 1.0,
+    num_boost_round: int = AFT_NUM_BOOST_ROUND,
+) -> XGBoostAFTExperimentResult:
+    """같은 시간 분할에서 AFT를 학습하고 Validation 성능만 계산합니다."""
+    prepared = prepare_xgboost_aft_experiment(
+        labels,
+        horizon_days=horizon_days,
+    )
+    return evaluate_xgboost_aft_candidate(
+        prepared,
+        calibration_bin_count=calibration_bin_count,
+        bootstrap_replicates=bootstrap_replicates,
+        bootstrap_random_seed=bootstrap_random_seed,
+        loss_distribution=loss_distribution,
+        loss_distribution_scale=loss_distribution_scale,
+        num_boost_round=num_boost_round,
+    )
+
+
+def evaluate_xgboost_aft_candidate(
+    prepared: XGBoostAFTPreparedExperiment,
+    *,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+    bootstrap_replicates: int | None = BOOTSTRAP_REPLICATES,
+    bootstrap_random_seed: int = BOOTSTRAP_RANDOM_SEED,
+    loss_distribution: str = "normal",
+    loss_distribution_scale: float = 1.0,
+    num_boost_round: int = AFT_NUM_BOOST_ROUND,
+) -> XGBoostAFTExperimentResult:
+    """공통 준비 데이터를 사용해 AFT 후보 하나를 학습하고 평가합니다."""
+    training_result = train_xgboost_aft_model(
+        prepared.training_data,
+        loss_distribution=loss_distribution,
+        loss_distribution_scale=loss_distribution_scale,
+        num_boost_round=num_boost_round,
+    )
+
+    validation_predictions = predict_xgboost_aft_duration(
+        training_result,
+        prepared.prediction_data,
+    )
+
+    concordance = evaluate_xgboost_aft_ipcw_concordance(
+        prepared.validation,
+        validation_predictions,
+        horizon_days=prepared.horizon_days,
+    )
+    probability = evaluate_xgboost_aft_ipcw_probability(
+        prepared.validation,
+        training_result,
+        validation_predictions,
+        horizon_days=prepared.horizon_days,
+        training_reference_probability=prepared.training_reference_probability,
         calibration_bin_count=calibration_bin_count,
         bootstrap_replicates=bootstrap_replicates,
         bootstrap_random_seed=bootstrap_random_seed,
@@ -132,22 +196,24 @@ def run_xgboost_aft_experiment(
     training_summary: dict[str, object] = {
         "training_split": "train",
         "evaluation_split": "validation",
-        "trained_until": split.train_end_at,
-        "source_sample_count": training_data.source_sample_count,
-        "excluded_zero_duration_count": (training_data.excluded_zero_duration_count),
-        "included_sample_count": training_data.included_sample_count,
-        "reference_population_sample_count": len(weighted_reference_training),
+        "trained_until": prepared.split.train_end_at,
+        "source_sample_count": prepared.training_data.source_sample_count,
+        "excluded_zero_duration_count": (
+            prepared.training_data.excluded_zero_duration_count
+        ),
+        "included_sample_count": prepared.training_data.included_sample_count,
+        "reference_population_sample_count": (
+            prepared.reference_population_sample_count
+        ),
         "feature_columns": list(training_result.feature_columns),
         "loss_distribution": training_result.loss_distribution,
         "loss_distribution_scale": training_result.loss_distribution_scale,
         "num_boost_round": training_result.num_boost_round,
         "training_aft_nloglik": list(training_result.training_aft_nloglik),
-        "training_reference_probability": (
-            global_probability_model.global_event_probability
-        ),
+        "training_reference_probability": prepared.training_reference_probability,
     }
     return XGBoostAFTExperimentResult(
-        split=split,
+        split=prepared.split,
         training_summary=training_summary,
         validation_predictions=validation_predictions,
         concordance=concordance,

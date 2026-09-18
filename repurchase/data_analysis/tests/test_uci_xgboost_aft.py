@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import numpy as np
 import pandas as pd
 
 from scripts.modeling.samples import (
@@ -14,6 +15,8 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
     build_xgboost_aft_report,
+    evaluate_xgboost_aft_candidate,
+    prepare_xgboost_aft_experiment,
     render_xgboost_aft_report,
     run_xgboost_aft_experiment,
 )
@@ -83,3 +86,114 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     assert "사용자 단위 Bootstrap" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
+
+
+def test_evaluate_xgboost_aft_candidate_can_skip_bootstrap(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """후보 탐색에서는 공통 데이터를 재사용하고 Bootstrap을 생략합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=30)
+
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=5,
+        bootstrap_replicates=None,
+    )
+
+    assert prepared.horizon_days == 30
+    assert prepared.prediction_data.feature_columns == (
+        prepared.training_data.feature_columns
+    )
+    assert result.probability.user_bootstrap is None
+
+
+def test_reusing_prepared_experiment_does_not_change_shared_data(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """후보 A·B·A 실행 뒤에도 공통 데이터와 동일 후보 결과를 보존합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+    validation_before = prepared.validation.copy(deep=True)
+    lower_bound_before = prepared.training_data.matrix.get_float_info(
+        "label_lower_bound"
+    ).copy()
+    upper_bound_before = prepared.training_data.matrix.get_float_info(
+        "label_upper_bound"
+    ).copy()
+
+    first_a = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=3,
+        bootstrap_replicates=None,
+    )
+    second_a = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    pd.testing.assert_frame_equal(prepared.validation, validation_before)
+    np.testing.assert_array_equal(
+        prepared.training_data.matrix.get_float_info("label_lower_bound"),
+        lower_bound_before,
+    )
+    np.testing.assert_array_equal(
+        prepared.training_data.matrix.get_float_info("label_upper_bound"),
+        upper_bound_before,
+    )
+    pd.testing.assert_series_equal(
+        first_a.validation_predictions,
+        second_a.validation_predictions,
+    )
+    assert first_a.training_summary == second_a.training_summary
+    assert first_a.concordance == second_a.concordance
+    assert first_a.probability.summary == second_a.probability.summary
+
+
+def test_wrapper_matches_explicit_prepare_and_evaluate_flow(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """기존 실행 함수와 새 두 단계 실행이 같은 설정에서 같은 결과를 냅니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    explicit = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution_scale=2.0,
+        num_boost_round=3,
+        bootstrap_replicates=None,
+    )
+    wrapped = run_xgboost_aft_experiment(
+        labels,
+        horizon_days=14,
+        loss_distribution_scale=2.0,
+        num_boost_round=3,
+        bootstrap_replicates=None,
+    )
+
+    assert explicit.split == wrapped.split
+    assert explicit.training_summary == wrapped.training_summary
+    pd.testing.assert_series_equal(
+        explicit.validation_predictions,
+        wrapped.validation_predictions,
+    )
+    assert explicit.concordance == wrapped.concordance
+    assert explicit.probability.summary == wrapped.probability.summary
+    pd.testing.assert_frame_equal(
+        explicit.probability.calibration,
+        wrapped.probability.calibration,
+    )
