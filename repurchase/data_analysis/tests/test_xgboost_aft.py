@@ -10,8 +10,10 @@ from scripts.modeling.xgboost_aft import (
     AFTLabelBounds,
     XGBoostAFTError,
     build_aft_label_bounds,
+    build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
     create_xgboost_aft_parameters,
+    predict_xgboost_aft_duration,
     train_xgboost_aft_model,
 )
 
@@ -351,6 +353,55 @@ def test_build_xgboost_aft_training_data_rejects_duplicate_row_index() -> None:
         build_xgboost_aft_training_data(rows)
 
 
+def test_build_xgboost_aft_prediction_data_reuses_training_feature_order() -> None:
+    """예측 행렬은 원본 열 순서가 달라도 학습 피처 계약 순서를 재사용합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    rows = make_aft_training_rows().loc[[20, 30]].copy()
+    rows = rows.loc[:, list(reversed(rows.columns))]
+
+    prediction_data = build_xgboost_aft_prediction_data(
+        rows,
+        feature_columns=training_data.feature_columns,
+    )
+
+    assert prediction_data.row_index.tolist() == [20, 30]
+    assert prediction_data.feature_columns == training_data.feature_columns
+    assert prediction_data.matrix.feature_names == list(training_data.feature_columns)
+    feature_values = prediction_data.matrix.get_data().toarray()
+    np.testing.assert_allclose(
+        feature_values[:, [0, 1, 3]],
+        np.array(
+            [
+                [1.0, 18.0, 2.0],
+                [2.0, 25.0, 5.0],
+            ]
+        ),
+    )
+
+
+def test_build_xgboost_aft_prediction_data_rejects_empty_rows() -> None:
+    """예측할 행이 없으면 빈 결과를 정상 예측으로 반환하지 않습니다."""
+    rows = make_aft_training_rows().iloc[0:0]
+
+    with pytest.raises(XGBoostAFTError, match="예측할 표본이 없습니다"):
+        build_xgboost_aft_prediction_data(
+            rows,
+            feature_columns=("history_interval_count",),
+        )
+
+
+def test_build_xgboost_aft_prediction_data_rejects_duplicate_index() -> None:
+    """예측을 원본 행에 되돌릴 수 없는 중복 인덱스를 거절합니다."""
+    rows = make_aft_training_rows().loc[[20, 30]].copy()
+    rows.index = [7, 7]
+
+    with pytest.raises(XGBoostAFTError, match="인덱스에 중복"):
+        build_xgboost_aft_prediction_data(
+            rows,
+            feature_columns=("history_interval_count",),
+        )
+
+
 def test_train_xgboost_aft_model_completes_small_cpu_smoke_run() -> None:
     """작은 계약 표본으로 실제 AFT 학습 경로와 손실 기록을 확인합니다."""
     training_data = build_xgboost_aft_training_data(make_aft_training_rows())
@@ -358,6 +409,7 @@ def test_train_xgboost_aft_model_completes_small_cpu_smoke_run() -> None:
     result = train_xgboost_aft_model(training_data, num_boost_round=5)
 
     assert result.booster.num_boosted_rounds() == 5
+    assert result.feature_columns == training_data.feature_columns
     assert result.loss_distribution == "normal"
     assert result.loss_distribution_scale == 1.0
     assert result.num_boost_round == 5
@@ -440,3 +492,68 @@ def test_train_xgboost_aft_model_rejects_invalid_boost_rounds(
             training_data,
             num_boost_round=invalid_rounds,  # type: ignore[arg-type]
         )
+
+
+def test_predict_xgboost_aft_duration_restores_original_row_index() -> None:
+    """실제 모델 예측값을 입력 순서가 아닌 원본 행 식별자와 연결합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+    rows = make_aft_training_rows().loc[[20, 30]].copy()
+    prediction_data = build_xgboost_aft_prediction_data(
+        rows,
+        feature_columns=training_result.feature_columns,
+    )
+
+    predictions = predict_xgboost_aft_duration(training_result, prediction_data)
+
+    assert predictions.index.tolist() == [20, 30]
+    assert predictions.name == "predicted_duration_days"
+    assert predictions.dtype == "float64"
+    assert len(predictions) == 2
+    assert np.isfinite(predictions).all()
+    assert predictions.gt(0).all()
+
+
+def test_predict_xgboost_aft_duration_rejects_different_feature_contract() -> None:
+    """예측용 피처 이름이나 순서가 학습 계약과 다르면 추론 전에 거절합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+    prediction_data = build_xgboost_aft_prediction_data(
+        make_aft_training_rows().loc[[20, 30]],
+        feature_columns=("user_prior_order_count", "history_interval_count"),
+    )
+
+    with pytest.raises(XGBoostAFTError, match="모델의 학습 피처 계약"):
+        predict_xgboost_aft_duration(training_result, prediction_data)
+
+
+@pytest.mark.parametrize(
+    "invalid_predictions",
+    [
+        np.array([[20.0], [30.0]]),
+        np.array([20.0]),
+        np.array([20.0, float("nan")]),
+        np.array([20.0, float("inf")]),
+        np.array([20.0, 0.0]),
+        np.array([20.0, -1.0]),
+    ],
+)
+def test_predict_xgboost_aft_duration_rejects_invalid_model_output(
+    invalid_predictions: np.ndarray,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """형태가 다르거나 비유한·비양수인 모델 출력을 서비스 값으로 허용하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+    prediction_data = build_xgboost_aft_prediction_data(
+        make_aft_training_rows().loc[[20, 30]],
+        feature_columns=training_result.feature_columns,
+    )
+    monkeypatch.setattr(
+        training_result.booster,
+        "predict",
+        lambda _matrix: invalid_predictions,
+    )
+
+    with pytest.raises(XGBoostAFTError, match="예측 결과|예상 재구매 소요일"):
+        predict_xgboost_aft_duration(training_result, prediction_data)

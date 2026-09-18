@@ -132,10 +132,20 @@ class XGBoostAFTTrainingResult:
     """학습된 AFT 모델과 재현·검증에 필요한 실행 정보를 함께 보관합니다."""
 
     booster: xgb.Booster
+    feature_columns: tuple[str, ...]
     loss_distribution: str
     loss_distribution_scale: float
     num_boost_round: int
     training_aft_nloglik: tuple[float, ...]
+
+
+@dataclass(frozen=True)
+class XGBoostAFTPredictionData:
+    """학습 피처 계약에 맞춰 만든 예측 행렬과 원본 행 인덱스를 보관합니다."""
+
+    matrix: xgb.DMatrix
+    row_index: pd.Index
+    feature_columns: tuple[str, ...]
 
 
 def _validate_xgboost_aft_training_data(
@@ -277,6 +287,33 @@ def build_xgboost_aft_training_data(
     )
 
 
+def build_xgboost_aft_prediction_data(
+    rows: pd.DataFrame,
+    *,
+    feature_columns: Sequence[str],
+) -> XGBoostAFTPredictionData:
+    """학습 때 사용한 피처 이름·순서로 예측용 행렬을 만듭니다."""
+    if rows.empty:
+        raise XGBoostAFTError("XGBoost AFT로 예측할 표본이 없습니다.")
+    if not rows.index.is_unique:
+        raise XGBoostAFTError("XGBoost AFT 예측 행의 원본 인덱스에 중복이 있습니다.")
+
+    features = select_minimal_model_features(
+        rows,
+        feature_columns=feature_columns,
+    )
+    matrix = xgb.DMatrix(
+        features,
+        feature_names=list(features.columns),
+        missing=np.nan,
+    )
+    return XGBoostAFTPredictionData(
+        matrix=matrix,
+        row_index=features.index.copy(),
+        feature_columns=tuple(features.columns),
+    )
+
+
 def train_xgboost_aft_model(
     training_data: XGBoostAFTTrainingData,
     *,
@@ -316,8 +353,48 @@ def train_xgboost_aft_model(
 
     return XGBoostAFTTrainingResult(
         booster=booster,
+        feature_columns=training_data.feature_columns,
         loss_distribution=loss_distribution,
         loss_distribution_scale=float(loss_distribution_scale),
         num_boost_round=int(num_boost_round),
         training_aft_nloglik=training_loss,
+    )
+
+
+def predict_xgboost_aft_duration(
+    training_result: XGBoostAFTTrainingResult,
+    prediction_data: XGBoostAFTPredictionData,
+) -> pd.Series:
+    """AFT 예상 재구매 소요일을 원본 행 인덱스와 연결해 반환합니다."""
+    if prediction_data.feature_columns != training_result.feature_columns:
+        raise XGBoostAFTError(
+            "AFT 예측 피처 이름·순서가 모델의 학습 피처 계약과 일치하지 않습니다."
+        )
+    if prediction_data.matrix.feature_names != list(training_result.feature_columns):
+        raise XGBoostAFTError(
+            "AFT 예측 행렬의 실제 피처 이름·순서가 학습 피처 계약과 일치하지 않습니다."
+        )
+    if len(prediction_data.row_index) != prediction_data.matrix.num_row():
+        raise XGBoostAFTError(
+            "AFT 예측 행렬의 행 수가 원본 인덱스 수와 일치하지 않습니다."
+        )
+
+    raw_predictions = np.asarray(
+        training_result.booster.predict(prediction_data.matrix),
+        dtype="float64",
+    )
+    if raw_predictions.shape != (prediction_data.matrix.num_row(),):
+        raise XGBoostAFTError(
+            "AFT 예측 결과는 입력 행 수와 같은 1차원 배열이어야 합니다."
+        )
+    if not np.isfinite(raw_predictions).all() or (raw_predictions <= 0).any():
+        raise XGBoostAFTError(
+            "AFT 예상 재구매 소요일은 0보다 큰 유한한 값이어야 합니다."
+        )
+
+    return pd.Series(
+        raw_predictions,
+        index=prediction_data.row_index.copy(),
+        name="predicted_duration_days",
+        dtype="float64",
     )
