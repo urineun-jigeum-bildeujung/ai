@@ -10,7 +10,27 @@ from scripts.modeling.xgboost_aft import (
     AFTLabelBounds,
     XGBoostAFTError,
     build_aft_label_bounds,
+    build_xgboost_aft_training_data,
 )
+
+
+def make_aft_training_rows(*, split: str = "train") -> pd.DataFrame:
+    """사건·검열·0일 표본을 함께 가진 작은 AFT 학습 데이터를 만듭니다."""
+    return pd.DataFrame(
+        {
+            "history_interval_count": [2, 0, 1],
+            "history_median_days": [25.0, float("nan"), 18.0],
+            "history_relative_mad": [0.2, float("nan"), float("nan")],
+            "user_prior_order_count": [5, 0, 2],
+            "survival_observed_duration_days": [20.0, 0.0, 30.0],
+            "survival_event_observed": pd.array(
+                [True, True, False],
+                dtype="boolean",
+            ),
+            "split": [split] * 3,
+        },
+        index=[30, 10, 20],
+    )
 
 
 def test_aft_label_bounds_calculates_included_sample_count() -> None:
@@ -188,3 +208,42 @@ def test_build_aft_label_bounds_rejects_only_zero_duration_rows() -> None:
 
     with pytest.raises(XGBoostAFTError, match="0일 표본을 제외한 뒤"):
         build_aft_label_bounds(rows)
+
+
+def test_build_xgboost_aft_training_data_aligns_features_and_bounds() -> None:
+    """0일 제외 후 동일한 두 행의 피처와 하한·상한이 행렬에 연결됩니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+
+    assert training_data.source_sample_count == 3
+    assert training_data.excluded_zero_duration_count == 1
+    assert training_data.included_sample_count == 2
+    assert training_data.row_index.tolist() == [30, 20]
+    assert training_data.feature_columns == (
+        "history_interval_count",
+        "history_median_days",
+        "history_relative_mad",
+        "user_prior_order_count",
+    )
+    assert training_data.matrix.num_row() == 2
+    assert training_data.matrix.num_col() == 4
+    assert training_data.matrix.get_float_info("label_lower_bound").tolist() == [
+        20.0,
+        30.0,
+    ]
+    upper_bound = training_data.matrix.get_float_info("label_upper_bound")
+    assert upper_bound[0] == 20.0
+    assert np.isinf(upper_bound[1])
+
+
+def test_build_xgboost_aft_training_data_rejects_non_train_rows() -> None:
+    """Validation이나 Test 표본이 AFT 학습 입력으로 섞이면 거절합니다."""
+    with pytest.raises(XGBoostAFTError, match="Train 표본만"):
+        build_xgboost_aft_training_data(make_aft_training_rows(split="validation"))
+
+
+def test_build_xgboost_aft_training_data_rejects_missing_split() -> None:
+    """시간 분할 정보가 없으면 학습 데이터라고 임의로 가정하지 않습니다."""
+    rows = make_aft_training_rows().drop(columns="split")
+
+    with pytest.raises(XGBoostAFTError, match="필수 컬럼"):
+        build_xgboost_aft_training_data(rows)

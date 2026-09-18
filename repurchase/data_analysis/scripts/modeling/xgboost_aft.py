@@ -6,13 +6,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from numbers import Integral
 from typing import Final
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
+
+from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
 
 
 class XGBoostAFTError(ValueError):
@@ -65,6 +69,22 @@ class AFTLabelBounds:
         return self.source_sample_count - self.excluded_zero_duration_count
 
 
+@dataclass(frozen=True)
+class XGBoostAFTTrainingData:
+    """동일한 행으로 정렬된 AFT 피처·구간 라벨과 제외 통계를 보관합니다."""
+
+    matrix: xgb.DMatrix
+    row_index: pd.Index
+    feature_columns: tuple[str, ...]
+    source_sample_count: int
+    excluded_zero_duration_count: int
+
+    @property
+    def included_sample_count(self) -> int:
+        """원본 표본 수에서 0일 제외 건수를 뺀 실제 학습 건수를 계산합니다."""
+        return self.source_sample_count - self.excluded_zero_duration_count
+
+
 def build_aft_label_bounds(rows: pd.DataFrame) -> AFTLabelBounds:
     """공용 생존 관측값을 XGBoost AFT의 하한·상한 라벨로 변환합니다."""
     missing_columns = AFT_LABEL_REQUIRED_COLUMNS - set(rows.columns)
@@ -109,4 +129,56 @@ def build_aft_label_bounds(rows: pd.DataFrame) -> AFTLabelBounds:
         rows=result,
         source_sample_count=len(rows),
         excluded_zero_duration_count=int(zero_duration.sum()),
+    )
+
+
+def build_xgboost_aft_training_data(
+    rows: pd.DataFrame,
+    *,
+    feature_columns: Sequence[str] = MINIMAL_MODEL_FEATURE_COLUMNS,
+) -> XGBoostAFTTrainingData:
+    """Train 행에서 0일을 제외하고 XGBoost AFT 학습 행렬을 만듭니다."""
+    if "split" not in rows.columns:
+        raise XGBoostAFTError("XGBoost AFT 학습 필수 컬럼이 누락됐습니다: ['split']")
+    if rows["split"].isna().any() or not rows["split"].eq("train").all():
+        raise XGBoostAFTError("XGBoost AFT 학습에는 Train 표본만 사용합니다.")
+
+    # AFT에서 사용할 행을 먼저 확정한 뒤 같은 행에서 피처를 선택합니다.
+    # 이 순서를 지켜야 0일 제외 후 피처와 구간 라벨의 사용자 대응이 어긋나지 않습니다.
+    label_bounds = build_aft_label_bounds(rows)
+    features = select_minimal_model_features(
+        label_bounds.rows,
+        feature_columns=feature_columns,
+    )
+    if not features.index.equals(label_bounds.rows.index):
+        raise XGBoostAFTError(
+            "XGBoost AFT 피처와 구간 라벨의 행 인덱스가 일치하지 않습니다."
+        )
+
+    matrix = xgb.DMatrix(
+        features,
+        feature_names=list(features.columns),
+        missing=np.nan,
+    )
+    matrix.set_float_info(
+        "label_lower_bound",
+        label_bounds.rows["aft_lower_bound"].to_numpy(
+            dtype="float64",
+            copy=True,
+        ),
+    )
+    matrix.set_float_info(
+        "label_upper_bound",
+        label_bounds.rows["aft_upper_bound"].to_numpy(
+            dtype="float64",
+            copy=True,
+        ),
+    )
+
+    return XGBoostAFTTrainingData(
+        matrix=matrix,
+        row_index=features.index.copy(),
+        feature_columns=tuple(features.columns),
+        source_sample_count=label_bounds.source_sample_count,
+        excluded_zero_duration_count=(label_bounds.excluded_zero_duration_count),
     )
