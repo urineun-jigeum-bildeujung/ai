@@ -5,10 +5,17 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.modeling import model_selection
 from scripts.modeling.baseline import HierarchicalMedianModel
+from scripts.modeling.evaluation import bootstrap_ipcw_brier_pair_difference_by_user
 from scripts.modeling.model_selection import (
+    LIGHTGBM_FEATURE_SETS,
+    build_lightgbm_feature_pair_predictions,
+    build_paired_probability_predictions,
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
+    evaluate_lightgbm_feature_sets,
+    evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
 )
 
@@ -79,8 +86,111 @@ def make_ipcw_probability_samples(split: str) -> pd.DataFrame:
             "split_end_at": pd.to_datetime([split_end] * 4),
             "outcome_available_by_split_end": [True, False, True, False],
             "target_duration_days": [2.0, float("nan"), 4.0, float("nan")],
+            "history_interval_count": [0, 1, 2, 3],
+            "history_median_days": [float("nan"), 2.0, 3.0, 4.0],
+            "history_relative_mad": [float("nan"), float("nan"), 0.2, 0.1],
+            "user_prior_order_count": [0, 2, 3, 4],
         }
     )
+
+
+def make_probability_pair_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """인덱스는 다르지만 구매 키 순서가 같은 두 모델의 예측표를 만듭니다."""
+    weighted = pd.DataFrame(
+        {
+            "user_id": ["u1", "u1", "u2"],
+            "order_id": ["o1", "o2", "o3"],
+            "product_id": ["p1", "p2", "p1"],
+            "ipcw_outcome_known": [True, True, False],
+            "ipcw_event_within_horizon": pd.array(
+                [True, False, pd.NA], dtype="boolean"
+            ),
+            "ipcw_weight": [1.2, 1.0, 0.0],
+        },
+        index=[10, 20, 30],
+    )
+    reference = weighted[["user_id", "order_id", "product_id"]].copy()
+    candidate = reference.copy()
+    reference.index = [100, 200, 300]
+    candidate.index = [1000, 2000, 3000]
+    reference["predicted_event_probability"] = [0.6, 0.3, 0.4]
+    candidate["predicted_event_probability"] = [0.7, 0.2, 0.5]
+    return weighted, reference, candidate
+
+
+def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:
+    """인덱스가 달라도 같은 구매에 확률을 붙이고 미관측 정답과 원본을 보존합니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    originals = [rows.copy(deep=True) for rows in (weighted, reference, candidate)]
+
+    paired = build_paired_probability_predictions(weighted, reference, candidate)
+
+    pd.testing.assert_frame_equal(paired.loc[:, weighted.columns], weighted)
+    assert paired["reference_predicted_event_probability"].tolist() == [0.6, 0.3, 0.4]
+    assert paired["candidate_predicted_event_probability"].tolist() == [0.7, 0.2, 0.5]
+    paired.loc[10, "ipcw_weight"] = 9.0
+    paired.loc[10, "reference_predicted_event_probability"] = 0.0
+    for rows, original in zip((weighted, reference, candidate), originals, strict=True):
+        pd.testing.assert_frame_equal(rows, original)
+
+
+@pytest.mark.parametrize("role", ["reference", "candidate"])
+@pytest.mark.parametrize(
+    ("problem", "message"),
+    [
+        ("reordered", "순서"),
+        ("missing_row", "표본 수"),
+        ("duplicate_key", "중복"),
+        ("missing_probability", "predicted_event_probability"),
+        ("missing_key", "누락"),
+    ],
+)
+def test_probability_pair_rejects_misaligned_predictions(
+    role: str, problem: str, message: str
+) -> None:
+    """어느 모델이든 구매 누락·중복·순서 불일치가 있으면 자동 병합하지 않습니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    predictions = {"reference": reference, "candidate": candidate}
+    rows = predictions[role]
+    if problem == "reordered":
+        rows = rows.iloc[::-1]
+    elif problem == "missing_row":
+        rows = rows.iloc[:-1]
+    elif problem == "duplicate_key":
+        rows = rows.iloc[[0, 0, 2]]
+    elif problem == "missing_probability":
+        rows = rows.drop(columns="predicted_event_probability")
+    else:
+        rows = rows.drop(columns="order_id")
+    predictions[role] = rows
+
+    with pytest.raises(ValueError, match=message):
+        build_paired_probability_predictions(
+            weighted,
+            predictions["reference"],
+            predictions["candidate"],
+        )
+
+
+def test_probability_pair_rejects_matching_missing_keys() -> None:
+    """모든 표의 같은 위치에 결측 키가 있어도 유효한 구매 식별자로 인정하지 않습니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    for rows in (weighted, reference, candidate):
+        rows.loc[rows.index[0], "order_id"] = None
+
+    with pytest.raises(ValueError, match="식별자.*결측"):
+        build_paired_probability_predictions(weighted, reference, candidate)
+
+
+def test_probability_pair_rejects_duplicate_probability_columns() -> None:
+    """같은 확률 이름이 두 열을 가리키는 모호한 입력을 거절합니다."""
+    weighted, reference, candidate = make_probability_pair_inputs()
+    candidate = pd.concat(
+        [candidate, candidate[["predicted_event_probability"]]], axis=1
+    )
+
+    with pytest.raises(ValueError, match="열 이름.*중복"):
+        build_paired_probability_predictions(weighted, reference, candidate)
 
 
 def test_evaluate_shrinkage_candidates_preserves_candidates_and_metrics() -> None:
@@ -211,6 +321,277 @@ def test_evaluate_ipcw_probability_candidates_rejects_unknown_bootstrap_strength
             product_smoothing_strengths=(1.0, 4.0),
             horizon_days=4,
             bootstrap_product_smoothing_strength=8.0,
+        )
+
+
+def test_evaluate_lightgbm_probability_candidate_uses_train_and_validation() -> None:
+    """Train으로만 학습한 LightGBM을 동일한 Validation IPCW 기준으로 평가합니다."""
+    evaluation = evaluate_lightgbm_probability_candidate(
+        make_ipcw_probability_samples("train"),
+        make_ipcw_probability_samples("validation"),
+        horizon_days=4,
+        calibration_bin_count=2,
+        bootstrap_reference_product_smoothing_strength=4.0,
+        bootstrap_replicates=100,
+        bootstrap_random_seed=42,
+    )
+    result = evaluation.comparison.iloc[0]
+
+    assert result["model_candidate"] == "lightgbm_probability"
+    assert pd.isna(result["product_smoothing_strength"])
+    assert result["evaluation_sample_count"] == 4
+    assert result["outcome_known_count"] == 3
+    assert result["horizon_days"] == 4
+    assert 0 <= result["ipcw_brier_score"] <= 1
+    assert 0 <= result["expected_calibration_error"] <= 1
+
+    calibration = evaluation.calibration
+    assert calibration["model_candidate"].eq("lightgbm_probability").all()
+    assert calibration["sample_count"].sum() == 3
+    assert calibration["ipcw_weight_share"].sum() == pytest.approx(1.0)
+    assert evaluation.user_bootstrap is not None
+    assert evaluation.user_bootstrap.summary["bootstrap_replicates"] == 100
+    assert evaluation.user_bootstrap.summary["user_count"] == 3
+    assert len(evaluation.user_bootstrap.trials) == 100
+
+
+def test_lightgbm_feature_comparison_preserves_rows_targets_and_weights(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """결측이 있는 표본까지 같은 행·정답·가중치로 학습하고 같은 행을 평가합니다."""
+    training = make_ipcw_probability_samples("train")
+    validation = make_ipcw_probability_samples("validation")
+    original_training = training.copy(deep=True)
+    original_validation = validation.copy(deep=True)
+    training_inputs = []
+    prediction_inputs = []
+    original_train = model_selection.train_lightgbm_classifier
+    original_predict = model_selection.predict_lightgbm_repurchase_probability
+
+    def capture_training(data):
+        """실제 학습에 전달되는 표본·정답·가중치를 후보별로 보관합니다."""
+        training_inputs.append(data)
+        return original_train(data)
+
+    def capture_prediction(model, rows):
+        """실제 예측에 전달되는 모든 행의 동일성을 확인하도록 보관합니다."""
+        prediction_inputs.append(rows.copy(deep=True))
+        return original_predict(model, rows)
+
+    monkeypatch.setattr(model_selection, "train_lightgbm_classifier", capture_training)
+    monkeypatch.setattr(
+        model_selection, "predict_lightgbm_repurchase_probability", capture_prediction
+    )
+    result = evaluate_lightgbm_feature_sets(training, validation, horizon_days=4)
+
+    assert result.comparison["feature_set"].tolist() == [
+        name for name, _ in LIGHTGBM_FEATURE_SETS
+    ]
+    assert result.comparison["evaluation_sample_count"].tolist() == [4, 4, 4]
+    assert result.comparison["outcome_known_count"].tolist() == [3, 3, 3]
+    assert pd.isna(result.comparison.iloc[0]["brier_improvement_vs_previous"])
+    assert result.comparison["training_sample_count"].tolist() == [3, 3, 3]
+    assert len(training_inputs) == len(prediction_inputs) == 3
+    for data, (_, columns), predicted_rows in zip(
+        training_inputs, LIGHTGBM_FEATURE_SETS, prediction_inputs, strict=True
+    ):
+        assert list(data.features.columns) == list(columns)
+        assert data.features.index.tolist() == [0, 2, 3]
+        pd.testing.assert_series_equal(data.target, training_inputs[0].target)
+        pd.testing.assert_series_equal(
+            data.sample_weight, training_inputs[0].sample_weight
+        )
+        pd.testing.assert_frame_equal(predicted_rows, original_validation)
+    assert pd.isna(training_inputs[2].features.loc[0, "history_relative_mad"])
+    pd.testing.assert_frame_equal(training, original_training)
+    pd.testing.assert_frame_equal(validation, original_validation)
+
+
+def test_lightgbm_feature_pair_shares_samples_and_trains_each_candidate_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """B/C의 정답·가중치·행을 고정하고 결측과 미관측 표본도 보존합니다."""
+    training = make_ipcw_probability_samples("train")
+    validation = make_ipcw_probability_samples("validation")
+    originals = [rows.copy(deep=True) for rows in (training, validation)]
+    training_inputs = []
+    prediction_inputs = []
+    prediction_outputs = []
+    weight_calls = []
+    original_train = model_selection.train_lightgbm_classifier
+    original_predict = model_selection.predict_lightgbm_repurchase_probability
+    original_weight = model_selection.add_split_ipcw_weights
+
+    def capture_training(data):
+        """학습 호출 횟수와 실제 입력을 기록합니다."""
+        training_inputs.append(data)
+        return original_train(data)
+
+    def capture_prediction(model, rows):
+        """예측 대상과 실제 확률을 기록해 반환표와 대조합니다."""
+        prediction_inputs.append(rows.copy(deep=True))
+        result = original_predict(model, rows)
+        prediction_outputs.append(result)
+        return result
+
+    def capture_weight(rows, *, horizon_days):
+        """가중치를 후보별로 반복 계산하지 않는지 기록합니다."""
+        weight_calls.append((rows["split"].iloc[0], horizon_days))
+        return original_weight(rows, horizon_days=horizon_days)
+
+    monkeypatch.setattr(model_selection, "train_lightgbm_classifier", capture_training)
+    monkeypatch.setattr(
+        model_selection, "predict_lightgbm_repurchase_probability", capture_prediction
+    )
+    monkeypatch.setattr(model_selection, "add_split_ipcw_weights", capture_weight)
+    result = build_lightgbm_feature_pair_predictions(
+        training,
+        validation,
+        reference_feature_columns=LIGHTGBM_FEATURE_SETS[1][1],
+        candidate_feature_columns=LIGHTGBM_FEATURE_SETS[2][1],
+        horizon_days=4,
+    )
+
+    assert len(training_inputs) == len(prediction_inputs) == 2
+    assert weight_calls == [("train", 4), ("validation", 4)]
+    for data, (_, columns), predicted_rows in zip(
+        training_inputs, LIGHTGBM_FEATURE_SETS[1:], prediction_inputs, strict=True
+    ):
+        assert data.horizon_days == 4
+        assert tuple(data.features.columns) == columns
+        assert data.features.index.tolist() == [0, 2, 3]
+        pd.testing.assert_series_equal(data.target, training_inputs[0].target)
+        pd.testing.assert_series_equal(
+            data.sample_weight, training_inputs[0].sample_weight
+        )
+        pd.testing.assert_frame_equal(predicted_rows, originals[1])
+    assert pd.isna(training_inputs[1].features.loc[0, "history_relative_mad"])
+    expected = original_weight(validation, horizon_days=4)
+    pd.testing.assert_frame_equal(result.loc[:, expected.columns], expected)
+    assert len(result) == 4
+    assert result["product_train_outcome_count"].tolist() == [2, 1, 2, 1]
+    assert not result.loc[1, "ipcw_outcome_known"]
+    assert pd.isna(result.loc[1, "ipcw_event_within_horizon"])
+    for role, values in zip(
+        ("reference", "candidate"), prediction_outputs, strict=True
+    ):
+        assert result[f"{role}_predicted_event_probability"].tolist() == values.tolist()
+    for rows, original in zip((training, validation), originals, strict=True):
+        pd.testing.assert_frame_equal(rows, original)
+
+
+def test_lightgbm_feature_pair_bootstrap_reuses_predictions_without_retraining(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """학습 연결부터 사용자 재표집까지 검증하되 시험용 확률로 역할을 구분합니다."""
+    training = make_ipcw_probability_samples("train")
+    validation = make_ipcw_probability_samples("validation")
+    # 한 사용자의 구매 두 건이 있어도 서로 다른 사용자 두 명으로 세면 안 됩니다.
+    validation.loc[2, "user_id"] = "u1"
+    training_calls = []
+    prediction_calls = []
+    original_train = model_selection.train_lightgbm_classifier
+
+    def capture_training(data):
+        """실제 학습을 수행하면서 호출 횟수를 기록합니다."""
+        training_calls.append(data)
+        return original_train(data)
+
+    def supply_test_probabilities(model, rows):
+        """두 후보에 다른 확률을 넣어 역할 교환이나 한 후보의 재사용을 탐지합니다."""
+        prediction_calls.append(tuple(model.feature_name_))
+        values = (
+            [0.8, 0.5, 0.3, 0.2]
+            if "history_relative_mad" not in model.feature_name_
+            else [0.9, 0.5, 0.8, 0.6]
+        )
+        return pd.Series(values, index=rows.index, dtype="float64")
+
+    monkeypatch.setattr(model_selection, "train_lightgbm_classifier", capture_training)
+    monkeypatch.setattr(
+        model_selection,
+        "predict_lightgbm_repurchase_probability",
+        supply_test_probabilities,
+    )
+    paired = build_lightgbm_feature_pair_predictions(
+        training,
+        validation,
+        reference_feature_columns=LIGHTGBM_FEATURE_SETS[1][1],
+        candidate_feature_columns=LIGHTGBM_FEATURE_SETS[2][1],
+        horizon_days=4,
+    )
+    original_paired = paired.copy(deep=True)
+    result = bootstrap_ipcw_brier_pair_difference_by_user(
+        paired, bootstrap_replicates=100, random_seed=42
+    )
+    repeated = bootstrap_ipcw_brier_pair_difference_by_user(
+        paired, bootstrap_replicates=100, random_seed=42
+    )
+
+    # 확인된 정답은 [1, 1, 0]입니다. 공통 가중치로 수계산한 값과 대조합니다.
+    weights = paired.loc[[0, 2, 3], "ipcw_weight"].tolist()
+    expected_b = sum(w * e for w, e in zip(weights, [0.04, 0.49, 0.04], strict=True))
+    expected_c = sum(w * e for w, e in zip(weights, [0.01, 0.04, 0.36], strict=True))
+    assert result.summary["point_reference_brier_score"] == pytest.approx(
+        expected_b / sum(weights)
+    )
+    assert result.summary["point_candidate_brier_score"] == pytest.approx(
+        expected_c / sum(weights)
+    )
+    assert result.summary["point_brier_improvement"] == pytest.approx(
+        (expected_b - expected_c) / sum(weights)
+    )
+    assert result.summary["user_count"] == 2
+    assert result.summary["outcome_known_count"] == 3
+    assert len(result.trials) == 100
+    # C가 좋아지는 사용자와 나빠지는 사용자를 모두 포함해 개선을 강제하지 않습니다.
+    assert result.trials["brier_improvement"].gt(0).any()
+    assert result.trials["brier_improvement"].lt(0).any()
+    assert len(training_calls) == len(prediction_calls) == 2
+    assert result.summary == repeated.summary
+    pd.testing.assert_frame_equal(result.trials, repeated.trials)
+    pd.testing.assert_frame_equal(paired, original_paired)
+
+
+@pytest.mark.parametrize("invalid_input", ["test", "train_split", "candidate_feature"])
+def test_lightgbm_feature_pair_rejects_invalid_inputs_before_training(
+    monkeypatch: pytest.MonkeyPatch, invalid_input: str
+) -> None:
+    """Test 유입·Train 오지정·정답 피처 유입은 학습을 시작하기 전에 거절합니다."""
+    training = make_ipcw_probability_samples("train")
+    validation = make_ipcw_probability_samples("validation")
+    candidate_columns = LIGHTGBM_FEATURE_SETS[2][1]
+    if invalid_input == "test":
+        validation["split"] = "test"
+        message = "Validation 표본만"
+    elif invalid_input == "train_split":
+        training["split"] = "validation"
+        message = "Train 표본만"
+    else:
+        candidate_columns = ("target_duration_days",)
+        message = "피처"
+
+    def reject_training(data):
+        """잘못된 입력으로 학습에 도달하면 테스트를 실패시킵니다."""
+        pytest.fail("입력 검증 전에 학습이 실행됐습니다.")
+
+    monkeypatch.setattr(model_selection, "train_lightgbm_classifier", reject_training)
+    with pytest.raises(ValueError, match=message):
+        build_lightgbm_feature_pair_predictions(
+            training,
+            validation,
+            reference_feature_columns=LIGHTGBM_FEATURE_SETS[1][1],
+            candidate_feature_columns=candidate_columns,
+            horizon_days=4,
+        )
+
+
+def test_lightgbm_feature_comparison_rejects_test_split() -> None:
+    """피처 선택 실험에 Test 표본을 전달하면 평가 전에 거절합니다."""
+    with pytest.raises(ValueError, match="Validation 표본만"):
+        evaluate_lightgbm_feature_sets(
+            make_ipcw_probability_samples("train"),
+            make_ipcw_probability_samples("test"),
         )
 
 
