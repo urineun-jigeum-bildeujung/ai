@@ -10,6 +10,7 @@ from scripts.modeling.xgboost_aft import (
     AFTLabelBounds,
     XGBoostAFTError,
     build_aft_label_bounds,
+    build_xgboost_aft_evaluation_rows,
     build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
     create_xgboost_aft_parameters,
@@ -557,3 +558,65 @@ def test_predict_xgboost_aft_duration_rejects_invalid_model_output(
 
     with pytest.raises(XGBoostAFTError, match="예측 결과|예상 재구매 소요일"):
         predict_xgboost_aft_duration(training_result, prediction_data)
+
+
+def test_build_xgboost_aft_evaluation_rows_aligns_by_original_index() -> None:
+    """예측 순서가 달라도 원본 행 인덱스로 정답과 정확히 다시 연결합니다."""
+    rows = make_aft_training_rows()
+    original_rows = rows.copy(deep=True)
+    predictions = pd.Series(
+        [200.0, 300.0, 100.0],
+        index=[20, 30, 10],
+        name="predicted_duration_days",
+    )
+
+    evaluation = build_xgboost_aft_evaluation_rows(rows, predictions)
+
+    assert evaluation.source_sample_count == 3
+    assert evaluation.excluded_zero_duration_count == 1
+    assert evaluation.included_sample_count == 2
+    assert evaluation.rows.index.tolist() == [30, 20]
+    assert evaluation.rows["predicted_duration_days"].tolist() == [300.0, 200.0]
+    assert evaluation.rows["survival_observed_duration_days"].tolist() == [20.0, 30.0]
+    pd.testing.assert_frame_equal(rows, original_rows)
+
+
+@pytest.mark.parametrize(
+    "predictions",
+    [
+        pd.Series([30.0, 20.0], index=[30, 20]),
+        pd.Series([30.0, 20.0, 10.0], index=[30, 20, 99]),
+        pd.Series([30.0, 20.0, 10.0], index=[30, 20, 20]),
+    ],
+)
+def test_build_xgboost_aft_evaluation_rows_rejects_unmatched_index(
+    predictions: pd.Series,
+) -> None:
+    """누락·추가·중복된 예측 행을 내부 결합으로 조용히 버리지 않습니다."""
+    with pytest.raises(XGBoostAFTError, match="인덱스"):
+        build_xgboost_aft_evaluation_rows(
+            make_aft_training_rows(),
+            predictions,
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_predictions",
+    [
+        [30.0, 20.0, float("nan")],
+        [30.0, 20.0, float("inf")],
+        [30.0, 20.0, 0.0],
+        [30.0, 20.0, -1.0],
+    ],
+)
+def test_build_xgboost_aft_evaluation_rows_rejects_invalid_prediction(
+    invalid_predictions: list[float],
+) -> None:
+    """비유한·비양수 예측을 평가 지표 입력으로 허용하지 않습니다."""
+    predictions = pd.Series(invalid_predictions, index=[30, 10, 20])
+
+    with pytest.raises(XGBoostAFTError, match="0보다 큰 유한한 숫자"):
+        build_xgboost_aft_evaluation_rows(
+            make_aft_training_rows(),
+            predictions,
+        )

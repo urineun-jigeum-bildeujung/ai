@@ -398,3 +398,38 @@ def predict_xgboost_aft_duration(
         name="predicted_duration_days",
         dtype="float64",
     )
+
+
+def build_xgboost_aft_evaluation_rows(
+    rows: pd.DataFrame,
+    predictions: pd.Series,
+) -> AFTLabelBounds:
+    """원본 행 인덱스로 AFT 예측과 생존 관측값을 정렬해 평가 행을 만듭니다."""
+    if rows.empty:
+        raise XGBoostAFTError("XGBoost AFT를 평가할 표본이 없습니다.")
+    if not rows.index.is_unique or not predictions.index.is_unique:
+        raise XGBoostAFTError("AFT 평가 원본과 예측의 행 인덱스는 중복될 수 없습니다.")
+    if len(rows) != len(predictions) or not (
+        rows.index.difference(predictions.index).empty
+        and predictions.index.difference(rows.index).empty
+    ):
+        raise XGBoostAFTError(
+            "AFT 평가 원본과 예측의 행 인덱스 집합이 일치하지 않습니다."
+        )
+    if (
+        not is_numeric_dtype(predictions.dtype)
+        or not np.isfinite(predictions.to_numpy(dtype="float64", copy=False)).all()
+        or predictions.le(0).any()
+    ):
+        raise XGBoostAFTError("AFT 평가 예측값은 0보다 큰 유한한 숫자여야 합니다.")
+
+    label_bounds = build_aft_label_bounds(rows)
+    evaluation_rows = label_bounds.rows.copy()
+    evaluation_rows["predicted_duration_days"] = predictions.reindex(
+        evaluation_rows.index
+    ).astype("float64")
+    return AFTLabelBounds(
+        rows=evaluation_rows,
+        source_sample_count=label_bounds.source_sample_count,
+        excluded_zero_duration_count=label_bounds.excluded_zero_duration_count,
+    )
