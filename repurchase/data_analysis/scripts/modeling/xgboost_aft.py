@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from numbers import Integral
+from numbers import Integral, Real
 from typing import Final
 
 import numpy as np
@@ -30,11 +30,53 @@ AFT_LABEL_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     }
 )
 
+AFT_LOSS_DISTRIBUTIONS: Final[frozenset[str]] = frozenset(
+    {
+        "normal",
+        "logistic",
+        "extreme",
+    }
+)
+
 
 def _validate_nonnegative_count(*, name: str, value: object) -> None:
     """표본 수가 boolean이 아닌 0 이상의 정수인지 검사합니다."""
     if isinstance(value, bool) or not isinstance(value, Integral) or value < 0:
         raise XGBoostAFTError(f"{name}은 0 이상의 정수여야 합니다.")
+
+
+def create_xgboost_aft_parameters(
+    *,
+    loss_distribution: str = "normal",
+    loss_distribution_scale: float = 1.0,
+) -> dict[str, object]:
+    """CPU에서 재현 가능한 XGBoost AFT 기준 설정을 만듭니다."""
+    if (
+        not isinstance(loss_distribution, str)
+        or loss_distribution not in AFT_LOSS_DISTRIBUTIONS
+    ):
+        raise XGBoostAFTError(
+            "AFT 손실분포는 normal, logistic, extreme 중 하나여야 합니다."
+        )
+    if (
+        isinstance(loss_distribution_scale, bool)
+        or not isinstance(loss_distribution_scale, Real)
+        or not np.isfinite(loss_distribution_scale)
+        or loss_distribution_scale <= 0
+    ):
+        raise XGBoostAFTError("AFT 손실분포 scale은 0보다 큰 유한한 숫자여야 합니다.")
+
+    return {
+        "objective": "survival:aft",
+        "eval_metric": "aft-nloglik",
+        "aft_loss_distribution": loss_distribution,
+        "aft_loss_distribution_scale": float(loss_distribution_scale),
+        "tree_method": "hist",
+        "device": "cpu",
+        "seed": 42,
+        "nthread": 1,
+        "validate_parameters": True,
+    }
 
 
 @dataclass(frozen=True)
@@ -83,6 +125,54 @@ class XGBoostAFTTrainingData:
     def included_sample_count(self) -> int:
         """원본 표본 수에서 0일 제외 건수를 뺀 실제 학습 건수를 계산합니다."""
         return self.source_sample_count - self.excluded_zero_duration_count
+
+
+@dataclass(frozen=True)
+class XGBoostAFTTrainingResult:
+    """학습된 AFT 모델과 재현·검증에 필요한 실행 정보를 함께 보관합니다."""
+
+    booster: xgb.Booster
+    loss_distribution: str
+    loss_distribution_scale: float
+    num_boost_round: int
+    training_aft_nloglik: tuple[float, ...]
+
+
+def _validate_xgboost_aft_training_data(
+    training_data: XGBoostAFTTrainingData,
+) -> None:
+    """학습 직전 DMatrix의 행·피처·AFT 구간 라벨 계약을 다시 검사합니다."""
+    matrix = training_data.matrix
+    if matrix.num_row() != training_data.included_sample_count:
+        raise XGBoostAFTError(
+            "AFT 학습 행렬의 행 수가 실제 학습 포함 건수와 일치하지 않습니다."
+        )
+    if len(training_data.row_index) != matrix.num_row():
+        raise XGBoostAFTError(
+            "AFT 학습 행렬의 행 수가 예측 추적용 원본 인덱스 수와 일치하지 않습니다."
+        )
+    if matrix.feature_names != list(training_data.feature_columns):
+        raise XGBoostAFTError(
+            "AFT 학습 행렬의 피처 이름·순서가 기록된 피처 계약과 일치하지 않습니다."
+        )
+
+    lower_bound = matrix.get_float_info("label_lower_bound")
+    upper_bound = matrix.get_float_info("label_upper_bound")
+    if len(lower_bound) != matrix.num_row() or len(upper_bound) != matrix.num_row():
+        raise XGBoostAFTError(
+            "AFT 학습 행렬의 하한·상한 수가 학습 행 수와 일치하지 않습니다."
+        )
+    exact_event = np.isclose(lower_bound, upper_bound)
+    right_censored = np.isinf(upper_bound) & (upper_bound > 0)
+    if (
+        not np.isfinite(lower_bound).all()
+        or (lower_bound <= 0).any()
+        or not (exact_event | right_censored).all()
+    ):
+        raise XGBoostAFTError(
+            "AFT 학습 라벨은 양수의 정확 사건 [t, t] 또는 "
+            "우측검열 [t, inf] 구간이어야 합니다."
+        )
 
 
 def build_aft_label_bounds(rows: pd.DataFrame) -> AFTLabelBounds:
@@ -184,4 +274,50 @@ def build_xgboost_aft_training_data(
         feature_columns=tuple(features.columns),
         source_sample_count=label_bounds.source_sample_count,
         excluded_zero_duration_count=(label_bounds.excluded_zero_duration_count),
+    )
+
+
+def train_xgboost_aft_model(
+    training_data: XGBoostAFTTrainingData,
+    *,
+    loss_distribution: str = "normal",
+    loss_distribution_scale: float = 1.0,
+    num_boost_round: int = 5,
+) -> XGBoostAFTTrainingResult:
+    """검증된 AFT 행렬로 CPU 기준 모델을 학습하고 손실 이력을 반환합니다."""
+    if (
+        isinstance(num_boost_round, bool)
+        or not isinstance(num_boost_round, Integral)
+        or num_boost_round <= 0
+    ):
+        raise XGBoostAFTError("부스팅 반복 횟수는 0보다 큰 정수여야 합니다.")
+    _validate_xgboost_aft_training_data(training_data)
+
+    parameters = create_xgboost_aft_parameters(
+        loss_distribution=loss_distribution,
+        loss_distribution_scale=loss_distribution_scale,
+    )
+    evaluation_history: dict[str, dict[str, list[float]]] = {}
+    booster = xgb.train(
+        params=parameters,
+        dtrain=training_data.matrix,
+        num_boost_round=int(num_boost_round),
+        evals=[(training_data.matrix, "train")],
+        evals_result=evaluation_history,
+        verbose_eval=False,
+    )
+    training_loss = tuple(
+        float(value) for value in evaluation_history["train"]["aft-nloglik"]
+    )
+    if len(training_loss) != num_boost_round or not np.isfinite(training_loss).all():
+        raise XGBoostAFTError(
+            "AFT 학습 손실 이력이 반복 횟수와 일치하는 유한한 값이 아닙니다."
+        )
+
+    return XGBoostAFTTrainingResult(
+        booster=booster,
+        loss_distribution=loss_distribution,
+        loss_distribution_scale=float(loss_distribution_scale),
+        num_boost_round=int(num_boost_round),
+        training_aft_nloglik=training_loss,
     )

@@ -11,6 +11,8 @@ from scripts.modeling.xgboost_aft import (
     XGBoostAFTError,
     build_aft_label_bounds,
     build_xgboost_aft_training_data,
+    create_xgboost_aft_parameters,
+    train_xgboost_aft_model,
 )
 
 
@@ -31,6 +33,71 @@ def make_aft_training_rows(*, split: str = "train") -> pd.DataFrame:
         },
         index=[30, 10, 20],
     )
+
+
+def test_create_xgboost_aft_parameters_uses_reproducible_cpu_baseline() -> None:
+    """튜닝 전 기준 설정이 AFT 목적·평가지표·CPU·고정 seed를 명시합니다."""
+    parameters = create_xgboost_aft_parameters()
+
+    assert parameters == {
+        "objective": "survival:aft",
+        "eval_metric": "aft-nloglik",
+        "aft_loss_distribution": "normal",
+        "aft_loss_distribution_scale": 1.0,
+        "tree_method": "hist",
+        "device": "cpu",
+        "seed": 42,
+        "nthread": 1,
+        "validate_parameters": True,
+    }
+
+
+def test_create_xgboost_aft_parameters_accepts_experiment_candidate() -> None:
+    """공통 실행 조건을 유지하면서 손실분포와 scale만 교체할 수 있습니다."""
+    parameters = create_xgboost_aft_parameters(
+        loss_distribution="logistic",
+        loss_distribution_scale=1.5,
+    )
+
+    assert parameters["aft_loss_distribution"] == "logistic"
+    assert parameters["aft_loss_distribution_scale"] == 1.5
+    assert parameters["device"] == "cpu"
+    assert parameters["seed"] == 42
+
+
+def test_create_xgboost_aft_parameters_rejects_unknown_distribution() -> None:
+    """분포 이름의 오타를 XGBoost 실행 전 명확한 오류로 거절합니다."""
+    with pytest.raises(XGBoostAFTError, match="normal, logistic, extreme"):
+        create_xgboost_aft_parameters(loss_distribution="gaussian")
+
+
+def test_create_xgboost_aft_parameters_rejects_non_string_distribution() -> None:
+    """해시할 수 없는 값도 Python 오류가 아닌 AFT 설정 오류로 거절합니다."""
+    with pytest.raises(XGBoostAFTError, match="normal, logistic, extreme"):
+        create_xgboost_aft_parameters(
+            loss_distribution=["normal"],  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_scale",
+    [
+        0.0,
+        -1.0,
+        float("nan"),
+        float("inf"),
+        True,
+        "1.0",
+    ],
+)
+def test_create_xgboost_aft_parameters_rejects_invalid_scale(
+    invalid_scale: object,
+) -> None:
+    """0·음수·비유한값·boolean·문자열 scale을 학습 설정으로 허용하지 않습니다."""
+    with pytest.raises(XGBoostAFTError, match="0보다 큰 유한한 숫자"):
+        create_xgboost_aft_parameters(
+            loss_distribution_scale=invalid_scale,  # type: ignore[arg-type]
+        )
 
 
 def test_aft_label_bounds_calculates_included_sample_count() -> None:
@@ -282,3 +349,94 @@ def test_build_xgboost_aft_training_data_rejects_duplicate_row_index() -> None:
 
     with pytest.raises(XGBoostAFTError, match="중복"):
         build_xgboost_aft_training_data(rows)
+
+
+def test_train_xgboost_aft_model_completes_small_cpu_smoke_run() -> None:
+    """작은 계약 표본으로 실제 AFT 학습 경로와 손실 기록을 확인합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+
+    result = train_xgboost_aft_model(training_data, num_boost_round=5)
+
+    assert result.booster.num_boosted_rounds() == 5
+    assert result.loss_distribution == "normal"
+    assert result.loss_distribution_scale == 1.0
+    assert result.num_boost_round == 5
+    assert len(result.training_aft_nloglik) == 5
+    assert np.isfinite(result.training_aft_nloglik).all()
+
+
+def test_train_xgboost_aft_model_records_candidate_conditions() -> None:
+    """후보별로 달라지는 분포·scale과 공통 반복 횟수를 결과에 보존합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+
+    result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution="logistic",
+        loss_distribution_scale=1.5,
+        num_boost_round=3,
+    )
+
+    assert result.booster.num_boosted_rounds() == 3
+    assert result.loss_distribution == "logistic"
+    assert result.loss_distribution_scale == 1.5
+    assert result.num_boost_round == 3
+    assert len(result.training_aft_nloglik) == 3
+
+
+@pytest.mark.parametrize("loss_distribution", ["normal", "logistic", "extreme"])
+def test_train_xgboost_aft_model_supports_each_loss_distribution(
+    loss_distribution: str,
+) -> None:
+    """허용한 세 손실분포가 모두 실제 AFT 학습 경로에서 동작합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+
+    result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution=loss_distribution,
+        num_boost_round=1,
+    )
+
+    assert result.loss_distribution == loss_distribution
+    assert len(result.training_aft_nloglik) == 1
+
+
+def test_train_xgboost_aft_model_rejects_changed_feature_order() -> None:
+    """DMatrix 내부 피처 순서가 생성 후 바뀌면 잘못된 의미로 학습하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_data.matrix.feature_names = list(reversed(training_data.feature_columns))
+
+    with pytest.raises(XGBoostAFTError, match="피처 이름·순서"):
+        train_xgboost_aft_model(training_data)
+
+
+def test_train_xgboost_aft_model_rejects_changed_row_index_count() -> None:
+    """예측을 원본 행에 되돌릴 인덱스가 유실되면 학습 전에 중단합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    object.__setattr__(training_data, "row_index", training_data.row_index[:1])
+
+    with pytest.raises(XGBoostAFTError, match="원본 인덱스 수"):
+        train_xgboost_aft_model(training_data)
+
+
+def test_train_xgboost_aft_model_rejects_changed_zero_day_label() -> None:
+    """DMatrix 내부 라벨이 0일로 바뀌면 AFT 양수 시간 계약 위반으로 거절합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_data.matrix.set_float_info("label_lower_bound", [0.0, 30.0])
+    training_data.matrix.set_float_info("label_upper_bound", [0.0, float("inf")])
+
+    with pytest.raises(XGBoostAFTError, match="양수의 정확 사건"):
+        train_xgboost_aft_model(training_data)
+
+
+@pytest.mark.parametrize("invalid_rounds", [0, -1, 1.5, True])
+def test_train_xgboost_aft_model_rejects_invalid_boost_rounds(
+    invalid_rounds: object,
+) -> None:
+    """0·음수·실수·boolean 반복 횟수를 학습 전에 명확히 거절합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+
+    with pytest.raises(XGBoostAFTError, match="0보다 큰 정수"):
+        train_xgboost_aft_model(
+            training_data,
+            num_boost_round=invalid_rounds,  # type: ignore[arg-type]
+        )
