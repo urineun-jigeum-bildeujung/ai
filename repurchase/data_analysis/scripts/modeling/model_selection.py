@@ -150,6 +150,56 @@ def build_paired_probability_predictions(
     return paired_rows
 
 
+def build_lightgbm_feature_pair_predictions(
+    training_samples: pd.DataFrame,
+    validation_samples: pd.DataFrame,
+    *,
+    reference_feature_columns: Sequence[str],
+    candidate_feature_columns: Sequence[str],
+    horizon_days: int = 30,
+) -> pd.DataFrame:
+    """같은 기간·표본으로 두 피처 후보를 한 번씩 학습해 쌍 비교 입력을 만듭니다.
+
+    같은 사건 정의로 생성한 Train·Validation을 전달해야 합니다. 검열 가중치는
+    분할마다 한 번 계산해 두 후보가 공유하며, Bootstrap과 지표 계산은 하지
+    않습니다. 반환한 예측표를 재사용해 후속 비교마다 재학습하지 않습니다.
+    """
+    if training_samples.empty or validation_samples.empty:
+        raise ValueError("피처 쌍 비교에는 Train과 Validation 표본이 모두 필요합니다.")
+    if (
+        "split" not in validation_samples
+        or not validation_samples["split"].eq("validation").fillna(False).all()
+    ):
+        raise ValueError("피처 쌍 비교에는 Validation 표본만 사용합니다.")
+    # 구매 키의 결측·중복은 비용이 드는 학습 전에 거절합니다.
+    _validate_candidate_alignment(training_samples, training_samples)
+    _validate_candidate_alignment(validation_samples, validation_samples)
+    weighted_training = add_split_ipcw_weights(
+        training_samples, horizon_days=horizon_days
+    )
+    weighted_validation = add_split_ipcw_weights(
+        validation_samples, horizon_days=horizon_days
+    )
+    # 두 후보의 입력을 모두 검증한 뒤 학습하므로 잘못된 두 번째 피처도 먼저 거절합니다.
+    training_inputs = [
+        build_lightgbm_training_data(weighted_training, feature_columns=columns)
+        for columns in (reference_feature_columns, candidate_feature_columns)
+    ]
+    prediction_tables = []
+    for training_data in training_inputs:
+        model = train_lightgbm_classifier(training_data)
+        probabilities = predict_lightgbm_repurchase_probability(
+            model, validation_samples
+        )
+        predictions = validation_samples.loc[:, IPCW_CANDIDATE_ID_COLUMNS].copy()
+        predictions["predicted_event_probability"] = probabilities.to_numpy(copy=True)
+        prediction_tables.append(predictions)
+
+    return build_paired_probability_predictions(
+        weighted_validation, prediction_tables[0], prediction_tables[1]
+    )
+
+
 def evaluate_lightgbm_probability_candidate(
     training_samples: pd.DataFrame,
     validation_samples: pd.DataFrame,
