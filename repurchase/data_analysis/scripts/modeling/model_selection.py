@@ -37,13 +37,22 @@ from .lightgbm_baseline import (
     predict_lightgbm_repurchase_probability,
     train_lightgbm_classifier,
 )
-from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
+from .maturity_analysis import (
+    add_split_ipcw_weights,
+    add_validation_ipcw_weights,
+    add_validation_survival_observation,
+)
 from .probability_baseline import (
     fit_global_event_probability_baseline,
     fit_hierarchical_event_probability_baseline,
     predict_hierarchical_event_probability_baseline,
 )
-from .xgboost_aft import build_xgboost_aft_evaluation_rows
+from .xgboost_aft import (
+    AFTLabelBounds,
+    XGBoostAFTTrainingResult,
+    build_xgboost_aft_evaluation_rows,
+    calculate_xgboost_aft_event_probability,
+)
 
 IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
 
@@ -531,16 +540,84 @@ def _attach_candidate_predictions(
     return evaluation_rows
 
 
-def evaluate_xgboost_aft_ipcw_concordance(
-    weighted_samples: pd.DataFrame,
+def _prepare_xgboost_aft_ipcw_evaluation_rows(
+    validation_samples: pd.DataFrame,
     predictions: pd.Series,
-) -> dict[str, float | int]:
-    """AFT 예측을 원본 행에 정렬한 뒤 공통 IPCW C-index로 평가합니다."""
-    evaluation = build_xgboost_aft_evaluation_rows(
-        weighted_samples,
+    *,
+    horizon_days: int,
+) -> AFTLabelBounds:
+    """0일을 먼저 제외한 동일 Validation 집단에서 IPCW 평가 행을 만듭니다."""
+    observed_samples = add_validation_survival_observation(validation_samples)
+    aligned_evaluation = build_xgboost_aft_evaluation_rows(
+        observed_samples,
         predictions,
     )
+    included_index = aligned_evaluation.rows.index
+    weighted_samples = add_validation_ipcw_weights(
+        validation_samples.loc[included_index],
+        horizon_days=horizon_days,
+    )
+    weighted_samples["predicted_duration_days"] = aligned_evaluation.rows[
+        "predicted_duration_days"
+    ]
+    return AFTLabelBounds(
+        rows=weighted_samples,
+        source_sample_count=aligned_evaluation.source_sample_count,
+        excluded_zero_duration_count=(aligned_evaluation.excluded_zero_duration_count),
+    )
+
+
+def evaluate_xgboost_aft_ipcw_concordance(
+    validation_samples: pd.DataFrame,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+) -> dict[str, float | int]:
+    """AFT 평가 집단에서 공통 IPCW C-index와 표본 흐름을 계산합니다."""
+    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+        validation_samples,
+        predictions,
+        horizon_days=horizon_days,
+    )
     metrics = evaluate_ipcw_concordance_index(evaluation.rows)
+    return {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **metrics,
+    }
+
+
+def evaluate_xgboost_aft_ipcw_brier(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+    training_reference_probability: float,
+) -> dict[str, float | int | None]:
+    """AFT 확률의 IPCW Brier를 같은 시점의 Train 기준 확률과 비교합니다.
+
+    training_reference_probability는 동일 horizon의 Train에서 계산해 전달하며,
+    Validation의 실제 결과로 다시 추정하지 않습니다.
+    """
+    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+        validation_samples,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    evaluation_rows = evaluation.rows.copy()
+    evaluation_rows["predicted_event_probability"] = (
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            evaluation_rows["predicted_duration_days"],
+            horizon_days=horizon_days,
+        )
+    )
+    metrics = evaluate_ipcw_brier_score(
+        evaluation_rows,
+        reference_probability=training_reference_probability,
+    )
     return {
         "source_validation_sample_count": evaluation.source_sample_count,
         "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,

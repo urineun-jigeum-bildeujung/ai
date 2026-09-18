@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from math import log
+from statistics import NormalDist
+
 import pandas as pd
 import pytest
 
@@ -17,7 +20,12 @@ from scripts.modeling.model_selection import (
     evaluate_lightgbm_feature_sets,
     evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
+    evaluate_xgboost_aft_ipcw_brier,
     evaluate_xgboost_aft_ipcw_concordance,
+)
+from scripts.modeling.xgboost_aft import (
+    build_xgboost_aft_training_data,
+    train_xgboost_aft_model,
 )
 
 
@@ -123,16 +131,30 @@ def make_xgboost_aft_concordance_samples() -> pd.DataFrame:
     """0일 한 건과 순위를 비교할 수 있는 세 건의 AFT 평가 표본을 만듭니다."""
     return pd.DataFrame(
         {
-            "survival_observed_duration_days": [2.0, 0.0, 4.0, 6.0],
-            "survival_event_observed": pd.array(
-                [True, True, False, True],
+            "split": ["validation"] * 4,
+            "anchor_at": pd.to_datetime(
+                ["2026-01-08", "2026-01-10", "2026-01-06", "2026-01-04"]
+            ),
+            "split_end_at": pd.to_datetime(["2026-01-10"] * 4),
+            "outcome_available_by_split_end": pd.array(
+                [True, False, False, True],
                 dtype="boolean",
             ),
-            "ipcw_horizon_days": [6] * 4,
-            "ipcw_censoring_survival_probability": [1.0] * 4,
+            "target_duration_days": [2.0, float("nan"), float("nan"), 6.0],
         },
         index=[30, 10, 20, 40],
     )
+
+
+def make_xgboost_aft_training_samples() -> pd.DataFrame:
+    """AFT 확률 변환에 사용할 작은 Train 학습 표본을 만듭니다."""
+    rows = make_ipcw_probability_samples("train")
+    rows["survival_observed_duration_days"] = [2.0, 3.0, 4.0, 5.0]
+    rows["survival_event_observed"] = pd.array(
+        [True, False, True, False],
+        dtype="boolean",
+    )
+    return rows
 
 
 def test_evaluate_xgboost_aft_ipcw_concordance_reuses_common_metric() -> None:
@@ -144,7 +166,11 @@ def test_evaluate_xgboost_aft_ipcw_concordance_reuses_common_metric() -> None:
         name="predicted_duration_days",
     )
 
-    result = evaluate_xgboost_aft_ipcw_concordance(samples, predictions)
+    result = evaluate_xgboost_aft_ipcw_concordance(
+        samples,
+        predictions,
+        horizon_days=6,
+    )
 
     assert result["source_validation_sample_count"] == 4
     assert result["excluded_zero_duration_count"] == 1
@@ -166,7 +192,64 @@ def test_evaluate_xgboost_aft_ipcw_concordance_rejects_unmatched_prediction() ->
         evaluate_xgboost_aft_ipcw_concordance(
             make_xgboost_aft_concordance_samples(),
             predictions,
+            horizon_days=6,
         )
+
+
+def test_prepare_xgboost_aft_ipcw_excludes_zero_before_weighting() -> None:
+    """0일 검열 표본이 남은 AFT 평가 집단의 IPCW 분모를 바꾸지 못하게 합니다."""
+    predictions = pd.Series(
+        [2.0, 1.0, 4.0, 6.0],
+        index=[30, 10, 20, 40],
+        name="predicted_duration_days",
+    )
+
+    evaluation = model_selection._prepare_xgboost_aft_ipcw_evaluation_rows(
+        make_xgboost_aft_concordance_samples(),
+        predictions,
+        horizon_days=6,
+    )
+
+    assert evaluation.source_sample_count == 4
+    assert evaluation.excluded_zero_duration_count == 1
+    assert evaluation.rows.index.tolist() == [30, 20, 40]
+    assert evaluation.rows.loc[40, "ipcw_censoring_survival_probability"] == 0.5
+    assert evaluation.rows.loc[40, "ipcw_weight"] == pytest.approx(2.0)
+
+
+def test_evaluate_xgboost_aft_ipcw_brier_reuses_filtered_cohort() -> None:
+    """사건·비사건·조기검열을 구분해 IPCW Brier를 손계산 값과 비교합니다."""
+    training_result = train_xgboost_aft_model(
+        build_xgboost_aft_training_data(make_xgboost_aft_training_samples())
+    )
+    predictions = pd.Series(
+        [2.0, 1.0, 4.0, 6.0],
+        index=[30, 10, 20, 40],
+        name="predicted_duration_days",
+    )
+
+    result = evaluate_xgboost_aft_ipcw_brier(
+        make_xgboost_aft_concordance_samples(),
+        training_result,
+        predictions,
+        horizon_days=5,
+        training_reference_probability=0.5,
+    )
+
+    event_probability = NormalDist().cdf(log(5.0 / 2.0))
+    no_event_probability = NormalDist().cdf(log(5.0 / 6.0))
+    expected_brier = (
+        (1.0 - event_probability) ** 2 + 2.0 * (0.0 - no_event_probability) ** 2
+    ) / 3.0
+
+    assert result["source_validation_sample_count"] == 4
+    assert result["excluded_zero_duration_count"] == 1
+    assert result["aft_evaluation_sample_count"] == 3
+    assert result["validation_sample_count"] == 3
+    assert result["outcome_known_count"] == 2
+    assert result["ipcw_weight_sum"] == pytest.approx(3.0)
+    assert result["ipcw_brier_score"] == pytest.approx(expected_brier)
+    assert result["reference_probability"] == 0.5
 
 
 def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:

@@ -626,10 +626,12 @@ def test_build_xgboost_aft_evaluation_rows_rejects_unmatched_index(
         [30.0, 20.0, float("inf")],
         [30.0, 20.0, 0.0],
         [30.0, 20.0, -1.0],
+        [True, False, True],
+        [30.0 + 7.0j, 20.0 + 3.0j, 10.0 + 1.0j],
     ],
 )
 def test_build_xgboost_aft_evaluation_rows_rejects_invalid_prediction(
-    invalid_predictions: list[float],
+    invalid_predictions: list[object],
 ) -> None:
     """비유한·비양수 예측을 평가 지표 입력으로 허용하지 않습니다."""
     predictions = pd.Series(invalid_predictions, index=[30, 10, 20])

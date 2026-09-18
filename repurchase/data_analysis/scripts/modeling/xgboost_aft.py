@@ -418,7 +418,9 @@ def build_xgboost_aft_evaluation_rows(
             "AFT 평가 원본과 예측의 행 인덱스 집합이 일치하지 않습니다."
         )
     if (
-        not is_numeric_dtype(predictions.dtype)
+        is_bool_dtype(predictions.dtype)
+        or is_complex_dtype(predictions.dtype)
+        or not is_numeric_dtype(predictions.dtype)
         or not np.isfinite(predictions.to_numpy(dtype="float64", copy=False)).all()
         or predictions.le(0).any()
     ):
