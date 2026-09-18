@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 
 from scripts.modeling.samples import (
@@ -9,7 +11,12 @@ from scripts.modeling.samples import (
     build_historical_interval_features,
 )
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
-from scripts.run_uci_xgboost_aft import run_xgboost_aft_experiment
+from scripts.run_uci_xgboost_aft import (
+    build_xgboost_aft_bootstrap_trials_report,
+    build_xgboost_aft_report,
+    render_xgboost_aft_report,
+    run_xgboost_aft_experiment,
+)
 
 
 def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
@@ -63,3 +70,14 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     assert result.probability.user_bootstrap is not None
     assert result.probability.user_bootstrap.summary["bootstrap_replicates"] == 20
     assert len(result.probability.user_bootstrap.trials) == 20
+
+    report = build_xgboost_aft_report(result)
+    trials_report = build_xgboost_aft_bootstrap_trials_report(result)
+    markdown = render_xgboost_aft_report(report)
+    assert report["evaluation_split"] == "validation"
+    assert report["training"]["trained_until"] == result.split.train_end_at.isoformat()
+    assert len(trials_report["trials"]) == 20
+    assert "C-index" in markdown
+    assert "사용자 단위 Bootstrap" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+    json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
