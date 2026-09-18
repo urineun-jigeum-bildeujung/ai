@@ -14,7 +14,7 @@ from typing import Final
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from pandas.api.types import is_bool_dtype, is_complex_dtype, is_numeric_dtype
 
 from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
 
@@ -99,6 +99,7 @@ def build_aft_label_bounds(rows: pd.DataFrame) -> AFTLabelBounds:
     if (
         duration.isna().any()
         or is_bool_dtype(duration.dtype)
+        or is_complex_dtype(duration.dtype)
         or not is_numeric_dtype(duration.dtype)
         or not np.isfinite(duration.to_numpy(dtype="float64")).all()
         or duration.lt(0).any()
@@ -146,6 +147,8 @@ def build_xgboost_aft_training_data(
     # AFT에서 사용할 행을 먼저 확정한 뒤 같은 행에서 피처를 선택합니다.
     # 이 순서를 지켜야 0일 제외 후 피처와 구간 라벨의 사용자 대응이 어긋나지 않습니다.
     label_bounds = build_aft_label_bounds(rows)
+    if not label_bounds.rows.index.is_unique:
+        raise XGBoostAFTError("XGBoost AFT 학습 행의 원본 인덱스에 중복이 있습니다.")
     features = select_minimal_model_features(
         label_bounds.rows,
         feature_columns=feature_columns,

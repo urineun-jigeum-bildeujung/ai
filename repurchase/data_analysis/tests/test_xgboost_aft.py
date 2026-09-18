@@ -210,6 +210,22 @@ def test_build_aft_label_bounds_rejects_only_zero_duration_rows() -> None:
         build_aft_label_bounds(rows)
 
 
+def test_build_aft_label_bounds_rejects_complex_duration() -> None:
+    """복소수 관측 기간의 허수부를 버리고 실수로 변환하지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "survival_observed_duration_days": np.array(
+                [20.0 + 1.0j],
+                dtype="complex128",
+            ),
+            "survival_event_observed": pd.array([True], dtype="boolean"),
+        }
+    )
+
+    with pytest.raises(XGBoostAFTError, match="관측 기간"):
+        build_aft_label_bounds(rows)
+
+
 def test_build_xgboost_aft_training_data_aligns_features_and_bounds() -> None:
     """0일 제외 후 동일한 두 행의 피처와 하한·상한이 행렬에 연결됩니다."""
     training_data = build_xgboost_aft_training_data(make_aft_training_rows())
@@ -226,6 +242,16 @@ def test_build_xgboost_aft_training_data_aligns_features_and_bounds() -> None:
     )
     assert training_data.matrix.num_row() == 2
     assert training_data.matrix.num_col() == 4
+    feature_values = training_data.matrix.get_data().toarray()
+    np.testing.assert_allclose(
+        feature_values[:, [0, 1, 3]],
+        np.array(
+            [
+                [2.0, 25.0, 5.0],
+                [1.0, 18.0, 2.0],
+            ]
+        ),
+    )
     assert training_data.matrix.get_float_info("label_lower_bound").tolist() == [
         20.0,
         30.0,
@@ -246,4 +272,13 @@ def test_build_xgboost_aft_training_data_rejects_missing_split() -> None:
     rows = make_aft_training_rows().drop(columns="split")
 
     with pytest.raises(XGBoostAFTError, match="필수 컬럼"):
+        build_xgboost_aft_training_data(rows)
+
+
+def test_build_xgboost_aft_training_data_rejects_duplicate_row_index() -> None:
+    """학습 행의 원본 인덱스가 중복되면 예측 추적이 불가능하므로 거절합니다."""
+    rows = make_aft_training_rows()
+    rows.index = [7, 8, 7]
+
+    with pytest.raises(XGBoostAFTError, match="중복"):
         build_xgboost_aft_training_data(rows)
