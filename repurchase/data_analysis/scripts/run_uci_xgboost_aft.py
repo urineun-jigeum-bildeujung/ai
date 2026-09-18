@@ -386,10 +386,14 @@ def compare_xgboost_aft_loss_distributions(
     return comparison
 
 
-def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
-    """Brier를 우선하고 순위·확률 신뢰도·비용 순으로 최종 후보를 선택합니다."""
+def _validate_xgboost_aft_selection_table(
+    comparison: pd.DataFrame,
+    *,
+    candidate_column: str,
+) -> None:
+    """AFT 후보 선택표의 공통 지표와 후보 식별 컬럼을 검사합니다."""
     required_columns = (
-        "num_boost_round",
+        candidate_column,
         "ipcw_brier_score",
         "ipcw_concordance_index",
         "expected_calibration_error",
@@ -403,15 +407,7 @@ def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
     if missing_columns:
         raise ValueError(f"AFT 후보 선택 필수 컬럼이 누락됐습니다: {missing_columns}")
     if comparison.empty:
-        raise ValueError("선택할 AFT 반복 횟수 후보 결과가 없습니다.")
-    round_values = comparison["num_boost_round"].tolist()
-    if any(
-        isinstance(value, bool) or not isinstance(value, Integral) or int(value) <= 0
-        for value in round_values
-    ):
-        raise ValueError("AFT 후보 반복 횟수는 0보다 큰 정수여야 합니다.")
-    if comparison["num_boost_round"].duplicated().any():
-        raise ValueError("AFT 후보 선택 결과에 중복된 반복 횟수가 있습니다.")
+        raise ValueError("선택할 AFT 후보 결과가 없습니다.")
 
     metric_ranges = {
         "ipcw_brier_score": (0.0, 1.0),
@@ -432,22 +428,82 @@ def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
                 f"{lower_bound}부터 {upper_bound} 사이의 유한한 실수여야 합니다."
             )
 
+
+def _rank_xgboost_aft_candidates(
+    comparison: pd.DataFrame,
+    *,
+    final_tie_breaker_columns: Sequence[str] = (),
+) -> pd.DataFrame:
+    """공통 Validation 우선순위와 마지막 동률 해소 기준으로 후보를 정렬합니다."""
     ranked = comparison.copy()
     ranked["absolute_weighted_calibration_gap"] = ranked[
         "weighted_calibration_gap"
     ].abs()
-    ranked = ranked.sort_values(
+    return ranked.sort_values(
         by=[
             "ipcw_brier_score",
             "ipcw_concordance_index",
             "expected_calibration_error",
             "absolute_weighted_calibration_gap",
-            "num_boost_round",
+            *final_tie_breaker_columns,
         ],
-        ascending=[True, False, True, True, True],
+        ascending=[True, False, True, True] + [True] * len(final_tie_breaker_columns),
         kind="stable",
     )
+
+
+def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
+    """Brier를 우선하고 순위·확률 신뢰도·비용 순으로 반복 횟수를 선택합니다."""
+    _validate_xgboost_aft_selection_table(
+        comparison,
+        candidate_column="num_boost_round",
+    )
+    round_values = comparison["num_boost_round"].tolist()
+    if any(
+        isinstance(value, bool) or not isinstance(value, Integral) or int(value) <= 0
+        for value in round_values
+    ):
+        raise ValueError("AFT 후보 반복 횟수는 0보다 큰 정수여야 합니다.")
+    if comparison["num_boost_round"].duplicated().any():
+        raise ValueError("AFT 후보 선택 결과에 중복된 반복 횟수가 있습니다.")
+
+    ranked = _rank_xgboost_aft_candidates(
+        comparison,
+        final_tie_breaker_columns=("num_boost_round",),
+    )
     return int(ranked.iloc[0]["num_boost_round"])
+
+
+def select_xgboost_aft_loss_distribution(comparison: pd.DataFrame) -> str:
+    """공통 Validation 우선순위와 기준 분포 선호로 AFT 손실분포를 선택합니다."""
+    _validate_xgboost_aft_selection_table(
+        comparison,
+        candidate_column="loss_distribution",
+    )
+    distribution_values = comparison["loss_distribution"].tolist()
+    if any(
+        not isinstance(value, str) or value not in AFT_LOSS_DISTRIBUTIONS
+        for value in distribution_values
+    ):
+        raise ValueError(
+            "AFT 후보 손실분포는 normal, logistic, extreme 중 하나여야 합니다."
+        )
+    if comparison["loss_distribution"].duplicated().any():
+        raise ValueError("AFT 후보 선택 결과에 중복된 손실분포가 있습니다.")
+
+    distribution_preference = {
+        distribution: index
+        for index, distribution in enumerate(AFT_LOSS_DISTRIBUTION_CANDIDATES)
+    }
+    candidates_with_preference = comparison.copy()
+    candidates_with_preference["distribution_preference"] = candidates_with_preference[
+        "loss_distribution"
+    ].map(distribution_preference)
+    ranked = _rank_xgboost_aft_candidates(
+        candidates_with_preference,
+        final_tie_breaker_columns=("distribution_preference",),
+    )
+    return str(ranked.iloc[0]["loss_distribution"])
 
 
 def validate_selected_xgboost_aft_result(

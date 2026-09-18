@@ -25,6 +25,7 @@ from scripts.run_uci_xgboost_aft import (
     render_xgboost_aft_round_comparison_report,
     run_xgboost_aft_experiment,
     select_xgboost_aft_boosting_round,
+    select_xgboost_aft_loss_distribution,
     validate_selected_xgboost_aft_result,
 )
 
@@ -408,6 +409,70 @@ def test_compare_xgboost_aft_loss_distributions_rejects_invalid_candidates_befor
                 distribution_candidates=distribution_candidates,
                 num_boost_round=2,
             )
+
+
+def test_select_xgboost_aft_loss_distribution_prioritizes_validation_brier() -> None:
+    """학습 손실이 낮아도 Validation Brier가 가장 낮은 손실분포를 선택합니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution": ["normal", "logistic", "extreme"],
+            "final_training_aft_nloglik": [2.50, 2.40, 2.30],
+            "ipcw_brier_score": [0.08, 0.09, 0.10],
+            "ipcw_concordance_index": [0.70, 0.80, 0.90],
+            "expected_calibration_error": [0.10, 0.05, 0.01],
+            "weighted_calibration_gap": [0.05, 0.02, 0.01],
+        }
+    )
+
+    selected = select_xgboost_aft_loss_distribution(comparison)
+
+    assert selected == "normal"
+
+
+def test_select_xgboost_aft_loss_distribution_keeps_normal_on_exact_tie() -> None:
+    """모든 Validation 지표가 같으면 행 순서와 무관하게 기준 분포를 유지합니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution": ["extreme", "normal", "logistic"],
+            "ipcw_brier_score": [0.08, 0.08, 0.08],
+            "ipcw_concordance_index": [0.80, 0.80, 0.80],
+            "expected_calibration_error": [0.05, 0.05, 0.05],
+            "weighted_calibration_gap": [0.01, 0.01, 0.01],
+        }
+    )
+
+    selected = select_xgboost_aft_loss_distribution(comparison)
+
+    assert selected == "normal"
+    assert "distribution_preference" not in comparison.columns
+
+
+def test_select_xgboost_aft_loss_distribution_rejects_invalid_candidates() -> None:
+    """누락·중복·미지원 손실분포가 있는 선택표는 명확히 거절합니다."""
+    valid = pd.DataFrame(
+        {
+            "loss_distribution": ["normal", "logistic"],
+            "ipcw_brier_score": [0.08, 0.09],
+            "ipcw_concordance_index": [0.80, 0.79],
+            "expected_calibration_error": [0.05, 0.06],
+            "weighted_calibration_gap": [0.01, -0.02],
+        }
+    )
+
+    with pytest.raises(ValueError, match="필수 컬럼"):
+        select_xgboost_aft_loss_distribution(valid.drop(columns="ipcw_brier_score"))
+    with pytest.raises(ValueError, match="중복된 손실분포"):
+        select_xgboost_aft_loss_distribution(
+            valid.assign(loss_distribution=["normal", "normal"])
+        )
+    with pytest.raises(ValueError, match="normal, logistic, extreme"):
+        select_xgboost_aft_loss_distribution(
+            valid.assign(loss_distribution=["normal", "unknown"])
+        )
+    with pytest.raises(ValueError, match="normal, logistic, extreme"):
+        select_xgboost_aft_loss_distribution(
+            valid.assign(loss_distribution=["normal", 1])
+        )
 
 
 def test_select_xgboost_aft_boosting_round_prioritizes_validation_brier() -> None:
