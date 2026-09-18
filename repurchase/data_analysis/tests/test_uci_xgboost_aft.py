@@ -16,12 +16,15 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
     build_xgboost_aft_report,
+    build_xgboost_aft_round_comparison_report,
     compare_xgboost_aft_boosting_rounds,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_report,
+    render_xgboost_aft_round_comparison_report,
     run_xgboost_aft_experiment,
     select_xgboost_aft_boosting_round,
+    validate_selected_xgboost_aft_result,
 )
 
 
@@ -90,6 +93,12 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
 
+    undefined_skill_report = report.copy()
+    undefined_skill_probability = report["validation_probability"].copy()
+    undefined_skill_probability["brier_skill_score"] = None
+    undefined_skill_report["validation_probability"] = undefined_skill_probability
+    assert "N/A" in render_xgboost_aft_report(undefined_skill_report)
+
 
 def test_evaluate_xgboost_aft_candidate_can_skip_bootstrap(
     uci_e2e_purchase_events: pd.DataFrame,
@@ -122,7 +131,7 @@ def test_reusing_prepared_experiment_does_not_change_shared_data(
         uci_e2e_purchase_events,
         observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
     )
-    prepared = prepare_xgboost_aft_experiment(labels)
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
     validation_before = prepared.validation.copy(deep=True)
     lower_bound_before = prepared.training_data.matrix.get_float_info(
         "label_lower_bound"
@@ -210,7 +219,7 @@ def test_compare_xgboost_aft_boosting_rounds_uses_fixed_evaluation_cohort(
         uci_e2e_purchase_events,
         observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
     )
-    prepared = prepare_xgboost_aft_experiment(labels)
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
 
     comparison = compare_xgboost_aft_boosting_rounds(
         prepared,
@@ -230,6 +239,58 @@ def test_compare_xgboost_aft_boosting_rounds_uses_fixed_evaluation_cohort(
         assert comparison[fixed_column].nunique() == 1
     assert comparison["final_training_aft_nloglik"].notna().all()
     assert comparison["ipcw_brier_score"].notna().all()
+
+    selected = select_xgboost_aft_boosting_round(comparison)
+    selected_result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=selected,
+        bootstrap_replicates=None,
+    )
+    validate_selected_xgboost_aft_result(comparison, selected_result)
+
+    different_round = next(
+        round_count
+        for round_count in comparison["num_boost_round"]
+        if round_count != selected
+    )
+    different_result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=int(different_round),
+        bootstrap_replicates=None,
+    )
+    with pytest.raises(RuntimeError, match="반복 횟수"):
+        validate_selected_xgboost_aft_result(comparison, different_result)
+
+    report = build_xgboost_aft_round_comparison_report(
+        comparison,
+        selected_num_boost_round=selected,
+    )
+    markdown = render_xgboost_aft_round_comparison_report(report)
+    assert report["selected_num_boost_round"] == selected
+    assert report["horizon_days"] == 14
+    assert len(report["candidates"]) == 2
+    assert "Validation 선택 후보" in markdown
+    assert "Test 성능이나 배포 가능성" in markdown
+    assert "14일 horizon" in markdown
+    assert "선택 과정의 불확실성" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+    undefined_skill_report = report.copy()
+    undefined_skill_report["candidates"] = [
+        {**row, "brier_skill_score": None} for row in report["candidates"]
+    ]
+    assert "N/A" in render_xgboost_aft_round_comparison_report(undefined_skill_report)
+
+    wrong_selection = next(
+        round_count
+        for round_count in comparison["num_boost_round"]
+        if round_count != selected
+    )
+    with pytest.raises(ValueError, match="선택 규칙과 다릅니다"):
+        build_xgboost_aft_round_comparison_report(
+            comparison,
+            selected_num_boost_round=int(wrong_selection),
+        )
 
 
 def test_compare_xgboost_aft_boosting_rounds_rejects_invalid_candidates(

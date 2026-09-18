@@ -11,6 +11,7 @@ import platform
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
+from math import isclose
 from numbers import Integral, Real
 from typing import Final
 
@@ -56,6 +57,12 @@ AFT_BOOST_ROUND_CANDIDATES: Final[tuple[int, ...]] = (5, 20, 50, 100)
 JSON_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.md"
 BOOTSTRAP_TRIALS_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_bootstrap_trials.json"
+ROUND_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_boost_round_comparison.json"
+)
+ROUND_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_boost_round_comparison.md"
+)
 
 
 @dataclass(frozen=True)
@@ -374,6 +381,122 @@ def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
     return int(ranked.iloc[0]["num_boost_round"])
 
 
+def validate_selected_xgboost_aft_result(
+    comparison: pd.DataFrame,
+    result: XGBoostAFTExperimentResult,
+) -> None:
+    """선택 후보의 재학습 결과가 후보 비교 시점의 점 지표와 같은지 확인합니다."""
+    selected_num_boost_round = select_xgboost_aft_boosting_round(comparison)
+    result_num_boost_round = result.training_summary["num_boost_round"]
+    if result_num_boost_round != selected_num_boost_round:
+        raise RuntimeError(
+            "최종 AFT 평가 모델의 반복 횟수가 Validation 선택 후보와 다릅니다."
+        )
+    selected_row = comparison.loc[
+        comparison["num_boost_round"].eq(selected_num_boost_round)
+    ].iloc[0]
+    training_loss = result.training_summary["training_aft_nloglik"]
+    if not isinstance(training_loss, list) or not training_loss:
+        raise RuntimeError("최종 AFT 평가 모델의 학습 손실 이력이 비어 있습니다.")
+    probability = result.probability.summary
+    actual_metrics = {
+        "final_training_aft_nloglik": float(training_loss[-1]),
+        "ipcw_concordance_index": float(result.concordance["ipcw_concordance_index"]),
+        "ipcw_brier_score": float(probability["ipcw_brier_score"]),
+        "ipcw_reference_brier_score": float(probability["ipcw_reference_brier_score"]),
+        "expected_calibration_error": float(probability["expected_calibration_error"]),
+        "maximum_calibration_error": float(probability["maximum_calibration_error"]),
+        "weighted_calibration_gap": float(probability["weighted_calibration_gap"]),
+    }
+    for metric, actual_value in actual_metrics.items():
+        expected_value = float(selected_row[metric])
+        if not isclose(actual_value, expected_value, rel_tol=1e-12, abs_tol=1e-12):
+            raise RuntimeError(
+                f"최종 AFT 재학습 결과가 후보 비교 시점과 일치하지 않습니다: {metric}"
+            )
+
+
+def build_xgboost_aft_round_comparison_report(
+    comparison: pd.DataFrame,
+    *,
+    selected_num_boost_round: int,
+) -> dict[str, object]:
+    """반복 횟수 후보의 공통 Validation 결과와 선택 규칙을 저장합니다."""
+    selected_by_policy = select_xgboost_aft_boosting_round(comparison)
+    if selected_num_boost_round != selected_by_policy:
+        raise ValueError(
+            "전달된 선택 반복 횟수가 사전에 정의한 AFT 후보 선택 규칙과 다릅니다."
+        )
+    horizon_days = int(comparison["horizon_days"].iloc[0])
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_boost_round_comparison_v1",
+        "evaluation_split": "validation",
+        "horizon_days": horizon_days,
+        "selected_num_boost_round": selected_num_boost_round,
+        "selection_policy": [
+            "lowest_ipcw_brier_score",
+            "highest_ipcw_concordance_index_on_exact_brier_tie",
+            "lowest_expected_calibration_error_on_exact_tie",
+            "lowest_absolute_weighted_calibration_gap_on_exact_tie",
+            "lowest_num_boost_round_on_exact_tie",
+        ],
+        "candidates": dataframe_to_nullable_records(comparison),
+        "scope": (
+            f"같은 Train·Validation·피처·{horizon_days}일 horizon·IPCW 기준선에서 "
+            "반복 횟수만 "
+            "변경했습니다. 선택값은 Validation 후보 탐색 결과이며 Test 성능이나 "
+            "배포 가능성을 의미하지 않습니다. 후보 비교에서는 Bootstrap을 생략하고 "
+            "선택 후보에만 사용자 단위 Bootstrap을 별도로 수행합니다. 같은 "
+            "Validation으로 후보를 선택하고 평가했으므로 선택 과정의 불확실성과 "
+            "낙관성은 Bootstrap 구간에 포함되지 않습니다."
+        ),
+    }
+
+
+def _format_optional_metric(value: object) -> str:
+    """정의되지 않은 선택 지표는 실패 대신 N/A로 표시합니다."""
+    if value is None:
+        return "N/A"
+    return f"{float(value):.6f}"
+
+
+def render_xgboost_aft_round_comparison_report(report: dict[str, object]) -> str:
+    """반복 횟수 후보와 선택 근거를 사람이 검토할 Markdown으로 만듭니다."""
+    candidates = report["candidates"]
+    selected_num_boost_round = report["selected_num_boost_round"]
+    candidate_lines = [
+        (
+            f"| {row['num_boost_round']:,} | "
+            f"{row['final_training_aft_nloglik']:.6f} | "
+            f"{row['ipcw_brier_score']:.6f} | "
+            f"{row['ipcw_reference_brier_score']:.6f} | "
+            f"{_format_optional_metric(row['brier_skill_score'])} | "
+            f"{row['ipcw_concordance_index']:.6f} | "
+            f"{row['expected_calibration_error']:.6f} | "
+            f"{row['maximum_calibration_error']:.6f} | "
+            f"{row['weighted_calibration_gap']:+.6f} |"
+        )
+        for row in candidates
+    ]
+    lines = [
+        "# UCI XGBoost AFT 반복 횟수 비교",
+        "",
+        f"- Validation 선택 후보: `{selected_num_boost_round:,}` rounds",
+        "- 1순위는 IPCW Brier Score이며, 나머지 지표는 정확한 동률일 때만 "
+        "순서대로 사용합니다.",
+        "",
+        "| rounds | Train loss | AFT Brier | 기준 Brier | Brier Skill | "
+        "C-index | ECE | MCE | 확률 편향 |",
+        "| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        *candidate_lines,
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def build_xgboost_aft_report(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
@@ -425,7 +548,8 @@ def build_xgboost_aft_report(
             "Train으로 모델과 전체 확률 기준선을 학습하고 Validation에서만 "
             "평가했습니다. Test는 모델 선택이 끝나기 전까지 사용하지 않습니다. "
             "Bootstrap은 고정된 모델·확률·IPCW 가중치에서 사용자 구성의 "
-            "불확실성을 추정하며 재학습 불확실성은 포함하지 않습니다."
+            "불확실성을 추정하며 재학습 불확실성과 같은 Validation을 사용한 "
+            "후보 선택 과정의 불확실성·낙관성은 포함하지 않습니다."
         ),
     }
 
@@ -498,7 +622,7 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
             f"| {concordance['ipcw_concordance_index']:.6f} | "
             f"{probability['ipcw_brier_score']:.6f} | "
             f"{probability['ipcw_reference_brier_score']:.6f} | "
-            f"{probability['brier_skill_score']:.6f} | "
+            f"{_format_optional_metric(probability['brier_skill_score'])} | "
             f"{probability['expected_calibration_error']:.6f} | "
             f"{probability['maximum_calibration_error']:.6f} |"
         ),
@@ -537,7 +661,7 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
 
 
 def main() -> None:
-    """실제 UCI 원본으로 AFT를 실행하고 요약·반복 원자료를 저장합니다."""
+    """실제 UCI 원본으로 반복 횟수를 선택하고 최종 후보를 상세 평가합니다."""
     source = load_uci_online_retail_ii()
     classified = classify_uci_rows(source)
     events = build_uci_purchase_events(classified.rows)
@@ -545,19 +669,62 @@ def main() -> None:
         events,
         observation_end_at=pd.Timestamp(events["ordered_at"].max()),
     )
-    result = run_xgboost_aft_experiment(labels)
+    prepared = prepare_xgboost_aft_experiment(labels)
+    comparison = compare_xgboost_aft_boosting_rounds(prepared)
+    selected_num_boost_round = select_xgboost_aft_boosting_round(comparison)
+    comparison_report = build_xgboost_aft_round_comparison_report(
+        comparison,
+        selected_num_boost_round=selected_num_boost_round,
+    )
+    comparison_markdown = render_xgboost_aft_round_comparison_report(comparison_report)
+
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=selected_num_boost_round,
+    )
+    validate_selected_xgboost_aft_result(comparison, result)
     report = build_xgboost_aft_report(result)
     bootstrap_trials = build_xgboost_aft_bootstrap_trials_report(result)
+    markdown = render_xgboost_aft_report(report)
+    comparison_json = (
+        json.dumps(
+            comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    report_json = (
+        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    )
+    bootstrap_trials_json = (
+        json.dumps(
+            bootstrap_trials,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+
+    # 모든 계산·검증·직렬화가 성공한 뒤 보고서들을 같은 실행 결과로 교체합니다.
+    write_text_atomically(
+        ROUND_COMPARISON_JSON_REPORT_PATH,
+        comparison_json,
+    )
+    write_text_atomically(
+        ROUND_COMPARISON_MARKDOWN_REPORT_PATH,
+        comparison_markdown,
+    )
     write_text_atomically(
         JSON_REPORT_PATH,
-        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+        report_json,
     )
     write_text_atomically(
         BOOTSTRAP_TRIALS_REPORT_PATH,
-        json.dumps(bootstrap_trials, ensure_ascii=False, indent=2, allow_nan=False)
-        + "\n",
+        bootstrap_trials_json,
     )
-    markdown = render_xgboost_aft_report(report)
     write_text_atomically(MARKDOWN_REPORT_PATH, markdown)
     print(markdown)
 
