@@ -22,6 +22,7 @@ from scripts.modeling.model_selection import (
     evaluate_shrinkage_candidates,
     evaluate_xgboost_aft_ipcw_brier,
     evaluate_xgboost_aft_ipcw_concordance,
+    evaluate_xgboost_aft_ipcw_probability,
 )
 from scripts.modeling.xgboost_aft import (
     build_xgboost_aft_training_data,
@@ -250,6 +251,74 @@ def test_evaluate_xgboost_aft_ipcw_brier_reuses_filtered_cohort() -> None:
     assert result["ipcw_weight_sum"] == pytest.approx(3.0)
     assert result["ipcw_brier_score"] == pytest.approx(expected_brier)
     assert result["reference_probability"] == 0.5
+
+
+def test_evaluate_xgboost_aft_ipcw_probability_uses_same_rows_for_calibration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Brier와 Calibration이 같은 AFT 확률·IPCW 평가 행을 사용합니다."""
+    training_result = train_xgboost_aft_model(
+        build_xgboost_aft_training_data(make_xgboost_aft_training_samples())
+    )
+    predictions = pd.Series(
+        [2.0, 1.0, 4.0, 6.0],
+        index=[30, 10, 20, 40],
+        name="predicted_duration_days",
+    )
+    # 알려진 확률을 사용해 Calibration과 Brier의 수동 계산값을 검증합니다.
+    monkeypatch.setattr(
+        model_selection,
+        "calculate_xgboost_aft_event_probability",
+        lambda training_result, predicted_duration, *, horizon_days: pd.Series(
+            [0.4, 0.1, 0.9],
+            index=predicted_duration.index,
+            name="predicted_event_probability",
+        ),
+    )
+
+    result = evaluate_xgboost_aft_ipcw_probability(
+        make_xgboost_aft_concordance_samples(),
+        training_result,
+        predictions,
+        horizon_days=5,
+        training_reference_probability=0.5,
+        calibration_bin_count=2,
+    )
+    brier_only = evaluate_xgboost_aft_ipcw_brier(
+        make_xgboost_aft_concordance_samples(),
+        training_result,
+        predictions,
+        horizon_days=5,
+        training_reference_probability=0.5,
+    )
+
+    summary = result.summary
+    calibration = result.calibration
+    assert summary["source_validation_sample_count"] == 4
+    assert summary["excluded_zero_duration_count"] == 1
+    assert summary["aft_evaluation_sample_count"] == 3
+    assert summary["outcome_known_count"] == 2
+    assert calibration["sample_count"].sum() == 2
+    assert calibration["ipcw_weight_sum"].sum() == pytest.approx(3.0)
+    assert calibration["ipcw_weight_share"].sum() == pytest.approx(1.0)
+    assert summary["ipcw_brier_score"] == pytest.approx(0.66)
+    for key in (
+        "source_validation_sample_count",
+        "excluded_zero_duration_count",
+        "aft_evaluation_sample_count",
+        "horizon_days",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "ipcw_brier_score",
+        "reference_probability",
+        "ipcw_reference_brier_score",
+        "brier_skill_score",
+    ):
+        assert summary[key] == brier_only[key]
+    assert summary["requested_calibration_bin_count"] == 2
+    assert summary["expected_calibration_error"] == pytest.approx(0.8)
+    assert summary["maximum_calibration_error"] == pytest.approx(0.9)
+    assert summary["nonempty_calibration_bin_count"] == 2
 
 
 def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:

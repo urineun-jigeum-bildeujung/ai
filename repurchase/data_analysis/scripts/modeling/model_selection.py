@@ -85,6 +85,14 @@ class IPCWProbabilityCandidateEvaluation:
     user_bootstrap: IPCWUserBootstrapResult | None
 
 
+@dataclass(frozen=True)
+class XGBoostAFTProbabilityEvaluation:
+    """한 AFT 후보의 Brier 요약과 구간별 Calibration 근거를 함께 보관합니다."""
+
+    summary: dict[str, float | int | None]
+    calibration: pd.DataFrame
+
+
 def _validate_candidate_alignment(
     weighted_samples: pd.DataFrame,
     predictions: pd.DataFrame,
@@ -601,21 +609,14 @@ def evaluate_xgboost_aft_ipcw_brier(
     training_reference_probability는 동일 horizon의 Train에서 계산해 전달하며,
     Validation의 실제 결과로 다시 추정하지 않습니다.
     """
-    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+    evaluation = _prepare_xgboost_aft_ipcw_probability_rows(
         validation_samples,
+        training_result,
         predictions,
         horizon_days=horizon_days,
     )
-    evaluation_rows = evaluation.rows.copy()
-    evaluation_rows["predicted_event_probability"] = (
-        calculate_xgboost_aft_event_probability(
-            training_result,
-            evaluation_rows["predicted_duration_days"],
-            horizon_days=horizon_days,
-        )
-    )
     metrics = evaluate_ipcw_brier_score(
-        evaluation_rows,
+        evaluation.rows,
         reference_probability=training_reference_probability,
     )
     return {
@@ -624,6 +625,82 @@ def evaluate_xgboost_aft_ipcw_brier(
         "aft_evaluation_sample_count": evaluation.included_sample_count,
         **metrics,
     }
+
+
+def _prepare_xgboost_aft_ipcw_probability_rows(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+) -> AFTLabelBounds:
+    """공통 AFT 평가 집단에 동일 모델의 고정 시점 재구매 확률을 추가합니다."""
+    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+        validation_samples,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    probability_rows = evaluation.rows.copy()
+    probability_rows["predicted_event_probability"] = (
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            probability_rows["predicted_duration_days"],
+            horizon_days=horizon_days,
+        )
+    )
+    return AFTLabelBounds(
+        rows=probability_rows,
+        source_sample_count=evaluation.source_sample_count,
+        excluded_zero_duration_count=evaluation.excluded_zero_duration_count,
+    )
+
+
+def evaluate_xgboost_aft_ipcw_probability(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+    training_reference_probability: float,
+    calibration_bin_count: int = 10,
+) -> XGBoostAFTProbabilityEvaluation:
+    """같은 AFT 확률 행에서 IPCW Brier와 Calibration을 함께 계산합니다.
+
+    training_reference_probability는 동일 horizon의 Train에서 계산해 전달하며,
+    Validation의 실제 결과로 다시 추정하지 않습니다.
+    """
+    evaluation = _prepare_xgboost_aft_ipcw_probability_rows(
+        validation_samples,
+        training_result,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    brier_metrics = evaluate_ipcw_brier_score(
+        evaluation.rows,
+        reference_probability=training_reference_probability,
+    )
+    calibration = summarize_ipcw_calibration(
+        evaluation.rows,
+        bin_count=calibration_bin_count,
+    )
+    summary: dict[str, float | int | None] = {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **brier_metrics,
+        "requested_calibration_bin_count": calibration_bin_count,
+        "expected_calibration_error": float(
+            calibration["weighted_absolute_gap_contribution"].sum()
+        ),
+        "maximum_calibration_error": float(
+            calibration["absolute_calibration_gap"].max()
+        ),
+        "nonempty_calibration_bin_count": int(len(calibration)),
+    }
+    return XGBoostAFTProbabilityEvaluation(
+        summary=summary,
+        calibration=calibration,
+    )
 
 
 def evaluate_ipcw_shrinkage_candidates(
