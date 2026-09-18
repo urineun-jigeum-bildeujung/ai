@@ -132,6 +132,7 @@ def make_xgboost_aft_concordance_samples() -> pd.DataFrame:
     """0일 한 건과 순위를 비교할 수 있는 세 건의 AFT 평가 표본을 만듭니다."""
     return pd.DataFrame(
         {
+            "user_id": ["u30", "u10", "u20", "u40"],
             "split": ["validation"] * 4,
             "anchor_at": pd.to_datetime(
                 ["2026-01-08", "2026-01-10", "2026-01-06", "2026-01-04"]
@@ -283,6 +284,8 @@ def test_evaluate_xgboost_aft_ipcw_probability_uses_same_rows_for_calibration(
         horizon_days=5,
         training_reference_probability=0.5,
         calibration_bin_count=2,
+        bootstrap_replicates=100,
+        bootstrap_random_seed=42,
     )
     brier_only = evaluate_xgboost_aft_ipcw_brier(
         make_xgboost_aft_concordance_samples(),
@@ -319,6 +322,49 @@ def test_evaluate_xgboost_aft_ipcw_probability_uses_same_rows_for_calibration(
     assert summary["expected_calibration_error"] == pytest.approx(0.8)
     assert summary["maximum_calibration_error"] == pytest.approx(0.9)
     assert summary["nonempty_calibration_bin_count"] == 2
+    assert result.user_bootstrap is not None
+    bootstrap_summary = result.user_bootstrap.summary
+    assert bootstrap_summary["bootstrap_replicates"] == 100
+    assert bootstrap_summary["user_count"] == 2
+    assert bootstrap_summary["point_candidate_brier_score"] == pytest.approx(0.66)
+    assert bootstrap_summary["point_reference_brier_score"] == pytest.approx(0.25)
+    assert bootstrap_summary["point_brier_improvement"] == pytest.approx(-0.41)
+    assert bootstrap_summary["bootstrap_positive_improvement_rate"] == 0.0
+
+
+def test_evaluate_xgboost_aft_ipcw_probability_skips_optional_bootstrap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """반복 수가 없으면 사용자 식별자나 Bootstrap 실행을 요구하지 않습니다."""
+    training_result = train_xgboost_aft_model(
+        build_xgboost_aft_training_data(make_xgboost_aft_training_samples())
+    )
+    validation_samples = make_xgboost_aft_concordance_samples().drop(columns="user_id")
+    predictions = pd.Series(
+        [6.0, 4.0, 2.0, 1.0],
+        index=[40, 20, 30, 10],
+        name="predicted_duration_days",
+    )
+
+    def fail_if_called(*args: object, **kwargs: object) -> None:
+        pytest.fail("요청하지 않은 사용자 Bootstrap이 실행됐습니다.")
+
+    monkeypatch.setattr(
+        model_selection,
+        "bootstrap_ipcw_brier_difference_by_user",
+        fail_if_called,
+    )
+
+    result = evaluate_xgboost_aft_ipcw_probability(
+        validation_samples,
+        training_result,
+        predictions,
+        horizon_days=5,
+        training_reference_probability=0.5,
+        calibration_bin_count=2,
+    )
+
+    assert result.user_bootstrap is None
 
 
 def test_probability_pair_preserves_keys_weights_and_unknown_outcomes() -> None:

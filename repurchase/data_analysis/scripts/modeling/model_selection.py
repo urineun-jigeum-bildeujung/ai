@@ -87,10 +87,11 @@ class IPCWProbabilityCandidateEvaluation:
 
 @dataclass(frozen=True)
 class XGBoostAFTProbabilityEvaluation:
-    """한 AFT 후보의 Brier 요약과 구간별 Calibration 근거를 함께 보관합니다."""
+    """한 AFT 후보의 확률 평가와 선택적인 사용자 Bootstrap을 보관합니다."""
 
     summary: dict[str, float | int | None]
     calibration: pd.DataFrame
+    user_bootstrap: IPCWUserBootstrapResult | None
 
 
 def _validate_candidate_alignment(
@@ -663,6 +664,8 @@ def evaluate_xgboost_aft_ipcw_probability(
     horizon_days: int,
     training_reference_probability: float,
     calibration_bin_count: int = 10,
+    bootstrap_replicates: int | None = None,
+    bootstrap_random_seed: int = 42,
 ) -> XGBoostAFTProbabilityEvaluation:
     """같은 AFT 확률 행에서 IPCW Brier와 Calibration을 함께 계산합니다.
 
@@ -697,9 +700,18 @@ def evaluate_xgboost_aft_ipcw_probability(
         ),
         "nonempty_calibration_bin_count": int(len(calibration)),
     }
+    user_bootstrap = None
+    if bootstrap_replicates is not None:
+        user_bootstrap = bootstrap_ipcw_brier_difference_by_user(
+            evaluation.rows,
+            reference_probability=training_reference_probability,
+            bootstrap_replicates=bootstrap_replicates,
+            random_seed=bootstrap_random_seed,
+        )
     return XGBoostAFTProbabilityEvaluation(
         summary=summary,
         calibration=calibration,
+        user_bootstrap=user_bootstrap,
     )
 
 
