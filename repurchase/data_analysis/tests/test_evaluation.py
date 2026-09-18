@@ -17,6 +17,7 @@ from scripts.modeling.evaluation import (
     evaluate_ipcw_concordance_index,
     is_ipcw_concordance_pair_comparable,
     summarize_ipcw_calibration,
+    summarize_ipcw_probability_pair_by_count_segment,
 )
 from scripts.modeling.maturity_analysis import add_validation_ipcw_weights
 
@@ -417,3 +418,56 @@ def test_bootstrap_ipcw_brier_pair_resamples_complete_user_clusters() -> None:
     assert result.summary["point_brier_improvement"] > 0
     assert result.summary["bootstrap_positive_improvement_rate"] == 1.0
     pd.testing.assert_frame_equal(result.trials, repeated.trials)
+
+
+def test_probability_pair_count_segments_keep_zero_and_preserve_population() -> None:
+    """근거 없음 0을 독립 구간으로 남기고 B/C를 같은 행에서 평가합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2", "U2", "U3", "U4", "U5"],
+            "history_interval_count": [0, 1, 2, 3, 4, 8],
+            "reference_predicted_event_probability": [0.6, 0.3, 0.7, 0.4, 0.8, 0.2],
+            "candidate_predicted_event_probability": [0.8, 0.2, 0.8, 0.2, 0.6, 0.1],
+            "ipcw_event_within_horizon": pd.Series(
+                [True, False, True, False, True, False], dtype="boolean"
+            ),
+            "ipcw_horizon_days": [30] * 6,
+            "ipcw_outcome_known": [True] * 6,
+            "ipcw_weight": [1.0] * 6,
+        }
+    )
+
+    result = summarize_ipcw_probability_pair_by_count_segment(
+        rows,
+        count_column="history_interval_count",
+        calibration_bin_count=5,
+    )
+
+    assert result["count_bucket"].tolist() == ["0", "1", "2-3", "4-7", "8-15"]
+    assert result["sample_count"].sum() == len(rows)
+    assert result["outcome_known_count"].sum() == len(rows)
+    assert result.loc[result["count_bucket"].eq("2-3"), "user_count"].item() == 2
+    assert result["brier_improvement"].notna().all()
+    assert result["calibration_error_improvement"].notna().all()
+
+
+def test_probability_pair_count_segments_reject_fractional_counts() -> None:
+    """개수 의미가 없는 소수 값은 구간화 전에 명확히 거절합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1"],
+            "history_interval_count": [1.5],
+            "reference_predicted_event_probability": [0.6],
+            "candidate_predicted_event_probability": [0.7],
+            "ipcw_event_within_horizon": pd.Series([True], dtype="boolean"),
+            "ipcw_horizon_days": [30],
+            "ipcw_outcome_known": [True],
+            "ipcw_weight": [1.0],
+        }
+    )
+
+    with pytest.raises(RepurchaseEvaluationError, match="0 이상의 유한한 정수"):
+        summarize_ipcw_probability_pair_by_count_segment(
+            rows,
+            count_column="history_interval_count",
+        )

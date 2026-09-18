@@ -195,9 +195,19 @@ def build_lightgbm_feature_pair_predictions(
         predictions["predicted_event_probability"] = probabilities.to_numpy(copy=True)
         prediction_tables.append(predictions)
 
-    return build_paired_probability_predictions(
+    paired_rows = build_paired_probability_predictions(
         weighted_validation, prediction_tables[0], prediction_tables[1]
     )
+    # 평가 시점 이후 정보를 섞지 않도록 Train에서 정답을 확인한 상품 행만 셉니다.
+    product_training_counts = (
+        weighted_training.loc[weighted_training["ipcw_outcome_known"]]
+        .groupby("product_id", observed=True, sort=False)
+        .size()
+    )
+    paired_rows["product_train_outcome_count"] = (
+        paired_rows["product_id"].map(product_training_counts).fillna(0).astype("int64")
+    )
+    return paired_rows
 
 
 def evaluate_lightgbm_probability_candidate(

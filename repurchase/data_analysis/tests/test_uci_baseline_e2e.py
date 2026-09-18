@@ -126,6 +126,29 @@ def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json() -> No
     assert summary["bootstrap_replicates"] == 20
     assert summary["random_seed"] == 7
     assert len(report["trials"]) == 20
+    segments = pd.DataFrame(report["segments"])
+    assert set(segments["count_column"]) == {
+        "history_interval_count",
+        "user_prior_order_count",
+        "product_train_outcome_count",
+    }
+    validation_count = int(
+        segments.loc[
+            segments["count_column"].eq("history_interval_count"), "sample_count"
+        ].sum()
+    )
+    assert (
+        segments.groupby("count_column")["sample_count"]
+        .sum()
+        .eq(validation_count)
+        .all()
+    )
+    assert (
+        segments.groupby("count_column")["outcome_known_count"]
+        .sum()
+        .eq(summary["outcome_known_count"])
+        .all()
+    )
     assert "95%" in render_bc_bootstrap(report)
     json.dumps(report, allow_nan=False)
 

@@ -469,6 +469,7 @@ def test_lightgbm_feature_pair_shares_samples_and_trains_each_candidate_once(
     expected = original_weight(validation, horizon_days=4)
     pd.testing.assert_frame_equal(result.loc[:, expected.columns], expected)
     assert len(result) == 4
+    assert result["product_train_outcome_count"].tolist() == [2, 1, 2, 1]
     assert not result.loc[1, "ipcw_outcome_known"]
     assert pd.isna(result.loc[1, "ipcw_event_within_horizon"])
     for role, values in zip(

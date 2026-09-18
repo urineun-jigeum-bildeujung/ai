@@ -62,6 +62,31 @@ IPCW_BRIER_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
 
 IPCW_CALIBRATION_REQUIRED_COLUMNS: Final[frozenset[str]] = IPCW_BRIER_REQUIRED_COLUMNS
 
+# 0은 근거가 전혀 없는 상태이므로 1과 합치지 않고, 이후는 2배 단위로 묶습니다.
+COUNT_SEGMENT_BINS: Final[tuple[float, ...]] = (
+    -0.5,
+    0.5,
+    1.5,
+    3.5,
+    7.5,
+    15.5,
+    31.5,
+    63.5,
+    127.5,
+    np.inf,
+)
+COUNT_SEGMENT_LABELS: Final[tuple[str, ...]] = (
+    "0",
+    "1",
+    "2-3",
+    "4-7",
+    "8-15",
+    "16-31",
+    "32-63",
+    "64-127",
+    "128+",
+)
+
 
 class _FenwickCountTree:
     """예측 순위별 누적 표본 수를 로그 시간에 저장하고 조회합니다."""
@@ -694,6 +719,99 @@ def summarize_ipcw_calibration(
             "weighted_absolute_gap_contribution",
         ],
     ]
+
+
+def summarize_ipcw_probability_pair_by_count_segment(
+    rows: pd.DataFrame,
+    *,
+    count_column: str,
+    calibration_bin_count: int = 10,
+) -> pd.DataFrame:
+    """근거 개수 구간별 B/C Brier와 확률 보정 오차를 같은 표본에서 계산합니다."""
+    probability_columns = {
+        "reference": "reference_predicted_event_probability",
+        "candidate": "candidate_predicted_event_probability",
+    }
+    required_columns = {"user_id", count_column, *probability_columns.values()}
+    required_columns |= IPCW_BRIER_REQUIRED_COLUMNS - {"predicted_event_probability"}
+    missing_columns = required_columns - set(rows.columns)
+    if missing_columns:
+        raise RepurchaseEvaluationError(
+            f"세그먼트 확률 평가 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if rows.empty:
+        raise RepurchaseEvaluationError("세그먼트 확률을 평가할 표본이 없습니다.")
+
+    count_values = rows[count_column]
+    numeric_counts = count_values.to_numpy(dtype="float64", copy=False)
+    if (
+        not is_numeric_dtype(count_values.dtype)
+        or not np.isfinite(numeric_counts).all()
+        or (numeric_counts < 0).any()
+        or not np.equal(numeric_counts, np.floor(numeric_counts)).all()
+    ):
+        raise RepurchaseEvaluationError(
+            f"{count_column}에는 0 이상의 유한한 정수만 사용할 수 있습니다."
+        )
+
+    segmented = rows.copy()
+    bucket_column = f"{count_column}_bucket"
+    segmented[bucket_column] = pd.cut(
+        count_values,
+        bins=COUNT_SEGMENT_BINS,
+        labels=COUNT_SEGMENT_LABELS,
+        include_lowest=True,
+    )
+    if segmented[bucket_column].isna().any():
+        raise RepurchaseEvaluationError(f"{count_column}의 구간을 만들 수 없습니다.")
+
+    summaries: list[dict[str, float | int | str]] = []
+    for bucket, segment_rows in segmented.groupby(
+        bucket_column, observed=True, sort=True
+    ):
+        known_rows = segment_rows.loc[segment_rows["ipcw_outcome_known"]]
+        summary: dict[str, float | int | str] = {
+            "count_column": count_column,
+            "count_bucket": str(bucket),
+            "sample_count": int(len(segment_rows)),
+            "user_count": int(segment_rows["user_id"].nunique()),
+            "outcome_known_count": int(len(known_rows)),
+        }
+        for role, probability_column in probability_columns.items():
+            evaluation_rows = segment_rows.copy()
+            evaluation_rows["predicted_event_probability"] = evaluation_rows[
+                probability_column
+            ]
+            metrics = evaluate_ipcw_brier_score(
+                evaluation_rows,
+                reference_probability=0.5,
+            )
+            calibration = summarize_ipcw_calibration(
+                evaluation_rows,
+                bin_count=calibration_bin_count,
+            )
+            summary[f"{role}_ipcw_brier_score"] = float(metrics["ipcw_brier_score"])
+            summary[f"{role}_expected_calibration_error"] = float(
+                calibration["weighted_absolute_gap_contribution"].sum()
+            )
+            summary[f"{role}_maximum_calibration_error"] = float(
+                calibration["absolute_calibration_gap"].max()
+            )
+            summary[f"{role}_weighted_calibration_gap"] = float(
+                calibration["calibration_gap"]
+                .mul(calibration["ipcw_weight_share"])
+                .sum()
+            )
+        summary["brier_improvement"] = (
+            summary["reference_ipcw_brier_score"]
+            - summary["candidate_ipcw_brier_score"]
+        )
+        summary["calibration_error_improvement"] = (
+            summary["reference_expected_calibration_error"]
+            - summary["candidate_expected_calibration_error"]
+        )
+        summaries.append(summary)
+    return pd.DataFrame(summaries)
 
 
 def _validate_user_bootstrap_request(

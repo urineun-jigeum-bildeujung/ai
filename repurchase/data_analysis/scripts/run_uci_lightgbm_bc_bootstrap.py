@@ -12,7 +12,10 @@ from dataclasses import asdict
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
-from .modeling.evaluation import bootstrap_ipcw_brier_pair_difference_by_user
+from .modeling.evaluation import (
+    bootstrap_ipcw_brier_pair_difference_by_user,
+    summarize_ipcw_probability_pair_by_count_segment,
+)
 from .modeling.model_selection import (
     LIGHTGBM_FEATURE_SETS,
     build_lightgbm_feature_pair_predictions,
@@ -31,6 +34,16 @@ from .reporting import dataframe_to_nullable_records, write_text_atomically
 BOOTSTRAP_REPLICATES = 1_000
 BOOTSTRAP_RANDOM_SEED = 42
 HORIZON_DAYS = 30
+SEGMENT_COLUMNS = (
+    "history_interval_count",
+    "user_prior_order_count",
+    "product_train_outcome_count",
+)
+SEGMENT_LABELS = {
+    "history_interval_count": "사용자·상품 과거 간격 수",
+    "user_prior_order_count": "사용자 과거 주문 수",
+    "product_train_outcome_count": "상품 Train 정답 확인 수",
+}
 
 
 def run_bc_bootstrap(
@@ -57,6 +70,16 @@ def run_bc_bootstrap(
         bootstrap_replicates=bootstrap_replicates,
         random_seed=random_seed,
     )
+    segment_evaluation = pd.concat(
+        [
+            summarize_ipcw_probability_pair_by_count_segment(
+                paired_rows,
+                count_column=column,
+            )
+            for column in SEGMENT_COLUMNS
+        ],
+        ignore_index=True,
+    )
     split_metadata = {
         key: value.isoformat() if isinstance(value, pd.Timestamp) else value
         for key, value in asdict(split).items()
@@ -81,6 +104,7 @@ def run_bc_bootstrap(
         "candidate_feature_set": LIGHTGBM_FEATURE_SETS[2][0],
         "split": split_metadata,
         "summary": bootstrap.summary,
+        "segments": dataframe_to_nullable_records(segment_evaluation),
         "trials": dataframe_to_nullable_records(bootstrap.trials),
         "decision": decision,
         "scope": (
@@ -93,34 +117,56 @@ def run_bc_bootstrap(
 def render_bc_bootstrap(report: dict[str, object]) -> str:
     """점추정과 Bootstrap 구간의 의미를 짧은 Markdown으로 표시합니다."""
     summary = report["summary"]
-    return "\n".join(
-        [
-            "# UCI LightGBM B/C 사용자 Bootstrap",
-            "",
-            "- 평가: Validation, 30일 내 동일 상품 재구매 확률",
-            "- 개선량: Brier(B) − Brier(C), 양수이면 C가 더 좋음",
-            f"- 사용자 수: {summary['user_count']:,}",
-            f"- 정답 확인 표본: {summary['outcome_known_count']:,}",
-            f"- 반복 수 / seed: {summary['bootstrap_replicates']:,} / {summary['random_seed']}",
-            "",
-            "| B Brier | C Brier | 점추정 개선량 | Bootstrap 평균 | 95% 구간 | 양수 비율 |",
-            "| ---: | ---: | ---: | ---: | ---: | ---: |",
-            (
-                f"| {summary['point_reference_brier_score']:.6f} | "
-                f"{summary['point_candidate_brier_score']:.6f} | "
-                f"{summary['point_brier_improvement']:+.6f} | "
-                f"{summary['bootstrap_mean_brier_improvement']:+.6f} | "
-                f"[{summary['bootstrap_lower_95_brier_improvement']:+.6f}, "
-                f"{summary['bootstrap_upper_95_brier_improvement']:+.6f}] | "
-                f"{summary['bootstrap_positive_improvement_rate']:.2%} |"
-            ),
-            "",
-            str(report["decision"]),
-            "",
-            str(report["scope"]),
-            "",
-        ]
-    )
+    lines = [
+        "# UCI LightGBM B/C 사용자 Bootstrap",
+        "",
+        "- 평가: Validation, 30일 내 동일 상품 재구매 확률",
+        "- 개선량: Brier(B) − Brier(C), 양수이면 C가 더 좋음",
+        f"- 사용자 수: {summary['user_count']:,}",
+        f"- 정답 확인 표본: {summary['outcome_known_count']:,}",
+        f"- 반복 수 / seed: {summary['bootstrap_replicates']:,} / {summary['random_seed']}",
+        "",
+        "| B Brier | C Brier | 점추정 개선량 | Bootstrap 평균 | 95% 구간 | 양수 비율 |",
+        "| ---: | ---: | ---: | ---: | ---: | ---: |",
+        (
+            f"| {summary['point_reference_brier_score']:.6f} | "
+            f"{summary['point_candidate_brier_score']:.6f} | "
+            f"{summary['point_brier_improvement']:+.6f} | "
+            f"{summary['bootstrap_mean_brier_improvement']:+.6f} | "
+            f"[{summary['bootstrap_lower_95_brier_improvement']:+.6f}, "
+            f"{summary['bootstrap_upper_95_brier_improvement']:+.6f}] | "
+            f"{summary['bootstrap_positive_improvement_rate']:.2%} |"
+        ),
+        "",
+        str(report["decision"]),
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    segment_rows = pd.DataFrame(report["segments"])
+    for column in SEGMENT_COLUMNS:
+        rows = segment_rows.loc[segment_rows["count_column"].eq(column)]
+        lines.extend(
+            [
+                f"## {SEGMENT_LABELS[column]}",
+                "",
+                "| 구간 | 전체 / 정답 확인 | 사용자 | B Brier | C Brier | Brier 개선 | B ECE | C ECE | ECE 개선 |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for row in rows.to_dict(orient="records"):
+            lines.append(
+                f"| {row['count_bucket']} | {row['sample_count']:,} / "
+                f"{row['outcome_known_count']:,} | {row['user_count']:,} | "
+                f"{row['reference_ipcw_brier_score']:.6f} | "
+                f"{row['candidate_ipcw_brier_score']:.6f} | "
+                f"{row['brier_improvement']:+.6f} | "
+                f"{row['reference_expected_calibration_error']:.6f} | "
+                f"{row['candidate_expected_calibration_error']:.6f} | "
+                f"{row['calibration_error_improvement']:+.6f} |"
+            )
+        lines.append("")
+    return "\n".join(lines)
 
 
 def main() -> None:
