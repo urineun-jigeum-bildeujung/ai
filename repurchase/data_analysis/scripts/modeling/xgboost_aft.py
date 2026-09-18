@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import erfc, sqrt
 from numbers import Integral, Real
 from typing import Final
 
@@ -365,7 +366,7 @@ def predict_xgboost_aft_duration(
     training_result: XGBoostAFTTrainingResult,
     prediction_data: XGBoostAFTPredictionData,
 ) -> pd.Series:
-    """AFT 예상 재구매 소요일을 원본 행 인덱스와 연결해 반환합니다."""
+    """XGBoost AFT의 기본 시간 척도 예측값을 원본 행과 연결해 반환합니다."""
     if prediction_data.feature_columns != training_result.feature_columns:
         raise XGBoostAFTError(
             "AFT 예측 피처 이름·순서가 모델의 학습 피처 계약과 일치하지 않습니다."
@@ -389,7 +390,7 @@ def predict_xgboost_aft_duration(
         )
     if not np.isfinite(raw_predictions).all() or (raw_predictions <= 0).any():
         raise XGBoostAFTError(
-            "AFT 예상 재구매 소요일은 0보다 큰 유한한 값이어야 합니다."
+            "AFT 기본 시간 척도 예측값은 0보다 큰 유한한 값이어야 합니다."
         )
 
     return pd.Series(
@@ -432,4 +433,99 @@ def build_xgboost_aft_evaluation_rows(
         rows=evaluation_rows,
         source_sample_count=label_bounds.source_sample_count,
         excluded_zero_duration_count=label_bounds.excluded_zero_duration_count,
+    )
+
+
+def _calculate_aft_distribution_cdf(
+    standardized_time: np.ndarray,
+    *,
+    loss_distribution: str,
+) -> np.ndarray:
+    """AFT 표준화 시간에 선택한 잡음 분포의 누적확률을 계산합니다."""
+    if loss_distribution == "normal":
+        return np.fromiter(
+            (0.5 * erfc(-float(value) / sqrt(2.0)) for value in standardized_time),
+            dtype="float64",
+            count=len(standardized_time),
+        )
+    if loss_distribution == "logistic":
+        positive = standardized_time >= 0
+        probability = np.empty_like(standardized_time, dtype="float64")
+        probability[positive] = 1.0 / (1.0 + np.exp(-standardized_time[positive]))
+        exp_value = np.exp(standardized_time[~positive])
+        probability[~positive] = exp_value / (1.0 + exp_value)
+        return probability
+    if loss_distribution == "extreme":
+        # z가 매우 크면 exp(z)는 inf가 되지만 CDF의 수학적 극한은 정확히 1입니다.
+        with np.errstate(over="ignore"):
+            return -np.expm1(-np.exp(standardized_time))
+    raise XGBoostAFTError(
+        "AFT 손실분포는 normal, logistic, extreme 중 하나여야 합니다."
+    )
+
+
+def calculate_xgboost_aft_event_probability(
+    training_result: XGBoostAFTTrainingResult,
+    predicted_duration_days: pd.Series,
+    *,
+    horizon_days: int,
+) -> pd.Series:
+    """AFT 기본 시간 척도 예측값을 고정 시점 재구매 누적확률로 변환합니다.
+
+    predicted_duration_days에는 XGBoost 기본 예측인 exp(raw margin)을 사용합니다.
+    이 값은 모든 손실분포에서 평균이나 중앙 재구매일을 뜻하지는 않습니다.
+    """
+    if (
+        isinstance(horizon_days, bool)
+        or not isinstance(horizon_days, Integral)
+        or horizon_days <= 0
+    ):
+        raise XGBoostAFTError("AFT 확률 평가 시점은 0보다 큰 정수 일수여야 합니다.")
+    if predicted_duration_days.empty:
+        raise XGBoostAFTError("AFT 재구매 확률을 계산할 예측값이 없습니다.")
+    if not predicted_duration_days.index.is_unique:
+        raise XGBoostAFTError("AFT 재구매 확률 예측의 원본 인덱스가 중복됐습니다.")
+    if (
+        is_bool_dtype(predicted_duration_days.dtype)
+        or is_complex_dtype(predicted_duration_days.dtype)
+        or not is_numeric_dtype(predicted_duration_days.dtype)
+        or not np.isfinite(
+            predicted_duration_days.to_numpy(dtype="float64", copy=False)
+        ).all()
+        or predicted_duration_days.le(0).any()
+    ):
+        raise XGBoostAFTError(
+            "AFT 기본 시간 척도 예측값은 0보다 큰 유한한 숫자여야 합니다."
+        )
+
+    # 수동 생성된 결과 객체도 확률 계산 전에 분포·scale 계약을 다시 확인합니다.
+    create_xgboost_aft_parameters(
+        loss_distribution=training_result.loss_distribution,
+        loss_distribution_scale=training_result.loss_distribution_scale,
+    )
+    predicted_duration = predicted_duration_days.to_numpy(
+        dtype="float64",
+        copy=False,
+    )
+    standardized_time = (
+        np.log(float(horizon_days)) - np.log(predicted_duration)
+    ) / training_result.loss_distribution_scale
+    probability = _calculate_aft_distribution_cdf(
+        standardized_time,
+        loss_distribution=training_result.loss_distribution,
+    )
+    if (
+        not np.isfinite(probability).all()
+        or (probability < 0).any()
+        or (probability > 1).any()
+    ):
+        raise XGBoostAFTError(
+            "AFT 재구매 확률은 0부터 1 사이의 유한한 값이어야 합니다."
+        )
+
+    return pd.Series(
+        probability,
+        index=predicted_duration_days.index.copy(),
+        name="predicted_event_probability",
+        dtype="float64",
     )

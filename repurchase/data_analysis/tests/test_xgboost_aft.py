@@ -13,6 +13,7 @@ from scripts.modeling.xgboost_aft import (
     build_xgboost_aft_evaluation_rows,
     build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
+    calculate_xgboost_aft_event_probability,
     create_xgboost_aft_parameters,
     predict_xgboost_aft_duration,
     train_xgboost_aft_model,
@@ -515,6 +516,24 @@ def test_predict_xgboost_aft_duration_restores_original_row_index() -> None:
     assert predictions.gt(0).all()
 
 
+def test_predict_xgboost_aft_duration_is_exponentiated_raw_margin() -> None:
+    """AFT 기본 예측이 확률 변환식에서 쓰는 exp(raw margin)인지 확인합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+    prediction_data = build_xgboost_aft_prediction_data(
+        make_aft_training_rows().loc[[20, 30]],
+        feature_columns=training_result.feature_columns,
+    )
+
+    predictions = predict_xgboost_aft_duration(training_result, prediction_data)
+    raw_margin = training_result.booster.predict(
+        prediction_data.matrix,
+        output_margin=True,
+    )
+
+    np.testing.assert_allclose(predictions.to_numpy(), np.exp(raw_margin))
+
+
 def test_predict_xgboost_aft_duration_rejects_different_feature_contract() -> None:
     """예측용 피처 이름이나 순서가 학습 계약과 다르면 추론 전에 거절합니다."""
     training_data = build_xgboost_aft_training_data(make_aft_training_rows())
@@ -556,7 +575,7 @@ def test_predict_xgboost_aft_duration_rejects_invalid_model_output(
         lambda _matrix: invalid_predictions,
     )
 
-    with pytest.raises(XGBoostAFTError, match="예측 결과|예상 재구매 소요일"):
+    with pytest.raises(XGBoostAFTError, match="예측 결과|기본 시간 척도"):
         predict_xgboost_aft_duration(training_result, prediction_data)
 
 
@@ -619,4 +638,172 @@ def test_build_xgboost_aft_evaluation_rows_rejects_invalid_prediction(
         build_xgboost_aft_evaluation_rows(
             make_aft_training_rows(),
             predictions,
+        )
+
+
+@pytest.mark.parametrize("loss_distribution", ["normal", "logistic", "extreme"])
+def test_calculate_xgboost_aft_event_probability_increases_with_horizon(
+    loss_distribution: str,
+) -> None:
+    """같은 AFT 예측에서 평가 기간이 늘면 누적 재구매 확률이 감소하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution=loss_distribution,
+    )
+    predicted_duration = pd.Series([30.0], index=[77])
+
+    probability_7 = calculate_xgboost_aft_event_probability(
+        training_result,
+        predicted_duration,
+        horizon_days=7,
+    )
+    probability_30 = calculate_xgboost_aft_event_probability(
+        training_result,
+        predicted_duration,
+        horizon_days=30,
+    )
+    probability_90 = calculate_xgboost_aft_event_probability(
+        training_result,
+        predicted_duration,
+        horizon_days=90,
+    )
+
+    assert probability_7.index.tolist() == [77]
+    assert probability_7.name == "predicted_event_probability"
+    assert probability_7.iloc[0] < probability_30.iloc[0] < probability_90.iloc[0]
+
+
+@pytest.mark.parametrize(
+    ("loss_distribution", "expected_probability"),
+    [
+        ("normal", 0.5),
+        ("logistic", 0.5),
+        ("extreme", 1.0 - np.exp(-1.0)),
+    ],
+)
+def test_calculate_xgboost_aft_event_probability_uses_distribution_cdf(
+    loss_distribution: str,
+    expected_probability: float,
+) -> None:
+    """평가 시점과 예상일이 같을 때 각 분포 CDF의 z=0 값을 사용합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution=loss_distribution,
+    )
+
+    probability = calculate_xgboost_aft_event_probability(
+        training_result,
+        pd.Series([30.0], index=[77]),
+        horizon_days=30,
+    )
+
+    assert probability.iloc[0] == pytest.approx(expected_probability)
+
+
+@pytest.mark.parametrize(
+    ("loss_distribution_scale", "expected_probability"),
+    [
+        (2.0, 2.0 / 3.0),
+        (0.5, 16.0 / 17.0),
+    ],
+)
+def test_calculate_xgboost_aft_event_probability_divides_by_scale(
+    loss_distribution_scale: float,
+    expected_probability: float,
+) -> None:
+    """scale이 커지면 로그 시간 차이를 나눠 표준화하는 AFT 정의를 따릅니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution="logistic",
+        loss_distribution_scale=loss_distribution_scale,
+    )
+
+    probability = calculate_xgboost_aft_event_probability(
+        training_result,
+        pd.Series([1.0]),
+        horizon_days=4,
+    )
+
+    assert probability.iloc[0] == pytest.approx(expected_probability)
+
+
+def test_calculate_xgboost_aft_event_probability_preserves_normal_left_tail() -> None:
+    """normal CDF의 매우 작은 양수 꼬리확률을 부동소수점 0으로 소실하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(
+        training_data,
+        loss_distribution="normal",
+    )
+
+    probability = calculate_xgboost_aft_event_probability(
+        training_result,
+        pd.Series([np.exp(10.0)]),
+        horizon_days=1,
+    )
+
+    assert probability.iloc[0] == pytest.approx(7.619853024160593e-24)
+    assert probability.iloc[0] > 0
+
+
+@pytest.mark.parametrize("invalid_horizon", [0, -1, 1.5, True])
+def test_calculate_xgboost_aft_event_probability_rejects_invalid_horizon(
+    invalid_horizon: object,
+) -> None:
+    """0·음수·실수·boolean 평가 시점을 확률 기준일로 허용하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+
+    with pytest.raises(XGBoostAFTError, match="0보다 큰 정수 일수"):
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            pd.Series([30.0]),
+            horizon_days=invalid_horizon,  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_duration",
+    [float("nan"), float("inf"), 0.0, -1.0, True, 30.0 + 7.0j],
+)
+def test_calculate_xgboost_aft_event_probability_rejects_invalid_duration(
+    invalid_duration: object,
+) -> None:
+    """비유한·비양수 예상일을 확률로 변환하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+
+    with pytest.raises(XGBoostAFTError, match="0보다 큰 유한한 숫자"):
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            pd.Series([invalid_duration]),
+            horizon_days=30,
+        )
+
+
+def test_calculate_xgboost_aft_event_probability_rejects_empty_prediction() -> None:
+    """예측 표본이 없으면 빈 확률 결과를 정상 출력으로 처리하지 않습니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+
+    with pytest.raises(XGBoostAFTError, match="예측값이 없습니다"):
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            pd.Series(dtype="float64"),
+            horizon_days=30,
+        )
+
+
+def test_calculate_xgboost_aft_event_probability_rejects_duplicate_index() -> None:
+    """한 확률을 여러 원본 행에 잘못 연결할 수 있는 중복 인덱스를 거절합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+
+    with pytest.raises(XGBoostAFTError, match="인덱스가 중복"):
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            pd.Series([20.0, 30.0], index=[7, 7]),
+            horizon_days=30,
         )
