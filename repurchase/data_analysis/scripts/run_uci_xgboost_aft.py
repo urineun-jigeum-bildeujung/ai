@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import json
 import platform
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
+from numbers import Integral, Real
 from typing import Final
 
 import pandas as pd
@@ -50,6 +52,7 @@ CALIBRATION_BIN_COUNT: Final[int] = 10
 BOOTSTRAP_REPLICATES: Final[int] = 1_000
 BOOTSTRAP_RANDOM_SEED: Final[int] = 42
 AFT_NUM_BOOST_ROUND: Final[int] = 5
+AFT_BOOST_ROUND_CANDIDATES: Final[tuple[int, ...]] = (5, 20, 50, 100)
 JSON_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.md"
 BOOTSTRAP_TRIALS_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_bootstrap_trials.json"
@@ -219,6 +222,156 @@ def evaluate_xgboost_aft_candidate(
         concordance=concordance,
         probability=probability,
     )
+
+
+def compare_xgboost_aft_boosting_rounds(
+    prepared: XGBoostAFTPreparedExperiment,
+    *,
+    round_candidates: Sequence[int] = AFT_BOOST_ROUND_CANDIDATES,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+    loss_distribution: str = "normal",
+    loss_distribution_scale: float = 1.0,
+) -> pd.DataFrame:
+    """동일한 공통 데이터에서 부스팅 반복 횟수 후보의 Validation 지표를 비교합니다."""
+    candidates = tuple(round_candidates)
+    if not candidates:
+        raise ValueError("비교할 부스팅 반복 횟수 후보가 하나 이상 필요합니다.")
+    if any(
+        isinstance(candidate, bool)
+        or not isinstance(candidate, Integral)
+        or candidate <= 0
+        for candidate in candidates
+    ):
+        raise ValueError("부스팅 반복 횟수 후보는 0보다 큰 정수여야 합니다.")
+    if len(set(candidates)) != len(candidates):
+        raise ValueError("부스팅 반복 횟수 후보에는 중복된 값을 사용할 수 없습니다.")
+
+    comparison_rows: list[dict[str, float | int | None]] = []
+    for round_count in candidates:
+        result = evaluate_xgboost_aft_candidate(
+            prepared,
+            calibration_bin_count=calibration_bin_count,
+            bootstrap_replicates=None,
+            loss_distribution=loss_distribution,
+            loss_distribution_scale=loss_distribution_scale,
+            num_boost_round=round_count,
+        )
+        training_loss = result.training_summary["training_aft_nloglik"]
+        if not isinstance(training_loss, list) or not training_loss:
+            raise ValueError("후보 모델의 AFT 학습 손실 이력이 비어 있습니다.")
+        probability = result.probability.summary
+        comparison_rows.append(
+            {
+                "num_boost_round": int(round_count),
+                "final_training_aft_nloglik": float(training_loss[-1]),
+                "minimum_training_aft_nloglik": float(min(training_loss)),
+                "ipcw_concordance_index": float(
+                    result.concordance["ipcw_concordance_index"]
+                ),
+                "ipcw_brier_score": float(probability["ipcw_brier_score"]),
+                "ipcw_reference_brier_score": float(
+                    probability["ipcw_reference_brier_score"]
+                ),
+                "brier_skill_score": probability["brier_skill_score"],
+                "expected_calibration_error": float(
+                    probability["expected_calibration_error"]
+                ),
+                "maximum_calibration_error": float(
+                    probability["maximum_calibration_error"]
+                ),
+                "weighted_calibration_gap": float(
+                    probability["weighted_calibration_gap"]
+                ),
+                "horizon_days": int(probability["horizon_days"]),
+                "validation_sample_count": int(probability["validation_sample_count"]),
+                "outcome_known_count": int(probability["outcome_known_count"]),
+                "ipcw_weight_sum": float(probability["ipcw_weight_sum"]),
+                "reference_probability": float(probability["reference_probability"]),
+                "aft_evaluation_sample_count": int(
+                    probability["aft_evaluation_sample_count"]
+                ),
+            }
+        )
+
+    comparison = pd.DataFrame(comparison_rows)
+    for fixed_column in (
+        "ipcw_reference_brier_score",
+        "aft_evaluation_sample_count",
+        "horizon_days",
+        "validation_sample_count",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "reference_probability",
+    ):
+        if comparison[fixed_column].nunique(dropna=False) != 1:
+            raise RuntimeError(
+                f"AFT 반복 횟수 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
+            )
+    return comparison
+
+
+def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
+    """Brier를 우선하고 순위·확률 신뢰도·비용 순으로 최종 후보를 선택합니다."""
+    required_columns = (
+        "num_boost_round",
+        "ipcw_brier_score",
+        "ipcw_concordance_index",
+        "expected_calibration_error",
+        "weighted_calibration_gap",
+    )
+    if comparison.columns.duplicated().any():
+        raise ValueError("AFT 후보 선택 결과에 중복된 컬럼 이름이 있습니다.")
+    missing_columns = [
+        column for column in required_columns if column not in comparison.columns
+    ]
+    if missing_columns:
+        raise ValueError(f"AFT 후보 선택 필수 컬럼이 누락됐습니다: {missing_columns}")
+    if comparison.empty:
+        raise ValueError("선택할 AFT 반복 횟수 후보 결과가 없습니다.")
+    round_values = comparison["num_boost_round"].tolist()
+    if any(
+        isinstance(value, bool) or not isinstance(value, Integral) or int(value) <= 0
+        for value in round_values
+    ):
+        raise ValueError("AFT 후보 반복 횟수는 0보다 큰 정수여야 합니다.")
+    if comparison["num_boost_round"].duplicated().any():
+        raise ValueError("AFT 후보 선택 결과에 중복된 반복 횟수가 있습니다.")
+
+    metric_ranges = {
+        "ipcw_brier_score": (0.0, 1.0),
+        "ipcw_concordance_index": (0.0, 1.0),
+        "expected_calibration_error": (0.0, 1.0),
+        "weighted_calibration_gap": (-1.0, 1.0),
+    }
+    for column, (lower_bound, upper_bound) in metric_ranges.items():
+        values = comparison[column].tolist()
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, Real)
+            or not lower_bound <= float(value) <= upper_bound
+            for value in values
+        ):
+            raise ValueError(
+                f"AFT 후보 선택 지표 {column}은 "
+                f"{lower_bound}부터 {upper_bound} 사이의 유한한 실수여야 합니다."
+            )
+
+    ranked = comparison.copy()
+    ranked["absolute_weighted_calibration_gap"] = ranked[
+        "weighted_calibration_gap"
+    ].abs()
+    ranked = ranked.sort_values(
+        by=[
+            "ipcw_brier_score",
+            "ipcw_concordance_index",
+            "expected_calibration_error",
+            "absolute_weighted_calibration_gap",
+            "num_boost_round",
+        ],
+        ascending=[True, False, True, True, True],
+        kind="stable",
+    )
+    return int(ranked.iloc[0]["num_boost_round"])
 
 
 def build_xgboost_aft_report(

@@ -6,6 +6,7 @@ import json
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from scripts.modeling.samples import (
     assign_temporal_splits,
@@ -15,10 +16,12 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
     build_xgboost_aft_report,
+    compare_xgboost_aft_boosting_rounds,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_report,
     run_xgboost_aft_experiment,
+    select_xgboost_aft_boosting_round,
 )
 
 
@@ -197,3 +200,144 @@ def test_wrapper_matches_explicit_prepare_and_evaluate_flow(
         explicit.probability.calibration,
         wrapped.probability.calibration,
     )
+
+
+def test_compare_xgboost_aft_boosting_rounds_uses_fixed_evaluation_cohort(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """반복 횟수 후보마다 같은 기준선과 Validation 평가 표본을 사용합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    comparison = compare_xgboost_aft_boosting_rounds(
+        prepared,
+        round_candidates=(2, 3),
+    )
+
+    assert comparison["num_boost_round"].tolist() == [2, 3]
+    for fixed_column in (
+        "ipcw_reference_brier_score",
+        "aft_evaluation_sample_count",
+        "horizon_days",
+        "validation_sample_count",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "reference_probability",
+    ):
+        assert comparison[fixed_column].nunique() == 1
+    assert comparison["final_training_aft_nloglik"].notna().all()
+    assert comparison["ipcw_brier_score"].notna().all()
+
+
+def test_compare_xgboost_aft_boosting_rounds_rejects_invalid_candidates(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """비어 있거나 양의 정수가 아니거나 중복된 후보는 학습 전에 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    for round_candidates in ((), (0,), (-1,), (2.5,), (True,), (2, 2)):
+        with pytest.raises(ValueError):
+            compare_xgboost_aft_boosting_rounds(
+                prepared,
+                round_candidates=round_candidates,
+            )
+
+
+def test_select_xgboost_aft_boosting_round_prioritizes_validation_brier() -> None:
+    """다른 지표가 좋아도 Validation Brier가 더 낮은 후보를 먼저 선택합니다."""
+    comparison = pd.DataFrame(
+        {
+            "num_boost_round": [5, 20],
+            "ipcw_brier_score": [0.09, 0.10],
+            "ipcw_concordance_index": [0.60, 0.90],
+            "expected_calibration_error": [0.20, 0.05],
+            "weighted_calibration_gap": [0.15, 0.01],
+        }
+    )
+
+    selected = select_xgboost_aft_boosting_round(comparison)
+
+    assert selected == 5
+
+
+def test_select_xgboost_aft_boosting_round_uses_declared_tie_breakers() -> None:
+    """Brier 동률이면 C-index·ECE·절대 편향·낮은 비용 순으로 선택합니다."""
+    comparison = pd.DataFrame(
+        {
+            "num_boost_round": [5, 20, 50, 100, 200],
+            "ipcw_brier_score": [0.10] * 5,
+            "ipcw_concordance_index": [0.70, 0.80, 0.80, 0.80, 0.80],
+            "expected_calibration_error": [0.05, 0.20, 0.10, 0.10, 0.10],
+            "weighted_calibration_gap": [0.01, 0.01, 0.10, -0.05, -0.05],
+        }
+    )
+
+    selected = select_xgboost_aft_boosting_round(comparison)
+
+    assert selected == 100
+
+
+def test_select_xgboost_aft_boosting_round_uses_absolute_gap_and_lower_cost() -> None:
+    """부호가 아닌 편향 크기를 비교하고 완전 동률이면 낮은 반복 수를 선택합니다."""
+    common_metrics = {
+        "ipcw_brier_score": [0.10, 0.10],
+        "ipcw_concordance_index": [0.80, 0.80],
+        "expected_calibration_error": [0.05, 0.05],
+    }
+    gap_comparison = pd.DataFrame(
+        {
+            "num_boost_round": [50, 100],
+            **common_metrics,
+            "weighted_calibration_gap": [-0.40, 0.10],
+        }
+    )
+    cost_comparison = pd.DataFrame(
+        {
+            "num_boost_round": [200, 100],
+            **common_metrics,
+            "weighted_calibration_gap": [0.10, 0.10],
+        }
+    )
+
+    assert select_xgboost_aft_boosting_round(gap_comparison) == 100
+    assert select_xgboost_aft_boosting_round(gap_comparison.iloc[::-1]) == 100
+    assert select_xgboost_aft_boosting_round(cost_comparison) == 100
+
+
+def test_select_xgboost_aft_boosting_round_rejects_invalid_metrics() -> None:
+    """누락·중복·결측 지표가 있는 비교표는 선택 전에 명확히 거절합니다."""
+    valid = pd.DataFrame(
+        {
+            "num_boost_round": [5, 20],
+            "ipcw_brier_score": [0.10, 0.11],
+            "ipcw_concordance_index": [0.70, 0.71],
+            "expected_calibration_error": [0.05, 0.04],
+            "weighted_calibration_gap": [0.01, -0.01],
+        }
+    )
+
+    with pytest.raises(ValueError, match="필수 컬럼"):
+        select_xgboost_aft_boosting_round(valid.drop(columns="ipcw_brier_score"))
+    with pytest.raises(ValueError, match="중복된 반복 횟수"):
+        select_xgboost_aft_boosting_round(valid.assign(num_boost_round=[5, 5]))
+    with pytest.raises(ValueError, match="0보다 큰 정수"):
+        select_xgboost_aft_boosting_round(valid.assign(num_boost_round=[2.5, 20]))
+    with pytest.raises(ValueError, match="유한한 실수"):
+        select_xgboost_aft_boosting_round(
+            valid.assign(ipcw_brier_score=[0.10, float("nan")])
+        )
+    with pytest.raises(ValueError, match="유한한 실수"):
+        select_xgboost_aft_boosting_round(valid.assign(ipcw_brier_score=[False, True]))
+    with pytest.raises(ValueError, match="유한한 실수"):
+        select_xgboost_aft_boosting_round(valid.assign(ipcw_brier_score=[-0.10, 0.10]))
+    with pytest.raises(ValueError, match="유한한 실수"):
+        select_xgboost_aft_boosting_round(
+            valid.assign(ipcw_concordance_index=[2.0, 0.70])
+        )
