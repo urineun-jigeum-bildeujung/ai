@@ -319,6 +319,9 @@ def test_evaluate_xgboost_aft_ipcw_probability_uses_same_rows_for_calibration(
     ):
         assert summary[key] == brier_only[key]
     assert summary["requested_calibration_bin_count"] == 2
+    assert summary["weighted_mean_predicted_probability"] == pytest.approx(11 / 15)
+    assert summary["weighted_observed_event_rate"] == pytest.approx(1 / 3)
+    assert summary["weighted_calibration_gap"] == pytest.approx(0.4)
     assert summary["expected_calibration_error"] == pytest.approx(0.8)
     assert summary["maximum_calibration_error"] == pytest.approx(0.9)
     assert summary["nonempty_calibration_bin_count"] == 2

@@ -686,12 +686,25 @@ def evaluate_xgboost_aft_ipcw_probability(
         evaluation.rows,
         bin_count=calibration_bin_count,
     )
+    weighted_mean_predicted_probability = float(
+        calibration["mean_predicted_probability"]
+        .mul(calibration["ipcw_weight_share"])
+        .sum()
+    )
+    weighted_observed_event_rate = float(
+        calibration["observed_event_rate"].mul(calibration["ipcw_weight_share"]).sum()
+    )
     summary: dict[str, float | int | None] = {
         "source_validation_sample_count": evaluation.source_sample_count,
         "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
         "aft_evaluation_sample_count": evaluation.included_sample_count,
         **brier_metrics,
         "requested_calibration_bin_count": calibration_bin_count,
+        "weighted_mean_predicted_probability": (weighted_mean_predicted_probability),
+        "weighted_observed_event_rate": weighted_observed_event_rate,
+        "weighted_calibration_gap": (
+            weighted_mean_predicted_probability - weighted_observed_event_rate
+        ),
         "expected_calibration_error": float(
             calibration["weighted_absolute_gap_contribution"].sum()
         ),

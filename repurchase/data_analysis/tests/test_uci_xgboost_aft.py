@@ -78,6 +78,8 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     assert report["training"]["trained_until"] == result.split.train_end_at.isoformat()
     assert len(trials_report["trials"]) == 20
     assert "C-index" in markdown
+    assert "IPCW 가중 평균 예측확률 / 실제 사건률" in markdown
+    assert "기준 설정에서" in markdown
     assert "사용자 단위 Bootstrap" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)

@@ -245,6 +245,10 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
         )
         for row in calibration
     ]
+    maximum_gap_row = max(
+        calibration,
+        key=lambda row: row["absolute_calibration_gap"],
+    )
     lines = [
         "# UCI XGBoost AFT Validation 평가",
         "",
@@ -259,6 +263,16 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
         "",
         "## Validation 결과",
         "",
+        f"- 평가 시점: `{report['horizon_days']}`일 내 동일 상품 재구매",
+        f"- 평가 모집단: 원본 `{probability['source_validation_sample_count']:,}`건 "
+        f"→ 0일 제외 `{probability['excluded_zero_duration_count']:,}`건 "
+        f"→ AFT 평가 `{probability['aft_evaluation_sample_count']:,}`건",
+        f"- 정답 확인 표본: `{probability['outcome_known_count']:,}`건",
+        f"- Train 상수확률 기준선: `{training['training_reference_probability']:.2%}`",
+        f"- IPCW 가중 평균 예측확률 / 실제 사건률: "
+        f"`{probability['weighted_mean_predicted_probability']:.2%}` / "
+        f"`{probability['weighted_observed_event_rate']:.2%}`",
+        "",
         "| C-index | AFT Brier | 기준 Brier | Brier Skill | ECE | MCE |",
         "| ---: | ---: | ---: | ---: | ---: | ---: |",
         (
@@ -272,13 +286,19 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
         "",
         "## Calibration",
         "",
-        "| 확률 구간 | 표본 | 평균 예측 | 실제 사건률 | 차이 |",
+        "평균 예측·실제 사건률·차이는 IPCW 가중 값이며, 표본은 정답을 확인한 "
+        "원시 행 수입니다.",
+        "",
+        "| 확률 구간 | 표본 | 평균 예측 | 실제 사건률 | 차이(%p) |",
         "| --- | ---: | ---: | ---: | ---: |",
         *calibration_lines,
         "",
+        f"MCE 구간의 표본은 `{maximum_gap_row['sample_count']:,}`건이므로 "
+        "MCE만으로 전체 확률 성능을 판단하지 않습니다.",
+        "",
         "## 사용자 단위 Bootstrap",
         "",
-        f"- 사용자 수: `{bootstrap['user_count']:,}`명",
+        f"- 정답 확인 행을 가진 Bootstrap 대상 사용자: `{bootstrap['user_count']:,}`명",
         f"- 반복 수 / seed: `{bootstrap['bootstrap_replicates']:,}` / "
         f"`{bootstrap['random_seed']}`",
         f"- 점 개선량: `{bootstrap['point_brier_improvement']:+.6f}`",
@@ -287,7 +307,9 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
         f"{bootstrap['bootstrap_upper_95_brier_improvement']:+.6f}]`",
         f"- 양수 개선 비율: `{bootstrap['bootstrap_positive_improvement_rate']:.2%}`",
         "",
-        str(report["decision"]),
+        f"현재 `{training['loss_distribution']}`, "
+        f"`scale={training['loss_distribution_scale']}`, "
+        f"`{training['num_boost_round']}`회 기준 설정에서 {report['decision']}",
         "",
         str(report["scope"]),
         "",
