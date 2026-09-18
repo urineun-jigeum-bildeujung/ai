@@ -55,6 +55,7 @@ from .modeling.maturity_analysis import (
 from .modeling.model_selection import (
     evaluate_ipcw_probability_candidates,
     evaluate_ipcw_shrinkage_candidates,
+    evaluate_lightgbm_probability_candidate,
     evaluate_shrinkage_candidates,
 )
 from .modeling.samples import (
@@ -75,6 +76,9 @@ PRODUCT_CONCENTRATION_TRIALS_REPORT_PATH = (
 )
 IPCW_PROBABILITY_BOOTSTRAP_TRIALS_REPORT_PATH = (
     REPORT_DIR / "uci_baseline_e2e_ipcw_probability_bootstrap_trials.json"
+)
+LIGHTGBM_VS_K8_BOOTSTRAP_TRIALS_REPORT_PATH = (
+    REPORT_DIR / "uci_lightgbm_vs_k8_bootstrap_trials.json"
 )
 TOP_ERROR_CONTRIBUTOR_COUNT: Final[int] = 10
 # 1% 결과가 극소수 표본에만 좌우되는지 확인하기 위해 5% 결과도 함께 비교합니다.
@@ -115,6 +119,7 @@ class BaselineCycleResult:
     summary: dict[str, Any]
     product_concentration_trials: pd.DataFrame
     probability_bootstrap_trials: pd.DataFrame
+    lightgbm_vs_k8_bootstrap_trials: pd.DataFrame
 
 
 def _isoformat(timestamp: pd.Timestamp) -> str:
@@ -199,6 +204,21 @@ def _format_optional_percentage_point(value: object) -> str:
     if value is None:
         return "계산 불가"
     return f"{float(value):+.2%}p"
+
+
+def _probability_candidate_label(
+    candidate: dict[str, object],
+    *,
+    fixed: bool = False,
+) -> str:
+    """확률 후보 유형과 수축 강도를 사람이 읽을 수 있는 이름으로 변환합니다."""
+    if candidate["model_candidate"] == "lightgbm_probability":
+        return "LightGBM"
+    smoothing_strength = candidate["product_smoothing_strength"]
+    if smoothing_strength is None:
+        return "전체 확률 기준선"
+    prefix = "고정 상품 확률" if fixed else "상품 확률"
+    return f"{prefix} k={float(smoothing_strength):g}"
 
 
 def _model_summary(model: HierarchicalMedianModel) -> dict[str, object]:
@@ -403,17 +423,43 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         bootstrap_replicates=IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
         bootstrap_random_seed=IPCW_PROBABILITY_BOOTSTRAP_RANDOM_SEED,
     )
-    validation_ipcw_probability_comparison = (
-        validation_ipcw_probability_evaluation.comparison
+    validation_lightgbm_probability_evaluation = (
+        evaluate_lightgbm_probability_candidate(
+            training_population,
+            validation_population,
+            horizon_days=PRIMARY_IPCW_HORIZON_DAYS,
+            calibration_bin_count=CALIBRATION_BIN_COUNT,
+            bootstrap_reference_product_smoothing_strength=(
+                IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH
+            ),
+            bootstrap_replicates=IPCW_PROBABILITY_BOOTSTRAP_REPLICATES,
+            bootstrap_random_seed=IPCW_PROBABILITY_BOOTSTRAP_RANDOM_SEED,
+        )
     )
-    validation_ipcw_probability_calibration = (
-        validation_ipcw_probability_evaluation.calibration
+    validation_ipcw_probability_comparison = pd.concat(
+        [
+            validation_ipcw_probability_evaluation.comparison,
+            validation_lightgbm_probability_evaluation.comparison,
+        ],
+        ignore_index=True,
+    )
+    validation_ipcw_probability_calibration = pd.concat(
+        [
+            validation_ipcw_probability_evaluation.calibration,
+            validation_lightgbm_probability_evaluation.calibration,
+        ],
+        ignore_index=True,
     )
     validation_ipcw_probability_user_bootstrap = (
         validation_ipcw_probability_evaluation.user_bootstrap
     )
+    validation_lightgbm_vs_k8_user_bootstrap = (
+        validation_lightgbm_probability_evaluation.user_bootstrap
+    )
     if validation_ipcw_probability_user_bootstrap is None:
         raise RuntimeError("요청한 확률 후보의 사용자 Bootstrap 결과가 없습니다.")
+    if validation_lightgbm_vs_k8_user_bootstrap is None:
+        raise RuntimeError("LightGBM과 k=8의 사용자 Bootstrap 결과가 없습니다.")
     probability_refit_population = build_probability_refit_population(
         samples,
         trained_until=split.validation_end_at,
@@ -728,11 +774,34 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
                 "bootstrap_lower_95_brier_improvement"
             ]
             <= validation_ipcw_probability_user_bootstrap.summary[
-                "bootstrap_mean_brier_improvement"
-            ]
-            <= validation_ipcw_probability_user_bootstrap.summary[
                 "bootstrap_upper_95_brier_improvement"
             ]
+        ),
+        "ipcw_probability_bootstrap_mean_finite": bool(
+            math.isfinite(
+                validation_ipcw_probability_user_bootstrap.summary[
+                    "bootstrap_mean_brier_improvement"
+                ]
+            )
+        ),
+        "lightgbm_vs_k8_bootstrap_trial_count_preserved": bool(
+            len(validation_lightgbm_vs_k8_user_bootstrap.trials)
+            == IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+        ),
+        "lightgbm_vs_k8_bootstrap_interval_ordered": bool(
+            validation_lightgbm_vs_k8_user_bootstrap.summary[
+                "bootstrap_lower_95_brier_improvement"
+            ]
+            <= validation_lightgbm_vs_k8_user_bootstrap.summary[
+                "bootstrap_upper_95_brier_improvement"
+            ]
+        ),
+        "lightgbm_vs_k8_bootstrap_mean_finite": bool(
+            math.isfinite(
+                validation_lightgbm_vs_k8_user_bootstrap.summary[
+                    "bootstrap_mean_brier_improvement"
+                ]
+            )
         ),
         "test_ipcw_probability_population_preserved": bool(
             test_ipcw_probability_comparison["evaluation_sample_count"]
@@ -899,6 +968,14 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
             ),
             **validation_ipcw_probability_user_bootstrap.summary,
         },
+        "validation_lightgbm_vs_k8_user_bootstrap": {
+            "candidate_model": "lightgbm_probability",
+            "reference_model": "hierarchical_event_probability",
+            "reference_product_smoothing_strength": (
+                IPCW_PROBABILITY_BOOTSTRAP_SMOOTHING_STRENGTH
+            ),
+            **validation_lightgbm_vs_k8_user_bootstrap.summary,
+        },
         "test_ipcw_probability_comparison": dataframe_to_nullable_records(
             test_ipcw_probability_comparison
         ),
@@ -941,6 +1018,9 @@ def run_baseline_cycle(labels: pd.DataFrame) -> BaselineCycleResult:
         probability_bootstrap_trials=(
             validation_ipcw_probability_user_bootstrap.trials.copy()
         ),
+        lightgbm_vs_k8_bootstrap_trials=(
+            validation_lightgbm_vs_k8_user_bootstrap.trials.copy()
+        ),
     )
 
 
@@ -977,6 +1057,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ipcw_probability_user_bootstrap = summary[
         "validation_ipcw_probability_user_bootstrap"
     ]
+    lightgbm_vs_k8_user_bootstrap = summary["validation_lightgbm_vs_k8_user_bootstrap"]
     test_ipcw_probability_comparison = summary["test_ipcw_probability_comparison"]
     ipcw_candidate_comparison_lines = []
     for candidate in ipcw_candidate_comparison:
@@ -997,15 +1078,11 @@ def render_markdown(summary: dict[str, Any]) -> str:
         )
     ipcw_probability_comparison_lines = []
     for candidate in ipcw_probability_comparison:
-        candidate_label = (
-            "전체 확률 기준선"
-            if candidate["product_smoothing_strength"] is None
-            else f"상품 확률 k={float(candidate['product_smoothing_strength']):g}"
-        )
+        candidate_label = _probability_candidate_label(candidate)
         ipcw_probability_comparison_lines.append(
             f"| {candidate_label} | "
             f"{candidate['training_global_event_probability']:.2%} | "
-            f"{candidate['product_prediction_rate']:.2%} | "
+            f"{_format_optional_rate(candidate['product_prediction_rate'])} | "
             f"{candidate['ipcw_brier_score']:.6f} | "
             f"{candidate['ipcw_reference_brier_score']:.6f} | "
             f"{_format_optional_rate(candidate['brier_skill_score'])} | "
@@ -1017,10 +1094,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
         key=lambda candidate: candidate["ipcw_brier_score"],
     )
     best_smoothing_strength = best_probability_candidate["product_smoothing_strength"]
-    best_probability_candidate_label = (
-        "전체 확률 기준선"
-        if best_smoothing_strength is None
-        else f"상품 확률 k={float(best_smoothing_strength):g}"
+    best_probability_candidate_label = _probability_candidate_label(
+        best_probability_candidate
     )
     best_calibration_rows = [
         row
@@ -1044,11 +1119,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     test_ipcw_probability_comparison_lines = []
     for candidate in test_ipcw_probability_comparison:
-        candidate_label = (
-            "전체 확률 기준선"
-            if candidate["product_smoothing_strength"] is None
-            else f"고정 상품 확률 k={float(candidate['product_smoothing_strength']):g}"
-        )
+        candidate_label = _probability_candidate_label(candidate, fixed=True)
         test_ipcw_probability_comparison_lines.append(
             f"| {candidate_label} | "
             f"{candidate['training_global_event_probability']:.2%} | "
@@ -1326,6 +1397,21 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "사용자 내부 상관을 보존했습니다.",
             "- 95% 구간이 0을 포함하면 사용자 구성이 달라졌을 때 개선 방향이 "
             "바뀔 수 있으므로 안정적인 개선으로 확정하지 않습니다.",
+            "",
+            "#### LightGBM 대 k=8 사용자 단위 Bootstrap",
+            "",
+            f"- 반복 횟수: `{lightgbm_vs_k8_user_bootstrap['bootstrap_replicates']:,}`회",
+            f"- 사용자 수: `{lightgbm_vs_k8_user_bootstrap['user_count']:,}`명",
+            f"- k=8 대비 점 추정 Brier 개선: "
+            f"`{lightgbm_vs_k8_user_bootstrap['point_brier_improvement']:.6f}`",
+            f"- Bootstrap 평균 Brier 개선: "
+            f"`{lightgbm_vs_k8_user_bootstrap['bootstrap_mean_brier_improvement']:.6f}`",
+            f"- 95% Bootstrap 구간: "
+            f"`{lightgbm_vs_k8_user_bootstrap['bootstrap_lower_95_brier_improvement']:.6f}`"
+            " ~ "
+            f"`{lightgbm_vs_k8_user_bootstrap['bootstrap_upper_95_brier_improvement']:.6f}`",
+            f"- LightGBM이 k=8보다 개선된 반복 비율: "
+            f"`{lightgbm_vs_k8_user_bootstrap['bootstrap_positive_improvement_rate']:.2%}`",
             "",
             "### 고정 k=8의 1회 Test 평가",
             "",
@@ -1952,6 +2038,28 @@ def build_ipcw_probability_bootstrap_trials_report(
     }
 
 
+def build_lightgbm_vs_k8_bootstrap_trials_report(
+    result: BaselineCycleResult,
+) -> dict[str, object]:
+    """LightGBM과 k=8의 사용자 Bootstrap 반복 원자료를 저장 구조로 변환합니다."""
+    summary = result.summary
+    bootstrap = summary["validation_lightgbm_vs_k8_user_bootstrap"]
+
+    return {
+        "dataset": summary["dataset"],
+        "evaluation_split": "validation",
+        "candidate_model": bootstrap["candidate_model"],
+        "reference_model": bootstrap["reference_model"],
+        "reference_product_smoothing_strength": bootstrap[
+            "reference_product_smoothing_strength"
+        ],
+        "bootstrap_replicates": bootstrap["bootstrap_replicates"],
+        "random_seed": bootstrap["random_seed"],
+        "summary": bootstrap,
+        "trials": result.lightgbm_vs_k8_bootstrap_trials.to_dict(orient="records"),
+    }
+
+
 def main() -> None:
     """실제 UCI 원본을 읽어 모델 E2E를 실행하고 JSON·Markdown을 저장합니다."""
     source = load_uci_online_retail_ii()
@@ -1965,6 +2073,9 @@ def main() -> None:
     summary = result.summary
     random_trials_report = build_product_concentration_trials_report(result)
     bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
+    lightgbm_bootstrap_trials_report = build_lightgbm_vs_k8_bootstrap_trials_report(
+        result
+    )
     write_text_atomically(
         JSON_REPORT_PATH,
         json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
@@ -1983,6 +2094,16 @@ def main() -> None:
         IPCW_PROBABILITY_BOOTSTRAP_TRIALS_REPORT_PATH,
         json.dumps(
             bootstrap_trials_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n",
+    )
+    write_text_atomically(
+        LIGHTGBM_VS_K8_BOOTSTRAP_TRIALS_REPORT_PATH,
+        json.dumps(
+            lightgbm_bootstrap_trials_report,
             ensure_ascii=False,
             indent=2,
             allow_nan=False,

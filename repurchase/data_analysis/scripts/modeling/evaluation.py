@@ -62,6 +62,31 @@ IPCW_BRIER_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
 
 IPCW_CALIBRATION_REQUIRED_COLUMNS: Final[frozenset[str]] = IPCW_BRIER_REQUIRED_COLUMNS
 
+# 0은 근거가 전혀 없는 상태이므로 1과 합치지 않고, 이후는 2배 단위로 묶습니다.
+COUNT_SEGMENT_BINS: Final[tuple[float, ...]] = (
+    -0.5,
+    0.5,
+    1.5,
+    3.5,
+    7.5,
+    15.5,
+    31.5,
+    63.5,
+    127.5,
+    np.inf,
+)
+COUNT_SEGMENT_LABELS: Final[tuple[str, ...]] = (
+    "0",
+    "1",
+    "2-3",
+    "4-7",
+    "8-15",
+    "16-31",
+    "32-63",
+    "64-127",
+    "128+",
+)
+
 
 class _FenwickCountTree:
     """예측 순위별 누적 표본 수를 로그 시간에 저장하고 조회합니다."""
@@ -696,14 +721,106 @@ def summarize_ipcw_calibration(
     ]
 
 
-def bootstrap_ipcw_brier_difference_by_user(
+def summarize_ipcw_probability_pair_by_count_segment(
     rows: pd.DataFrame,
     *,
-    reference_probability: float,
+    count_column: str,
+    calibration_bin_count: int = 10,
+) -> pd.DataFrame:
+    """근거 개수 구간별 B/C Brier와 확률 보정 오차를 같은 표본에서 계산합니다."""
+    probability_columns = {
+        "reference": "reference_predicted_event_probability",
+        "candidate": "candidate_predicted_event_probability",
+    }
+    required_columns = {"user_id", count_column, *probability_columns.values()}
+    required_columns |= IPCW_BRIER_REQUIRED_COLUMNS - {"predicted_event_probability"}
+    missing_columns = required_columns - set(rows.columns)
+    if missing_columns:
+        raise RepurchaseEvaluationError(
+            f"세그먼트 확률 평가 필수 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if rows.empty:
+        raise RepurchaseEvaluationError("세그먼트 확률을 평가할 표본이 없습니다.")
+
+    count_values = rows[count_column]
+    numeric_counts = count_values.to_numpy(dtype="float64", copy=False)
+    if (
+        not is_numeric_dtype(count_values.dtype)
+        or not np.isfinite(numeric_counts).all()
+        or (numeric_counts < 0).any()
+        or not np.equal(numeric_counts, np.floor(numeric_counts)).all()
+    ):
+        raise RepurchaseEvaluationError(
+            f"{count_column}에는 0 이상의 유한한 정수만 사용할 수 있습니다."
+        )
+
+    segmented = rows.copy()
+    bucket_column = f"{count_column}_bucket"
+    segmented[bucket_column] = pd.cut(
+        count_values,
+        bins=COUNT_SEGMENT_BINS,
+        labels=COUNT_SEGMENT_LABELS,
+        include_lowest=True,
+    )
+    if segmented[bucket_column].isna().any():
+        raise RepurchaseEvaluationError(f"{count_column}의 구간을 만들 수 없습니다.")
+
+    summaries: list[dict[str, float | int | str]] = []
+    for bucket, segment_rows in segmented.groupby(
+        bucket_column, observed=True, sort=True
+    ):
+        known_rows = segment_rows.loc[segment_rows["ipcw_outcome_known"]]
+        summary: dict[str, float | int | str] = {
+            "count_column": count_column,
+            "count_bucket": str(bucket),
+            "sample_count": int(len(segment_rows)),
+            "user_count": int(segment_rows["user_id"].nunique()),
+            "outcome_known_count": int(len(known_rows)),
+        }
+        for role, probability_column in probability_columns.items():
+            evaluation_rows = segment_rows.copy()
+            evaluation_rows["predicted_event_probability"] = evaluation_rows[
+                probability_column
+            ]
+            metrics = evaluate_ipcw_brier_score(
+                evaluation_rows,
+                reference_probability=0.5,
+            )
+            calibration = summarize_ipcw_calibration(
+                evaluation_rows,
+                bin_count=calibration_bin_count,
+            )
+            summary[f"{role}_ipcw_brier_score"] = float(metrics["ipcw_brier_score"])
+            summary[f"{role}_expected_calibration_error"] = float(
+                calibration["weighted_absolute_gap_contribution"].sum()
+            )
+            summary[f"{role}_maximum_calibration_error"] = float(
+                calibration["absolute_calibration_gap"].max()
+            )
+            summary[f"{role}_weighted_calibration_gap"] = float(
+                calibration["calibration_gap"]
+                .mul(calibration["ipcw_weight_share"])
+                .sum()
+            )
+        summary["brier_improvement"] = (
+            summary["reference_ipcw_brier_score"]
+            - summary["candidate_ipcw_brier_score"]
+        )
+        summary["calibration_error_improvement"] = (
+            summary["reference_expected_calibration_error"]
+            - summary["candidate_expected_calibration_error"]
+        )
+        summaries.append(summary)
+    return pd.DataFrame(summaries)
+
+
+def _validate_user_bootstrap_request(
+    rows: pd.DataFrame,
+    *,
     bootstrap_replicates: int,
     random_seed: int,
-) -> IPCWUserBootstrapResult:
-    """사용자를 복원추출해 후보와 전체 확률 기준선의 Brier 차이를 추정합니다."""
+) -> None:
+    """사용자 Bootstrap 식별자·반복 수·난수 시드 계약을 검사합니다."""
     if "user_id" not in rows.columns:
         raise RepurchaseEvaluationError("사용자 Bootstrap에는 user_id가 필요합니다.")
     if rows["user_id"].isna().any():
@@ -719,20 +836,16 @@ def bootstrap_ipcw_brier_difference_by_user(
     if isinstance(random_seed, bool) or not isinstance(random_seed, int):
         raise RepurchaseEvaluationError("Bootstrap 무작위 시드는 정수여야 합니다.")
 
-    point_metrics = evaluate_ipcw_brier_score(
-        rows,
-        reference_probability=reference_probability,
-    )
-    known_rows = rows.loc[rows["ipcw_outcome_known"]].copy()
-    actual_event = known_rows["ipcw_event_within_horizon"].astype("float64")
-    weights = known_rows["ipcw_weight"].astype("float64")
-    candidate_squared_error = (
-        known_rows["predicted_event_probability"].sub(actual_event).pow(2)
-    )
-    reference_squared_error = actual_event.sub(reference_probability).pow(2)
-    known_rows["candidate_weighted_error"] = candidate_squared_error.mul(weights)
-    known_rows["reference_weighted_error"] = reference_squared_error.mul(weights)
 
+def _bootstrap_ipcw_weighted_error_difference_by_user(
+    known_rows: pd.DataFrame,
+    *,
+    point_candidate_brier_score: float,
+    point_reference_brier_score: float,
+    bootstrap_replicates: int,
+    random_seed: int,
+) -> IPCWUserBootstrapResult:
+    """사용자별 가중 오차를 복원추출해 두 Brier Score 차이를 반복합니다."""
     user_summary = (
         known_rows.groupby("user_id", observed=True, sort=False)
         .agg(
@@ -784,14 +897,11 @@ def bootstrap_ipcw_brier_difference_by_user(
             "bootstrap_replicates": bootstrap_replicates,
             "random_seed": random_seed,
             "user_count": user_count,
-            "outcome_known_count": int(point_metrics["outcome_known_count"]),
-            "point_candidate_brier_score": float(point_metrics["ipcw_brier_score"]),
-            "point_reference_brier_score": float(
-                point_metrics["ipcw_reference_brier_score"]
-            ),
+            "outcome_known_count": int(len(known_rows)),
+            "point_candidate_brier_score": point_candidate_brier_score,
+            "point_reference_brier_score": point_reference_brier_score,
             "point_brier_improvement": float(
-                point_metrics["ipcw_reference_brier_score"]
-                - point_metrics["ipcw_brier_score"]
+                point_reference_brier_score - point_candidate_brier_score
             ),
             "bootstrap_mean_brier_improvement": float(improvement.mean()),
             "bootstrap_lower_95_brier_improvement": float(improvement.quantile(0.025)),
@@ -799,4 +909,97 @@ def bootstrap_ipcw_brier_difference_by_user(
             "bootstrap_positive_improvement_rate": float(improvement.gt(0).mean()),
         },
         trials=trial_rows,
+    )
+
+
+def bootstrap_ipcw_brier_difference_by_user(
+    rows: pd.DataFrame,
+    *,
+    reference_probability: float,
+    bootstrap_replicates: int,
+    random_seed: int,
+) -> IPCWUserBootstrapResult:
+    """사용자를 복원추출해 후보와 전체 확률 기준선의 Brier 차이를 추정합니다."""
+    _validate_user_bootstrap_request(
+        rows,
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=random_seed,
+    )
+    point_metrics = evaluate_ipcw_brier_score(
+        rows,
+        reference_probability=reference_probability,
+    )
+    known_rows = rows.loc[rows["ipcw_outcome_known"]].copy()
+    actual_event = known_rows["ipcw_event_within_horizon"].astype("float64")
+    weights = known_rows["ipcw_weight"].astype("float64")
+    candidate_squared_error = (
+        known_rows["predicted_event_probability"].sub(actual_event).pow(2)
+    )
+    reference_squared_error = actual_event.sub(reference_probability).pow(2)
+    known_rows["candidate_weighted_error"] = candidate_squared_error.mul(weights)
+    known_rows["reference_weighted_error"] = reference_squared_error.mul(weights)
+    return _bootstrap_ipcw_weighted_error_difference_by_user(
+        known_rows,
+        point_candidate_brier_score=float(point_metrics["ipcw_brier_score"]),
+        point_reference_brier_score=float(point_metrics["ipcw_reference_brier_score"]),
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=random_seed,
+    )
+
+
+def bootstrap_ipcw_brier_pair_difference_by_user(
+    rows: pd.DataFrame,
+    *,
+    bootstrap_replicates: int,
+    random_seed: int,
+) -> IPCWUserBootstrapResult:
+    """사용자를 복원추출해 두 확률 모델의 Brier Score 차이를 추정합니다."""
+    _validate_user_bootstrap_request(
+        rows,
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=random_seed,
+    )
+    probability_columns = (
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    )
+    missing_columns = set(probability_columns) - set(rows.columns)
+    if missing_columns:
+        raise RepurchaseEvaluationError(
+            f"확률 모델 쌍 비교 열이 누락됐습니다: {sorted(missing_columns)}"
+        )
+
+    point_scores: dict[str, float] = {}
+    for role, probability_column in zip(
+        ("reference", "candidate"),
+        probability_columns,
+        strict=True,
+    ):
+        evaluation_rows = rows.copy()
+        evaluation_rows["predicted_event_probability"] = evaluation_rows[
+            probability_column
+        ]
+        metrics = evaluate_ipcw_brier_score(
+            evaluation_rows,
+            reference_probability=0.5,
+        )
+        point_scores[role] = float(metrics["ipcw_brier_score"])
+
+    known_rows = rows.loc[rows["ipcw_outcome_known"]].copy()
+    actual_event = known_rows["ipcw_event_within_horizon"].astype("float64")
+    weights = known_rows["ipcw_weight"].astype("float64")
+    candidate_squared_error = (
+        known_rows["candidate_predicted_event_probability"].sub(actual_event).pow(2)
+    )
+    reference_squared_error = (
+        known_rows["reference_predicted_event_probability"].sub(actual_event).pow(2)
+    )
+    known_rows["candidate_weighted_error"] = candidate_squared_error.mul(weights)
+    known_rows["reference_weighted_error"] = reference_squared_error.mul(weights)
+    return _bootstrap_ipcw_weighted_error_difference_by_user(
+        known_rows,
+        point_candidate_brier_score=point_scores["candidate"],
+        point_reference_brier_score=point_scores["reference"],
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=random_seed,
     )

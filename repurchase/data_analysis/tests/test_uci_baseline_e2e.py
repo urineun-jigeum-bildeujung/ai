@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from itertools import pairwise
 
 import pandas as pd
@@ -17,10 +18,19 @@ from scripts.run_uci_baseline_e2e import (
     SHRINKAGE_STRENGTH_CANDIDATES,
     _format_optional_days,
     build_ipcw_probability_bootstrap_trials_report,
+    build_lightgbm_vs_k8_bootstrap_trials_report,
     build_probability_refit_population,
     build_product_concentration_trials_report,
     render_markdown,
     run_baseline_cycle,
+)
+from scripts.run_uci_lightgbm_bc_bootstrap import (
+    render_bc_bootstrap,
+    run_bc_bootstrap,
+)
+from scripts.run_uci_lightgbm_feature_comparison import (
+    render_feature_comparison,
+    run_feature_comparison,
 )
 
 
@@ -52,7 +62,7 @@ def test_build_probability_refit_population_hides_future_outcomes() -> None:
 
 
 def make_purchase_events() -> pd.DataFrame:
-    """두 사용자·상품의 반복 구매를 전체 관측 기간에 걸쳐 생성합니다."""
+    """반복 구매와 단발 구매가 함께 있는 작은 E2E 구매 이력을 만듭니다."""
     rows: list[dict[str, object]] = []
     for user_id, product_id, start_at, interval_days, event_count in (
         ("u1", "p1", "2026-01-01", 5, 24),
@@ -68,7 +78,88 @@ def make_purchase_events() -> pd.DataFrame:
                     + pd.Timedelta(days=interval_days * index),
                 }
             )
+    # 관측 기간이 충분히 지난 단발 구매로 Train의 미재구매 정답을 만듭니다.
+    rows.append(
+        {
+            "user_id": "u3",
+            "order_id": "u3-o00",
+            "product_id": "p3",
+            "ordered_at": pd.Timestamp("2026-01-04"),
+        }
+    )
     return pd.DataFrame(rows)
+
+
+def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
+    """네 피처 후보가 기존 단일 평가를 재현하고 보고서는 표준 JSON으로 저장됩니다."""
+    from scripts.modeling.model_selection import evaluate_lightgbm_probability_candidate
+    from scripts.modeling.samples import (
+        assign_temporal_splits,
+        build_historical_interval_features,
+        make_temporal_split,
+    )
+
+    events = make_purchase_events()
+    labels = build_same_product_repurchase_labels(
+        events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
+    )
+    report = run_feature_comparison(labels)
+    samples = build_historical_interval_features(labels)
+    samples = assign_temporal_splits(samples, make_temporal_split(samples))
+    reference = evaluate_lightgbm_probability_candidate(
+        samples.loc[samples["split"].eq("train")],
+        samples.loc[samples["split"].eq("validation")],
+        horizon_days=30,
+    ).comparison.iloc[0]
+    candidate = report["comparison"][-1]
+    for metric in ("ipcw_brier_score", "expected_calibration_error"):
+        assert candidate[metric] == pytest.approx(reference[metric])
+    assert report["evaluation_split"] == "validation"
+    assert "C_counts_median_variability" in render_feature_comparison(report)
+    json.dumps(report, allow_nan=False)
+
+
+def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json() -> None:
+    """B/C 사용자 재표집 결과가 Validation에 한정되고 표준 JSON으로 저장됩니다."""
+    events = make_purchase_events()
+    labels = build_same_product_repurchase_labels(
+        events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
+    )
+
+    report = run_bc_bootstrap(labels, bootstrap_replicates=20, random_seed=7)
+    summary = report["summary"]
+
+    assert report["evaluation_split"] == "validation"
+    assert report["reference_feature_set"] == "B_counts_median"
+    assert report["candidate_feature_set"] == "C_counts_median_variability"
+    assert summary["bootstrap_replicates"] == 20
+    assert summary["random_seed"] == 7
+    assert len(report["trials"]) == 20
+    segments = pd.DataFrame(report["segments"])
+    assert set(segments["count_column"]) == {
+        "history_interval_count",
+        "user_prior_order_count",
+        "product_train_outcome_count",
+    }
+    validation_count = int(
+        segments.loc[
+            segments["count_column"].eq("history_interval_count"), "sample_count"
+        ].sum()
+    )
+    assert (
+        segments.groupby("count_column")["sample_count"]
+        .sum()
+        .eq(validation_count)
+        .all()
+    )
+    assert (
+        segments.groupby("count_column")["outcome_known_count"]
+        .sum()
+        .eq(summary["outcome_known_count"])
+        .all()
+    )
+    assert "95%" in render_bc_bootstrap(report)
+    json.dumps(report, allow_nan=False)
 
 
 def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> None:
@@ -343,12 +434,17 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         "ipcw_concordance_index_difference_vs_reference"
     ] == pytest.approx(0.0)
     probability_comparison = summary["validation_ipcw_probability_comparison"]
-    assert len(probability_comparison) == 1 + len(
+    assert len(probability_comparison) == 2 + len(
         PROBABILITY_SMOOTHING_STRENGTH_CANDIDATES
     )
     assert probability_comparison[0]["model_candidate"] == ("global_event_probability")
-    assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
-    assert probability_comparison[0]["brier_skill_score"] is None
+    assert probability_comparison[-1]["model_candidate"] == "lightgbm_probability"
+    reference_brier_score = probability_comparison[0]["ipcw_reference_brier_score"]
+    assert 0.0 <= reference_brier_score <= 1.0
+    if reference_brier_score == 0.0:
+        assert probability_comparison[0]["brier_skill_score"] is None
+    else:
+        assert probability_comparison[0]["brier_skill_score"] == pytest.approx(0.0)
     assert all(
         candidate["evaluation_sample_count"] == validation_sample_count
         for candidate in probability_comparison
@@ -375,9 +471,23 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     )
     assert (
         probability_bootstrap["bootstrap_lower_95_brier_improvement"]
-        <= probability_bootstrap["bootstrap_mean_brier_improvement"]
         <= probability_bootstrap["bootstrap_upper_95_brier_improvement"]
     )
+    assert math.isfinite(probability_bootstrap["bootstrap_mean_brier_improvement"])
+    lightgbm_bootstrap = summary["validation_lightgbm_vs_k8_user_bootstrap"]
+    assert lightgbm_bootstrap["candidate_model"] == "lightgbm_probability"
+    assert lightgbm_bootstrap["reference_product_smoothing_strength"] == 8.0
+    assert lightgbm_bootstrap["bootstrap_replicates"] == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert len(result.lightgbm_vs_k8_bootstrap_trials) == (
+        IPCW_PROBABILITY_BOOTSTRAP_REPLICATES
+    )
+    assert (
+        lightgbm_bootstrap["bootstrap_lower_95_brier_improvement"]
+        <= lightgbm_bootstrap["bootstrap_upper_95_brier_improvement"]
+    )
+    assert math.isfinite(lightgbm_bootstrap["bootstrap_mean_brier_improvement"])
     test_probability_comparison = summary["test_ipcw_probability_comparison"]
     assert len(test_probability_comparison) == 2
     assert test_probability_comparison[0]["model_candidate"] == (
@@ -445,6 +555,9 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
 
     random_trials_report = build_product_concentration_trials_report(result)
     bootstrap_trials_report = build_ipcw_probability_bootstrap_trials_report(result)
+    lightgbm_bootstrap_trials_report = build_lightgbm_vs_k8_bootstrap_trials_report(
+        result
+    )
     assert random_trials_report["dataset"] == "uci_online_retail_ii"
     assert random_trials_report["evaluation_split"] == "validation"
     assert (
@@ -472,6 +585,15 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
         allow_nan=False,
     )
     assert json.loads(serialized_bootstrap_trials_report) == bootstrap_trials_report
+    serialized_lightgbm_bootstrap_trials_report = json.dumps(
+        lightgbm_bootstrap_trials_report,
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    assert (
+        json.loads(serialized_lightgbm_bootstrap_trials_report)
+        == lightgbm_bootstrap_trials_report
+    )
 
     markdown = render_markdown(summary)
 

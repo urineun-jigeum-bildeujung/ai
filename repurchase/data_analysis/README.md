@@ -51,11 +51,26 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_events
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.run_uci_baseline_e2e
+.venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
+.venv/bin/python -m scripts.run_uci_lightgbm_bc_bootstrap
+.venv/bin/python -m scripts.visualize_uci_lightgbm_calibration
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 ```
+
+`run_uci_lightgbm_feature_comparison`은 동일 Train·Validation 표본에서 횟수만 사용하는
+A, 구매 간격 중앙값을 추가한 B, 불규칙성까지 추가한 C를 비교합니다. 결측 행은
+보존하며 Test 예측·평가는 실행하지 않습니다. 피처 목록·모델 설정·실행 환경과
+Brier·Calibration 결과는 `reports/uci_lightgbm_feature_comparison.json` 및
+동명의 Markdown에 저장합니다. 단계별 차이는 앞선 피처가 주어진 조건에서의
+효과이며, 개별 피처의 독립적인 인과 효과를 뜻하지 않습니다.
+
+`run_uci_lightgbm_bc_bootstrap`은 B와 C를 각각 한 번 학습·예측한 뒤 같은
+Validation 사용자를 1,000회 복원추출합니다. `Brier(B) - Brier(C)`의 점추정,
+95% 구간과 양수 비율을 저장하며 Test 표본은 사용하지 않습니다. 이 구간은 고정된
+모델 예측과 IPCW 가중치 아래의 평가 표본 불확실성만 나타냅니다.
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
@@ -74,6 +89,18 @@ python -m pytest
 ```
 
 `pytest`에는 작은 고정 표본으로 전처리 전체 연결을 검사하는 E2E 테스트가 포함됩니다. 이 검사는 외부 네트워크와 로컬 원본 파일에 의존하지 않으므로 모든 PR에서 재현할 수 있습니다.
+
+테스트가 실행되면 성공·실패 내역과 소요시간을 JUnit XML로 생성하고,
+`repurchase-tests-<실행 ID>-<재실행 번호>` 아티팩트로 14일간 보관합니다.
+GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 다운로드할 수 있습니다.
+테스트가 실패해도 결과 파일을 업로드하며 CI 실패 상태는 그대로 유지합니다.
+이전 단계 실패나 비관련 변경으로 테스트를 실행하지 않았거나 실행이 취소된 경우에는
+업로드하지 않습니다. 테스트가 실행됐는데 결과 파일이 없으면 업로드 단계도 실패로 표시합니다.
+
+업로드 대상은 러너 임시 디렉터리의 `repurchase-test-results/junit.xml` 하나입니다.
+원본 데이터·모델·보고서 디렉터리는 포함하지 않고 표준 출력 로그도 XML에 첨부하지 않습니다.
+다만 실패 메시지에는 테스트 값이 포함될 수 있으므로 테스트 입력에는 실제 개인정보나
+비밀정보를 사용하지 않습니다. 이 파일은 코드 검증 기록이며 실제 데이터의 모델 성능 보고서가 아닙니다.
 
 실제 UCI 전체 ZIP을 사용하는 아래 검증은 대용량 외부 데이터에 의존하므로 PR CI에서는 실행하지 않습니다. 데이터 다운로드·품질 분류·사건 집계·라벨 로직을 변경했을 때 수동으로 실행하고 결과 보고서를 함께 검토합니다.
 
