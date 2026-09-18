@@ -10,6 +10,7 @@ from lightgbm import LGBMClassifier
 from scripts.modeling.features import MINIMAL_MODEL_FEATURE_COLUMNS
 from scripts.modeling.lightgbm_baseline import (
     LightGBMBaselineError,
+    LightGBMTrainingData,
     build_lightgbm_training_data,
     create_lightgbm_classifier,
     predict_lightgbm_repurchase_probability,
@@ -92,6 +93,27 @@ def test_train_lightgbm_classifier_fits_real_model() -> None:
 
     assert trained_model.classes_.tolist() == [0, 1]
     assert trained_model.n_features_in_ == len(MINIMAL_MODEL_FEATURE_COLUMNS)
+
+
+@pytest.mark.parametrize("target_value", [0, 1])
+def test_train_lightgbm_classifier_rejects_single_target_class(
+    target_value: int,
+) -> None:
+    """생성 함수를 우회해도 한 종류의 정답만 있는 학습을 거절합니다."""
+    valid_training_data = build_lightgbm_training_data(make_lightgbm_rows())
+    single_class_training_data = LightGBMTrainingData(
+        horizon_days=valid_training_data.horizon_days,
+        features=valid_training_data.features,
+        target=pd.Series(
+            [target_value] * len(valid_training_data.target),
+            index=valid_training_data.target.index,
+            dtype="int8",
+        ),
+        sample_weight=valid_training_data.sample_weight,
+    )
+
+    with pytest.raises(LightGBMBaselineError, match="미발생 0과 발생 1"):
+        train_lightgbm_classifier(single_class_training_data)
 
 
 def test_predict_lightgbm_probability_selects_positive_class(
@@ -219,4 +241,16 @@ def test_build_lightgbm_training_data_rejects_unknown_boolean_contract() -> None
     rows.loc[20, "ipcw_outcome_known"] = pd.NA
 
     with pytest.raises(LightGBMBaselineError, match="정답 확인 여부"):
+        build_lightgbm_training_data(rows)
+
+
+@pytest.mark.parametrize("target_value", [False, True])
+def test_build_lightgbm_training_data_rejects_single_target_class(
+    target_value: bool,
+) -> None:
+    """형식이 boolean이어도 미발생·발생 중 하나만 있으면 학습하지 않습니다."""
+    rows = make_lightgbm_rows()
+    rows.loc[rows["ipcw_outcome_known"], "ipcw_event_within_horizon"] = target_value
+
+    with pytest.raises(LightGBMBaselineError, match="미발생 0과 발생 1"):
         build_lightgbm_training_data(rows)

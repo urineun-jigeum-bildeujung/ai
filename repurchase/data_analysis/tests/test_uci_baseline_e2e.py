@@ -62,7 +62,7 @@ def test_build_probability_refit_population_hides_future_outcomes() -> None:
 
 
 def make_purchase_events() -> pd.DataFrame:
-    """두 사용자·상품의 반복 구매를 전체 관측 기간에 걸쳐 생성합니다."""
+    """반복 구매와 단발 구매가 함께 있는 작은 E2E 구매 이력을 만듭니다."""
     rows: list[dict[str, object]] = []
     for user_id, product_id, start_at, interval_days, event_count in (
         ("u1", "p1", "2026-01-01", 5, 24),
@@ -78,6 +78,15 @@ def make_purchase_events() -> pd.DataFrame:
                     + pd.Timedelta(days=interval_days * index),
                 }
             )
+    # 관측 기간이 충분히 지난 단발 구매로 Train의 미재구매 정답을 만듭니다.
+    rows.append(
+        {
+            "user_id": "u3",
+            "order_id": "u3-o00",
+            "product_id": "p3",
+            "ordered_at": pd.Timestamp("2026-01-04"),
+        }
+    )
     return pd.DataFrame(rows)
 
 
@@ -430,8 +439,12 @@ def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> N
     )
     assert probability_comparison[0]["model_candidate"] == ("global_event_probability")
     assert probability_comparison[-1]["model_candidate"] == "lightgbm_probability"
-    assert probability_comparison[0]["ipcw_reference_brier_score"] == pytest.approx(0.0)
-    assert probability_comparison[0]["brier_skill_score"] is None
+    reference_brier_score = probability_comparison[0]["ipcw_reference_brier_score"]
+    assert 0.0 <= reference_brier_score <= 1.0
+    if reference_brier_score == 0.0:
+        assert probability_comparison[0]["brier_skill_score"] is None
+    else:
+        assert probability_comparison[0]["brier_skill_score"] == pytest.approx(0.0)
     assert all(
         candidate["evaluation_sample_count"] == validation_sample_count
         for candidate in probability_comparison

@@ -24,6 +24,15 @@ class LightGBMBaselineError(ValueError):
     """LightGBM 학습 입력이 정의한 계약을 위반할 때 발생합니다."""
 
 
+def _validate_binary_target_classes(target: pd.Series) -> None:
+    """재구매 미발생 0과 발생 1이 학습 정답에 모두 있는지 검사합니다."""
+    observed_classes = set(target.dropna().unique().tolist())
+    if observed_classes != {0, 1}:
+        raise LightGBMBaselineError(
+            "LightGBM 학습 정답에는 재구매 미발생 0과 발생 1이 모두 필요합니다."
+        )
+
+
 def create_lightgbm_classifier() -> LGBMClassifier:
     """튜닝 전 비교 기준으로 사용할 결정적 이진분류 모델을 만듭니다."""
     return LGBMClassifier(
@@ -103,6 +112,7 @@ def build_lightgbm_training_data(
         raise LightGBMBaselineError(
             "기간 내 재구매 정답에는 결측값 없는 boolean만 사용할 수 있습니다."
         )
+    _validate_binary_target_classes(target)
 
     sample_weight = known_rows["ipcw_weight"]
     if (
@@ -140,6 +150,8 @@ def train_lightgbm_classifier(
     training_data: LightGBMTrainingData,
 ) -> LGBMClassifier:
     """검증된 피처·정답·IPCW 가중치로 기준 분류 모델을 학습합니다."""
+    # 생성 함수를 우회해 학습 데이터가 만들어져도 단일 클래스 학습을 막습니다.
+    _validate_binary_target_classes(training_data.target)
     model = create_lightgbm_classifier()
     model.fit(
         training_data.features,
