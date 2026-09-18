@@ -82,6 +82,22 @@ Bootstrap은 학습된 두 모델의 예측을 고정하고 사용자 구성을 
 [Bootstrap 1,000회 원자료](uci_lightgbm_bc_bootstrap_trials.json).
 실행: `python -m scripts.run_uci_lightgbm_bc_bootstrap`.
 
+### B/C Calibration curve
+
+![B/C Calibration curve](figures/uci_lightgbm_bc_calibration.png)
+
+B와 C의 10개 확률 구간은 모두 `평균 예측 확률 > IPCW 가중 관측률`로 기준선
+아래에 있어 전반적인 과신 경향을 보였다. C는 B보다 Brier가 낮지만 ECE는
+0.0371501에서 0.0371832로 소폭 증가해 전체 보정 오차가 개선되지는 않았다.
+반면 최대 구간 오차는 0.2694318에서 0.2036435로 감소했다.
+
+C는 0.6~0.7 구간에서 B보다 과신이 커졌고, 0.7 이상 일부 구간에서는 기준선에
+더 가까워졌다. 특히 0.9~1.0 구간은 C 표본이 203건으로 0.0~0.1 구간 42,347건보다
+훨씬 적다. 따라서 곡선 아래에 표본 수를 로그 축으로 함께 표시하고, 고확률
+구간 한 점만으로 전체 보정 성능을 판단하지 않는다.
+
+실행: `python -m scripts.visualize_uci_lightgbm_calibration`.
+
 ## 구현 검증과 협업 기록
 
 - `35a1475` 기준 재구매 분석 테스트 전체 284개 통과, Ruff 검사 통과.
