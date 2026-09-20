@@ -9,6 +9,7 @@ import pytest
 from scripts.modeling.xgboost_aft import (
     AFTLabelBounds,
     XGBoostAFTError,
+    XGBoostAFTNumericalPredictionError,
     build_aft_label_bounds,
     build_xgboost_aft_evaluation_rows,
     build_xgboost_aft_prediction_data,
@@ -577,6 +578,34 @@ def test_predict_xgboost_aft_duration_rejects_invalid_model_output(
 
     with pytest.raises(XGBoostAFTError, match="예측 결과|기본 시간 척도"):
         predict_xgboost_aft_duration(training_result, prediction_data)
+
+
+def test_predict_xgboost_aft_duration_reports_numerical_failure_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """수치적으로 무효한 모델 출력의 유형별 건수를 전용 오류에 보존합니다."""
+    training_data = build_xgboost_aft_training_data(make_aft_training_rows())
+    training_result = train_xgboost_aft_model(training_data)
+    prediction_data = build_xgboost_aft_prediction_data(
+        make_aft_training_rows(),
+        feature_columns=training_result.feature_columns,
+    )
+    monkeypatch.setattr(
+        training_result.booster,
+        "predict",
+        lambda _matrix: np.array([float("nan"), float("inf"), 0.0]),
+    )
+
+    with pytest.raises(XGBoostAFTNumericalPredictionError) as caught:
+        predict_xgboost_aft_duration(training_result, prediction_data)
+
+    error = caught.value
+    assert error.sample_count == 3
+    assert error.nan_count == 1
+    assert error.positive_infinity_count == 1
+    assert error.negative_infinity_count == 0
+    assert error.nonpositive_finite_count == 1
+    assert error.invalid_prediction_count == 3
 
 
 def test_build_xgboost_aft_evaluation_rows_aligns_by_original_index() -> None:

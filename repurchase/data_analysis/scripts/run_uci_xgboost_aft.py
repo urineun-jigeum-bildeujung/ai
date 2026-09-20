@@ -36,6 +36,7 @@ from .modeling.samples import (
 )
 from .modeling.xgboost_aft import (
     AFT_LOSS_DISTRIBUTIONS,
+    XGBoostAFTNumericalPredictionError,
     XGBoostAFTPredictionData,
     XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
@@ -68,6 +69,12 @@ ROUND_COMPARISON_JSON_REPORT_PATH = (
 )
 ROUND_COMPARISON_MARKDOWN_REPORT_PATH = (
     REPORT_DIR / "uci_xgboost_aft_boost_round_comparison.md"
+)
+DISTRIBUTION_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_distribution_comparison.json"
+)
+DISTRIBUTION_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_distribution_comparison.md"
 )
 
 
@@ -348,14 +355,47 @@ def compare_xgboost_aft_loss_distributions(
 
     comparison_rows: list[dict[str, object]] = []
     for distribution in candidates:
-        result = evaluate_xgboost_aft_candidate(
-            prepared,
-            calibration_bin_count=calibration_bin_count,
-            bootstrap_replicates=None,
-            loss_distribution=distribution,
-            loss_distribution_scale=loss_distribution_scale,
-            num_boost_round=num_boost_round,
-        )
+        try:
+            result = evaluate_xgboost_aft_candidate(
+                prepared,
+                calibration_bin_count=calibration_bin_count,
+                bootstrap_replicates=None,
+                loss_distribution=distribution,
+                loss_distribution_scale=loss_distribution_scale,
+                num_boost_round=num_boost_round,
+            )
+        except XGBoostAFTNumericalPredictionError as error:
+            comparison_rows.append(
+                {
+                    "loss_distribution": distribution,
+                    "loss_distribution_scale": float(loss_distribution_scale),
+                    "num_boost_round": int(num_boost_round),
+                    "status": "failed",
+                    "failure_reason": str(error),
+                    "prediction_sample_count": error.sample_count,
+                    "invalid_prediction_count": error.invalid_prediction_count,
+                    "nan_count": error.nan_count,
+                    "positive_infinity_count": error.positive_infinity_count,
+                    "negative_infinity_count": error.negative_infinity_count,
+                    "nonpositive_finite_count": error.nonpositive_finite_count,
+                    "final_training_aft_nloglik": None,
+                    "minimum_training_aft_nloglik": None,
+                    "ipcw_concordance_index": None,
+                    "ipcw_brier_score": None,
+                    "ipcw_reference_brier_score": None,
+                    "brier_skill_score": None,
+                    "expected_calibration_error": None,
+                    "maximum_calibration_error": None,
+                    "weighted_calibration_gap": None,
+                    "horizon_days": prepared.horizon_days,
+                    "validation_sample_count": None,
+                    "outcome_known_count": None,
+                    "ipcw_weight_sum": None,
+                    "reference_probability": None,
+                    "aft_evaluation_sample_count": None,
+                }
+            )
+            continue
         comparison_rows.append(
             {
                 "loss_distribution": distribution,
@@ -363,11 +403,22 @@ def compare_xgboost_aft_loss_distributions(
                     "loss_distribution_scale"
                 ],
                 "num_boost_round": result.training_summary["num_boost_round"],
+                "status": "success",
+                "failure_reason": None,
+                "prediction_sample_count": len(result.validation_predictions),
+                "invalid_prediction_count": 0,
+                "nan_count": 0,
+                "positive_infinity_count": 0,
+                "negative_infinity_count": 0,
+                "nonpositive_finite_count": 0,
                 **_build_xgboost_aft_comparison_metrics(result),
             }
         )
 
     comparison = pd.DataFrame(comparison_rows)
+    successful = comparison.loc[comparison["status"].eq("success")]
+    if successful.empty:
+        return comparison
     for fixed_column in (
         "loss_distribution_scale",
         "num_boost_round",
@@ -379,7 +430,7 @@ def compare_xgboost_aft_loss_distributions(
         "ipcw_weight_sum",
         "reference_probability",
     ):
-        if comparison[fixed_column].nunique(dropna=False) != 1:
+        if successful[fixed_column].nunique(dropna=False) != 1:
             raise RuntimeError(
                 f"AFT 손실분포 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
             )
@@ -476,8 +527,14 @@ def select_xgboost_aft_boosting_round(comparison: pd.DataFrame) -> int:
 
 def select_xgboost_aft_loss_distribution(comparison: pd.DataFrame) -> str:
     """공통 Validation 우선순위와 기준 분포 선호로 AFT 손실분포를 선택합니다."""
+    selection_rows = comparison
+    if "status" in comparison.columns:
+        statuses = comparison["status"]
+        if statuses.isna().any() or not statuses.isin({"success", "failed"}).all():
+            raise ValueError("AFT 손실분포 후보 상태는 success 또는 failed여야 합니다.")
+        selection_rows = comparison.loc[statuses.eq("success")]
     _validate_xgboost_aft_selection_table(
-        comparison,
+        selection_rows,
         candidate_column="loss_distribution",
     )
     distribution_values = comparison["loss_distribution"].tolist()
@@ -495,7 +552,7 @@ def select_xgboost_aft_loss_distribution(comparison: pd.DataFrame) -> str:
         distribution: index
         for index, distribution in enumerate(AFT_LOSS_DISTRIBUTION_CANDIDATES)
     }
-    candidates_with_preference = comparison.copy()
+    candidates_with_preference = selection_rows.copy()
     candidates_with_preference["distribution_preference"] = candidates_with_preference[
         "loss_distribution"
     ].map(distribution_preference)
@@ -538,6 +595,59 @@ def validate_selected_xgboost_aft_result(
         if not isclose(actual_value, expected_value, rel_tol=1e-12, abs_tol=1e-12):
             raise RuntimeError(
                 f"최종 AFT 재학습 결과가 후보 비교 시점과 일치하지 않습니다: {metric}"
+            )
+
+
+def validate_selected_xgboost_aft_distribution_result(
+    comparison: pd.DataFrame,
+    result: XGBoostAFTExperimentResult,
+) -> None:
+    """최종 모델의 분포·고정 조건·점 지표가 분포 선택 결과와 같은지 확인합니다."""
+    selected_distribution = select_xgboost_aft_loss_distribution(comparison)
+    training_summary = result.training_summary
+    if training_summary["loss_distribution"] != selected_distribution:
+        raise RuntimeError(
+            "최종 AFT 평가 모델의 손실분포가 Validation 선택 후보와 다릅니다."
+        )
+
+    selected_row = comparison.loc[
+        comparison["loss_distribution"].eq(selected_distribution)
+    ].iloc[0]
+    if training_summary["num_boost_round"] != int(selected_row["num_boost_round"]):
+        raise RuntimeError(
+            "최종 AFT 평가 모델의 반복 횟수가 손실분포 비교 조건과 다릅니다."
+        )
+    if not isclose(
+        float(training_summary["loss_distribution_scale"]),
+        float(selected_row["loss_distribution_scale"]),
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        raise RuntimeError(
+            "최종 AFT 평가 모델의 scale이 손실분포 비교 조건과 다릅니다."
+        )
+
+    actual_metrics = _build_xgboost_aft_comparison_metrics(result)
+    for metric, actual_value in actual_metrics.items():
+        if metric not in selected_row:
+            continue
+        expected_value = selected_row[metric]
+        if actual_value is None or expected_value is None:
+            if actual_value is not expected_value:
+                raise RuntimeError(
+                    "최종 AFT 재학습 결과가 손실분포 비교 시점과 일치하지 "
+                    f"않습니다: {metric}"
+                )
+            continue
+        if not isclose(
+            float(actual_value),
+            float(expected_value),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise RuntimeError(
+                "최종 AFT 재학습 결과가 손실분포 비교 시점과 일치하지 "
+                f"않습니다: {metric}"
             )
 
 
@@ -665,9 +775,24 @@ def render_xgboost_aft_distribution_comparison_report(
     """손실분포 후보와 선택 근거를 사람이 검토할 Markdown으로 만듭니다."""
     candidates = report["candidates"]
     selected_loss_distribution = report["selected_loss_distribution"]
-    candidate_lines = [
-        (
-            f"| {row['loss_distribution']} | "
+    candidate_lines = []
+    failure_lines = []
+    for row in candidates:
+        if row.get("status", "success") == "failed":
+            candidate_lines.append(
+                f"| {row['loss_distribution']} | 실패 | N/A | N/A | N/A | "
+                "N/A | N/A | N/A | N/A | N/A |"
+            )
+            failure_lines.append(
+                f"- `{row['loss_distribution']}`: 무효 예측 "
+                f"`{row['invalid_prediction_count']}/{row['prediction_sample_count']}`건 "
+                f"(NaN {row['nan_count']}, +inf {row['positive_infinity_count']}, "
+                f"-inf {row['negative_infinity_count']}, 유한한 0 이하 "
+                f"{row['nonpositive_finite_count']})"
+            )
+            continue
+        candidate_lines.append(
+            f"| {row['loss_distribution']} | 성공 | "
             f"{row['final_training_aft_nloglik']:.6f} | "
             f"{row['ipcw_brier_score']:.6f} | "
             f"{row['ipcw_reference_brier_score']:.6f} | "
@@ -677,8 +802,6 @@ def render_xgboost_aft_distribution_comparison_report(
             f"{row['maximum_calibration_error']:.6f} | "
             f"{row['weighted_calibration_gap']:+.6f} |"
         )
-        for row in candidates
-    ]
     lines = [
         "# UCI XGBoost AFT 손실분포 비교",
         "",
@@ -688,14 +811,15 @@ def render_xgboost_aft_distribution_comparison_report(
         "- 1순위는 IPCW Brier Score이며, 나머지 지표는 정확한 동률일 때만 "
         "순서대로 사용합니다.",
         "",
-        "| 분포 | Train loss | AFT Brier | 기준 Brier | Brier Skill | "
+        "| 분포 | 상태 | Train loss | AFT Brier | 기준 Brier | Brier Skill | "
         "C-index | ECE | MCE | 확률 편향 |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         *candidate_lines,
         "",
-        str(report["scope"]),
-        "",
     ]
+    if failure_lines:
+        lines.extend(["## 수치 실패 진단", "", *failure_lines, ""])
+    lines.extend([str(report["scope"]), ""])
     return "\n".join(lines)
 
 
@@ -880,17 +1004,47 @@ def main() -> None:
     )
     comparison_markdown = render_xgboost_aft_round_comparison_report(comparison_report)
 
-    result = evaluate_xgboost_aft_candidate(
+    distribution_comparison = compare_xgboost_aft_loss_distributions(
         prepared,
         num_boost_round=selected_num_boost_round,
     )
-    validate_selected_xgboost_aft_result(comparison, result)
+    selected_loss_distribution = select_xgboost_aft_loss_distribution(
+        distribution_comparison
+    )
+    distribution_comparison_report = build_xgboost_aft_distribution_comparison_report(
+        distribution_comparison,
+        selected_loss_distribution=selected_loss_distribution,
+    )
+    distribution_comparison_markdown = (
+        render_xgboost_aft_distribution_comparison_report(
+            distribution_comparison_report
+        )
+    )
+
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution=selected_loss_distribution,
+        num_boost_round=selected_num_boost_round,
+    )
+    validate_selected_xgboost_aft_distribution_result(
+        distribution_comparison,
+        result,
+    )
     report = build_xgboost_aft_report(result)
     bootstrap_trials = build_xgboost_aft_bootstrap_trials_report(result)
     markdown = render_xgboost_aft_report(report)
     comparison_json = (
         json.dumps(
             comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    distribution_comparison_json = (
+        json.dumps(
+            distribution_comparison_report,
             ensure_ascii=False,
             indent=2,
             allow_nan=False,
@@ -918,6 +1072,14 @@ def main() -> None:
     write_text_atomically(
         ROUND_COMPARISON_MARKDOWN_REPORT_PATH,
         comparison_markdown,
+    )
+    write_text_atomically(
+        DISTRIBUTION_COMPARISON_JSON_REPORT_PATH,
+        distribution_comparison_json,
+    )
+    write_text_atomically(
+        DISTRIBUTION_COMPARISON_MARKDOWN_REPORT_PATH,
+        distribution_comparison_markdown,
     )
     write_text_atomically(
         JSON_REPORT_PATH,

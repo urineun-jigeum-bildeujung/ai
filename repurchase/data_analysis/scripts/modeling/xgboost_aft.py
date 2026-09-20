@@ -24,6 +24,38 @@ class XGBoostAFTError(ValueError):
     """AFT 학습 입력이나 결과가 정의한 계약을 위반할 때 발생합니다."""
 
 
+class XGBoostAFTNumericalPredictionError(XGBoostAFTError):
+    """AFT 모델 출력에 NaN·무한대·0 이하 값이 포함됐을 때 발생합니다."""
+
+    def __init__(
+        self,
+        *,
+        sample_count: int,
+        nan_count: int,
+        positive_infinity_count: int,
+        negative_infinity_count: int,
+        nonpositive_finite_count: int,
+    ) -> None:
+        """후보 실패 보고서에 사용할 수치 오류 건수를 보존합니다."""
+        self.sample_count = sample_count
+        self.nan_count = nan_count
+        self.positive_infinity_count = positive_infinity_count
+        self.negative_infinity_count = negative_infinity_count
+        self.nonpositive_finite_count = nonpositive_finite_count
+        self.invalid_prediction_count = (
+            nan_count
+            + positive_infinity_count
+            + negative_infinity_count
+            + nonpositive_finite_count
+        )
+        super().__init__(
+            "AFT 기본 시간 척도 예측값에 수치 오류가 있습니다: "
+            f"전체={sample_count}, NaN={nan_count}, +inf={positive_infinity_count}, "
+            f"-inf={negative_infinity_count}, "
+            f"유한한 0 이하={nonpositive_finite_count}"
+        )
+
+
 AFT_LABEL_REQUIRED_COLUMNS: Final[frozenset[str]] = frozenset(
     {
         "survival_observed_duration_days",
@@ -388,9 +420,23 @@ def predict_xgboost_aft_duration(
         raise XGBoostAFTError(
             "AFT 예측 결과는 입력 행 수와 같은 1차원 배열이어야 합니다."
         )
-    if not np.isfinite(raw_predictions).all() or (raw_predictions <= 0).any():
-        raise XGBoostAFTError(
-            "AFT 기본 시간 척도 예측값은 0보다 큰 유한한 값이어야 합니다."
+    finite = np.isfinite(raw_predictions)
+    nan_count = int(np.isnan(raw_predictions).sum())
+    positive_infinity_count = int(np.isposinf(raw_predictions).sum())
+    negative_infinity_count = int(np.isneginf(raw_predictions).sum())
+    nonpositive_finite_count = int(((raw_predictions <= 0) & finite).sum())
+    if (
+        nan_count
+        or positive_infinity_count
+        or negative_infinity_count
+        or nonpositive_finite_count
+    ):
+        raise XGBoostAFTNumericalPredictionError(
+            sample_count=len(raw_predictions),
+            nan_count=nan_count,
+            positive_infinity_count=positive_infinity_count,
+            negative_infinity_count=negative_infinity_count,
+            nonpositive_finite_count=nonpositive_finite_count,
         )
 
     return pd.Series(

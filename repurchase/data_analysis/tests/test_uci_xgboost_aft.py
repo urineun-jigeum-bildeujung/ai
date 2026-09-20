@@ -12,6 +12,10 @@ from scripts.modeling.samples import (
     assign_temporal_splits,
     build_historical_interval_features,
 )
+from scripts.modeling.xgboost_aft import (
+    XGBoostAFTError,
+    XGBoostAFTNumericalPredictionError,
+)
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
@@ -28,6 +32,7 @@ from scripts.run_uci_xgboost_aft import (
     run_xgboost_aft_experiment,
     select_xgboost_aft_boosting_round,
     select_xgboost_aft_loss_distribution,
+    validate_selected_xgboost_aft_distribution_result,
     validate_selected_xgboost_aft_result,
 )
 
@@ -413,6 +418,127 @@ def test_compare_xgboost_aft_loss_distributions_rejects_invalid_candidates_befor
             )
 
 
+def test_compare_xgboost_aft_loss_distributions_records_numerical_failure(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """수치 예측 실패만 후보 실패로 남기고 정상 후보의 선택을 계속합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+    original_evaluate = evaluate_xgboost_aft_candidate
+
+    def fail_logistic_candidate(
+        prepared_argument: object,
+        **kwargs: object,
+    ) -> object:
+        if kwargs["loss_distribution"] == "logistic":
+            raise XGBoostAFTNumericalPredictionError(
+                sample_count=100,
+                nan_count=0,
+                positive_infinity_count=60,
+                negative_infinity_count=0,
+                nonpositive_finite_count=20,
+            )
+        return original_evaluate(prepared_argument, **kwargs)
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.evaluate_xgboost_aft_candidate",
+        fail_logistic_candidate,
+    )
+
+    comparison = compare_xgboost_aft_loss_distributions(
+        prepared,
+        num_boost_round=2,
+    )
+
+    failed = comparison.loc[comparison["loss_distribution"].eq("logistic")].iloc[0]
+    assert failed["status"] == "failed"
+    assert failed["prediction_sample_count"] == 100
+    assert failed["invalid_prediction_count"] == 80
+    assert failed["positive_infinity_count"] == 60
+    assert failed["nonpositive_finite_count"] == 20
+    assert pd.isna(failed["validation_sample_count"])
+    assert pd.isna(failed["ipcw_brier_score"])
+    selected = select_xgboost_aft_loss_distribution(comparison)
+    assert selected in {
+        "normal",
+        "extreme",
+    }
+    report = build_xgboost_aft_distribution_comparison_report(
+        comparison,
+        selected_loss_distribution=selected,
+    )
+    markdown = render_xgboost_aft_distribution_comparison_report(report)
+    assert "logistic" in markdown
+    assert "실패" in markdown
+    assert "80/100" in markdown
+    assert "+inf 60" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+
+def test_compare_xgboost_aft_loss_distributions_propagates_contract_error(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """피처·정렬 같은 일반 계약 오류를 후보 실패로 숨기지 않습니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    def raise_contract_error(*args: object, **kwargs: object) -> None:
+        raise XGBoostAFTError("공통 데이터 계약 오류")
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.evaluate_xgboost_aft_candidate",
+        raise_contract_error,
+    )
+
+    with pytest.raises(XGBoostAFTError, match="공통 데이터 계약 오류"):
+        compare_xgboost_aft_loss_distributions(
+            prepared,
+            num_boost_round=2,
+        )
+
+
+def test_select_xgboost_aft_loss_distribution_rejects_all_failed_candidates(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """모든 분포가 수치 실패하면 임의 후보를 고르지 않고 명확히 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    def fail_every_candidate(*args: object, **kwargs: object) -> None:
+        raise XGBoostAFTNumericalPredictionError(
+            sample_count=100,
+            nan_count=0,
+            positive_infinity_count=100,
+            negative_infinity_count=0,
+            nonpositive_finite_count=0,
+        )
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.evaluate_xgboost_aft_candidate",
+        fail_every_candidate,
+    )
+    comparison = compare_xgboost_aft_loss_distributions(
+        prepared,
+        num_boost_round=2,
+    )
+
+    assert comparison["status"].eq("failed").all()
+    with pytest.raises(ValueError, match="선택할 AFT 후보 결과가 없습니다"):
+        select_xgboost_aft_loss_distribution(comparison)
+
+
 def test_select_xgboost_aft_loss_distribution_prioritizes_validation_brier() -> None:
     """학습 손실이 낮아도 Validation Brier가 가장 낮은 손실분포를 선택합니다."""
     comparison = pd.DataFrame(
@@ -508,6 +634,18 @@ def test_build_xgboost_aft_distribution_comparison_report_records_fixed_conditio
     assert "paired Bootstrap" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
 
+    selected_result = evaluate_xgboost_aft_candidate(
+        prepared,
+        bootstrap_replicates=None,
+        loss_distribution=selected,
+        loss_distribution_scale=1.0,
+        num_boost_round=2,
+    )
+    validate_selected_xgboost_aft_distribution_result(
+        comparison,
+        selected_result,
+    )
+
     wrong_selection = next(
         distribution
         for distribution in comparison["loss_distribution"]
@@ -517,6 +655,18 @@ def test_build_xgboost_aft_distribution_comparison_report_records_fixed_conditio
         build_xgboost_aft_distribution_comparison_report(
             comparison,
             selected_loss_distribution=str(wrong_selection),
+        )
+    wrong_result = evaluate_xgboost_aft_candidate(
+        prepared,
+        bootstrap_replicates=None,
+        loss_distribution=str(wrong_selection),
+        loss_distribution_scale=1.0,
+        num_boost_round=2,
+    )
+    with pytest.raises(RuntimeError, match="손실분포"):
+        validate_selected_xgboost_aft_distribution_result(
+            comparison,
+            wrong_result,
         )
 
 
