@@ -15,12 +15,14 @@ from scripts.modeling.samples import (
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
+    build_xgboost_aft_distribution_comparison_report,
     build_xgboost_aft_report,
     build_xgboost_aft_round_comparison_report,
     compare_xgboost_aft_boosting_rounds,
     compare_xgboost_aft_loss_distributions,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
+    render_xgboost_aft_distribution_comparison_report,
     render_xgboost_aft_report,
     render_xgboost_aft_round_comparison_report,
     run_xgboost_aft_experiment,
@@ -472,6 +474,49 @@ def test_select_xgboost_aft_loss_distribution_rejects_invalid_candidates() -> No
     with pytest.raises(ValueError, match="normal, logistic, extreme"):
         select_xgboost_aft_loss_distribution(
             valid.assign(loss_distribution=["normal", 1])
+        )
+
+
+def test_build_xgboost_aft_distribution_comparison_report_records_fixed_conditions(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """손실분포 선택 결과에 고정 조건과 Validation 한계를 함께 기록합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    comparison = compare_xgboost_aft_loss_distributions(
+        prepared,
+        num_boost_round=2,
+    )
+    selected = select_xgboost_aft_loss_distribution(comparison)
+
+    report = build_xgboost_aft_distribution_comparison_report(
+        comparison,
+        selected_loss_distribution=selected,
+    )
+    markdown = render_xgboost_aft_distribution_comparison_report(report)
+
+    assert report["selected_loss_distribution"] == selected
+    assert report["num_boost_round"] == 2
+    assert report["loss_distribution_scale"] == 1.0
+    assert report["horizon_days"] == 14
+    assert len(report["candidates"]) == 3
+    assert "Validation 선택 후보" in markdown
+    assert "Test 성능이나 배포 가능성" in markdown
+    assert "paired Bootstrap" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+    wrong_selection = next(
+        distribution
+        for distribution in comparison["loss_distribution"]
+        if distribution != selected
+    )
+    with pytest.raises(ValueError, match="선택 규칙과 다릅니다"):
+        build_xgboost_aft_distribution_comparison_report(
+            comparison,
+            selected_loss_distribution=str(wrong_selection),
         )
 
 

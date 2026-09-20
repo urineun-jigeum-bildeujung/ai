@@ -622,6 +622,83 @@ def render_xgboost_aft_round_comparison_report(report: dict[str, object]) -> str
     return "\n".join(lines)
 
 
+def build_xgboost_aft_distribution_comparison_report(
+    comparison: pd.DataFrame,
+    *,
+    selected_loss_distribution: str,
+) -> dict[str, object]:
+    """손실분포 후보의 공통 Validation 결과와 선택 규칙을 저장합니다."""
+    selected_by_policy = select_xgboost_aft_loss_distribution(comparison)
+    if selected_loss_distribution != selected_by_policy:
+        raise ValueError(
+            "전달된 선택 손실분포가 사전에 정의한 AFT 후보 선택 규칙과 다릅니다."
+        )
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_distribution_comparison_v1",
+        "evaluation_split": "validation",
+        "horizon_days": int(comparison["horizon_days"].iloc[0]),
+        "num_boost_round": int(comparison["num_boost_round"].iloc[0]),
+        "loss_distribution_scale": float(comparison["loss_distribution_scale"].iloc[0]),
+        "selected_loss_distribution": selected_loss_distribution,
+        "selection_policy": [
+            "lowest_ipcw_brier_score",
+            "highest_ipcw_concordance_index_on_exact_brier_tie",
+            "lowest_expected_calibration_error_on_exact_tie",
+            "lowest_absolute_weighted_calibration_gap_on_exact_tie",
+            "normal_then_logistic_then_extreme_on_exact_tie",
+        ],
+        "candidates": dataframe_to_nullable_records(comparison),
+        "scope": (
+            "같은 Train·Validation·피처·horizon·IPCW 기준선에서 손실분포만 "
+            "변경했습니다. 선택값은 Validation 점 지표의 1차 후보 탐색 결과이며 "
+            "Test 성능이나 배포 가능성을 의미하지 않습니다. 점 지표 상위 두 "
+            "후보는 동일 사용자 재표본의 paired Bootstrap으로 차이의 안정성을 "
+            "추가 확인해야 합니다."
+        ),
+    }
+
+
+def render_xgboost_aft_distribution_comparison_report(
+    report: dict[str, object],
+) -> str:
+    """손실분포 후보와 선택 근거를 사람이 검토할 Markdown으로 만듭니다."""
+    candidates = report["candidates"]
+    selected_loss_distribution = report["selected_loss_distribution"]
+    candidate_lines = [
+        (
+            f"| {row['loss_distribution']} | "
+            f"{row['final_training_aft_nloglik']:.6f} | "
+            f"{row['ipcw_brier_score']:.6f} | "
+            f"{row['ipcw_reference_brier_score']:.6f} | "
+            f"{_format_optional_metric(row['brier_skill_score'])} | "
+            f"{row['ipcw_concordance_index']:.6f} | "
+            f"{row['expected_calibration_error']:.6f} | "
+            f"{row['maximum_calibration_error']:.6f} | "
+            f"{row['weighted_calibration_gap']:+.6f} |"
+        )
+        for row in candidates
+    ]
+    lines = [
+        "# UCI XGBoost AFT 손실분포 비교",
+        "",
+        f"- Validation 선택 후보: `{selected_loss_distribution}`",
+        f"- 고정 반복 횟수 / scale: `{report['num_boost_round']}` / "
+        f"`{report['loss_distribution_scale']}`",
+        "- 1순위는 IPCW Brier Score이며, 나머지 지표는 정확한 동률일 때만 "
+        "순서대로 사용합니다.",
+        "",
+        "| 분포 | Train loss | AFT Brier | 기준 Brier | Brier Skill | "
+        "C-index | ECE | MCE | 확률 편향 |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        *candidate_lines,
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def build_xgboost_aft_report(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
