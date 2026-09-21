@@ -9,13 +9,17 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from math import isfinite
+from math import isclose, isfinite
 from typing import Final
 
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
-from .modeling.evaluation import summarize_ipcw_probability_pair_by_count_segment
+from .modeling.evaluation import (
+    COUNT_SEGMENT_BINS,
+    COUNT_SEGMENT_LABELS,
+    summarize_ipcw_probability_pair_by_count_segment,
+)
 from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
 from .modeling.rolling_validation import (
     RollingValidationError,
@@ -87,6 +91,89 @@ def _interval_direction(lower: float, upper: float) -> str:
     if upper < 0:
         return "xgboost_aft"
     return "inconclusive"
+
+
+def add_fold_brier_contributions(
+    cohorts: pd.DataFrame,
+    paired_rows: pd.DataFrame,
+    *,
+    count_column: str,
+) -> pd.DataFrame:
+    """구간별 오차 차이를 fold 전체 IPCW 분모에 대한 기여량으로 바꿉니다.
+
+    구간 자체의 Brier는 각 구간의 가중치 합으로 나누지만, 기여량은 모든
+    정답 확인 행의 가중치 합으로 나눕니다. 따라서 기여량 합은 fold 전체
+    AFT Brier - LightGBM Brier와 일치해야 합니다.
+    """
+    required_columns = {
+        count_column,
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    }
+    missing_columns = required_columns - set(paired_rows.columns)
+    if missing_columns:
+        raise RollingValidationError(
+            f"구간별 Brier 기여량 필수 열이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if "count_bucket" not in cohorts.columns:
+        raise RollingValidationError(
+            "구간별 Brier 기여량에는 count_bucket이 필요합니다."
+        )
+
+    known_rows = paired_rows.loc[paired_rows["ipcw_outcome_known"]]
+    if known_rows.empty:
+        raise RollingValidationError("구간별 Brier 기여량에 정답 확인 표본이 없습니다.")
+    weights = known_rows["ipcw_weight"].astype("float64")
+    total_weight = float(weights.sum())
+    if not isfinite(total_weight) or total_weight <= 0:
+        raise RollingValidationError(
+            "구간별 Brier 기여량의 IPCW 분모가 유효하지 않습니다."
+        )
+
+    actual = known_rows["ipcw_event_within_horizon"].astype("float64")
+    aft_error = known_rows["reference_predicted_event_probability"].sub(actual).pow(2)
+    lightgbm_error = (
+        known_rows["candidate_predicted_event_probability"].sub(actual).pow(2)
+    )
+    weighted_difference = aft_error.sub(lightgbm_error).mul(weights)
+    buckets = pd.cut(
+        known_rows[count_column],
+        bins=COUNT_SEGMENT_BINS,
+        labels=COUNT_SEGMENT_LABELS,
+        include_lowest=True,
+    )
+    if buckets.isna().any():
+        raise RollingValidationError(
+            f"{count_column}의 Brier 기여 구간을 만들 수 없습니다."
+        )
+    contribution_rows = pd.DataFrame(
+        {
+            "count_bucket": buckets.astype(str).to_numpy(),
+            "weighted_difference": weighted_difference.to_numpy(),
+            "known_ipcw_weight": weights.to_numpy(),
+        }
+    )
+    by_bucket = contribution_rows.groupby("count_bucket", sort=False).sum()
+
+    result = cohorts.copy()
+    result["known_ipcw_weight_share"] = (
+        result["count_bucket"]
+        .map(by_bucket["known_ipcw_weight"])
+        .fillna(0.0)
+        .div(total_weight)
+    )
+    result["brier_difference_contribution"] = (
+        result["count_bucket"]
+        .map(by_bucket["weighted_difference"])
+        .fillna(0.0)
+        .div(total_weight)
+    )
+    if not isclose(float(result["known_ipcw_weight_share"].sum()), 1.0, abs_tol=1e-10):
+        raise RollingValidationError("구간별 IPCW 가중치 비율의 합은 1이어야 합니다.")
+    return result
 
 
 def evaluate_rolling_cutoff_models(
@@ -314,6 +401,11 @@ def evaluate_rolling_cutoff_models(
                 count_column=count_column,
                 calibration_bin_count=calibration_bin_count,
             )
+            cohorts = add_fold_brier_contributions(
+                cohorts,
+                paired_rows,
+                count_column=count_column,
+            )
             if int(cohorts["sample_count"].sum()) != len(paired_rows):
                 raise RollingValidationError(
                     f"{fold_id}: {count_column} 구간 표본 합계가 평가 표본과 다릅니다."
@@ -403,6 +495,14 @@ def build_rolling_cutoff_report(
             if int(count_rows["sample_count"].sum()) != fold.evaluation_sample_count:
                 raise ValueError(
                     f"{fold.fold_id}: {count_column} 구간 합계가 평가 표본과 다릅니다."
+                )
+            if not isclose(
+                float(count_rows["brier_difference_contribution"].sum()),
+                fold.brier_difference_aft_minus_lightgbm,
+                abs_tol=1e-10,
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 Brier 기여량 합계가 다릅니다."
                 )
 
     train_end_at = pd.to_datetime(folds["train_end_at"], errors="raise")

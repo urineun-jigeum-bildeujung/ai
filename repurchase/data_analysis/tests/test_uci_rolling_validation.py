@@ -16,6 +16,7 @@ from scripts.modeling.samples import (
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_rolling_validation import (
     RollingCutoffEvaluation,
+    add_fold_brier_contributions,
     build_rolling_bootstrap_trials_report,
     build_rolling_cutoff_report,
     evaluate_rolling_cutoff_models,
@@ -177,6 +178,39 @@ def test_rolling_cohorts_partition_each_fold_without_losing_samples(
             assert int(selected["sample_count"].sum()) == fold.evaluation_sample_count
             assert selected["sample_rate"].sum() == pytest.approx(1.0)
             assert selected["outcome_known_count"].le(selected["sample_count"]).all()
+            assert selected["known_ipcw_weight_share"].sum() == pytest.approx(1.0)
+            assert selected["brier_difference_contribution"].sum() == pytest.approx(
+                fold.brier_difference_aft_minus_lightgbm
+            )
+
+
+def test_fold_brier_contributions_use_the_full_fold_denominator() -> None:
+    """구간 평균이 아니라 전체 IPCW 분모에 대한 오차 기여량을 계산합니다."""
+    paired_rows = pd.DataFrame(
+        {
+            "history_interval_count": [0, 0, 1, 1],
+            "ipcw_outcome_known": [True, True, True, False],
+            "ipcw_event_within_horizon": pd.array(
+                [True, False, True, pd.NA], dtype="boolean"
+            ),
+            "ipcw_weight": [1.0, 2.0, 1.0, 0.0],
+            "reference_predicted_event_probability": [0.8, 0.3, 0.4, 0.9],
+            "candidate_predicted_event_probability": [0.6, 0.2, 0.7, 0.1],
+        }
+    )
+    cohorts = pd.DataFrame({"count_bucket": ["0", "1"]})
+
+    result = add_fold_brier_contributions(
+        cohorts, paired_rows, count_column="history_interval_count"
+    )
+
+    # 세 정답 확인 행의 가중치 합은 4이고, 검열로 정답을 모르는 행은 0만 기여합니다.
+    assert result["known_ipcw_weight_share"].tolist() == pytest.approx([0.75, 0.25])
+    assert result["brier_difference_contribution"].tolist() == pytest.approx(
+        [-0.005, 0.0675]
+    )
+    assert result["brier_difference_contribution"].sum() == pytest.approx(0.0625)
+    assert "brier_difference_contribution" not in cohorts.columns
 
 
 def test_rolling_report_rejects_missing_cohort_samples(
@@ -194,6 +228,41 @@ def test_rolling_report_rejects_missing_cohort_samples(
         build_rolling_cutoff_report(replace(rolling_evaluation, cohorts=cohorts))
 
 
+def test_rolling_report_rejects_inconsistent_cohort_contribution(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """구간 기여량과 전체 Brier 차이가 맞지 않으면 보고서를 거절합니다."""
+    cohorts = rolling_evaluation.cohorts.copy()
+    cohorts.loc[cohorts.index[0], "brier_difference_contribution"] += 0.01
+
+    with pytest.raises(ValueError, match="Brier 기여량 합계"):
+        build_rolling_cutoff_report(replace(rolling_evaluation, cohorts=cohorts))
+
+
+def _cohorts_for_changed_fold_differences(
+    evaluation: RollingCutoffEvaluation,
+    changed_folds: pd.DataFrame,
+) -> pd.DataFrame:
+    """판정 분기 테스트의 가상 Brier 차이에 구간 합계도 맞춥니다."""
+    cohorts = evaluation.cohorts.copy()
+    for original, changed in zip(
+        evaluation.folds.itertuples(), changed_folds.itertuples(), strict=True
+    ):
+        difference_change = (
+            changed.brier_difference_aft_minus_lightgbm
+            - original.brier_difference_aft_minus_lightgbm
+        )
+        for count_column in cohorts["count_column"].unique():
+            selected = cohorts.loc[
+                cohorts["fold_id"].eq(original.fold_id)
+                & cohorts["count_column"].eq(count_column)
+            ]
+            cohorts.loc[selected.index[0], "brier_difference_contribution"] += (
+                difference_change
+            )
+    return cohorts
+
+
 def test_rolling_cutoff_decision_requires_consistent_intervals(
     rolling_evaluation: RollingCutoffEvaluation,
 ) -> None:
@@ -204,7 +273,13 @@ def test_rolling_cutoff_decision_requires_consistent_intervals(
     direction_only_folds["interval_supported_model"] = "inconclusive"
     direction_only_folds["bootstrap_lower_95_brier_difference"] = -0.01
     direction_only_folds["bootstrap_upper_95_brier_difference"] = 0.03
-    direction_only = replace(rolling_evaluation, folds=direction_only_folds)
+    direction_only = replace(
+        rolling_evaluation,
+        folds=direction_only_folds,
+        cohorts=_cohorts_for_changed_fold_differences(
+            rolling_evaluation, direction_only_folds
+        ),
+    )
     assert (
         build_rolling_cutoff_report(direction_only)["model_selection_status"]
         == "direction_only"
@@ -213,7 +288,13 @@ def test_rolling_cutoff_decision_requires_consistent_intervals(
     supported_folds = direction_only_folds.copy()
     supported_folds["interval_supported_model"] = "lightgbm_probability"
     supported_folds["bootstrap_lower_95_brier_difference"] = 0.001
-    supported = replace(rolling_evaluation, folds=supported_folds)
+    supported = replace(
+        rolling_evaluation,
+        folds=supported_folds,
+        cohorts=_cohorts_for_changed_fold_differences(
+            rolling_evaluation, supported_folds
+        ),
+    )
     assert (
         build_rolling_cutoff_report(supported)["model_selection_status"]
         == "lightgbm_supported"
@@ -232,7 +313,11 @@ def test_rolling_cutoff_decision_requires_consistent_intervals(
         mixed_folds.index[-1], "bootstrap_upper_95_brier_difference"
     ] = -0.001
     mixed_folds.loc[mixed_folds.index[-1], "interval_supported_model"] = "xgboost_aft"
-    mixed = replace(rolling_evaluation, folds=mixed_folds)
+    mixed = replace(
+        rolling_evaluation,
+        folds=mixed_folds,
+        cohorts=_cohorts_for_changed_fold_differences(rolling_evaluation, mixed_folds),
+    )
     assert (
         build_rolling_cutoff_report(mixed)["model_selection_status"] == "inconclusive"
     )
@@ -247,7 +332,13 @@ def test_rolling_cutoff_decision_requires_consistent_intervals(
     conflicting_folds.loc[conflicting_folds.index[0], "interval_supported_model"] = (
         "xgboost_aft"
     )
-    conflicting = replace(rolling_evaluation, folds=conflicting_folds)
+    conflicting = replace(
+        rolling_evaluation,
+        folds=conflicting_folds,
+        cohorts=_cohorts_for_changed_fold_differences(
+            rolling_evaluation, conflicting_folds
+        ),
+    )
     assert (
         build_rolling_cutoff_report(conflicting)["model_selection_status"]
         == "inconclusive"

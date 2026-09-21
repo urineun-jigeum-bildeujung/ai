@@ -208,6 +208,8 @@
       "candidate_weighted_calibration_gap": 0.010105069683397631,
       "brier_difference_aft_minus_lightgbm": -0.0020163140897909854,
       "calibration_error_improvement": 0.02275187397832405,
+      "known_ipcw_weight_share": 0.6511233249928176,
+      "brier_difference_contribution": -0.0013128691343745724,
       "sample_rate": 0.6357889618283491
     },
     {
@@ -227,6 +229,8 @@
       "candidate_weighted_calibration_gap": 0.021274622815743802,
       "brier_difference_aft_minus_lightgbm": -0.001501592997184692,
       "calibration_error_improvement": 0.0013599608038007416,
+      "known_ipcw_weight_share": 0.16488812058660715,
+      "brier_difference_contribution": -0.0002475948471917937,
       "sample_rate": 0.16568063322257343
     },
     {
@@ -246,6 +250,8 @@
       "candidate_weighted_calibration_gap": 0.05390044229556932,
       "brier_difference_aft_minus_lightgbm": -0.01239018898890179,
       "calibration_error_improvement": -0.02976922546171739,
+      "known_ipcw_weight_share": 0.10711934212893903,
+      "brier_difference_contribution": -0.001327228893344386,
       "sample_rate": 0.11304265607693763
     },
     {
@@ -265,6 +271,8 @@
       "candidate_weighted_calibration_gap": 0.0915516173888,
       "brier_difference_aft_minus_lightgbm": -0.023250900505313782,
       "calibration_error_improvement": -0.04107666060104416,
+      "known_ipcw_weight_share": 0.0530395392734672,
+      "brier_difference_contribution": -0.0012332170504950693,
       "sample_rate": 0.058939136072615285
     },
     {
@@ -284,6 +292,8 @@
       "candidate_weighted_calibration_gap": 0.1370803414700766,
       "brier_difference_aft_minus_lightgbm": -0.029043024838794507,
       "calibration_error_improvement": -0.09650814118101844,
+      "known_ipcw_weight_share": 0.019279537389460217,
+      "brier_difference_contribution": -0.00055993608328256,
       "sample_rate": 0.021571170002971606
     },
     {
@@ -303,6 +313,8 @@
       "candidate_weighted_calibration_gap": 0.08317520294119624,
       "brier_difference_aft_minus_lightgbm": 0.029652667214957018,
       "calibration_error_improvement": 0.02594728942107913,
+      "known_ipcw_weight_share": 0.00336389438362616,
+      "brier_difference_contribution": 9.974844070392951e-05,
       "sample_rate": 0.003775292433206365
     },
     {
@@ -322,6 +334,8 @@
       "candidate_weighted_calibration_gap": 0.04839751997521673,
       "brier_difference_aft_minus_lightgbm": 0.05918902580635374,
       "calibration_error_improvement": 0.10327310788775158,
+      "known_ipcw_weight_share": 0.0007015243783267212,
+      "brier_difference_contribution": 4.1522544532566587e-05,
       "sample_rate": 0.0007226409487532756
     },
     {
@@ -341,6 +355,8 @@
       "candidate_weighted_calibration_gap": 0.0926282516089878,
       "brier_difference_aft_minus_lightgbm": 0.00026248036957596255,
       "calibration_error_improvement": 0.0014240259452621418,
+      "known_ipcw_weight_share": 0.00048471686675611697,
+      "brier_difference_contribution": 1.2722866232584087e-07,
       "sample_rate": 0.00047950941459329495
     },
     {
@@ -360,6 +376,8 @@
       "candidate_weighted_calibration_gap": 0.0014078034844905093,
       "brier_difference_aft_minus_lightgbm": 0.0009293234959145899,
       "calibration_error_improvement": 0.0291094933578829,
+      "known_ipcw_weight_share": 0.17240510214664945,
+      "brier_difference_contribution": 0.00016022011224043584,
       "sample_rate": 0.16237809655023366
     },
     {
@@ -379,6 +397,8 @@
       "candidate_weighted_calibration_gap": -0.012909306034648717,
       "brier_difference_aft_minus_lightgbm": 0.00181781545258064,
       "calibration_error_improvement": 0.026329086475503524,
+      "known_ipcw_weight_share": 0.12442535925738024,
+      "brier_difference_contribution": 0.000226182340750965,
       "sample_rate": 0.11756085042007726
     },
     {
@@ -398,6 +418,8 @@
       "candidate_weighted_calibration_gap": -0.004394599005835507,
       "brier_difference_aft_minus_lightgbm": 0.003277579150887465,
       "calibration_error_improvement": 0.024104853887851163,
+      "known_ipcw_weight_share": 0.19451131262943455,
+      "brier_difference_contribution": 0.0006375262228859875,
       "sample_rate": 0.1880149660966583
     },
     {
@@ -417,6 +439,8 @@
       "candidate_weighted_calibration_gap": 0.0050822133708792955,
       "brier_difference_aft_minus_lightgbm": 0.0015369250306836724,
       "calibration_error_improvement": 0.019935036154065083,
+      "known_ipcw_weight_share": 0.20725070958438443,
+      "brier_difference_contribution": 0.00031852880318719,
       "sample_rate": 0.20610800443039684
     },
     {
@@ -436,6 +460,8 @@
       "candidate_weighted_calibration_gap": 0.056264813066492926,
       "brier_difference_aft_minus_lightgbm": 0.0006227241068323119,
       "calibration_error_improvement": -0.018288637858777552,
+      "known_ipcw_weight_share": 0.1416422654230865,
+      "brier_difference_contribution": 8.820405322529708e-05,
       "sample_rate": 0.1527608936434611
     },
     {
@@ -455,6 +481,8 @@
       "candidate_weighted_calibration_gap": 0.0549519902619474,
       "brier_difference_aft_minus_lightgbm": 0.00020672590473952424,
       "calibration_error_improvement": -0.0077800268173503495,
+      "known_ipcw_weight_share": 0.07407000575315802,
+      "brier_difference_contribution": 1.5312188953381423e-05,
       "sample_rate": 0.08183402220601345
     },
     {
@@ -474,6 +502,8 @@
       "candidate_weighted_calibration_gap": -0.035375671626951294,
       "brier_difference_aft_minus_lightgbm": 0.004005746849410574,
       "calibration_error_improvement": 0.009184155354628451,
+      "known_ipcw_weight_share": 0.02768311238514726,
+      "brier_difference_contribution": 0.00011089154021868246,
       "sample_rate": 0.031215387524650837
     },
     {
@@ -493,6 +523,8 @@
       "candidate_weighted_calibration_gap": 0.14026917137226227,
       "brier_difference_aft_minus_lightgbm": -0.057205695601480394,
       "calibration_error_improvement": -0.10382563112305725,
+      "known_ipcw_weight_share": 0.043471147311892895,
+      "brier_difference_contribution": -0.0024867972205712564,
       "sample_rate": 0.045188697085123054
     },
     {
@@ -512,6 +544,8 @@
       "candidate_weighted_calibration_gap": 0.5312996040398863,
       "brier_difference_aft_minus_lightgbm": -0.24823048159144595,
       "calibration_error_improvement": -0.3128957943001211,
+      "known_ipcw_weight_share": 0.014540985508866804,
+      "brier_difference_contribution": -0.003609515835680242,
       "sample_rate": 0.014939082043385472
     },
     {
@@ -531,6 +565,8 @@
       "candidate_weighted_calibration_gap": 0.0002256200061547583,
       "brier_difference_aft_minus_lightgbm": -0.0008796174168715504,
       "calibration_error_improvement": 0.026828655424475302,
+      "known_ipcw_weight_share": 0.07285930998343734,
+      "brier_difference_contribution": -6.408831804267457e-05,
       "sample_rate": 0.07640408460977388
     },
     {
@@ -550,6 +586,8 @@
       "candidate_weighted_calibration_gap": 0.0049703243141957995,
       "brier_difference_aft_minus_lightgbm": -0.004434964990854898,
       "calibration_error_improvement": 0.014286451704487127,
+      "known_ipcw_weight_share": 0.007082675914894122,
+      "brier_difference_contribution": -3.1411419724126604e-05,
       "sample_rate": 0.007050814490639436
     },
     {
@@ -569,6 +607,8 @@
       "candidate_weighted_calibration_gap": 0.06274815461368705,
       "brier_difference_aft_minus_lightgbm": -0.009928644745696887,
       "calibration_error_improvement": -0.029183127039460494,
+      "known_ipcw_weight_share": 0.007236890071114167,
+      "brier_difference_contribution": -7.185251057975377e-05,
       "sample_rate": 0.0073479752546127455
     },
     {
@@ -588,6 +628,8 @@
       "candidate_weighted_calibration_gap": 0.060732883360315265,
       "brier_difference_aft_minus_lightgbm": -0.012337569660279893,
       "calibration_error_improvement": -0.03648691444322222,
+      "known_ipcw_weight_share": 0.018113251267120732,
+      "brier_difference_contribution": -0.00022347349928225515,
       "sample_rate": 0.017789123916038575
     },
     {
@@ -607,6 +649,8 @@
       "candidate_weighted_calibration_gap": 0.062081917206797274,
       "brier_difference_aft_minus_lightgbm": -0.011562812526770522,
       "calibration_error_improvement": -0.04239221972284683,
+      "known_ipcw_weight_share": 0.03704643345919491,
+      "brier_difference_contribution": -0.00042836096487414995,
       "sample_rate": 0.036098279169030446
     },
     {
@@ -626,6 +670,8 @@
       "candidate_weighted_calibration_gap": 0.0229765441584857,
       "brier_difference_aft_minus_lightgbm": -0.004770028689932482,
       "calibration_error_improvement": 0.015331965427931235,
+      "known_ipcw_weight_share": 0.09260855656552816,
+      "brier_difference_contribution": -0.0004417454717508026,
       "sample_rate": 0.0911338033876327
     },
     {
@@ -645,6 +691,8 @@
       "candidate_weighted_calibration_gap": 0.04001997056772634,
       "brier_difference_aft_minus_lightgbm": -0.008110898171172984,
       "calibration_error_improvement": -0.012691113642221481,
+      "known_ipcw_weight_share": 0.11302693424703114,
+      "brier_difference_contribution": -0.0009167499542775343,
       "sample_rate": 0.11155685225707107
     },
     {
@@ -664,6 +712,8 @@
       "candidate_weighted_calibration_gap": 0.034259467748563296,
       "brier_difference_aft_minus_lightgbm": -0.007243517619740361,
       "calibration_error_improvement": -0.005097021107019886,
+      "known_ipcw_weight_share": 0.15515168717995384,
+      "brier_difference_contribution": -0.0011238439798204394,
       "sample_rate": 0.15318637382824107
     },
     {
@@ -683,6 +733,8 @@
       "candidate_weighted_calibration_gap": 0.01579152668122605,
       "brier_difference_aft_minus_lightgbm": -0.0024914183986301935,
       "calibration_error_improvement": 0.0039782806932552595,
+      "known_ipcw_weight_share": 0.49687426131172574,
+      "brier_difference_contribution": -0.0012379216764378232,
       "sample_rate": 0.49943269308696003
     },
     {
@@ -702,6 +754,8 @@
       "candidate_weighted_calibration_gap": 0.03760719011721164,
       "brier_difference_aft_minus_lightgbm": -0.00032684633535254304,
       "calibration_error_improvement": -0.017376151125028955,
+      "known_ipcw_weight_share": 0.568323017159036,
+      "brier_difference_contribution": -0.00018575429545493005,
       "sample_rate": 0.5721607412919797
     },
     {
@@ -721,6 +775,8 @@
       "candidate_weighted_calibration_gap": 0.05482158163269818,
       "brier_difference_aft_minus_lightgbm": 0.002896014456587895,
       "calibration_error_improvement": -0.01743841945031279,
+      "known_ipcw_weight_share": 0.16433624925312026,
+      "brier_difference_contribution": 0.00047592015357846734,
       "sample_rate": 0.16352593801762008
     },
     {
@@ -740,6 +796,8 @@
       "candidate_weighted_calibration_gap": 0.07832187882048446,
       "brier_difference_aft_minus_lightgbm": 0.006223109237197294,
       "calibration_error_improvement": 0.0037488423617226263,
+      "known_ipcw_weight_share": 0.13848069863087997,
+      "brier_difference_contribution": 0.0008617805148233631,
       "sample_rate": 0.13536740523801521
     },
     {
@@ -759,6 +817,8 @@
       "candidate_weighted_calibration_gap": 0.14025446909736988,
       "brier_difference_aft_minus_lightgbm": 0.01141062692135894,
       "calibration_error_improvement": 0.025756921483864492,
+      "known_ipcw_weight_share": 0.08339649536639801,
+      "brier_difference_contribution": 0.0009516062951748055,
       "sample_rate": 0.0828552224115995
     },
     {
@@ -778,6 +838,8 @@
       "candidate_weighted_calibration_gap": 0.14936045171463774,
       "brier_difference_aft_minus_lightgbm": 0.03226751149789392,
       "calibration_error_improvement": 0.060896897092862834,
+      "known_ipcw_weight_share": 0.03646252949791736,
+      "brier_difference_contribution": 0.001176555089816345,
       "sample_rate": 0.03675252658616799
     },
     {
@@ -797,6 +859,8 @@
       "candidate_weighted_calibration_gap": 0.1323935120871149,
       "brier_difference_aft_minus_lightgbm": 0.012553955746051726,
       "calibration_error_improvement": 0.04296926824284955,
+      "known_ipcw_weight_share": 0.008315874426381023,
+      "brier_difference_contribution": 0.00010439711953851015,
       "sample_rate": 0.008605996591209161
     },
     {
@@ -816,6 +880,8 @@
       "candidate_weighted_calibration_gap": -0.035236448102196165,
       "brier_difference_aft_minus_lightgbm": -0.011658452729858992,
       "calibration_error_improvement": 0.021164864940474704,
+      "known_ipcw_weight_share": 0.0006851356662672568,
+      "brier_difference_contribution": -7.987621778717257e-06,
       "sample_rate": 0.0007321698634083107
     },
     {
@@ -835,6 +901,8 @@
       "candidate_weighted_calibration_gap": -0.00035664041962157195,
       "brier_difference_aft_minus_lightgbm": 0.0013015999123256392,
       "calibration_error_improvement": 0.03572281501854363,
+      "known_ipcw_weight_share": 0.12937515945167458,
+      "brier_difference_contribution": 0.00016839469619941603,
       "sample_rate": 0.1234486400844996
     },
     {
@@ -854,6 +922,8 @@
       "candidate_weighted_calibration_gap": 0.002678530750411054,
       "brier_difference_aft_minus_lightgbm": 0.001133059202695831,
       "calibration_error_improvement": 0.030484833417805546,
+      "known_ipcw_weight_share": 0.06359452894615557,
+      "brier_difference_contribution": 7.205636626354813e-05,
       "sample_rate": 0.07140456585927936
     },
     {
@@ -873,6 +943,8 @@
       "candidate_weighted_calibration_gap": 0.025995657336790885,
       "brier_difference_aft_minus_lightgbm": 0.0007910871623854551,
       "calibration_error_improvement": -0.018203407012951266,
+      "known_ipcw_weight_share": 0.13158146239587598,
+      "brier_difference_contribution": 0.0001040924057092818,
       "sample_rate": 0.12772163141848908
     },
     {
@@ -892,6 +964,8 @@
       "candidate_weighted_calibration_gap": 0.04191432745674729,
       "brier_difference_aft_minus_lightgbm": -0.00034188606049886244,
       "calibration_error_improvement": -0.025617647729154976,
+      "known_ipcw_weight_share": 0.2241171896852315,
+      "brier_difference_contribution": -7.662254307156198e-05,
       "sample_rate": 0.22646854070144273
     },
     {
@@ -911,6 +985,8 @@
       "candidate_weighted_calibration_gap": 0.08488517964671315,
       "brier_difference_aft_minus_lightgbm": -0.002656726213367558,
       "calibration_error_improvement": -0.03439719629137058,
+      "known_ipcw_weight_share": 0.22119831087333008,
+      "brier_difference_contribution": -0.0005876633508498034,
       "sample_rate": 0.21861871954293396
     },
     {
@@ -930,6 +1006,8 @@
       "candidate_weighted_calibration_gap": 0.1424243198302908,
       "brier_difference_aft_minus_lightgbm": -0.0026521971702437586,
       "calibration_error_improvement": -0.03448231050688448,
+      "known_ipcw_weight_share": 0.11679079030011327,
+      "brier_difference_contribution": -0.0003097522035444931,
       "sample_rate": 0.11737523105360444
     },
     {
@@ -949,6 +1027,8 @@
       "candidate_weighted_calibration_gap": 0.09137497700183639,
       "brier_difference_aft_minus_lightgbm": 0.008085640896361379,
       "calibration_error_improvement": 0.021725849376171016,
+      "known_ipcw_weight_share": 0.037468208597268175,
+      "brier_difference_contribution": 0.0003029544797474708,
       "sample_rate": 0.04054540653431596
     },
     {
@@ -968,6 +1048,8 @@
       "candidate_weighted_calibration_gap": 0.14052266651910691,
       "brier_difference_aft_minus_lightgbm": 0.03007800999096752,
       "calibration_error_improvement": 0.05222076596337269,
+      "known_ipcw_weight_share": 0.04842542212637019,
+      "brier_difference_contribution": 0.0014565403305337808,
       "sample_rate": 0.045406534315961304
     },
     {
@@ -987,6 +1069,8 @@
       "candidate_weighted_calibration_gap": 0.031716712349898986,
       "brier_difference_aft_minus_lightgbm": 0.08184352793249206,
       "calibration_error_improvement": 0.1479869246714949,
+      "known_ipcw_weight_share": 0.02744892762398056,
+      "brier_difference_contribution": 0.0022465170747102046,
       "sample_rate": 0.029010730489473557
     },
     {
@@ -1006,6 +1090,8 @@
       "candidate_weighted_calibration_gap": 0.05211062897912654,
       "brier_difference_aft_minus_lightgbm": 0.0020730277951761106,
       "calibration_error_improvement": -0.032090618505948854,
+      "known_ipcw_weight_share": 0.03584004734883444,
+      "brier_difference_contribution": 7.429741433456194e-05,
       "sample_rate": 0.04831120820030247
     },
     {
@@ -1025,6 +1111,8 @@
       "candidate_weighted_calibration_gap": 0.06779164379436059,
       "brier_difference_aft_minus_lightgbm": -0.0047829182813692245,
       "calibration_error_improvement": -0.04346042327619247,
+      "known_ipcw_weight_share": 0.0002757012960432443,
+      "brier_difference_contribution": -1.3186567690424221e-06,
       "sample_rate": 0.00034808075473509854
     },
     {
@@ -1044,6 +1132,8 @@
       "candidate_weighted_calibration_gap": 0.05966042799165472,
       "brier_difference_aft_minus_lightgbm": -0.001175464688905236,
       "calibration_error_improvement": -0.03907883682078259,
+      "known_ipcw_weight_share": 0.0015054178815423903,
+      "brier_difference_contribution": -1.7695655617995969e-06,
       "sample_rate": 0.001500348080754735
     },
     {
@@ -1063,6 +1153,8 @@
       "candidate_weighted_calibration_gap": 0.05683104248660068,
       "brier_difference_aft_minus_lightgbm": -0.00255025328717709,
       "calibration_error_improvement": -0.03292426964242136,
+      "known_ipcw_weight_share": 0.004713671320834862,
+      "brier_difference_contribution": -1.2021055780631462e-05,
       "sample_rate": 0.004549055380848357
     },
     {
@@ -1082,6 +1174,8 @@
       "candidate_weighted_calibration_gap": 0.06370840808733773,
       "brier_difference_aft_minus_lightgbm": 0.0010154846934613965,
       "calibration_error_improvement": -0.03466832745245161,
+      "known_ipcw_weight_share": 0.021273643311177908,
+      "brier_difference_contribution": 2.1603059156658474e-05,
       "sample_rate": 0.021100895407734594
     },
     {
@@ -1101,6 +1195,8 @@
       "candidate_weighted_calibration_gap": 0.04818647884454216,
       "brier_difference_aft_minus_lightgbm": 0.0059112276072302225,
       "calibration_error_improvement": -0.012019345198316392,
+      "known_ipcw_weight_share": 0.03688092263728689,
+      "brier_difference_contribution": 0.0002180115280736524,
       "sample_rate": 0.03711261012554913
     },
     {
@@ -1120,6 +1216,8 @@
       "candidate_weighted_calibration_gap": 0.060878484655139134,
       "brier_difference_aft_minus_lightgbm": 0.002487616906580545,
       "calibration_error_improvement": -0.024541825630697747,
+      "known_ipcw_weight_share": 0.08323677440132689,
+      "brier_difference_contribution": 0.0002070612072499713,
       "sample_rate": 0.08187099407062438
     },
     {
@@ -1139,6 +1237,8 @@
       "candidate_weighted_calibration_gap": 0.06360406386245016,
       "brier_difference_aft_minus_lightgbm": 0.002266017974322937,
       "calibration_error_improvement": -0.02362253256127414,
+      "known_ipcw_weight_share": 0.13041680496406324,
+      "brier_difference_contribution": 0.00029552682420233757,
       "sample_rate": 0.1250570132270687
     },
     {
@@ -1158,6 +1258,8 @@
       "candidate_weighted_calibration_gap": 0.0593549615608311,
       "brier_difference_aft_minus_lightgbm": 0.0037546112929789377,
       "calibration_error_improvement": -0.004005694799432434,
+      "known_ipcw_weight_share": 0.68585701683889,
+      "brier_difference_contribution": 0.0025751265007921353,
       "sample_rate": 0.6801497947523826
     },
     {
@@ -1177,6 +1279,8 @@
       "candidate_weighted_calibration_gap": 0.030533331509786776,
       "brier_difference_aft_minus_lightgbm": -0.0011557641919870063,
       "calibration_error_improvement": -0.002640621103670561,
+      "known_ipcw_weight_share": 0.5432199867658544,
+      "brier_difference_contribution": -0.0006278342090756308,
       "sample_rate": 0.5356368605451612
     },
     {
@@ -1196,6 +1300,8 @@
       "candidate_weighted_calibration_gap": 0.03672639980582667,
       "brier_difference_aft_minus_lightgbm": -8.892819613669223e-05,
       "calibration_error_improvement": -0.007203325506174564,
+      "known_ipcw_weight_share": 0.16505653675036147,
+      "brier_difference_contribution": -1.4678180073778894e-05,
       "sample_rate": 0.16756567929394117
     },
     {
@@ -1215,6 +1321,8 @@
       "candidate_weighted_calibration_gap": 0.04359444690513752,
       "brier_difference_aft_minus_lightgbm": -0.00285713819300476,
       "calibration_error_improvement": -0.0317023675528482,
+      "known_ipcw_weight_share": 0.14058622655884292,
+      "brier_difference_contribution": -0.0004016742773116893,
       "sample_rate": 0.14142752930781166
     },
     {
@@ -1234,6 +1342,8 @@
       "candidate_weighted_calibration_gap": 0.054643151752293,
       "brier_difference_aft_minus_lightgbm": -0.0019966578540638324,
       "calibration_error_improvement": -0.02933961451732905,
+      "known_ipcw_weight_share": 0.09208796681710228,
+      "brier_difference_contribution": -0.0001838681622101338,
       "sample_rate": 0.0940418580279259
     },
     {
@@ -1253,6 +1363,8 @@
       "candidate_weighted_calibration_gap": 0.06657971193947844,
       "brier_difference_aft_minus_lightgbm": -0.003761437858869121,
       "calibration_error_improvement": -0.0012848125382176057,
+      "known_ipcw_weight_share": 0.044026049481380176,
+      "brier_difference_contribution": -0.00016560124929570707,
       "sample_rate": 0.04528968755458291
     },
     {
@@ -1272,6 +1384,8 @@
       "candidate_weighted_calibration_gap": 0.014407505516722891,
       "brier_difference_aft_minus_lightgbm": 0.0014665693055619933,
       "calibration_error_improvement": 0.006200978478900027,
+      "known_ipcw_weight_share": 0.012989956465284842,
+      "brier_difference_contribution": 1.9050671432573632e-05,
       "sample_rate": 0.013767736234832373
     },
     {
@@ -1291,6 +1405,8 @@
       "candidate_weighted_calibration_gap": -0.0731764668017871,
       "brier_difference_aft_minus_lightgbm": 0.07460408131041693,
       "calibration_error_improvement": 0.1107395425143545,
+      "known_ipcw_weight_share": 0.0019912767018159384,
+      "brier_difference_contribution": 0.00014855736897381513,
       "sample_rate": 0.0022192768856147704
     },
     {
@@ -1310,6 +1426,8 @@
       "candidate_weighted_calibration_gap": -0.03817035399717661,
       "brier_difference_aft_minus_lightgbm": 0.36634231633763326,
       "calibration_error_improvement": 0.5681737489787174,
+      "known_ipcw_weight_share": 4.2000459358085205e-05,
+      "brier_difference_contribution": 1.5386545568485562e-05,
       "sample_rate": 5.137215012997154e-05
     },
     {
@@ -1329,6 +1447,8 @@
       "candidate_weighted_calibration_gap": 0.0008144250062986289,
       "brier_difference_aft_minus_lightgbm": 0.0014202626033036764,
       "calibration_error_improvement": 0.036880745657787296,
+      "known_ipcw_weight_share": 0.09210846812080727,
+      "brier_difference_contribution": 0.0001308182127195713,
       "sample_rate": 0.09533643621120118
     },
     {
@@ -1348,6 +1468,8 @@
       "candidate_weighted_calibration_gap": 0.019769232758291348,
       "brier_difference_aft_minus_lightgbm": 0.0006493644580423015,
       "calibration_error_improvement": -0.0043975010429712046,
+      "known_ipcw_weight_share": 0.06146362542186123,
+      "brier_difference_contribution": 3.991229381138156e-05,
       "sample_rate": 0.06494467219431002
     },
     {
@@ -1367,6 +1489,8 @@
       "candidate_weighted_calibration_gap": 0.023138688000468196,
       "brier_difference_aft_minus_lightgbm": -0.00016606733879883512,
       "calibration_error_improvement": -0.0048687795758050115,
+      "known_ipcw_weight_share": 0.12098421672809355,
+      "brier_difference_contribution": -2.0091526908695757e-05,
       "sample_rate": 0.11705658128615315
     },
     {
@@ -1386,6 +1510,8 @@
       "candidate_weighted_calibration_gap": 0.03596936334166032,
       "brier_difference_aft_minus_lightgbm": -0.0005721632925687892,
       "calibration_error_improvement": -0.027531730041779966,
+      "known_ipcw_weight_share": 0.1997800317410547,
+      "brier_difference_contribution": -0.0001143068007504596,
       "sample_rate": 0.19506005404350193
     },
     {
@@ -1405,6 +1531,8 @@
       "candidate_weighted_calibration_gap": 0.03343448591396987,
       "brier_difference_aft_minus_lightgbm": 0.0011384026948149245,
       "calibration_error_improvement": -0.01545233282400836,
+      "known_ipcw_weight_share": 0.22342675907710366,
+      "brier_difference_contribution": 0.000254349624627136,
       "sample_rate": 0.21780764212105333
     },
     {
@@ -1424,6 +1552,8 @@
       "candidate_weighted_calibration_gap": 0.0565926661610212,
       "brier_difference_aft_minus_lightgbm": -3.991544479581277e-06,
       "calibration_error_improvement": -0.023435990624734435,
+      "known_ipcw_weight_share": 0.1570592731419178,
+      "brier_difference_contribution": -6.269090746790428e-07,
       "sample_rate": 0.1611749838177727
     },
     {
@@ -1443,6 +1573,8 @@
       "candidate_weighted_calibration_gap": 0.06574477256499194,
       "brier_difference_aft_minus_lightgbm": 0.0014949899450756865,
       "calibration_error_improvement": -0.01290345054588067,
+      "known_ipcw_weight_share": 0.04357016130335904,
+      "brier_difference_contribution": 6.513695305384768e-05,
       "sample_rate": 0.04629658169713035
     },
     {
@@ -1462,6 +1594,8 @@
       "candidate_weighted_calibration_gap": 0.05449746420379581,
       "brier_difference_aft_minus_lightgbm": 0.004770970707599825,
       "calibration_error_improvement": 0.006224368184152423,
+      "known_ipcw_weight_share": 0.03529344975079813,
+      "brier_difference_contribution": 0.00016838401493120505,
       "sample_rate": 0.036782459493059624
     },
     {
@@ -1481,6 +1615,8 @@
       "candidate_weighted_calibration_gap": 0.06571950431377753,
       "brier_difference_aft_minus_lightgbm": -0.0261518980845081,
       "calibration_error_improvement": -0.01777744761003852,
+      "known_ipcw_weight_share": 0.06631401471500467,
+      "brier_difference_contribution": -0.0017342373544013726,
       "sample_rate": 0.06554058913581769
     },
     {
@@ -1500,6 +1636,8 @@
       "candidate_weighted_calibration_gap": 0.012704182815123534,
       "brier_difference_aft_minus_lightgbm": 0.007941571907600531,
       "calibration_error_improvement": 0.03963684367000317,
+      "known_ipcw_weight_share": 0.12678477060224408,
+      "brier_difference_contribution": 0.0010068703725263591,
       "sample_rate": 0.1373691294475439
     },
     {
@@ -1519,6 +1657,8 @@
       "candidate_weighted_calibration_gap": 0.05855121612604169,
       "brier_difference_aft_minus_lightgbm": 0.004214056083126284,
       "calibration_error_improvement": -0.03029576581274314,
+      "known_ipcw_weight_share": 0.004072840129968423,
+      "brier_difference_contribution": 1.716317672529425e-05,
       "sample_rate": 0.003842636829721871
     },
     {
@@ -1538,6 +1678,8 @@
       "candidate_weighted_calibration_gap": 0.07193436624894167,
       "brier_difference_aft_minus_lightgbm": -0.00885933693485235,
       "calibration_error_improvement": -0.05310200501109642,
+      "known_ipcw_weight_share": 0.006067668911831529,
+      "brier_difference_contribution": -5.375552329904443e-05,
       "sample_rate": 0.005589289934140903
     },
     {
@@ -1557,6 +1699,8 @@
       "candidate_weighted_calibration_gap": 0.05332395934299773,
       "brier_difference_aft_minus_lightgbm": -0.0074793945328425065,
       "calibration_error_improvement": -0.030586198319134485,
+      "known_ipcw_weight_share": 0.012334937007620474,
+      "brier_difference_contribution": -9.22578604177533e-05,
       "sample_rate": 0.011579282639295585
     },
     {
@@ -1576,6 +1720,8 @@
       "candidate_weighted_calibration_gap": 0.0479849089123956,
       "brier_difference_aft_minus_lightgbm": -0.003940800128233939,
       "calibration_error_improvement": -0.031826575649172795,
+      "known_ipcw_weight_share": 0.015767464674233497,
+      "brier_difference_contribution": -6.213642681014348e-05,
       "sample_rate": 0.01536027288886149
     },
     {
@@ -1595,6 +1741,8 @@
       "candidate_weighted_calibration_gap": 0.060440442384691546,
       "brier_difference_aft_minus_lightgbm": -0.008395498519497377,
       "calibration_error_improvement": -0.03659609216475251,
+      "known_ipcw_weight_share": 0.024807000705327934,
+      "brier_difference_contribution": -0.0002082671376947508,
       "sample_rate": 0.02427847815142455
     },
     {
@@ -1614,6 +1762,8 @@
       "candidate_weighted_calibration_gap": 0.03200677818669212,
       "brier_difference_aft_minus_lightgbm": -0.001180379427316719,
       "calibration_error_improvement": 0.0038495437283426956,
+      "known_ipcw_weight_share": 0.07541006243204766,
+      "brier_difference_contribution": -8.901248630745819e-05,
       "sample_rate": 0.07324641165531343
     },
     {
@@ -1633,6 +1783,8 @@
       "candidate_weighted_calibration_gap": 0.04402055172832229,
       "brier_difference_aft_minus_lightgbm": -0.005377331589359768,
       "calibration_error_improvement": -0.025085538462508033,
+      "known_ipcw_weight_share": 0.10403212355852912,
+      "brier_difference_contribution": -0.0005594152243194566,
       "sample_rate": 0.10292924000041098
     },
     {
@@ -1652,6 +1804,8 @@
       "candidate_weighted_calibration_gap": 0.03898312915304534,
       "brier_difference_aft_minus_lightgbm": -0.0018547764035956316,
       "calibration_error_improvement": -0.020176159995330997,
+      "known_ipcw_weight_share": 0.6307231319781974,
+      "brier_difference_contribution": -0.001169850382395112,
       "sample_rate": 0.6258052584532873
     }
   ],
