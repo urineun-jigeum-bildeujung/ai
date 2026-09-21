@@ -9,13 +9,22 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from math import isfinite
+from gzip import compress
+from math import isclose, isfinite
 from typing import Final
 
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
+from .modeling.evaluation import (
+    COUNT_SEGMENT_BINS,
+    COUNT_SEGMENT_LABELS,
+    bootstrap_ipcw_brier_pair_difference_by_user,
+    evaluate_ipcw_brier_score,
+    summarize_ipcw_probability_pair_by_count_segment,
+)
 from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
+from .modeling.rolling_diagnostics import summarize_entity_contribution_concentration
 from .modeling.rolling_validation import (
     RollingValidationError,
     build_expanding_rolling_splits,
@@ -25,7 +34,11 @@ from .paths import REPORT_DIR
 from .preprocessing.events import build_uci_purchase_events
 from .preprocessing.labels import build_same_product_repurchase_labels
 from .preprocessing.uci import classify_uci_rows
-from .reporting import dataframe_to_nullable_records, write_text_atomically
+from .reporting import (
+    dataframe_to_nullable_records,
+    write_bytes_atomically,
+    write_text_atomically,
+)
 from .run_uci_xgboost_aft import (
     BOOTSTRAP_RANDOM_SEED,
     BOOTSTRAP_REPLICATES,
@@ -45,6 +58,27 @@ ROLLING_REPORT_MARKDOWN_PATH = REPORT_DIR / "uci_repurchase_rolling_cutoff.md"
 ROLLING_BOOTSTRAP_TRIALS_PATH = (
     REPORT_DIR / "uci_repurchase_rolling_cutoff_bootstrap_trials.json"
 )
+ROLLING_CONCENTRATION_JSON_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_concentration.json"
+)
+ROLLING_CONCENTRATION_MARKDOWN_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_concentration.md"
+)
+ROLLING_FOCUS_BOOTSTRAP_JSON_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_focus_bootstrap.json"
+)
+ROLLING_FOCUS_BOOTSTRAP_MARKDOWN_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_focus_bootstrap.md"
+)
+ROLLING_FOCUS_BOOTSTRAP_TRIALS_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_focus_bootstrap_trials.json.gz"
+)
+# 앞선 Validation 진단에서 fold 2의 우위 변화에 기여한 두 구간만 고정해 봅니다.
+CONCENTRATION_FOCUS_SEGMENTS: Final[tuple[tuple[str, str], ...]] = (
+    ("product_train_sample_count", "128+"),
+    ("history_interval_count", "8-15"),
+)
+CONCENTRATION_ENTITY_COLUMNS: Final[tuple[str, ...]] = ("user_id", "product_id")
 
 
 @dataclass(frozen=True)
@@ -52,8 +86,12 @@ class RollingCutoffEvaluation:
     """Fold별 핵심 지표와 상세 Calibration·Bootstrap 원자료를 보관합니다."""
 
     folds: pd.DataFrame
+    cohorts: pd.DataFrame
     calibration: pd.DataFrame
     bootstrap_trials: pd.DataFrame
+    concentration: pd.DataFrame
+    focus_bootstrap: pd.DataFrame
+    focus_bootstrap_trials: pd.DataFrame
 
 
 def _model_metric_row(
@@ -87,6 +125,229 @@ def _interval_direction(lower: float, upper: float) -> str:
     return "inconclusive"
 
 
+def add_fold_brier_contributions(
+    cohorts: pd.DataFrame,
+    paired_rows: pd.DataFrame,
+    *,
+    count_column: str,
+    bucket_labels: pd.Series | None = None,
+) -> pd.DataFrame:
+    """구간별 오차 차이를 fold 전체 IPCW 분모에 대한 기여량으로 바꿉니다.
+
+    구간 자체의 Brier는 각 구간의 가중치 합으로 나누지만, 기여량은 모든
+    정답 확인 행의 가중치 합으로 나눕니다. 따라서 기여량 합은 fold 전체
+    AFT Brier - LightGBM Brier와 일치해야 합니다.
+    """
+    required_columns = {
+        count_column,
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    }
+    missing_columns = required_columns - set(paired_rows.columns)
+    if missing_columns:
+        raise RollingValidationError(
+            f"구간별 Brier 기여량 필수 열이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if "count_bucket" not in cohorts.columns:
+        raise RollingValidationError(
+            "구간별 Brier 기여량에는 count_bucket이 필요합니다."
+        )
+
+    known_rows = paired_rows.loc[paired_rows["ipcw_outcome_known"]]
+    if known_rows.empty:
+        raise RollingValidationError("구간별 Brier 기여량에 정답 확인 표본이 없습니다.")
+    weights = known_rows["ipcw_weight"].astype("float64")
+    total_weight = float(weights.sum())
+    if not isfinite(total_weight) or total_weight <= 0:
+        raise RollingValidationError(
+            "구간별 Brier 기여량의 IPCW 분모가 유효하지 않습니다."
+        )
+
+    actual = known_rows["ipcw_event_within_horizon"].astype("float64")
+    aft_error = known_rows["reference_predicted_event_probability"].sub(actual).pow(2)
+    lightgbm_error = (
+        known_rows["candidate_predicted_event_probability"].sub(actual).pow(2)
+    )
+    weighted_difference = aft_error.sub(lightgbm_error).mul(weights)
+    if bucket_labels is None:
+        buckets = pd.cut(
+            known_rows[count_column],
+            bins=COUNT_SEGMENT_BINS,
+            labels=COUNT_SEGMENT_LABELS,
+            include_lowest=True,
+        )
+    else:
+        if not bucket_labels.index.equals(paired_rows.index):
+            raise RollingValidationError("구간 라벨과 평가 행의 인덱스가 다릅니다.")
+        buckets = bucket_labels.loc[known_rows.index]
+    if buckets.isna().any():
+        raise RollingValidationError(
+            f"{count_column}의 Brier 기여 구간을 만들 수 없습니다."
+        )
+    contribution_rows = pd.DataFrame(
+        {
+            "count_bucket": buckets.astype(str).to_numpy(),
+            "weighted_difference": weighted_difference.to_numpy(),
+            "known_ipcw_weight": weights.to_numpy(),
+        }
+    )
+    by_bucket = contribution_rows.groupby("count_bucket", sort=False).sum()
+
+    result = cohorts.copy()
+    result["known_ipcw_weight_share"] = (
+        result["count_bucket"]
+        .map(by_bucket["known_ipcw_weight"])
+        .fillna(0.0)
+        .div(total_weight)
+    )
+    result["brier_difference_contribution"] = (
+        result["count_bucket"]
+        .map(by_bucket["weighted_difference"])
+        .fillna(0.0)
+        .div(total_weight)
+    )
+    if not isclose(float(result["known_ipcw_weight_share"].sum()), 1.0, abs_tol=1e-10):
+        raise RollingValidationError("구간별 IPCW 가중치 비율의 합은 1이어야 합니다.")
+    return result
+
+
+def classify_history_irregularity(rows: pd.DataFrame) -> pd.Series:
+    """미계산과 상대 MAD의 절반 이하·초과를 혼동 없이 구분합니다."""
+    if "history_relative_mad" not in rows.columns:
+        raise RollingValidationError("history_relative_mad가 누락됐습니다.")
+    values = rows["history_relative_mad"]
+    available = values.notna()
+    measured = values.loc[available].astype("float64")
+    if not measured.map(isfinite).all() or measured.lt(0).any():
+        raise RollingValidationError(
+            "상대 MAD는 결측 또는 0 이상의 유한값이어야 합니다."
+        )
+    # 결측은 구매 간격이 충분하지 않아 계산하지 못한 상태이지 0이 아닙니다.
+    buckets = pd.Series("unavailable", index=rows.index, dtype="string")
+    buckets.loc[available] = "relative_mad_le_0_5"
+    buckets.loc[measured.loc[measured.gt(0.5)].index] = "relative_mad_gt_0_5"
+    return buckets
+
+
+def add_fold_outcome_distribution(
+    cohorts: pd.DataFrame,
+    paired_rows: pd.DataFrame,
+    *,
+    count_column: str,
+    bucket_labels: pd.Series | None = None,
+) -> pd.DataFrame:
+    """정답 확인 행의 사건·미사건 수와 가중 사건율을 구간별로 보탭니다."""
+    required = {
+        count_column,
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+    }
+    missing = required - set(paired_rows.columns)
+    if missing:
+        raise RollingValidationError(f"사건 분포 진단 열 누락: {sorted(missing)}")
+    if bucket_labels is None:
+        buckets = pd.cut(
+            paired_rows[count_column],
+            bins=COUNT_SEGMENT_BINS,
+            labels=COUNT_SEGMENT_LABELS,
+            include_lowest=True,
+        )
+    else:
+        if not bucket_labels.index.equals(paired_rows.index):
+            raise RollingValidationError("구간 라벨과 평가 행의 인덱스가 다릅니다.")
+        buckets = bucket_labels
+    if buckets.isna().any():
+        raise RollingValidationError("사건 분포 진단에서 표본의 구간이 누락됐습니다.")
+    known = paired_rows.loc[paired_rows["ipcw_outcome_known"]].copy()
+    known["bucket"] = buckets.loc[known.index].astype(str)
+    known["event"] = known["ipcw_event_within_horizon"].astype("int64")
+    known["weighted_event"] = known["event"].mul(known["ipcw_weight"])
+    group = known.groupby("bucket", sort=False).agg(
+        event_count=("event", "sum"),
+        known_count=("event", "size"),
+        event_weight=("weighted_event", "sum"),
+        known_weight=("ipcw_weight", "sum"),
+    )
+    result = cohorts.copy()
+    result["event_within_horizon_count"] = (
+        result["count_bucket"].map(group["event_count"]).fillna(0).astype("int64")
+    )
+    result["no_event_within_horizon_count"] = (
+        result["count_bucket"].map(group["known_count"]).fillna(0).astype("int64")
+        - result["event_within_horizon_count"]
+    )
+    result["ipcw_weighted_event_rate"] = result["count_bucket"].map(
+        group["event_weight"].div(group["known_weight"])
+    )
+    if (
+        not result["event_within_horizon_count"]
+        .add(result["no_event_within_horizon_count"])
+        .equals(result["outcome_known_count"])
+    ):
+        raise RollingValidationError(
+            "구간별 사건·미사건 합계가 정답 확인 수와 다릅니다."
+        )
+    return result
+
+
+def summarize_history_irregularity_cohorts(
+    paired_rows: pd.DataFrame,
+    *,
+    bucket_labels: pd.Series,
+) -> pd.DataFrame:
+    """불규칙성별 동일 평가 표본의 사건 분포와 두 모델의 Brier를 집계합니다."""
+    required = {
+        "user_id",
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    }
+    missing = required - set(paired_rows.columns)
+    if missing:
+        raise RollingValidationError(f"불규칙성 진단 열 누락: {sorted(missing)}")
+    if paired_rows.empty or not bucket_labels.index.equals(paired_rows.index):
+        raise RollingValidationError("불규칙성 구간과 평가 표본이 일치해야 합니다.")
+    if bucket_labels.isna().any():
+        raise RollingValidationError("불규칙성 진단에서 표본이 누락됐습니다.")
+
+    segmented = paired_rows.copy()
+    segmented["irregularity_bucket"] = bucket_labels
+    summaries: list[dict[str, object]] = []
+    for bucket, segment in segmented.groupby("irregularity_bucket", sort=True):
+        known = segment.loc[segment["ipcw_outcome_known"]]
+        summary: dict[str, object] = {
+            "count_column": "history_relative_mad",
+            "count_bucket": str(bucket),
+            "sample_count": int(len(segment)),
+            "user_count": int(segment["user_id"].nunique()),
+            "outcome_known_count": int(len(known)),
+        }
+        for role, column in (
+            ("reference", "reference_predicted_event_probability"),
+            ("candidate", "candidate_predicted_event_probability"),
+        ):
+            if known.empty:
+                summary[f"{role}_ipcw_brier_score"] = float("nan")
+                continue
+            evaluation_rows = segment.copy()
+            evaluation_rows["predicted_event_probability"] = segment[column]
+            score = evaluate_ipcw_brier_score(
+                evaluation_rows, reference_probability=0.5
+            )
+            summary[f"{role}_ipcw_brier_score"] = float(score["ipcw_brier_score"])
+        summary["brier_difference_aft_minus_lightgbm"] = float(
+            summary["reference_ipcw_brier_score"]
+        ) - float(summary["candidate_ipcw_brier_score"])
+        summaries.append(summary)
+    return pd.DataFrame(summaries)
+
+
 def evaluate_rolling_cutoff_models(
     labels: pd.DataFrame,
     *,
@@ -109,8 +370,12 @@ def evaluate_rolling_cutoff_models(
     )
 
     fold_records: list[dict[str, object]] = []
+    cohort_tables: list[pd.DataFrame] = []
     calibration_tables: list[pd.DataFrame] = []
     bootstrap_tables: list[pd.DataFrame] = []
+    concentration_records: list[dict[str, int | float | str | None]] = []
+    focus_bootstrap_records: list[dict[str, object]] = []
+    focus_bootstrap_trial_tables: list[pd.DataFrame] = []
     for fold_index, split in enumerate(rolling_splits, start=1):
         fold_id = f"fold_{fold_index}"
         if split.validation_end_at > base_split.validation_end_at:
@@ -289,6 +554,144 @@ def evaluate_rolling_cutoff_models(
             }
         )
 
+        # 상품 표본 수는 현재 fold의 Train 구매만 세어 Validation 미래 정보가
+        # 진단 구간에도 섞이지 않게 합니다. 표본 수는 모델 피처가 아닙니다.
+        paired_rows = comparison.paired_rows.copy()
+        product_train_counts = prepared.training.groupby(
+            "product_id", observed=True, sort=False
+        ).size()
+        paired_rows["product_train_sample_count"] = (
+            paired_rows["product_id"]
+            .map(product_train_counts)
+            .fillna(0)
+            .astype("int64")
+        )
+        for count_column in (
+            "history_interval_count",
+            "user_prior_order_count",
+            "product_train_sample_count",
+        ):
+            cohorts = summarize_ipcw_probability_pair_by_count_segment(
+                paired_rows,
+                count_column=count_column,
+                calibration_bin_count=calibration_bin_count,
+            )
+            cohorts = add_fold_brier_contributions(
+                cohorts,
+                paired_rows,
+                count_column=count_column,
+            )
+            cohorts = add_fold_outcome_distribution(
+                cohorts, paired_rows, count_column=count_column
+            )
+            if int(cohorts["sample_count"].sum()) != len(paired_rows):
+                raise RollingValidationError(
+                    f"{fold_id}: {count_column} 구간 표본 합계가 평가 표본과 다릅니다."
+                )
+            cohorts.insert(0, "fold_id", fold_id)
+            cohorts["sample_rate"] = cohorts["sample_count"].div(len(paired_rows))
+            # 기존 비교 함수에서 reference=AFT, candidate=LightGBM입니다.
+            cohorts = cohorts.rename(
+                columns={"brier_improvement": "brier_difference_aft_minus_lightgbm"}
+            )
+            cohort_tables.append(cohorts)
+
+        # 상대 MAD는 적은 이력 때문에 아예 계산할 수 없는 행을 별도로 셉니다.
+        irregularity_labels = classify_history_irregularity(paired_rows)
+        irregularity_cohorts = summarize_history_irregularity_cohorts(
+            paired_rows, bucket_labels=irregularity_labels
+        )
+        irregularity_cohorts = add_fold_brier_contributions(
+            irregularity_cohorts,
+            paired_rows,
+            count_column="history_relative_mad",
+            bucket_labels=irregularity_labels,
+        )
+        irregularity_cohorts = add_fold_outcome_distribution(
+            irregularity_cohorts,
+            paired_rows,
+            count_column="history_relative_mad",
+            bucket_labels=irregularity_labels,
+        )
+        if int(irregularity_cohorts["sample_count"].sum()) != len(paired_rows):
+            raise RollingValidationError(
+                f"{fold_id}: 불규칙성 구간 표본 합계가 평가 표본과 다릅니다."
+            )
+        irregularity_cohorts.insert(0, "fold_id", fold_id)
+        irregularity_cohorts["sample_rate"] = irregularity_cohorts["sample_count"].div(
+            len(paired_rows)
+        )
+        cohort_tables.append(irregularity_cohorts)
+
+        for count_column, count_bucket in CONCENTRATION_FOCUS_SEGMENTS:
+            focus_bucket = pd.cut(
+                paired_rows[count_column],
+                bins=COUNT_SEGMENT_BINS,
+                labels=COUNT_SEGMENT_LABELS,
+                include_lowest=True,
+            )
+            if not focus_bucket.eq(count_bucket).any():
+                # 작은 테스트 데이터에는 실제 UCI에서 발견한 집중 구간이 없을 수 있습니다.
+                continue
+            focus_rows = paired_rows.loc[focus_bucket.eq(count_bucket)]
+            focus_known = focus_rows.loc[focus_rows["ipcw_outcome_known"]]
+            focus_known_user_count = int(focus_known["user_id"].nunique())
+            focus_record: dict[str, object] = {
+                "fold_id": fold_id,
+                "count_column": count_column,
+                "count_bucket": count_bucket,
+                "sample_count": int(len(focus_rows)),
+                "outcome_known_count": int(len(focus_known)),
+                "known_user_count": focus_known_user_count,
+                "bootstrap_replicates": bootstrap_replicates,
+                "bootstrap_random_seed": bootstrap_random_seed,
+            }
+            if focus_known_user_count < 2:
+                # 작은 시험 데이터에서는 두 사용자를 복원추출할 수 없다고 명시합니다.
+                focus_record["status"] = "insufficient_known_users"
+                focus_record["point_brier_difference_aft_minus_lightgbm"] = None
+                focus_record["bootstrap_lower_95_brier_difference"] = None
+                focus_record["bootstrap_upper_95_brier_difference"] = None
+                focus_record["bootstrap_lightgbm_improvement_rate"] = None
+            else:
+                focus_bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
+                    focus_rows,
+                    bootstrap_replicates=bootstrap_replicates,
+                    random_seed=bootstrap_random_seed,
+                )
+                summary = focus_bootstrap.summary
+                focus_record.update(
+                    {
+                        "status": "evaluated",
+                        "point_brier_difference_aft_minus_lightgbm": float(
+                            summary["point_brier_improvement"]
+                        ),
+                        "bootstrap_lower_95_brier_difference": float(
+                            summary["bootstrap_lower_95_brier_improvement"]
+                        ),
+                        "bootstrap_upper_95_brier_difference": float(
+                            summary["bootstrap_upper_95_brier_improvement"]
+                        ),
+                        "bootstrap_lightgbm_improvement_rate": float(
+                            summary["bootstrap_positive_improvement_rate"]
+                        ),
+                    }
+                )
+                focus_trials = focus_bootstrap.trials.copy()
+                focus_trials.insert(0, "count_bucket", count_bucket)
+                focus_trials.insert(0, "count_column", count_column)
+                focus_trials.insert(0, "fold_id", fold_id)
+                focus_bootstrap_trial_tables.append(focus_trials)
+            focus_bootstrap_records.append(focus_record)
+            for entity_column in CONCENTRATION_ENTITY_COLUMNS:
+                concentration = summarize_entity_contribution_concentration(
+                    paired_rows,
+                    count_column=count_column,
+                    count_bucket=count_bucket,
+                    entity_column=entity_column,
+                )
+                concentration_records.append({"fold_id": fold_id, **concentration})
+
         fold_calibration = comparison.calibration.copy()
         fold_calibration.insert(0, "fold_id", fold_id)
         calibration_tables.append(fold_calibration)
@@ -298,8 +701,16 @@ def evaluate_rolling_cutoff_models(
 
     return RollingCutoffEvaluation(
         folds=pd.DataFrame(fold_records),
+        cohorts=pd.concat(cohort_tables, ignore_index=True),
         calibration=pd.concat(calibration_tables, ignore_index=True),
         bootstrap_trials=pd.concat(bootstrap_tables, ignore_index=True),
+        concentration=pd.DataFrame(concentration_records),
+        focus_bootstrap=pd.DataFrame(focus_bootstrap_records),
+        focus_bootstrap_trials=(
+            pd.concat(focus_bootstrap_trial_tables, ignore_index=True)
+            if focus_bootstrap_trial_tables
+            else pd.DataFrame()
+        ),
     )
 
 
@@ -326,6 +737,7 @@ def build_rolling_cutoff_report(
 ) -> dict[str, object]:
     """Rolling cutoff 결과를 표준 JSON으로 저장할 수 있게 요약합니다."""
     folds = evaluation.folds
+    cohorts = evaluation.cohorts
     required_columns = {
         "fold_id",
         "train_end_at",
@@ -353,6 +765,45 @@ def build_rolling_cutoff_report(
         raise ValueError("Rolling cutoff fold는 비어 있지 않고 고유해야 합니다.")
     if folds["test_accessed"].astype(bool).any():
         raise ValueError("Rolling cutoff 보고서에는 Test 결과를 포함할 수 없습니다.")
+    for fold in folds.itertuples():
+        fold_cohorts = cohorts.loc[cohorts["fold_id"].eq(fold.fold_id)]
+        for count_column in (
+            "history_interval_count",
+            "user_prior_order_count",
+            "product_train_sample_count",
+            "history_relative_mad",
+        ):
+            count_rows = fold_cohorts.loc[fold_cohorts["count_column"].eq(count_column)]
+            if int(count_rows["sample_count"].sum()) != fold.evaluation_sample_count:
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 합계가 평가 표본과 다릅니다."
+                )
+            if not isclose(
+                float(count_rows["brier_difference_contribution"].sum()),
+                fold.brier_difference_aft_minus_lightgbm,
+                abs_tol=1e-10,
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 Brier 기여량 합계가 다릅니다."
+                )
+            if int(count_rows["outcome_known_count"].sum()) != fold.outcome_known_count:
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 정답 확인 합계가 다릅니다."
+                )
+            if (
+                int(count_rows["event_within_horizon_count"].sum())
+                != fold.event_within_horizon_count
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 사건 수 합계가 다릅니다."
+                )
+            if (
+                int(count_rows["no_event_within_horizon_count"].sum())
+                != fold.no_event_within_horizon_count
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 미사건 수 합계가 다릅니다."
+                )
 
     train_end_at = pd.to_datetime(folds["train_end_at"], errors="raise")
     validation_start_at = pd.to_datetime(
@@ -463,6 +914,7 @@ def build_rolling_cutoff_report(
         "brier_difference_min": float(differences.min()),
         "brier_difference_max": float(differences.max()),
         "folds": dataframe_to_nullable_records(folds),
+        "cohorts": dataframe_to_nullable_records(cohorts),
         "calibration": dataframe_to_nullable_records(evaluation.calibration),
         "decision": decision,
         "scope": (
@@ -491,6 +943,313 @@ def build_rolling_bootstrap_trials_report(
         "brier_difference_direction": "aft_minus_lightgbm",
         "trials": dataframe_to_nullable_records(evaluation.bootstrap_trials),
     }
+
+
+def build_rolling_concentration_report(
+    evaluation: RollingCutoffEvaluation,
+) -> dict[str, object]:
+    """선택된 구간의 사용자·상품 순기여 집중도를 전체 구간 값과 대조합니다."""
+    folds = evaluation.folds
+    cohorts = evaluation.cohorts
+    concentration = evaluation.concentration
+    if folds["test_accessed"].astype(bool).any():
+        raise ValueError("집중도 보고서에는 Test 결과를 포함할 수 없습니다.")
+    expected_keys: set[tuple[str, str, str, str]] = set()
+    for fold in folds.itertuples():
+        for count_column, count_bucket in CONCENTRATION_FOCUS_SEGMENTS:
+            cohort = cohorts.loc[
+                cohorts["fold_id"].eq(fold.fold_id)
+                & cohorts["count_column"].eq(count_column)
+                & cohorts["count_bucket"].eq(count_bucket)
+            ]
+            if len(cohort) > 1:
+                raise ValueError("집중도 기준 구간은 fold마다 고유해야 합니다.")
+            if cohort.empty:
+                continue
+            for entity_column in CONCENTRATION_ENTITY_COLUMNS:
+                expected_keys.add(
+                    (fold.fold_id, count_column, count_bucket, entity_column)
+                )
+
+    if concentration.empty:
+        actual_keys: set[tuple[str, str, str, str]] = set()
+    else:
+        actual_keys = set(
+            concentration[
+                ["fold_id", "count_column", "count_bucket", "entity_column"]
+            ].itertuples(index=False, name=None)
+        )
+    if actual_keys != expected_keys or len(concentration) != len(expected_keys):
+        raise ValueError("집중도 분석 구간 또는 사용자·상품 결과가 누락됐습니다.")
+    for row in concentration.itertuples():
+        cohort = cohorts.loc[
+            cohorts["fold_id"].eq(row.fold_id)
+            & cohorts["count_column"].eq(row.count_column)
+            & cohorts["count_bucket"].eq(row.count_bucket)
+        ].iloc[0]
+        if row.sample_count != int(
+            cohort["sample_count"]
+        ) or row.known_sample_count != int(cohort["outcome_known_count"]):
+            raise ValueError("집중도 표본 수가 원래 구간 평가와 다릅니다.")
+        if not isclose(
+            row.net_contribution_total,
+            float(cohort["brier_difference_contribution"]),
+            abs_tol=1e-10,
+        ):
+            raise ValueError("집중도 순기여 합계가 구간 Brier 기여량과 다릅니다.")
+
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "repurchase_rolling_concentration_v1",
+        "evaluation_split": "historical_rolling_validation",
+        "test_accessed": False,
+        "focus_segments": [
+            {"count_column": column, "count_bucket": bucket}
+            for column, bucket in CONCENTRATION_FOCUS_SEGMENTS
+        ],
+        "concentration_basis": (
+            "사용자·상품별로 AFT Brier - LightGBM Brier의 fold 전체 IPCW "
+            "분모 기준 순기여를 먼저 합산한 뒤, 양의 순기여만 대상으로 "
+            "Top-1·Top-5·HHI를 계산"
+        ),
+        "results": dataframe_to_nullable_records(concentration),
+        "scope": (
+            "기존 Validation에서 우위 변화가 컸던 구간을 사후 진단합니다. "
+            "양의 순기여 집중도는 LightGBM에 유리한 몫의 쏠림을 설명하며 "
+            "모델 우위의 통계적 유의성이나 인과 원인을 증명하지 않습니다. "
+            "동일 사용자·상품의 행별 양·음 기여는 합산 후 판단하고, 검열로 "
+            "정답이 불명인 행은 구성 표본에는 남기되 Brier에는 넣지 않습니다. "
+            "원래 Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def build_rolling_focus_bootstrap_report(
+    evaluation: RollingCutoffEvaluation,
+) -> dict[str, object]:
+    """고정 구간의 사용자 재표집 결과를 기존 구간 Brier와 대조합니다."""
+    folds = evaluation.folds
+    cohorts = evaluation.cohorts
+    focus = evaluation.focus_bootstrap
+    trials = evaluation.focus_bootstrap_trials
+    if folds["test_accessed"].astype(bool).any():
+        raise ValueError("구간 Bootstrap 보고서에는 Test 결과를 포함할 수 없습니다.")
+    expected_keys = {
+        (str(row.fold_id), count_column, count_bucket)
+        for row in folds.itertuples()
+        for count_column, count_bucket in CONCENTRATION_FOCUS_SEGMENTS
+        if (
+            cohorts["fold_id"].eq(row.fold_id)
+            & cohorts["count_column"].eq(count_column)
+            & cohorts["count_bucket"].eq(count_bucket)
+        ).any()
+    }
+    actual_keys = (
+        set(
+            focus[["fold_id", "count_column", "count_bucket"]].itertuples(
+                index=False, name=None
+            )
+        )
+        if not focus.empty
+        else set()
+    )
+    if actual_keys != expected_keys or len(focus) != len(expected_keys):
+        raise ValueError("고정 구간별 사용자 Bootstrap 결과가 누락됐습니다.")
+    if not trials.empty:
+        trial_keys = set(
+            trials[["fold_id", "count_column", "count_bucket"]].itertuples(
+                index=False, name=None
+            )
+        )
+        if not trial_keys.issubset(actual_keys):
+            raise ValueError("대응하는 구간이 없는 Bootstrap 반복 원자료가 있습니다.")
+
+    for row in focus.itertuples():
+        cohort = cohorts.loc[
+            cohorts["fold_id"].eq(row.fold_id)
+            & cohorts["count_column"].eq(row.count_column)
+            & cohorts["count_bucket"].eq(row.count_bucket)
+        ].iloc[0]
+        if row.sample_count != int(
+            cohort["sample_count"]
+        ) or row.outcome_known_count != int(cohort["outcome_known_count"]):
+            raise ValueError("구간 Bootstrap 표본 수가 기존 평가와 다릅니다.")
+        selected_trials = (
+            trials.loc[
+                trials["fold_id"].eq(row.fold_id)
+                & trials["count_column"].eq(row.count_column)
+                & trials["count_bucket"].eq(row.count_bucket)
+            ]
+            if not trials.empty
+            else pd.DataFrame()
+        )
+        if row.status == "insufficient_known_users":
+            if (
+                row.known_user_count >= 2
+                or not selected_trials.empty
+                or pd.notna(row.point_brier_difference_aft_minus_lightgbm)
+                or pd.notna(row.bootstrap_lower_95_brier_difference)
+                or pd.notna(row.bootstrap_upper_95_brier_difference)
+            ):
+                raise ValueError("사용자 수 부족 상태와 반복 결과가 모순됩니다.")
+            continue
+        if row.status != "evaluated" or row.known_user_count < 2:
+            raise ValueError("구간 Bootstrap 상태와 사용자 수가 모순됩니다.")
+        if len(selected_trials) != row.bootstrap_replicates:
+            raise ValueError("구간 Bootstrap 반복 원자료 수가 다릅니다.")
+        if set(selected_trials["replicate_index"]) != set(
+            range(row.bootstrap_replicates)
+        ):
+            raise ValueError("구간 Bootstrap 반복 번호가 누락되거나 중복됐습니다.")
+        differences = selected_trials["brier_improvement"].astype("float64")
+        if not differences.map(isfinite).all():
+            raise ValueError("구간 Bootstrap 반복값은 유한해야 합니다.")
+        if not isclose(
+            row.point_brier_difference_aft_minus_lightgbm,
+            float(cohort["brier_difference_aft_minus_lightgbm"]),
+            abs_tol=1e-10,
+        ):
+            raise ValueError("구간 Bootstrap 점추정과 기존 Brier 차이가 다릅니다.")
+        if (
+            not isfinite(row.bootstrap_lower_95_brier_difference)
+            or not isfinite(row.bootstrap_upper_95_brier_difference)
+            or row.bootstrap_lower_95_brier_difference
+            > row.bootstrap_upper_95_brier_difference
+        ):
+            raise ValueError("구간 Bootstrap 95% 구간이 유효하지 않습니다.")
+        if (
+            not isclose(
+                row.bootstrap_lower_95_brier_difference,
+                float(differences.quantile(0.025)),
+                abs_tol=1e-10,
+            )
+            or not isclose(
+                row.bootstrap_upper_95_brier_difference,
+                float(differences.quantile(0.975)),
+                abs_tol=1e-10,
+            )
+            or not isclose(
+                row.bootstrap_lightgbm_improvement_rate,
+                float(differences.gt(0).mean()),
+                abs_tol=1e-10,
+            )
+        ):
+            raise ValueError("구간 Bootstrap 요약값이 반복 원자료와 다릅니다.")
+
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "repurchase_rolling_focus_bootstrap_v1",
+        "evaluation_split": "historical_rolling_validation",
+        "test_accessed": False,
+        "focus_segments": [
+            {"count_column": column, "count_bucket": bucket}
+            for column, bucket in CONCENTRATION_FOCUS_SEGMENTS
+        ],
+        "results": dataframe_to_nullable_records(focus),
+        "scope": (
+            "각 구간 안에서 사용자를 복원추출하고 같은 사용자의 구매 행을 함께 "
+            "유지해 구간 내부 AFT-LightGBM IPCW Brier 차이를 비교합니다. "
+            "이는 fold 전체 Brier 기여량의 신뢰구간이나 선정된 구간의 사전 "
+            "검정이 아닙니다. 구간은 앞선 Validation에서 사후 선택했고 여러 "
+            "fold가 사용자와 Train 이력을 공유하므로 결과를 독립 반복으로 보지 "
+            "않습니다. 원래 Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def build_rolling_focus_bootstrap_trials_report(
+    evaluation: RollingCutoffEvaluation,
+) -> dict[str, object]:
+    """고정 구간별 사용자 Bootstrap의 반복 원자료를 별도로 보관합니다."""
+    if evaluation.folds["test_accessed"].astype(bool).any():
+        raise ValueError("구간 Bootstrap 반복 결과에는 Test를 포함할 수 없습니다.")
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "repurchase_rolling_focus_bootstrap_v1",
+        "test_accessed": False,
+        "brier_difference_direction": "aft_minus_lightgbm",
+        "trials": dataframe_to_nullable_records(evaluation.focus_bootstrap_trials),
+    }
+
+
+def render_rolling_focus_bootstrap_report(report: dict[str, object]) -> str:
+    """구간 안의 Brier 차이와 사용자 단위 불확실성을 함께 보여줍니다."""
+    lines = [
+        "# 재구매 Rolling 집중 구간 사용자 Bootstrap",
+        "",
+        "- 차이 방향: `AFT Brier - LightGBM Brier` (양수면 LightGBM 유리)",
+        "- 각 구간 안에서 사용자를 복원추출합니다. 구간 Brier 차이의 구간이지 "
+        "fold 전체 점수 기여량의 구간은 아닙니다.",
+        "- 구간별 반복 원자료는 "
+        "`uci_repurchase_rolling_focus_bootstrap_trials.json.gz`에 압축해 "
+        "보관합니다. 요약값과 반복 원자료는 같은 시드로 재현됩니다.",
+        "",
+        "| Fold | 진단 구간 | 정답 확인 사용자 | 정답 확인 행 | 점 차이 | "
+        "사용자 Bootstrap 95% | 양수 반복 비율 | 상태 |",
+        "| --- | --- | ---: | ---: | ---: | --- | ---: | --- |",
+    ]
+    for row in report["results"]:
+        interval = (
+            "N/A"
+            if row["status"] != "evaluated"
+            else f"{row['bootstrap_lower_95_brier_difference']:+.6f}~"
+            f"{row['bootstrap_upper_95_brier_difference']:+.6f}"
+        )
+        lines.append(
+            f"| {row['fold_id']} | {row['count_column']}={row['count_bucket']} | "
+            f"{row['known_user_count']:,} | {row['outcome_known_count']:,} | "
+            f"{_format_optional_signed_float(row['point_brier_difference_aft_minus_lightgbm'])} | "
+            f"{interval} | "
+            f"{_format_optional_percent(row['bootstrap_lightgbm_improvement_rate'])} | "
+            f"{row['status']} |"
+        )
+    lines.extend(["", str(report["scope"]), ""])
+    return "\n".join(lines)
+
+
+def _format_optional_signed_float(value: object) -> str:
+    """정답 확인 사용자가 부족하면 Brier 차이를 만들어내지 않습니다."""
+    return "N/A" if value is None or pd.isna(value) else f"{float(value):+.6f}"
+
+
+def render_rolling_concentration_report(report: dict[str, object]) -> str:
+    """고정 구간의 사용자·상품 집중도를 읽기 쉬운 표로 표시합니다."""
+    lines = [
+        "# 재구매 Rolling 구간별 모델 우위 집중도",
+        "",
+        "- 차이 방향: `AFT Brier - LightGBM Brier` (양수면 LightGBM 유리)",
+        "- 양의 순기여 점유율은 사용자·상품 안에서 먼저 행별 이득과 손실을 "
+        "상쇄한 뒤 계산합니다.",
+        "- 전체 표본 Top-1 비율은 단순 행 수 기준이며, 양의 순기여 Top-1 "
+        "비율과 분모가 다릅니다.",
+        "- 분모가 될 양의 순기여가 없으면 Top 점유율·HHI·유효 개체 수는 "
+        "N/A로 표시합니다.",
+        "",
+        "| Fold | 진단 구간 | 기준 | 구간 표본 | 개체 수 | 양의 순기여 개체 | "
+        "행 수 Top-1 | 양의 순기여 Top-1 | Top-5 | HHI | 유효 개체 수 | "
+        "구간 순기여 |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | "
+        "---: | ---: | ---: |",
+    ]
+    for row in report["results"]:
+        focus = f"{row['count_column']}={row['count_bucket']}"
+        lines.append(
+            f"| {row['fold_id']} | {focus} | {row['entity_column']} | "
+            f"{row['sample_count']:,} | {row['entity_count']:,} | "
+            f"{row['positive_entity_count']:,} | {row['row_top1_share']:.2%} | "
+            f"{_format_optional_percent(row['positive_top1_share'])} | "
+            f"{_format_optional_percent(row['positive_top5_share'])} | "
+            f"{_format_optional_float(row['positive_hhi'])} | "
+            f"{_format_optional_float(row['positive_effective_entity_count'])} | "
+            f"{row['net_contribution_total']:+.6f} |"
+        )
+    lines.extend(["", str(report["scope"]), ""])
+    return "\n".join(lines)
+
+
+def _format_optional_percent(value: object) -> str:
+    """양의 기여가 없을 때 퍼센트를 만들어내지 않습니다."""
+    return "N/A" if value is None or pd.isna(value) else f"{float(value):.2%}"
 
 
 def _format_optional_float(value: object) -> str:
@@ -555,6 +1314,20 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
         )
         for row in report["folds"]
     ]
+    irregularity_lines = [
+        (
+            f"| {row['fold_id']} | {row['count_bucket']} | "
+            f"{row['sample_count']:,} ({row['sample_rate']:.2%}) | "
+            f"{row['outcome_known_count']:,} | "
+            f"{row['event_within_horizon_count']:,} | "
+            f"{_format_optional_percent(row['ipcw_weighted_event_rate'])} | "
+            f"{_format_optional_float(row['reference_ipcw_brier_score'])} | "
+            f"{_format_optional_float(row['candidate_ipcw_brier_score'])} | "
+            f"{row['brier_difference_contribution']:+.6f} |"
+        )
+        for row in report["cohorts"]
+        if row["count_column"] == "history_relative_mad"
+    ]
     return "\n".join(
         [
             "# UCI 재구매 모델 Rolling cutoff 시간 강건성 검증",
@@ -598,6 +1371,21 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
             "표본 구성이 시점마다 달라 성능 변화의 원인을 하나로 단정하지 "
             "않습니다.",
             "",
+            "## 과거 구매 간격 불규칙성별 사건·오차",
+            "",
+            "상대 MAD = 과거 간격의 중앙값 절대편차 / 과거 간격 중앙값. "
+            "간격이 부족해 계산하지 못한 표본은 unavailable로 유지합니다. "
+            "0.5는 편차가 대표 간격의 절반을 넘는지 보기 위한 고정 진단 "
+            "경계일 뿐 학습·모델 선택 임계값이 아닙니다. 사건 수는 정답 확인 "
+            "행만 세고, 검열로 정답을 모르는 행은 미사건으로 세지 않습니다. "
+            "각 구간 Brier는 구간 내 IPCW 평균이며 기여량은 fold 전체 "
+            "IPCW 분모를 쓰므로, 기여량을 더해야 전체 차이가 됩니다.",
+            "",
+            "| Fold | 상대 MAD 구간 | 평가 표본 (비율) | 정답 확인 | 사건 | "
+            "IPCW 가중 사건율 | AFT Brier | LightGBM Brier | 전체 차이 기여 |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            *irregularity_lines,
+            "",
             str(report["decision"]),
             "",
             str(report["scope"]),
@@ -618,7 +1406,16 @@ def main() -> None:
     evaluation = evaluate_rolling_cutoff_models(labels)
     report = build_rolling_cutoff_report(evaluation)
     trials_report = build_rolling_bootstrap_trials_report(evaluation)
+    concentration_report = build_rolling_concentration_report(evaluation)
+    focus_bootstrap_report = build_rolling_focus_bootstrap_report(evaluation)
+    focus_bootstrap_trials_report = build_rolling_focus_bootstrap_trials_report(
+        evaluation
+    )
     markdown = render_rolling_cutoff_report(report)
+    concentration_markdown = render_rolling_concentration_report(concentration_report)
+    focus_bootstrap_markdown = render_rolling_focus_bootstrap_report(
+        focus_bootstrap_report
+    )
     write_text_atomically(
         ROLLING_REPORT_JSON_PATH,
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
@@ -634,7 +1431,40 @@ def main() -> None:
         )
         + "\n",
     )
+    write_text_atomically(
+        ROLLING_CONCENTRATION_JSON_PATH,
+        json.dumps(concentration_report, ensure_ascii=False, indent=2, allow_nan=False)
+        + "\n",
+    )
+    write_text_atomically(ROLLING_CONCENTRATION_MARKDOWN_PATH, concentration_markdown)
+    write_text_atomically(
+        ROLLING_FOCUS_BOOTSTRAP_JSON_PATH,
+        json.dumps(
+            focus_bootstrap_report, ensure_ascii=False, indent=2, allow_nan=False
+        )
+        + "\n",
+    )
+    write_bytes_atomically(
+        ROLLING_FOCUS_BOOTSTRAP_TRIALS_PATH,
+        compress(
+            (
+                json.dumps(
+                    focus_bootstrap_trials_report,
+                    ensure_ascii=False,
+                    indent=2,
+                    allow_nan=False,
+                )
+                + "\n"
+            ).encode("utf-8"),
+            mtime=0,
+        ),
+    )
+    write_text_atomically(
+        ROLLING_FOCUS_BOOTSTRAP_MARKDOWN_PATH, focus_bootstrap_markdown
+    )
     print(markdown)
+    print(concentration_markdown)
+    print(focus_bootstrap_markdown)
 
 
 if __name__ == "__main__":
