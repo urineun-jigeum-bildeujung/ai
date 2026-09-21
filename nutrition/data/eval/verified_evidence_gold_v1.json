@@ -1,0 +1,16 @@
+{
+  "artifact_version": "verified_evidence_gold_v1",
+  "validation_version": "gold_evidence_intake_v1",
+  "validated_at": "2026-09-20T10:55:58.478192+00:00",
+  "source_path": "/Users/aku/Documents/통합 프로젝트(우리는지금빌드중)/ai/data/eval/human_gold_evidence_intake_v1.csv",
+  "input_missing": true,
+  "schema_errors": [],
+  "human_intake_rows": 0,
+  "accepted": 0,
+  "rejected": 0,
+  "runtime_eligible_count": 0,
+  "rejection_reason_counts": {},
+  "operational_evidence": [],
+  "operational_candidates": [],
+  "rejected_rows": []
+}

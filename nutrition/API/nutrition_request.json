@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "purpose": "nutrition 분석 API 요청 스키마 placeholder (v4, 9/4 16:30 KST v3_draft v4 정합)",
+    "version": "draft-v4 (9/4 16:30 KST)",
+    "status": "placeholder, 9/8 Phase 2 nutrition_ai_api_spec_v2 와 동기화 예정",
+    "related": [
+      "단계/3단계_구현/API/nutrition_api_spec.md",
+      "단계/3단계_구현/API/nutrition_response.json",
+      "단계/3단계_구현/API/error_response.json"
+    ]
+  },
+  "POST /internal/v1/nutrition/analyze": {
+    "required": ["pet_id", "product_id"],
+    "optional": ["detail_level", "include_persona_friendly"],
+    "body_example": {
+      "pet_id": "pet_123",
+      "product_id": "prod_456",
+      "detail_level": "SUMMARY",
+      "include_persona_friendly": true
+    }
+  },
+  "GET /internal/v1/nutrition/diff": {
+    "required": ["pet_id", "product_id", "compare_product_id"],
+    "optional": ["detail_level", "include_persona_friendly"],
+    "query_example": {
+      "pet_id": "pet_123",
+      "product_id": "prod_456",
+      "compare_product_id": "prod_789",
+      "detail_level": "SUMMARY"
+    }
+  },
+  "GET /internal/v1/nutrition/exclusions": {
+    "required": ["pet_id", "product_id"],
+    "optional": [],
+    "query_example": {
+      "pet_id": "pet_123",
+      "product_id": "prod_456"
+    }
+  }
+}

@@ -1,0 +1,544 @@
+{
+  "_comment": "시드 4: 사료 원료/첨가제 코드. 출처: 농림축산식품부 「농림축산식품부_사료 정보 코드_20240920」 (CSV, EUC-KR, 1,001행). 성화섭 수기 작성 2026-08-13. 주요 카테고리만 추출, 21xx 곡류·23xx 동물성 단백질·24xx 광물성·32xx 첨가제 — 표준사료 검색의 원료 매핑 + 알레르기 dictionary의 시드.",
+  "_source": {
+    "publisher": "농림축산식품부 (mafra)",
+    "title": "농림축산식품부_사료 정보 코드_20240920",
+    "format": "CSV (EUC-KR)",
+    "total_rows": 1001,
+    "checked_at": "2026-08-13"
+  },
+  "category_hierarchy": {
+    "11xx": {
+      "name": "양축용 (가축 종류별)",
+      "count": 16,
+      "subcategories": [
+        "11001 고기소",
+        "11002 젖소",
+        "11003 돼지",
+        "11004 닭",
+        "11005 말",
+        "11006 양",
+        "11008 사슴",
+        "11010 칠면조",
+        "11011 토끼",
+        "11014 오소리",
+        "11017 배합사료원료",
+        "11018 거위",
+        "11020 당나귀",
+        "11023 특수배합사료"
+      ]
+    },
+    "12xx": {
+      "name": "고기소",
+      "count": 10,
+      "note": "11xx-고기소 상세"
+    },
+    "13xx": {
+      "name": "대용유용 (인공포유)",
+      "count": 4
+    },
+    "14xx": {
+      "name": "기타 가축",
+      "count": 2
+    },
+    "19xx": {
+      "name": "그밖의 동물·어류용 (애완동물 포함)",
+      "count": 3,
+      "note": "19902 반려동물-동물, 19903 반려동물-가공식품, 19904 반려동물-기타"
+    },
+    "21xx": {
+      "name": "식물성 단미사료-곡류",
+      "count": 171,
+      "subcategories": [
+        "21100 곡류",
+        "21200 박류",
+        "21300 유지",
+        "21400 당류",
+        "21500 박류부산물",
+        "21600 곡류"
+      ]
+    },
+    "22xx": {
+      "name": "식물성 단미사료-전분류",
+      "count": 40
+    },
+    "23xx": {
+      "name": "동물성 단백질류",
+      "count": 67,
+      "subcategories": [
+        "닭고기",
+        "소고기",
+        "양고기",
+        "돼지고기",
+        "어류",
+        "난류(계란)",
+        "유제품"
+      ]
+    },
+    "24xx": {
+      "name": "광물성-식염류",
+      "count": 63,
+      "subcategories": [
+        "칼슘·인·나트륨·마그네슘·철·아연·구리 등"
+      ]
+    },
+    "25xx": {
+      "name": "혼합성 단미사료",
+      "count": 2
+    },
+    "29xx": {
+      "name": "불해성지방(보호지방)",
+      "count": 15
+    },
+    "31xx": {
+      "name": "결착제",
+      "count": 10
+    },
+    "32xx": {
+      "name": "사료첨가제",
+      "count": 6,
+      "subcategories": [
+        "32100 아미노산제",
+        "32300 효소제 (당분해·인분해·단백질분해)",
+        "32401 미생물제-유익균"
+      ]
+    }
+  },
+  "pet_relevance_mapping": {
+    "_note": "골라주개 MVP = 강아지/고양이 사료. 23xx(동물성 단백질) + 21xx(곡류) + 24xx(광물) + 32xx(첨가제)가 핵심.",
+    "primary_categories": [
+      "21xx 곡류",
+      "23xx 동물성 단백질",
+      "24xx 광물성",
+      "32xx 첨가제"
+    ],
+    "pet_subcategories_19xx": {
+      "19902": "반려동물-동물 (소·말·양·토끼 등 사료원료)",
+      "19903": "반려동물-가공식품 (조미료·향신료·향미료)",
+      "19904": "반려동물-기타 (곡류·사료박류)"
+    }
+  },
+  "ingredient_matching_dictionary_v1": {
+    "_comment": "사료 성분표 → mafra 코드 매핑. 알레르기 dictionary 시드. 동의어 + 흔한 표기 통합.",
+    "chicken": {
+      "code_prefix": "23",
+      "synonyms": [
+        "chicken",
+        "poultry",
+        "계육",
+        "닭",
+        "닭가슴살",
+        "닭간",
+        "닭고기",
+        "닭기름",
+        "닭껍질",
+        "닭날개",
+        "닭다리",
+        "닭발",
+        "닭뼈",
+        "닭안심",
+        "치킨"
+      ],
+      "korean_names": [
+        "닭고기",
+        "치킨"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "chicken",
+      "prevalence": "가장 흔한 반려동물 알레르기 1위 (AAFCO 2024)",
+      "severity": "critical",
+      "ingredient_codes": [
+        "CHKN-MEAT",
+        "CHKN-BYPRODUCT-MEAL",
+        "CHKN-FAT",
+        "CHKN-LIVER",
+        "CHKN-HEART",
+        "CHKN-BROTH"
+      ],
+      "allergen_name_ko": "닭고기",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "beef": {
+      "code_prefix": "23",
+      "synonyms": [
+        "beef",
+        "비프",
+        "사태",
+        "소",
+        "소간",
+        "소고기",
+        "소기름",
+        "소뼈",
+        "소심장",
+        "소혀",
+        "송아지고기",
+        "쇠고기",
+        "양지",
+        "우육",
+        "한우"
+      ],
+      "korean_names": [
+        "소고기",
+        "비프"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "beef",
+      "prevalence": "알레르기 2위",
+      "severity": "critical",
+      "ingredient_codes": [
+        "BEEF-MEAT",
+        "BEEF-MEAL",
+        "BEEF-FAT",
+        "BEEF-LIVER",
+        "BEEF-HEART",
+        "BEEF-BROTH"
+      ],
+      "allergen_name_ko": "소고기",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "dairy": {
+      "code_prefix": "23",
+      "synonyms": [
+        " whey",
+        "casein",
+        "dairy",
+        "lactose",
+        "milk",
+        "whey",
+        "분유",
+        "연유",
+        "요거트",
+        "우유",
+        "유당",
+        "유제품",
+        "유청",
+        "유청단백질",
+        "유크림",
+        "치즈",
+        "카제인"
+      ],
+      "korean_names": [
+        "유제품",
+        "우유"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "dairy",
+      "prevalence": "강아지 유당불내증 多 (성견 50%)",
+      "severity": "critical",
+      "ingredient_codes": [
+        "WHEY",
+        "WPC",
+        "CASEIN",
+        "LACTOSE",
+        "MILK-FAT",
+        "CHEESE"
+      ],
+      "allergen_name_ko": "유제품",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "egg": {
+      "code_prefix": "23",
+      "synonyms": [
+        "albumin",
+        "dried egg",
+        "egg",
+        "whole egg",
+        "계란",
+        "난백",
+        "난분",
+        "난황",
+        "달걀",
+        "에그",
+        "전란"
+      ],
+      "korean_names": [
+        "계란",
+        "달걀"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "egg",
+      "severity": "critical",
+      "ingredient_codes": [
+        "EGG-WHOLE",
+        "EGG-WHITE",
+        "EGG-YOLK",
+        "EGG-DRIED"
+      ],
+      "allergen_name_ko": "계란",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "wheat": {
+      "code_prefix": "21",
+      "synonyms": [
+        "barley",
+        "gluten",
+        "rye",
+        "wheat",
+        "wheat flour",
+        "whole wheat",
+        "강력분",
+        "귀리",
+        "글루텐",
+        "밀",
+        "밀기울",
+        "박력분",
+        "보리",
+        "소맥",
+        "통밀",
+        "호밀"
+      ],
+      "korean_names": [
+        "밀",
+        "글루텐"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "wheat",
+      "prevalence": "글루텐 불내증 多 (셀리악병)",
+      "severity": "critical",
+      "ingredient_codes": [
+        "WHEAT",
+        "WHEAT-GLUTEN",
+        "WHEAT-FLOUR",
+        "WHEAT-BRAN"
+      ],
+      "allergen_name_ko": "밀 / 글루텐",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "soy": {
+      "code_prefix": "21",
+      "synonyms": [
+        "soy",
+        "soy protein",
+        "soybean",
+        "tofu",
+        "대두",
+        "대두단백",
+        "된장",
+        "두부",
+        "소이",
+        "청국장",
+        "콩",
+        "콩비지"
+      ],
+      "korean_names": [
+        "대두",
+        "콩"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "soy",
+      "severity": "critical",
+      "ingredient_codes": [
+        "SOYBEAN-MEAL",
+        "SOY-PROTEIN",
+        "SOY-OIL",
+        "TOFU"
+      ],
+      "allergen_name_ko": "대두",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "corn": {
+      "code_prefix": "21",
+      "synonyms": [
+        "corn",
+        "corn gluten",
+        "maize",
+        "옥수수",
+        "옥수수글루텐",
+        "옥전분",
+        "전분",
+        "콘"
+      ],
+      "korean_names": [
+        "옥수수"
+      ],
+      "allergy_flag": true,
+      "note": "알레르기보다 소화불량 多",
+      "allergy_id": "corn",
+      "severity": "severe",
+      "ingredient_codes": [
+        "CORN",
+        "CORN-GLUTEN-MEAL",
+        "CORN-STARCH",
+        "MAIZE"
+      ],
+      "allergen_name_ko": "옥수수",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "rice": {
+      "code_prefix": "21",
+      "synonyms": [
+        "쌀",
+        "백미",
+        "현미",
+        "찹쌀",
+        "rice",
+        "brown rice"
+      ],
+      "korean_names": [
+        "쌀"
+      ],
+      "allergy_flag": false,
+      "note": "저알레르기 베이스"
+    },
+    "lamb": {
+      "code_prefix": "23",
+      "synonyms": [
+        "lamb",
+        "mutton",
+        "램",
+        "램고기",
+        "머튼",
+        "양",
+        "양간",
+        "양고기",
+        "양육"
+      ],
+      "korean_names": [
+        "양고기"
+      ],
+      "allergy_flag": true,
+      "note": "알레르기 대체 단백질 (노출 적음)",
+      "allergy_id": "lamb",
+      "severity": "critical",
+      "ingredient_codes": [
+        "LAMB-MEAT",
+        "LAMB-MEAL",
+        "LAMB-FAT",
+        "LAMB-LIVER"
+      ],
+      "allergen_name_ko": "양고기",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "fish": {
+      "code_prefix": "23",
+      "synonyms": [
+        "fish",
+        "mackerel",
+        "salmon",
+        "tuna",
+        "whitefish",
+        "고등어",
+        "멸치",
+        "삼치",
+        "생선",
+        "생선분",
+        "어류",
+        "연어",
+        "연어유",
+        "정어리",
+        "참치",
+        "청어"
+      ],
+      "korean_names": [
+        "어류",
+        "생선"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "fish",
+      "severity": "critical",
+      "ingredient_codes": [
+        "SALMON",
+        "TUNA",
+        "MACKEREL",
+        "HERRING",
+        "SARDINE",
+        "WHITEFISH",
+        "FISH-MEAL",
+        "FISH-OIL"
+      ],
+      "allergen_name_ko": "생선",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "pork": {
+      "code_prefix": "23",
+      "synonyms": [
+        "pork",
+        "돈육",
+        "돈창",
+        "돼지",
+        "돼지간",
+        "돼지고기",
+        "돼지귀",
+        "베이컨",
+        "포크",
+        "햄"
+      ],
+      "korean_names": [
+        "돼지고기"
+      ],
+      "allergy_flag": true,
+      "note": "한국에서 흔한 단백질, 알레르기 적음",
+      "allergy_id": "pork",
+      "severity": "critical",
+      "ingredient_codes": [
+        "PORK-MEAT",
+        "PORK-MEAL",
+        "PORK-FAT",
+        "PORK-LIVER"
+      ],
+      "allergen_name_ko": "돼지고기",
+      "_source_seeds": [
+        "seed_11"
+      ]
+    },
+    "potato": {
+      "code_prefix": "",
+      "synonyms": [
+        "potato",
+        "sweet potato",
+        "tapioca",
+        "yam",
+        "감자",
+        "감자전분",
+        "고구마",
+        "타피오카"
+      ],
+      "korean_names": [
+        "감자 / 고구마"
+      ],
+      "allergy_flag": true,
+      "allergy_id": "potato",
+      "allergen_name_ko": "감자 / 고구마",
+      "severity": "moderate",
+      "ingredient_codes": [
+        "POTATO",
+        "POTATO-STARCH",
+        "SWEET-POTATO",
+        "TAPIOCA"
+      ],
+      "_source_seeds": [
+        "seed_11"
+      ]
+    }
+  },
+  "used_in": {
+    "matching_algorithm_v1": "ingredient_list 매칭 시 위 동의어 dictionary로 알레르기 1%라도 자동 제외",
+    "feed_search": "23xx = 동물성 단백질 카테고리 → 사료 종류 분류",
+    "persona_allergy_filter": "시드 3 (페르소나 5명) allergies 필드와 매칭"
+  },
+  "_seed_11_merged_at": "2026-08-14",
+  "_seed_11_stats": {
+    "added": 1,
+    "updated": 10,
+    "preserved": 0,
+    "total_dictionary_entries": 13
+  }
+}

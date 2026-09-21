@@ -1,0 +1,185 @@
+species,life_stage,form,nutrient_code,nutrient_name_ko,min_value,max_value,unit,basis,tier,source_url,source_page_table,profile_edition,publication_year,notes
+DOG,ADULT_MAINTENANCE,ALL,CRUDE_PROTEIN,조단백질,18.0,,g/100g_DM,DRY_MATTER,tier1_core,https://www.aafco.org/wp-content/uploads/2023/01/Pet_Food_Report_Annual_2014-Appendix_A-Revised_AAFCO_Nutrient_Profiles-Final_092214.pdf,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,CP 필수. AAFCO 2024 OP 동일값 인용
+DOG,ADULT_MAINTENANCE,ALL,CRUDE_FAT,조지방,5.5,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,조지방 필수
+DOG,ADULT_MAINTENANCE,ALL,LINOLEIC_ACID,리놀레산,1.0,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,오메가-6 필수
+DOG,ADULT_MAINTENANCE,ALL,CALCIUM,칼슘,0.5,2.5,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Ca 필수
+DOG,ADULT_MAINTENANCE,ALL,PHOSPHORUS,인,0.4,1.6,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,P 필수
+DOG,ADULT_MAINTENANCE,ALL,CA_P_RATIO,Ca:P 비율,1.0,2.0,ratio,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance) Footnote,AAFCO 2014 Nutrient Profiles,2014,종별 분기: DOG만 적용. CAT는 AAFCO Ca:P 미요구
+DOG,ADULT_MAINTENANCE,ALL,POTASSIUM,칼륨,0.6,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,K 필수
+DOG,ADULT_MAINTENANCE,ALL,SODIUM,나트륨,0.08,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Na 필수
+DOG,ADULT_MAINTENANCE,ALL,CHLORIDE,염소,0.12,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Cl 필수
+DOG,ADULT_MAINTENANCE,ALL,MAGNESIUM,마그네슘,0.06,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Mg 필수
+DOG,ADULT_MAINTENANCE,ALL,IRON,철,40,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Fe 필수
+DOG,ADULT_MAINTENANCE,ALL,COPPER,구리,7.3,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Cu 필수
+DOG,ADULT_MAINTENANCE,ALL,MANGANESE,망간,5.0,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Mn 필수
+DOG,ADULT_MAINTENANCE,ALL,ZINC,아연,80,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Zn 필수
+DOG,ADULT_MAINTENANCE,ALL,IODINE,요오드,1.0,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,I 필수
+DOG,ADULT_MAINTENANCE,ALL,SELENIUM,셀레늄,0.35,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Se 필수
+DOG,ADULT_MAINTENANCE,ALL,VITAMIN_A,비타민 A,5000,250000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,상한 250000 IU/kg. retinol activity equivalent
+DOG,ADULT_MAINTENANCE,ALL,VITAMIN_D,비타민 D,500,3000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,상한 3000 IU/kg. cholecalciferol activity
+DOG,ADULT_MAINTENANCE,ALL,VITAMIN_E,비타민 E,50,,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,α-tocopherol 기준. IU↔mg 환산 1 IU = 0.67 mg α-TE
+DOG,ADULT_MAINTENANCE,ALL,VITAMIN_K,비타민 K,0.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,메나디온 (menadione) 활성 기준
+DOG,ADULT_MAINTENANCE,ALL,THIAMINE,티아민,2.25,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B1
+DOG,ADULT_MAINTENANCE,ALL,RIBOFLAVIN,리보플라빈,5.2,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B2
+DOG,ADULT_MAINTENANCE,ALL,PANTOTHENIC_ACID,판토텐산,11.4,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B5
+DOG,ADULT_MAINTENANCE,ALL,NIACIN,니아신,13.6,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B3
+DOG,ADULT_MAINTENANCE,ALL,PYRIDOXINE,피리독신,1.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B6
+DOG,ADULT_MAINTENANCE,ALL,FOLIC_ACID,엽산,0.216,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,Vit B9
+DOG,ADULT_MAINTENANCE,ALL,VITAMIN_B12,비타민 B12,0.028,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,시아노코발라민
+DOG,ADULT_MAINTENANCE,ALL,CHOLINE,콜린,1360,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,비타민 유사체 (B complex)
+DOG,ADULT_MAINTENANCE,ALL,ARGININE,아르기닌,0.51,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,HISTIDINE,히스티딘,0.19,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,ISOLEUCINE,이소류신,0.38,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (BCAA)
+DOG,ADULT_MAINTENANCE,ALL,LEUCINE,류신,0.68,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (BCAA)
+DOG,ADULT_MAINTENANCE,ALL,LYSINE,라이신,0.63,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,METHIONINE,메티오닌,0.33,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (황 함유)
+DOG,ADULT_MAINTENANCE,ALL,METHIONINE_CYSTINE,메티오닌-시스틴,0.65,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (황 함유 합산)
+DOG,ADULT_MAINTENANCE,ALL,PHENYLALANINE,페닐알라닌,0.45,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,PHENYLALANINE_TYROSINE,페닐알라닌-티로신,0.74,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (방향족 합산)
+DOG,ADULT_MAINTENANCE,ALL,THREONINE,트레오닌,0.48,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,TRYPTOPHAN,트립토판,0.16,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산
+DOG,ADULT_MAINTENANCE,ALL,VALINE,발린,0.49,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,필수 아미노산 (BCAA)
+DOG,ADULT_MAINTENANCE,ALL,MOISTURE,수분,,12.0,g/100g_AF,AS_FED,basis_conversion_input,AAFCO 2014 Nutrient Profiles (Labeling Rule),AAFCO Pet Food Labeling,2014,DRY 사료 max 12% (라벨링 규칙). WET 사료 60-85%는 별도. basis_conversion_input — 영양소 평가 제외
+DOG,ADULT_MAINTENANCE,ALL,ALPHA_LINOLENIC_ACID,알파리놀렌산,,,g/100g_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance) Footnote,AAFCO 2014 Nutrient Profiles,2014,AAFCO는 권장만 (min 없음). NIAS에만 존재
+DOG,ADULT_MAINTENANCE,ALL,BIOTIN,비오틴,,,mg/kg_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,Table A-1 (Dog Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,AAFCO Dog profile 미포함. NIAS에만 존재
+DOG,ADULT_MAINTENANCE,ALL,CRUDE_ASH,조회분,,,g/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,AAFCO 영양소 아님 (라벨링 항목). NIAS에만 존재
+DOG,ADULT_MAINTENANCE,ALL,ENERGY_KCAL,에너지,,,kcal/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,AAFCO 영양소 아님 (라벨링 항목). NIAS에만 존재
+DOG,GROWTH_REPRODUCTION,ALL,CRUDE_PROTEIN,조단백질,22.5,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성장과 임신·수유기. AAFCO 2024 OP 동일값
+DOG,GROWTH_REPRODUCTION,ALL,CRUDE_FAT,조지방,8.5,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,LINOLEIC_ACID,리놀레산,1.3,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,오메가-6
+DOG,GROWTH_REPRODUCTION,ALL,CALCIUM,칼슘,1.0,2.5,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성장기 min 1.0% (성인 0.5% 대비 상향)
+DOG,GROWTH_REPRODUCTION,ALL,PHOSPHORUS,인,0.8,1.6,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,CA_P_RATIO,Ca:P 비율,1.0,2.0,ratio,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction) Footnote,AAFCO 2014 Nutrient Profiles,2014,DOG만 적용. Ca 1.0% / P 0.8% = 1.25 (PASS)
+DOG,GROWTH_REPRODUCTION,ALL,POTASSIUM,칼륨,0.6,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,SODIUM,나트륨,0.3,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.08% 대비 3.75배
+DOG,GROWTH_REPRODUCTION,ALL,CHLORIDE,염소,0.45,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,MAGNESIUM,마그네슘,0.04,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.06% 대비 하향
+DOG,GROWTH_REPRODUCTION,ALL,IRON,철,88,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 40 mg/kg 대비 2.2배
+DOG,GROWTH_REPRODUCTION,ALL,COPPER,구리,12.4,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 7.3 mg/kg 대비 1.7배
+DOG,GROWTH_REPRODUCTION,ALL,MANGANESE,망간,5.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,ZINC,아연,100,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,IODINE,요오드,1.0,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,SELENIUM,셀레늄,0.35,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VITAMIN_A,비타민 A,5000,250000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VITAMIN_D,비타민 D,500,3000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VITAMIN_E,비타민 E,50,,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VITAMIN_K,비타민 K,0.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,THIAMINE,티아민,2.25,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,RIBOFLAVIN,리보플라빈,5.2,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,PANTOTHENIC_ACID,판토텐산,11.4,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,NIACIN,니아신,13.6,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,PYRIDOXINE,피리독신,1.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,FOLIC_ACID,엽산,0.216,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VITAMIN_B12,비타민 B12,0.028,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,CHOLINE,콜린,1360,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,ARGININE,아르기닌,0.79,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.51% 대비 상향
+DOG,GROWTH_REPRODUCTION,ALL,HISTIDINE,히스티딘,0.25,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,ISOLEUCINE,이소류신,0.5,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,LEUCINE,류신,0.9,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,LYSINE,라이신,0.7,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,METHIONINE,메티오닌,0.35,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,METHIONINE_CYSTINE,메티오닌-시스틴,0.7,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,PHENYLALANINE,페닐알라닌,0.5,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,PHENYLALANINE_TYROSINE,페닐알라닌-티로신,1.0,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,THREONINE,트레오닌,0.64,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,TRYPTOPHAN,트립토판,0.2,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,VALINE,발린,0.56,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,MOISTURE,수분,,12.0,g/100g_AF,AS_FED,basis_conversion_input,AAFCO 2014 Nutrient Profiles (Labeling Rule),AAFCO Pet Food Labeling,2014,basis_conversion_input
+DOG,GROWTH_REPRODUCTION,ALL,ALPHA_LINOLENIC_ACID,알파리놀렌산,0.08,,g/100g_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction) Footnote,AAFCO 2014 Nutrient Profiles,2014,성장기 NIAS에 0.08 min 존재. AAFCO는 권장
+DOG,GROWTH_REPRODUCTION,ALL,BIOTIN,비오틴,,,mg/kg_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,Table A-2 (Dog Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,AAFCO Dog profile 미포함
+DOG,GROWTH_REPRODUCTION,ALL,CRUDE_ASH,조회분,,,g/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+DOG,GROWTH_REPRODUCTION,ALL,ENERGY_KCAL,에너지,,,kcal/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,CRUDE_PROTEIN,조단백질,26.0,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,CP 필수 (DOG 18% 대비 1.44배)
+CAT,ADULT_MAINTENANCE,ALL,CRUDE_FAT,조지방,9.0,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,LINOLEIC_ACID,리놀레산,0.5,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,ARACHIDONIC_ACID,아라키돈산,0.02,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,CAT 필수 (개는 합성 가능)
+CAT,ADULT_MAINTENANCE,ALL,CALCIUM,칼슘,0.6,2.5,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,PHOSPHORUS,인,0.5,1.6,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,POTASSIUM,칼륨,0.6,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,SODIUM,나트륨,0.2,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,성인 DOG 0.08% 대비 2.5배
+CAT,ADULT_MAINTENANCE,ALL,CHLORIDE,염소,0.3,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,MAGNESIUM,마그네슘,0.04,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,CAT 성인 min 0.04% (DOG 성인 0.06% 대비 하향)
+CAT,ADULT_MAINTENANCE,ALL,IRON,철,80,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,성인 DOG 40 mg/kg 대비 2배
+CAT,ADULT_MAINTENANCE,ALL,COPPER,구리,5,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,MANGANESE,망간,7.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,ZINC,아연,75,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,IODINE,요오드,0.6,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,SELENIUM,셀레늄,0.3,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,VITAMIN_A,비타민 A,5000,75000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,상한 75000 IU/kg (DOG 250000의 30% — CAT 비타민 A 민감)
+CAT,ADULT_MAINTENANCE,ALL,VITAMIN_D,비타민 D,500,3000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,VITAMIN_E,비타민 E,30,,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 50 IU/kg 대비 하향
+CAT,ADULT_MAINTENANCE,ALL,VITAMIN_K,비타민 K,0.1,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 0.5 mg/kg 대비 5배 하향
+CAT,ADULT_MAINTENANCE,ALL,THIAMINE,티아민,5.5,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 2.25 mg/kg 대비 2.4배 (CAT B1 요구량 큼)
+CAT,ADULT_MAINTENANCE,ALL,RIBOFLAVIN,리보플라빈,4,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,PANTOTHENIC_ACID,판토텐산,5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,NIACIN,니아신,60,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 13.6 mg/kg 대비 4.4배 (CAT niacin 요구량 큼)
+CAT,ADULT_MAINTENANCE,ALL,PYRIDOXINE,피리독신,4,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,FOLIC_ACID,엽산,0.8,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 0.216 mg/kg 대비 3.7배
+CAT,ADULT_MAINTENANCE,ALL,VITAMIN_B12,비타민 B12,0.02,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,CHOLINE,콜린,1200,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,DRY,TAURINE,타우린,1000,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DRY 사료 기준 1000 mg/kg DM
+CAT,ADULT_MAINTENANCE,WET,TAURINE,타우린,2000,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,WET (canned) 사료 기준 2000 mg/kg DM — 가열 가공 손실 보전
+CAT,ADULT_MAINTENANCE,ALL,ARGININE,아르기닌,1.04,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,DOG 0.51% 대비 2배
+CAT,ADULT_MAINTENANCE,ALL,HISTIDINE,히스티딘,0.31,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,ISOLEUCINE,이소류신,0.52,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,LEUCINE,류신,1.24,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,LYSINE,라이신,0.83,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,METHIONINE,메티오닌,0.4,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,METHIONINE_CYSTINE,메티오닌-시스틴,0.7,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,PHENYLALANINE,페닐알라닌,0.42,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,PHENYLALANINE_TYROSINE,페닐알라닌-티로신,0.88,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,THREONINE,트레오닌,0.73,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,TRYPTOPHAN,트립토판,0.16,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,VALINE,발린,0.62,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-3 (Cat Adult Maintenance),AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,MOISTURE,수분,,12.0,g/100g_AF,AS_FED,basis_conversion_input,AAFCO 2014 Nutrient Profiles (Labeling Rule),AAFCO Pet Food Labeling,2014,DRY 사료 max 12%. WET 사료 60-85%. basis_conversion_input
+CAT,ADULT_MAINTENANCE,ALL,ALPHA_LINOLENIC_ACID,알파리놀렌산,,,g/100g_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,AAFCO는 권장만
+CAT,ADULT_MAINTENANCE,ALL,BIOTIN,비오틴,7.0,,mg/kg_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,NIAS v5 CAT GROWTH_REPRODUCTION 에 7.0 min 존재. AAFCO는 강제 아님
+CAT,ADULT_MAINTENANCE,ALL,CRUDE_ASH,조회분,,,g/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+CAT,ADULT_MAINTENANCE,ALL,ENERGY_KCAL,에너지,,,kcal/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,CRUDE_PROTEIN,조단백질,30.0,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 26% 대비 상향
+CAT,GROWTH_REPRODUCTION,ALL,CRUDE_FAT,조지방,9.0,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인과 동일
+CAT,GROWTH_REPRODUCTION,ALL,LINOLEIC_ACID,리놀레산,0.5,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,ARACHIDONIC_ACID,아라키돈산,0.02,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,CALCIUM,칼슘,1.0,2.5,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.6% 대비 상향
+CAT,GROWTH_REPRODUCTION,ALL,PHOSPHORUS,인,0.8,1.6,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,POTASSIUM,칼륨,0.6,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,SODIUM,나트륨,0.3,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.2% 대비 상향
+CAT,GROWTH_REPRODUCTION,ALL,CHLORIDE,염소,0.45,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,MAGNESIUM,마그네슘,0.04,,g/100g_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,IRON,철,80,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인과 동일
+CAT,GROWTH_REPRODUCTION,ALL,COPPER,구리,5,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,MANGANESE,망간,7.5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,ZINC,아연,75,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,IODINE,요오드,0.6,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,SELENIUM,셀레늄,0.3,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,VITAMIN_A,비타민 A,5000,100000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,상한 100000 IU/kg (성인 75000의 1.33배)
+CAT,GROWTH_REPRODUCTION,ALL,VITAMIN_D,비타민 D,500,3000,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,VITAMIN_E,비타민 E,30,,IU/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,VITAMIN_K,비타민 K,0.1,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,THIAMINE,티아민,5.5,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,RIBOFLAVIN,리보플라빈,4,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,PANTOTHENIC_ACID,판토텐산,5,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,NIACIN,니아신,60,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,PYRIDOXINE,피리독신,4,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,FOLIC_ACID,엽산,0.8,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,VITAMIN_B12,비타민 B12,0.02,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,CHOLINE,콜린,1200,,mg/kg_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,DRY,TAURINE,타우린,1000,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,WET,TAURINE,타우린,2000,,mg/kg_DM,DRY_MATTER,tier1_core,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,ARGININE,아르기닌,1.24,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 1.04% 대비 상향
+CAT,GROWTH_REPRODUCTION,ALL,HISTIDINE,히스티딘,0.33,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,ISOLEUCINE,이소류신,0.56,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,LEUCINE,류신,1.28,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,LYSINE,라이신,1.1,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,성인 0.83% 대비 상향
+CAT,GROWTH_REPRODUCTION,ALL,METHIONINE,메티오닌,0.45,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,METHIONINE_CYSTINE,메티오닌-시스틴,0.75,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,PHENYLALANINE,페닐알라닌,0.5,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,PHENYLALANINE_TYROSINE,페닐알라닌-티로신,1.0,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,THREONINE,트레오닌,0.83,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,TRYPTOPHAN,트립토판,0.19,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,VALINE,발린,0.7,,g/100g_DM,DRY_MATTER,tier2_extended,AAFCO 2014 Nutrient Profiles,Table A-4 (Cat Growth and Reproduction),AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,MOISTURE,수분,,12.0,g/100g_AF,AS_FED,basis_conversion_input,AAFCO 2014 Nutrient Profiles (Labeling Rule),AAFCO Pet Food Labeling,2014,basis_conversion_input
+CAT,GROWTH_REPRODUCTION,ALL,ALPHA_LINOLENIC_ACID,알파리놀렌산,,,g/100g_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,BIOTIN,비오틴,7.0,,mg/kg_DM,DRY_MATTER,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,NIAS v5 에만 존재
+CAT,GROWTH_REPRODUCTION,ALL,CRUDE_ASH,조회분,,,g/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
+CAT,GROWTH_REPRODUCTION,ALL,ENERGY_KCAL,에너지,,,kcal/100g_AF,AS_FED,tier3_unavailable,AAFCO 2014 Nutrient Profiles,AAFCO 2014 Nutrient Profiles,2014,
