@@ -19,9 +19,11 @@ from scripts.run_uci_rolling_validation import (
     add_fold_brier_contributions,
     add_fold_outcome_distribution,
     build_rolling_bootstrap_trials_report,
+    build_rolling_concentration_report,
     build_rolling_cutoff_report,
     classify_history_irregularity,
     evaluate_rolling_cutoff_models,
+    render_rolling_concentration_report,
     render_rolling_cutoff_report,
     summarize_history_irregularity_cohorts,
 )
@@ -139,7 +141,9 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     """요약과 반복 원자료에 NaN 없이 Test 미사용·해석 범위를 남깁니다."""
     report = build_rolling_cutoff_report(rolling_evaluation)
     trials_report = build_rolling_bootstrap_trials_report(rolling_evaluation)
+    concentration_report = build_rolling_concentration_report(rolling_evaluation)
     markdown = render_rolling_cutoff_report(report)
+    concentration_markdown = render_rolling_concentration_report(concentration_report)
 
     assert report["evaluation_split"] == "historical_rolling_validation"
     assert report["test_accessed"] is False
@@ -157,9 +161,56 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     assert "원래 Test 사용: `아니요`" in markdown
     assert len(trials_report["trials"]) == 40
     assert report["cohorts"]
+    assert concentration_report["test_accessed"] is False
+    assert "원래 Test는 사용하지 않았습니다" in concentration_report["scope"]
+    assert "재구매 Rolling 구간별 모델 우위 집중도" in concentration_markdown
     assert "과거 구매 간격 불규칙성별 사건·오차" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
+    json.dumps(concentration_report, ensure_ascii=False, allow_nan=False)
+
+
+def test_concentration_report_requires_both_entities_and_matching_cohort() -> None:
+    """사용자·상품 중 하나가 없거나 순기여가 원래 구간과 다르면 거절합니다."""
+    concentration = pd.DataFrame(
+        [
+            {
+                "fold_id": "fold_1",
+                "count_column": "history_interval_count",
+                "count_bucket": "8-15",
+                "entity_column": entity_column,
+                "sample_count": 10,
+                "known_sample_count": 8,
+                "net_contribution_total": 0.02,
+            }
+            for entity_column in ("user_id", "product_id")
+        ]
+    )
+    evaluation = RollingCutoffEvaluation(
+        folds=pd.DataFrame({"fold_id": ["fold_1"], "test_accessed": [False]}),
+        cohorts=pd.DataFrame(
+            {
+                "fold_id": ["fold_1"],
+                "count_column": ["history_interval_count"],
+                "count_bucket": ["8-15"],
+                "sample_count": [10],
+                "outcome_known_count": [8],
+                "brier_difference_contribution": [0.02],
+            }
+        ),
+        calibration=pd.DataFrame(),
+        bootstrap_trials=pd.DataFrame(),
+        concentration=concentration,
+    )
+    assert len(build_rolling_concentration_report(evaluation)["results"]) == 2
+    with pytest.raises(ValueError, match="누락"):
+        build_rolling_concentration_report(
+            replace(evaluation, concentration=concentration.iloc[:1])
+        )
+    changed = concentration.copy()
+    changed.loc[0, "net_contribution_total"] = 0.03
+    with pytest.raises(ValueError, match="순기여 합계"):
+        build_rolling_concentration_report(replace(evaluation, concentration=changed))
 
 
 def test_rolling_cohorts_partition_each_fold_without_losing_samples(

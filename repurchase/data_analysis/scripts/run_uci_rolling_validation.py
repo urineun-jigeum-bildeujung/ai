@@ -22,6 +22,7 @@ from .modeling.evaluation import (
     summarize_ipcw_probability_pair_by_count_segment,
 )
 from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
+from .modeling.rolling_diagnostics import summarize_entity_contribution_concentration
 from .modeling.rolling_validation import (
     RollingValidationError,
     build_expanding_rolling_splits,
@@ -51,6 +52,18 @@ ROLLING_REPORT_MARKDOWN_PATH = REPORT_DIR / "uci_repurchase_rolling_cutoff.md"
 ROLLING_BOOTSTRAP_TRIALS_PATH = (
     REPORT_DIR / "uci_repurchase_rolling_cutoff_bootstrap_trials.json"
 )
+ROLLING_CONCENTRATION_JSON_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_concentration.json"
+)
+ROLLING_CONCENTRATION_MARKDOWN_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_concentration.md"
+)
+# 앞선 Validation 진단에서 fold 2의 우위 변화에 기여한 두 구간만 고정해 봅니다.
+CONCENTRATION_FOCUS_SEGMENTS: Final[tuple[tuple[str, str], ...]] = (
+    ("product_train_sample_count", "128+"),
+    ("history_interval_count", "8-15"),
+)
+CONCENTRATION_ENTITY_COLUMNS: Final[tuple[str, ...]] = ("user_id", "product_id")
 
 
 @dataclass(frozen=True)
@@ -61,6 +74,7 @@ class RollingCutoffEvaluation:
     cohorts: pd.DataFrame
     calibration: pd.DataFrame
     bootstrap_trials: pd.DataFrame
+    concentration: pd.DataFrame
 
 
 def _model_metric_row(
@@ -342,6 +356,7 @@ def evaluate_rolling_cutoff_models(
     cohort_tables: list[pd.DataFrame] = []
     calibration_tables: list[pd.DataFrame] = []
     bootstrap_tables: list[pd.DataFrame] = []
+    concentration_records: list[dict[str, int | float | str | None]] = []
     for fold_index, split in enumerate(rolling_splits, start=1):
         fold_id = f"fold_{fold_index}"
         if split.validation_end_at > base_split.validation_end_at:
@@ -589,6 +604,25 @@ def evaluate_rolling_cutoff_models(
         )
         cohort_tables.append(irregularity_cohorts)
 
+        for count_column, count_bucket in CONCENTRATION_FOCUS_SEGMENTS:
+            focus_bucket = pd.cut(
+                paired_rows[count_column],
+                bins=COUNT_SEGMENT_BINS,
+                labels=COUNT_SEGMENT_LABELS,
+                include_lowest=True,
+            )
+            if not focus_bucket.eq(count_bucket).any():
+                # 작은 테스트 데이터에는 실제 UCI에서 발견한 집중 구간이 없을 수 있습니다.
+                continue
+            for entity_column in CONCENTRATION_ENTITY_COLUMNS:
+                concentration = summarize_entity_contribution_concentration(
+                    paired_rows,
+                    count_column=count_column,
+                    count_bucket=count_bucket,
+                    entity_column=entity_column,
+                )
+                concentration_records.append({"fold_id": fold_id, **concentration})
+
         fold_calibration = comparison.calibration.copy()
         fold_calibration.insert(0, "fold_id", fold_id)
         calibration_tables.append(fold_calibration)
@@ -601,6 +635,7 @@ def evaluate_rolling_cutoff_models(
         cohorts=pd.concat(cohort_tables, ignore_index=True),
         calibration=pd.concat(calibration_tables, ignore_index=True),
         bootstrap_trials=pd.concat(bootstrap_tables, ignore_index=True),
+        concentration=pd.DataFrame(concentration_records),
     )
 
 
@@ -835,6 +870,125 @@ def build_rolling_bootstrap_trials_report(
     }
 
 
+def build_rolling_concentration_report(
+    evaluation: RollingCutoffEvaluation,
+) -> dict[str, object]:
+    """선택된 구간의 사용자·상품 순기여 집중도를 전체 구간 값과 대조합니다."""
+    folds = evaluation.folds
+    cohorts = evaluation.cohorts
+    concentration = evaluation.concentration
+    if folds["test_accessed"].astype(bool).any():
+        raise ValueError("집중도 보고서에는 Test 결과를 포함할 수 없습니다.")
+    expected_keys: set[tuple[str, str, str, str]] = set()
+    for fold in folds.itertuples():
+        for count_column, count_bucket in CONCENTRATION_FOCUS_SEGMENTS:
+            cohort = cohorts.loc[
+                cohorts["fold_id"].eq(fold.fold_id)
+                & cohorts["count_column"].eq(count_column)
+                & cohorts["count_bucket"].eq(count_bucket)
+            ]
+            if len(cohort) > 1:
+                raise ValueError("집중도 기준 구간은 fold마다 고유해야 합니다.")
+            if cohort.empty:
+                continue
+            for entity_column in CONCENTRATION_ENTITY_COLUMNS:
+                expected_keys.add(
+                    (fold.fold_id, count_column, count_bucket, entity_column)
+                )
+
+    if concentration.empty:
+        actual_keys: set[tuple[str, str, str, str]] = set()
+    else:
+        actual_keys = set(
+            concentration[
+                ["fold_id", "count_column", "count_bucket", "entity_column"]
+            ].itertuples(index=False, name=None)
+        )
+    if actual_keys != expected_keys or len(concentration) != len(expected_keys):
+        raise ValueError("집중도 분석 구간 또는 사용자·상품 결과가 누락됐습니다.")
+    for row in concentration.itertuples():
+        cohort = cohorts.loc[
+            cohorts["fold_id"].eq(row.fold_id)
+            & cohorts["count_column"].eq(row.count_column)
+            & cohorts["count_bucket"].eq(row.count_bucket)
+        ].iloc[0]
+        if row.sample_count != int(
+            cohort["sample_count"]
+        ) or row.known_sample_count != int(cohort["outcome_known_count"]):
+            raise ValueError("집중도 표본 수가 원래 구간 평가와 다릅니다.")
+        if not isclose(
+            row.net_contribution_total,
+            float(cohort["brier_difference_contribution"]),
+            abs_tol=1e-10,
+        ):
+            raise ValueError("집중도 순기여 합계가 구간 Brier 기여량과 다릅니다.")
+
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "repurchase_rolling_concentration_v1",
+        "evaluation_split": "historical_rolling_validation",
+        "test_accessed": False,
+        "focus_segments": [
+            {"count_column": column, "count_bucket": bucket}
+            for column, bucket in CONCENTRATION_FOCUS_SEGMENTS
+        ],
+        "concentration_basis": (
+            "사용자·상품별로 AFT Brier - LightGBM Brier의 fold 전체 IPCW "
+            "분모 기준 순기여를 먼저 합산한 뒤, 양의 순기여만 대상으로 "
+            "Top-1·Top-5·HHI를 계산"
+        ),
+        "results": dataframe_to_nullable_records(concentration),
+        "scope": (
+            "기존 Validation에서 우위 변화가 컸던 구간을 사후 진단합니다. "
+            "양의 순기여 집중도는 LightGBM에 유리한 몫의 쏠림을 설명하며 "
+            "모델 우위의 통계적 유의성이나 인과 원인을 증명하지 않습니다. "
+            "동일 사용자·상품의 행별 양·음 기여는 합산 후 판단하고, 검열로 "
+            "정답이 불명인 행은 구성 표본에는 남기되 Brier에는 넣지 않습니다. "
+            "원래 Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def render_rolling_concentration_report(report: dict[str, object]) -> str:
+    """고정 구간의 사용자·상품 집중도를 읽기 쉬운 표로 표시합니다."""
+    lines = [
+        "# 재구매 Rolling 구간별 모델 우위 집중도",
+        "",
+        "- 차이 방향: `AFT Brier - LightGBM Brier` (양수면 LightGBM 유리)",
+        "- 양의 순기여 점유율은 사용자·상품 안에서 먼저 행별 이득과 손실을 "
+        "상쇄한 뒤 계산합니다.",
+        "- 전체 표본 Top-1 비율은 단순 행 수 기준이며, 양의 순기여 Top-1 "
+        "비율과 분모가 다릅니다.",
+        "- 분모가 될 양의 순기여가 없으면 Top 점유율·HHI·유효 개체 수는 "
+        "N/A로 표시합니다.",
+        "",
+        "| Fold | 진단 구간 | 기준 | 구간 표본 | 개체 수 | 양의 순기여 개체 | "
+        "행 수 Top-1 | 양의 순기여 Top-1 | Top-5 | HHI | 유효 개체 수 | "
+        "구간 순기여 |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | "
+        "---: | ---: | ---: |",
+    ]
+    for row in report["results"]:
+        focus = f"{row['count_column']}={row['count_bucket']}"
+        lines.append(
+            f"| {row['fold_id']} | {focus} | {row['entity_column']} | "
+            f"{row['sample_count']:,} | {row['entity_count']:,} | "
+            f"{row['positive_entity_count']:,} | {row['row_top1_share']:.2%} | "
+            f"{_format_optional_percent(row['positive_top1_share'])} | "
+            f"{_format_optional_percent(row['positive_top5_share'])} | "
+            f"{_format_optional_float(row['positive_hhi'])} | "
+            f"{_format_optional_float(row['positive_effective_entity_count'])} | "
+            f"{row['net_contribution_total']:+.6f} |"
+        )
+    lines.extend(["", str(report["scope"]), ""])
+    return "\n".join(lines)
+
+
+def _format_optional_percent(value: object) -> str:
+    """양의 기여가 없을 때 퍼센트를 만들어내지 않습니다."""
+    return "N/A" if value is None or pd.isna(value) else f"{float(value):.2%}"
+
+
 def _format_optional_float(value: object) -> str:
     """결측 가능한 지표는 Markdown에서 N/A로 표시합니다."""
     return "N/A" if value is None or pd.isna(value) else f"{float(value):.6f}"
@@ -989,7 +1143,9 @@ def main() -> None:
     evaluation = evaluate_rolling_cutoff_models(labels)
     report = build_rolling_cutoff_report(evaluation)
     trials_report = build_rolling_bootstrap_trials_report(evaluation)
+    concentration_report = build_rolling_concentration_report(evaluation)
     markdown = render_rolling_cutoff_report(report)
+    concentration_markdown = render_rolling_concentration_report(concentration_report)
     write_text_atomically(
         ROLLING_REPORT_JSON_PATH,
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
@@ -1005,7 +1161,14 @@ def main() -> None:
         )
         + "\n",
     )
+    write_text_atomically(
+        ROLLING_CONCENTRATION_JSON_PATH,
+        json.dumps(concentration_report, ensure_ascii=False, indent=2, allow_nan=False)
+        + "\n",
+    )
+    write_text_atomically(ROLLING_CONCENTRATION_MARKDOWN_PATH, concentration_markdown)
     print(markdown)
+    print(concentration_markdown)
 
 
 if __name__ == "__main__":
