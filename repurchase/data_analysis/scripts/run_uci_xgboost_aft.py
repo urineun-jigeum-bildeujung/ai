@@ -27,7 +27,15 @@ from .modeling.evaluation import (
     IPCWUserBootstrapResult,
     bootstrap_ipcw_brier_pair_difference_by_user,
     calculate_regression_metrics,
+    evaluate_ipcw_brier_score,
+    evaluate_ipcw_concordance_index,
+    summarize_ipcw_calibration,
     summarize_ipcw_probability_pair_by_count_segment,
+)
+from .modeling.lightgbm_baseline import (
+    build_lightgbm_training_data,
+    predict_lightgbm_repurchase_probability,
+    train_lightgbm_classifier,
 )
 from .modeling.maturity_analysis import (
     add_split_ipcw_weights,
@@ -133,6 +141,15 @@ TIME_COMPARISON_JSON_REPORT_PATH = (
 TIME_COMPARISON_MARKDOWN_REPORT_PATH = (
     REPORT_DIR / "uci_xgboost_aft_observed_time_comparison.md"
 )
+LIGHTGBM_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_lightgbm_comparison.json"
+)
+LIGHTGBM_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_lightgbm_comparison.md"
+)
+LIGHTGBM_COMPARISON_TRIALS_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_lightgbm_bootstrap_trials.json"
+)
 
 
 @dataclass(frozen=True)
@@ -162,6 +179,17 @@ class XGBoostAFTPreparedExperiment:
     prediction_data: XGBoostAFTPredictionData
     training_reference_probability: float
     reference_population_sample_count: int
+
+
+@dataclass(frozen=True)
+class XGBoostAFTLightGBMComparison:
+    """동일 모집단 AFT·LightGBM 확률 비교 결과를 함께 보관합니다."""
+
+    comparison: pd.DataFrame
+    calibration: pd.DataFrame
+    segments: pd.DataFrame
+    paired_rows: pd.DataFrame
+    user_bootstrap: IPCWUserBootstrapResult
 
 
 def prepare_xgboost_aft_experiment(
@@ -335,6 +363,51 @@ def evaluate_xgboost_aft_observed_event_time(
     return calculate_regression_metrics(observed_rows)
 
 
+def _validate_xgboost_aft_result_matches_prepared(
+    prepared: XGBoostAFTPreparedExperiment,
+    result: XGBoostAFTExperimentResult,
+) -> pd.DataFrame:
+    """AFT 결과가 동일한 준비 데이터에서 생성됐는지 계약값으로 검증합니다."""
+    if result.split != prepared.split:
+        raise ValueError("AFT 결과와 준비 데이터의 시간 분할이 다릅니다.")
+    expected_training_summary = {
+        "trained_until": prepared.split.train_end_at,
+        "source_sample_count": len(prepared.training),
+        "included_sample_count": len(prepared.training_data.row_index),
+        "feature_columns": list(prepared.training_data.feature_columns),
+        "training_reference_probability": prepared.training_reference_probability,
+    }
+    for field, expected_value in expected_training_summary.items():
+        if result.training_summary.get(field) != expected_value:
+            raise ValueError(f"AFT 결과와 준비 데이터의 {field} 값이 다릅니다.")
+    if int(result.probability.summary["horizon_days"]) != prepared.horizon_days:
+        raise ValueError("AFT 결과와 준비 데이터의 horizon_days 값이 다릅니다.")
+
+    aft_rows = result.probability.rows
+    if (
+        aft_rows["ipcw_horizon_days"].nunique() != 1
+        or int(aft_rows["ipcw_horizon_days"].iat[0]) != prepared.horizon_days
+    ):
+        raise ValueError("AFT 평가 행과 준비 데이터의 horizon_days 값이 다릅니다.")
+    expected_validation = add_split_survival_observation(prepared.validation)
+    expected_validation = expected_validation.loc[
+        expected_validation["survival_observed_duration_days"].ne(0)
+    ]
+    if not aft_rows.index.equals(expected_validation.index):
+        raise ValueError("AFT 결과와 준비 데이터의 0일 제외 Validation 행이 다릅니다.")
+    comparison_contract_columns = (
+        *IPCW_CANDIDATE_ID_COLUMNS,
+        *prepared.training_data.feature_columns,
+        "target_duration_days",
+        "survival_event_observed",
+        "survival_observed_duration_days",
+    )
+    for column in comparison_contract_columns:
+        if not aft_rows[column].equals(expected_validation[column]):
+            raise ValueError(f"AFT 결과와 준비 데이터의 {column} 값이 다릅니다.")
+    return expected_validation
+
+
 def compare_xgboost_aft_observed_time_with_median_baselines(
     prepared: XGBoostAFTPreparedExperiment,
     result: XGBoostAFTExperimentResult,
@@ -347,8 +420,7 @@ def compare_xgboost_aft_observed_time_with_median_baselines(
         raise ValueError("시점 비교에는 수축 강도 후보가 하나 이상 필요합니다.")
     if len(set(strengths)) != len(strengths):
         raise ValueError("시점 비교 수축 강도 후보에는 중복을 사용할 수 없습니다.")
-    if result.split != prepared.split:
-        raise ValueError("AFT 결과와 시점 비교 준비 데이터의 시간 분할이 다릅니다.")
+    _validate_xgboost_aft_result_matches_prepared(prepared, result)
 
     # AFT가 실제로 사용한 0일 제외 Train 행만 중앙값 후보에도 제공합니다.
     training_rows = prepared.training.loc[prepared.training_data.row_index].copy()
@@ -369,25 +441,6 @@ def compare_xgboost_aft_observed_time_with_median_baselines(
         )
 
     aft_rows = result.probability.rows
-    expected_validation = add_split_survival_observation(prepared.validation)
-    expected_validation = expected_validation.loc[
-        expected_validation["survival_observed_duration_days"].ne(0)
-    ]
-    if not aft_rows.index.equals(expected_validation.index):
-        raise ValueError(
-            "AFT 결과와 시점 비교 준비 데이터의 0일 제외 Validation 행이 다릅니다."
-        )
-    comparison_contract_columns = (
-        *IPCW_CANDIDATE_ID_COLUMNS,
-        "target_duration_days",
-        "survival_event_observed",
-        "survival_observed_duration_days",
-    )
-    for column in comparison_contract_columns:
-        if not aft_rows[column].equals(expected_validation[column]):
-            raise ValueError(
-                f"AFT 결과와 시점 비교 준비 데이터의 {column} 값이 다릅니다."
-            )
     observed_index = aft_rows.index[aft_rows["survival_event_observed"]]
     if observed_index.empty:
         raise ValueError("시점 후보를 비교할 관측 재구매 사건이 없습니다.")
@@ -606,6 +659,276 @@ def render_xgboost_aft_observed_time_comparison_report(
         "| 후보 | 표본 | MAE | Median AE | ±7일 | MAE 개선 | ±7일 개선 |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
         *candidate_lines,
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def compare_xgboost_aft_with_lightgbm_probability(
+    prepared: XGBoostAFTPreparedExperiment,
+    result: XGBoostAFTExperimentResult,
+    *,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+    bootstrap_replicates: int = BOOTSTRAP_REPLICATES,
+    bootstrap_random_seed: int = BOOTSTRAP_RANDOM_SEED,
+) -> XGBoostAFTLightGBMComparison:
+    """동일 학습 원본·Validation·피처에서 AFT와 LightGBM을 비교합니다."""
+    _validate_xgboost_aft_result_matches_prepared(prepared, result)
+    common_training = prepared.training.loc[prepared.training_data.row_index].copy()
+    weighted_training = add_split_ipcw_weights(
+        common_training,
+        horizon_days=prepared.horizon_days,
+    )
+    lightgbm_training = build_lightgbm_training_data(
+        weighted_training,
+        feature_columns=prepared.training_data.feature_columns,
+    )
+    lightgbm_model = train_lightgbm_classifier(lightgbm_training)
+
+    aft_rows = result.probability.rows.copy()
+    validation_rows = prepared.validation.loc[aft_rows.index].copy()
+    lightgbm_probability = predict_lightgbm_repurchase_probability(
+        lightgbm_model,
+        validation_rows,
+    )
+    if not lightgbm_probability.index.equals(aft_rows.index):
+        raise RuntimeError("LightGBM 확률과 AFT Validation 행 순서가 다릅니다.")
+
+    lightgbm_rows = aft_rows.copy()
+    lightgbm_rows["predicted_event_probability"] = lightgbm_probability
+    # C-index에는 실제 일수가 아니라 확률과 반대 방향인 순위 점수를 사용합니다.
+    lightgbm_concordance_rows = lightgbm_rows.copy()
+    lightgbm_concordance_rows["predicted_duration_days"] = lightgbm_probability.rsub(
+        1.0
+    )
+
+    model_rows = {
+        "xgboost_aft": aft_rows,
+        "lightgbm_probability": lightgbm_rows,
+    }
+    training_counts = {
+        "xgboost_aft": len(common_training),
+        "lightgbm_probability": len(lightgbm_training.features),
+    }
+    concordance_rows = {
+        "xgboost_aft": aft_rows,
+        "lightgbm_probability": lightgbm_concordance_rows,
+    }
+    comparison_rows: list[dict[str, object]] = []
+    calibration_tables = []
+    for model_name in ("xgboost_aft", "lightgbm_probability"):
+        probability_rows = model_rows[model_name]
+        brier = evaluate_ipcw_brier_score(
+            probability_rows,
+            reference_probability=prepared.training_reference_probability,
+        )
+        calibration = summarize_ipcw_calibration(
+            probability_rows,
+            bin_count=calibration_bin_count,
+        )
+        calibration.insert(0, "model_candidate", model_name)
+        calibration_tables.append(calibration)
+        concordance = evaluate_ipcw_concordance_index(concordance_rows[model_name])
+        comparison_rows.append(
+            {
+                "model_candidate": model_name,
+                "feature_columns": list(prepared.training_data.feature_columns),
+                "common_training_source_sample_count": len(common_training),
+                "actual_training_sample_count": training_counts[model_name],
+                "evaluation_sample_count": int(brier["validation_sample_count"]),
+                "outcome_known_count": int(brier["outcome_known_count"]),
+                "ipcw_brier_score": float(brier["ipcw_brier_score"]),
+                "ipcw_reference_brier_score": float(
+                    brier["ipcw_reference_brier_score"]
+                ),
+                "brier_skill_score": brier["brier_skill_score"],
+                "ipcw_concordance_index": float(concordance["ipcw_concordance_index"]),
+                "expected_calibration_error": float(
+                    calibration["weighted_absolute_gap_contribution"].sum()
+                ),
+                "maximum_calibration_error": float(
+                    calibration["absolute_calibration_gap"].max()
+                ),
+            }
+        )
+
+    comparison = pd.DataFrame(comparison_rows)
+    fixed_columns = (
+        "feature_columns",
+        "common_training_source_sample_count",
+        "evaluation_sample_count",
+        "outcome_known_count",
+        "ipcw_reference_brier_score",
+    )
+    for column in fixed_columns:
+        if comparison[column].map(str).nunique() != 1:
+            raise RuntimeError(f"AFT·LightGBM 공통 비교 조건이 다릅니다: {column}")
+
+    aft_predictions = aft_rows.loc[:, IPCW_CANDIDATE_ID_COLUMNS].copy()
+    aft_predictions["predicted_event_probability"] = aft_rows[
+        "predicted_event_probability"
+    ]
+    lightgbm_predictions = lightgbm_rows.loc[:, IPCW_CANDIDATE_ID_COLUMNS].copy()
+    lightgbm_predictions["predicted_event_probability"] = lightgbm_rows[
+        "predicted_event_probability"
+    ]
+    paired_rows = build_paired_probability_predictions(
+        aft_rows,
+        aft_predictions,
+        lightgbm_predictions,
+    )
+    user_bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
+        paired_rows,
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=bootstrap_random_seed,
+    )
+    segment_tables = [
+        summarize_ipcw_probability_pair_by_count_segment(
+            paired_rows,
+            count_column=count_column,
+            calibration_bin_count=calibration_bin_count,
+        )
+        for count_column in AFT_SEGMENT_COUNT_COLUMNS
+    ]
+    segments = pd.concat(segment_tables, ignore_index=True)
+    segments["validation_lower_brier_model"] = segments["brier_improvement"].map(
+        lambda improvement: (
+            "insufficient_outcome"
+            if pd.isna(improvement)
+            else ("lightgbm_probability" if improvement > 0 else "xgboost_aft")
+        )
+    )
+    return XGBoostAFTLightGBMComparison(
+        comparison=comparison,
+        calibration=pd.concat(calibration_tables, ignore_index=True),
+        segments=segments,
+        paired_rows=paired_rows,
+        user_bootstrap=user_bootstrap,
+    )
+
+
+def build_xgboost_aft_lightgbm_comparison_report(
+    result: XGBoostAFTExperimentResult,
+    comparison: XGBoostAFTLightGBMComparison,
+) -> dict[str, object]:
+    """동일 모집단 AFT·LightGBM 비교를 JSON 저장 구조로 변환합니다."""
+    bootstrap = comparison.user_bootstrap.summary
+    lower = float(bootstrap["bootstrap_lower_95_brier_improvement"])
+    upper = float(bootstrap["bootstrap_upper_95_brier_improvement"])
+    if lower > 0:
+        decision = "LightGBM의 Brier Score가 AFT보다 일관되게 낮았습니다."
+    elif upper < 0:
+        decision = "AFT의 Brier Score가 LightGBM보다 일관되게 낮았습니다."
+    else:
+        decision = "95% 구간이 0을 포함해 두 모델의 안정적인 우위를 확정하지 않습니다."
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_lightgbm_comparison_v1",
+        "evaluation_split": "validation",
+        "horizon_days": int(result.probability.summary["horizon_days"]),
+        "aft_model": _build_xgboost_aft_candidate_identity(result),
+        "brier_improvement_direction": "aft_brier_minus_lightgbm_brier",
+        "comparison": dataframe_to_nullable_records(comparison.comparison),
+        "calibration": dataframe_to_nullable_records(comparison.calibration),
+        "segments": dataframe_to_nullable_records(comparison.segments),
+        "user_bootstrap": bootstrap,
+        "decision": decision,
+        "scope": (
+            "AFT가 사용한 0일 제외 Train 원본·Validation·네 피처를 LightGBM과 "
+            "공유했습니다. LightGBM은 고정 30일 정답을 확인할 수 있는 Train "
+            "행만 실제 학습하며, AFT는 우측검열 행도 사용합니다. LightGBM의 "
+            "C-index는 1-확률을 순위 점수로 사용한 결과이며 예상 일수 해석이 "
+            "아닙니다. 사용자 Bootstrap은 고정된 두 모델의 Validation 사용자 "
+            "구성 불확실성만 측정하며 Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def build_xgboost_aft_lightgbm_bootstrap_trials_report(
+    report: dict[str, object],
+    comparison: XGBoostAFTLightGBMComparison,
+) -> dict[str, object]:
+    """AFT·LightGBM 사용자 Bootstrap 반복 원자료를 별도 구조로 만듭니다."""
+    return {
+        "dataset": report["dataset"],
+        "experiment_version": report["experiment_version"],
+        "evaluation_split": report["evaluation_split"],
+        "brier_improvement_direction": report["brier_improvement_direction"],
+        "summary": comparison.user_bootstrap.summary,
+        "trials": dataframe_to_nullable_records(comparison.user_bootstrap.trials),
+    }
+
+
+def render_xgboost_aft_lightgbm_comparison_report(
+    report: dict[str, object],
+) -> str:
+    """AFT·LightGBM 동일 모집단 비교를 사람이 검토할 Markdown으로 만듭니다."""
+    comparison_lines = [
+        (
+            f"| {row['model_candidate']} | "
+            f"{row['actual_training_sample_count']:,} | "
+            f"{row['evaluation_sample_count']:,} | "
+            f"{row['ipcw_brier_score']:.6f} | "
+            f"{row['ipcw_concordance_index']:.6f} | "
+            f"{row['expected_calibration_error']:.6f} | "
+            f"{row['maximum_calibration_error']:.6f} |"
+        )
+        for row in report["comparison"]
+    ]
+    segment_lines = [
+        (
+            f"| {row['count_column']} | {row['count_bucket']} | "
+            f"{row['sample_count']:,} | {row['user_count']:,} | "
+            f"{_format_optional_metric(row['reference_ipcw_brier_score'])} | "
+            f"{_format_optional_metric(row['candidate_ipcw_brier_score'])} | "
+            f"{_format_optional_signed_metric(row['brier_improvement'])} | "
+            f"{_format_optional_metric(row['reference_expected_calibration_error'])} | "
+            f"{_format_optional_metric(row['candidate_expected_calibration_error'])} | "
+            f"{row['validation_lower_brier_model']} |"
+        )
+        for row in report["segments"]
+    ]
+    bootstrap = report["user_bootstrap"]
+    model = report["aft_model"]
+    lines = [
+        "# UCI XGBoost AFT·LightGBM 동일 모집단 비교",
+        "",
+        f"- AFT 설정: `{model['loss_distribution']}`, "
+        f"`scale={model['loss_distribution_scale']}`, "
+        f"`{model['num_boost_round']} rounds`",
+        f"- 평가 시점: `{report['horizon_days']}`일",
+        "- Bootstrap 개선량: `AFT Brier - LightGBM Brier`",
+        "",
+        "| 모델 | 실제 학습 | 평가 표본 | Brier | C-index | ECE | MCE |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        *comparison_lines,
+        "",
+        "## 사용자 단위 paired Bootstrap",
+        "",
+        f"- 사용자: `{bootstrap['user_count']:,}`명",
+        f"- 반복 수 / seed: `{bootstrap['bootstrap_replicates']:,}` / "
+        f"`{bootstrap['random_seed']}`",
+        f"- 점 개선량: `{bootstrap['point_brier_improvement']:+.6f}`",
+        f"- 평균 개선량: `{bootstrap['bootstrap_mean_brier_improvement']:+.6f}`",
+        f"- 95% 구간: `[{bootstrap['bootstrap_lower_95_brier_improvement']:+.6f}, "
+        f"{bootstrap['bootstrap_upper_95_brier_improvement']:+.6f}]`",
+        f"- LightGBM 개선 비율: "
+        f"`{bootstrap['bootstrap_positive_improvement_rate']:.2%}`",
+        "",
+        str(report["decision"]),
+        "",
+        "## 이력량 구간별 비교",
+        "",
+        "구간 개선량은 `AFT Brier - LightGBM Brier`이며 양수면 LightGBM, "
+        "0 이하면 AFT가 낮습니다. 이 열은 Validation에서 Brier가 낮았던 모델을 "
+        "표시할 뿐 운영 라우팅 규칙이 아니며 rolling cutoff 재검증이 필요합니다.",
+        "",
+        "| 기준 | 구간 | 표본 | 사용자 | AFT Brier | LightGBM Brier | 개선량 | "
+        "AFT ECE | LightGBM ECE | Validation 최저 Brier |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        *segment_lines,
         "",
         str(report["scope"]),
         "",
@@ -1351,6 +1674,13 @@ def _format_optional_metric(value: object) -> str:
     return f"{float(value):.6f}"
 
 
+def _format_optional_signed_metric(value: object) -> str:
+    """정의되지 않은 변화량은 N/A, 숫자는 부호와 함께 표시합니다."""
+    if value is None:
+        return "N/A"
+    return f"{float(value):+.6f}"
+
+
 def render_xgboost_aft_round_comparison_report(report: dict[str, object]) -> str:
     """반복 횟수 후보와 선택 근거를 사람이 검토할 Markdown으로 만듭니다."""
     candidates = report["candidates"]
@@ -1776,10 +2106,10 @@ def render_xgboost_aft_segment_comparison_report(
             f"| {row['count_column']} | {row['count_bucket']} | "
             f"{row['sample_count']:,} | {row['user_count']:,} | "
             f"{row['outcome_known_count']:,} | "
-            f"{row['reference_ipcw_brier_score']:.6f} | "
-            f"{row['candidate_ipcw_brier_score']:.6f} | "
-            f"{row['brier_improvement']:+.6f} | "
-            f"{row['candidate_expected_calibration_error']:.6f} | "
+            f"{_format_optional_metric(row['reference_ipcw_brier_score'])} | "
+            f"{_format_optional_metric(row['candidate_ipcw_brier_score'])} | "
+            f"{_format_optional_signed_metric(row['brier_improvement'])} | "
+            f"{_format_optional_metric(row['candidate_expected_calibration_error'])} | "
             f"{'검토' if row['validation_fallback_candidate'] else '-'} |"
         )
         for row in report["segments"]
@@ -2069,6 +2399,23 @@ def main() -> None:
     time_comparison_markdown = render_xgboost_aft_observed_time_comparison_report(
         time_comparison_report
     )
+    lightgbm_comparison = compare_xgboost_aft_with_lightgbm_probability(
+        prepared,
+        result,
+    )
+    lightgbm_comparison_report = build_xgboost_aft_lightgbm_comparison_report(
+        result,
+        lightgbm_comparison,
+    )
+    lightgbm_comparison_trials_report = (
+        build_xgboost_aft_lightgbm_bootstrap_trials_report(
+            lightgbm_comparison_report,
+            lightgbm_comparison,
+        )
+    )
+    lightgbm_comparison_markdown = render_xgboost_aft_lightgbm_comparison_report(
+        lightgbm_comparison_report
+    )
     logistic_candidate = None
     candidate_pair_bootstrap = None
     unavailable_reason = None
@@ -2173,6 +2520,24 @@ def main() -> None:
         )
         + "\n"
     )
+    lightgbm_comparison_json = (
+        json.dumps(
+            lightgbm_comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    lightgbm_comparison_trials_json = (
+        json.dumps(
+            lightgbm_comparison_trials_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     report_json = (
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
     )
@@ -2238,6 +2603,18 @@ def main() -> None:
     write_text_atomically(
         TIME_COMPARISON_MARKDOWN_REPORT_PATH,
         time_comparison_markdown,
+    )
+    write_text_atomically(
+        LIGHTGBM_COMPARISON_JSON_REPORT_PATH,
+        lightgbm_comparison_json,
+    )
+    write_text_atomically(
+        LIGHTGBM_COMPARISON_MARKDOWN_REPORT_PATH,
+        lightgbm_comparison_markdown,
+    )
+    write_text_atomically(
+        LIGHTGBM_COMPARISON_TRIALS_REPORT_PATH,
+        lightgbm_comparison_trials_json,
     )
     write_text_atomically(
         JSON_REPORT_PATH,

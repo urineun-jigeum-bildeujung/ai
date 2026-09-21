@@ -25,6 +25,8 @@ from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_candidate_pair_bootstrap_report,
     build_xgboost_aft_candidate_pair_bootstrap_trials_report,
     build_xgboost_aft_distribution_comparison_report,
+    build_xgboost_aft_lightgbm_bootstrap_trials_report,
+    build_xgboost_aft_lightgbm_comparison_report,
     build_xgboost_aft_logistic_scale_comparison_report,
     build_xgboost_aft_observed_time_comparison_report,
     build_xgboost_aft_report,
@@ -34,11 +36,13 @@ from scripts.run_uci_xgboost_aft import (
     compare_xgboost_aft_loss_distribution_scales,
     compare_xgboost_aft_loss_distributions,
     compare_xgboost_aft_observed_time_with_median_baselines,
+    compare_xgboost_aft_with_lightgbm_probability,
     evaluate_xgboost_aft_candidate,
     evaluate_xgboost_aft_observed_event_time,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_candidate_pair_bootstrap_report,
     render_xgboost_aft_distribution_comparison_report,
+    render_xgboost_aft_lightgbm_comparison_report,
     render_xgboost_aft_logistic_scale_comparison_report,
     render_xgboost_aft_observed_time_comparison_report,
     render_xgboost_aft_report,
@@ -271,6 +275,37 @@ def test_compare_xgboost_aft_observed_time_rejects_mixed_experiment_rows(
                 changed_result,
             )
 
+    changed_horizon = replace(prepared, horizon_days=30)
+    with pytest.raises(ValueError, match="horizon_days"):
+        compare_xgboost_aft_with_lightgbm_probability(
+            changed_horizon,
+            result,
+            bootstrap_replicates=2,
+        )
+
+    changed_training_data = replace(
+        prepared.training_data,
+        feature_columns=prepared.training_data.feature_columns[:-1],
+    )
+    changed_features = replace(prepared, training_data=changed_training_data)
+    with pytest.raises(ValueError, match="feature_columns"):
+        compare_xgboost_aft_with_lightgbm_probability(
+            changed_features,
+            result,
+            bootstrap_replicates=2,
+        )
+
+    changed_validation = prepared.validation.copy()
+    feature_column = prepared.training_data.feature_columns[0]
+    changed_validation.loc[changed_validation.index[0], feature_column] += 100
+    changed_feature_values = replace(prepared, validation=changed_validation)
+    with pytest.raises(ValueError, match=feature_column):
+        compare_xgboost_aft_with_lightgbm_probability(
+            changed_feature_values,
+            result,
+            bootstrap_replicates=2,
+        )
+
 
 def test_compare_xgboost_aft_observed_time_candidates_rejects_invalid_strengths(
     uci_e2e_purchase_events: pd.DataFrame,
@@ -294,6 +329,84 @@ def test_compare_xgboost_aft_observed_time_candidates_rejects_invalid_strengths(
                 result,
                 shrinkage_strengths=strengths,
             )
+
+
+def test_compare_xgboost_aft_with_lightgbm_uses_same_probability_cohort(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """같은 피처·Train 원본·Validation에서 AFT와 LightGBM을 쌍 비교합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    probability_rows_before = result.probability.rows.copy(deep=True)
+
+    comparison = compare_xgboost_aft_with_lightgbm_probability(
+        prepared,
+        result,
+        bootstrap_replicates=20,
+        bootstrap_random_seed=7,
+    )
+
+    assert comparison.comparison["model_candidate"].tolist() == [
+        "xgboost_aft",
+        "lightgbm_probability",
+    ]
+    for column in (
+        "feature_columns",
+        "common_training_source_sample_count",
+        "evaluation_sample_count",
+        "outcome_known_count",
+        "ipcw_reference_brier_score",
+    ):
+        assert comparison.comparison[column].map(str).nunique() == 1
+    assert comparison.comparison["ipcw_brier_score"].between(0.0, 1.0).all()
+    assert comparison.comparison["ipcw_concordance_index"].between(0.0, 1.0).all()
+    assert set(comparison.calibration["model_candidate"]) == {
+        "xgboost_aft",
+        "lightgbm_probability",
+    }
+    for count_column in comparison.segments["count_column"].unique():
+        segment_rows = comparison.segments.loc[
+            comparison.segments["count_column"].eq(count_column)
+        ]
+        assert segment_rows["sample_count"].sum() == len(result.probability.rows)
+        assert segment_rows["outcome_known_count"].sum() == int(
+            result.probability.rows["ipcw_outcome_known"].sum()
+        )
+    assert set(comparison.segments["validation_lower_brier_model"]).issubset(
+        {"xgboost_aft", "lightgbm_probability"}
+    )
+    assert len(comparison.paired_rows) == len(result.probability.rows)
+    assert comparison.user_bootstrap.summary["bootstrap_replicates"] == 20
+    aft_brier, lightgbm_brier = comparison.comparison["ipcw_brier_score"]
+    assert comparison.user_bootstrap.summary[
+        "point_brier_improvement"
+    ] == pytest.approx(aft_brier - lightgbm_brier)
+
+    report = build_xgboost_aft_lightgbm_comparison_report(result, comparison)
+    trials_report = build_xgboost_aft_lightgbm_bootstrap_trials_report(
+        report,
+        comparison,
+    )
+    markdown = render_xgboost_aft_lightgbm_comparison_report(report)
+    assert report["evaluation_split"] == "validation"
+    assert report["brier_improvement_direction"] == ("aft_brier_minus_lightgbm_brier")
+    assert len(report["comparison"]) == 2
+    assert len(report["segments"]) == len(comparison.segments)
+    assert len(trials_report["trials"]) == 20
+    assert "예상 일수 해석이 아닙니다" in report["scope"]
+    assert "사용자 단위 paired Bootstrap" in markdown
+    assert "이력량 구간별 비교" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+    json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
+    pd.testing.assert_frame_equal(result.probability.rows, probability_rows_before)
 
 
 def test_summarize_xgboost_aft_probability_by_count_segments_preserves_population(
@@ -333,6 +446,24 @@ def test_summarize_xgboost_aft_probability_by_count_segments_preserves_populatio
     assert "fallback 검토 후보" in report["scope"]
     assert "Train 상수확률 Brier - AFT Brier" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+    unknown_segments = segments.copy()
+    unknown_index = unknown_segments.index[0]
+    unknown_segments.loc[unknown_index, "outcome_known_count"] = 0
+    for column in (
+        "reference_ipcw_brier_score",
+        "candidate_ipcw_brier_score",
+        "brier_improvement",
+        "candidate_expected_calibration_error",
+    ):
+        unknown_segments.loc[unknown_index, column] = np.nan
+    unknown_report = build_xgboost_aft_segment_comparison_report(
+        result,
+        unknown_segments,
+    )
+    unknown_markdown = render_xgboost_aft_segment_comparison_report(unknown_report)
+    assert "N/A" in unknown_markdown
+    json.dumps(unknown_report, ensure_ascii=False, allow_nan=False)
 
 
 def test_evaluate_xgboost_aft_candidate_can_skip_bootstrap(

@@ -777,6 +777,17 @@ def summarize_ipcw_probability_pair_by_count_segment(
             "user_count": int(segment_rows["user_id"].nunique()),
             "outcome_known_count": int(len(known_rows)),
         }
+        if known_rows.empty:
+            # 정답 미확인 구간도 표본 구성에는 포함하되 성능값은 만들지 않습니다.
+            for role in probability_columns:
+                summary[f"{role}_ipcw_brier_score"] = float("nan")
+                summary[f"{role}_expected_calibration_error"] = float("nan")
+                summary[f"{role}_maximum_calibration_error"] = float("nan")
+                summary[f"{role}_weighted_calibration_gap"] = float("nan")
+            summary["brier_improvement"] = float("nan")
+            summary["calibration_error_improvement"] = float("nan")
+            summaries.append(summary)
+            continue
         for role, probability_column in probability_columns.items():
             evaluation_rows = segment_rows.copy()
             evaluation_rows["predicted_event_probability"] = evaluation_rows[
