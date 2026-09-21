@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from gzip import compress
 from math import isclose, isfinite
 from typing import Final
@@ -23,8 +23,18 @@ from .modeling.evaluation import (
     evaluate_ipcw_brier_score,
     summarize_ipcw_probability_pair_by_count_segment,
 )
-from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
+from .modeling.lightgbm_baseline import build_lightgbm_training_data
+from .modeling.maturity_analysis import (
+    add_split_ipcw_weights,
+    summarize_validation_ipcw_weight_stability,
+)
 from .modeling.rolling_diagnostics import summarize_entity_contribution_concentration
+from .modeling.rolling_user_composition import (
+    FoldUserComposition,
+    bootstrap_fold_difference_by_union_user,
+    build_fold_user_composition,
+    summarize_fold_user_composition,
+)
 from .modeling.rolling_validation import (
     RollingValidationError,
     build_expanding_rolling_splits,
@@ -73,6 +83,12 @@ ROLLING_FOCUS_BOOTSTRAP_MARKDOWN_PATH = (
 ROLLING_FOCUS_BOOTSTRAP_TRIALS_PATH = (
     REPORT_DIR / "uci_repurchase_rolling_focus_bootstrap_trials.json.gz"
 )
+ROLLING_USER_COMPOSITION_JSON_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_user_composition.json"
+)
+ROLLING_USER_COMPOSITION_MARKDOWN_PATH = (
+    REPORT_DIR / "uci_repurchase_rolling_user_composition.md"
+)
 # 앞선 Validation 진단에서 fold 2의 우위 변화에 기여한 두 구간만 고정해 봅니다.
 CONCENTRATION_FOCUS_SEGMENTS: Final[tuple[tuple[str, str], ...]] = (
     ("product_train_sample_count", "128+"),
@@ -92,6 +108,11 @@ class RollingCutoffEvaluation:
     concentration: pd.DataFrame
     focus_bootstrap: pd.DataFrame
     focus_bootstrap_trials: pd.DataFrame
+    user_compositions: tuple[FoldUserComposition, ...] = ()
+    user_groups: pd.DataFrame = field(default_factory=pd.DataFrame)
+    user_diagnostics: pd.DataFrame = field(default_factory=pd.DataFrame)
+    user_overlaps: pd.DataFrame = field(default_factory=pd.DataFrame)
+    user_bootstrap: pd.DataFrame = field(default_factory=pd.DataFrame)
 
 
 def _model_metric_row(
@@ -376,6 +397,7 @@ def evaluate_rolling_cutoff_models(
     concentration_records: list[dict[str, int | float | str | None]] = []
     focus_bootstrap_records: list[dict[str, object]] = []
     focus_bootstrap_trial_tables: list[pd.DataFrame] = []
+    user_compositions: list[FoldUserComposition] = []
     for fold_index, split in enumerate(rolling_splits, start=1):
         fold_id = f"fold_{fold_index}"
         if split.validation_end_at > base_split.validation_end_at:
@@ -557,6 +579,29 @@ def evaluate_rolling_cutoff_models(
         # 상품 표본 수는 현재 fold의 Train 구매만 세어 Validation 미래 정보가
         # 진단 구간에도 섞이지 않게 합니다. 표본 수는 모델 피처가 아닙니다.
         paired_rows = comparison.paired_rows.copy()
+        # 두 모델의 평가 행은 동일합니다. 학습 노출은 원천 Train,
+        # 0일 제외 공통 Train, IPCW 정답 확인 LightGBM Train으로 나눕니다.
+        common_train = prepared.training.loc[prepared.training_data.row_index]
+        weighted_train = add_split_ipcw_weights(common_train, horizon_days=horizon_days)
+        lightgbm_train = build_lightgbm_training_data(
+            weighted_train,
+            feature_columns=prepared.training_data.feature_columns,
+        )
+        if len(lightgbm_train.features) != int(
+            lightgbm_metrics["actual_training_sample_count"]
+        ):
+            raise RollingValidationError(
+                f"{fold_id}: 재구성한 LightGBM 학습 표본 수가 원래 모델과 다릅니다."
+            )
+        user_compositions.append(
+            build_fold_user_composition(
+                fold_id,
+                paired_rows,
+                source_train=prepared.training,
+                common_train=common_train,
+                lightgbm_train=weighted_train.loc[lightgbm_train.features.index],
+            )
+        )
         product_train_counts = prepared.training.groupby(
             "product_id", observed=True, sort=False
         ).size()
@@ -699,6 +744,26 @@ def evaluate_rolling_cutoff_models(
         fold_trials.insert(0, "fold_id", fold_id)
         bootstrap_tables.append(fold_trials)
 
+    user_groups, user_diagnostics, user_overlaps = summarize_fold_user_composition(
+        user_compositions
+    )
+    user_bootstrap = pd.DataFrame(
+        [
+            {
+                "previous_fold_id": previous.fold_id,
+                "current_fold_id": current.fold_id,
+                **bootstrap_fold_difference_by_union_user(
+                    previous,
+                    current,
+                    replicates=bootstrap_replicates,
+                    seed=bootstrap_random_seed,
+                ),
+            }
+            for index, current in enumerate(user_compositions)
+            for previous in user_compositions[:index]
+        ]
+    )
+
     return RollingCutoffEvaluation(
         folds=pd.DataFrame(fold_records),
         cohorts=pd.concat(cohort_tables, ignore_index=True),
@@ -711,6 +776,11 @@ def evaluate_rolling_cutoff_models(
             if focus_bootstrap_trial_tables
             else pd.DataFrame()
         ),
+        user_compositions=tuple(user_compositions),
+        user_groups=user_groups,
+        user_diagnostics=user_diagnostics,
+        user_overlaps=user_overlaps,
+        user_bootstrap=user_bootstrap,
     )
 
 
@@ -1394,6 +1464,290 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
     )
 
 
+def build_rolling_user_composition_report(
+    evaluation: RollingCutoffEvaluation,
+) -> dict[str, object]:
+    """사용자 ID 없이 fold별 모집단 구성과 민감도 결과만 내보냅니다."""
+    if evaluation.folds["test_accessed"].astype(bool).any():
+        raise ValueError("사용자 구성 보고서에 최종 Test를 포함할 수 없습니다.")
+    if len(evaluation.user_compositions) != len(evaluation.folds):
+        raise ValueError("fold별 사용자 구성 진단이 누락됐습니다.")
+    if len(evaluation.user_diagnostics) != len(evaluation.folds):
+        raise ValueError("fold별 사용자 집중도 진단이 누락됐습니다.")
+    fold_ids = set(evaluation.folds["fold_id"])
+    if set(evaluation.user_diagnostics["fold_id"]) != fold_ids:
+        raise ValueError("사용자 구성 진단의 fold ID가 평가 결과와 다릅니다.")
+    ordered_fold_ids = evaluation.folds["fold_id"].tolist()
+    expected_group_keys = {
+        (fold_id, group)
+        for fold_id in ordered_fold_ids[1:]
+        for group in (
+            "immediate_previous_validation",
+            "earlier_validation_only",
+            "common_train_only",
+            "source_train_only_excluded",
+            "new_to_source_train",
+        )
+    }
+    # fold가 하나라면 비교할 이전 Validation이 없어 이 표는 열 없이 비어 있습니다.
+    # 빈 표를 정상적인 0개 그룹으로 읽되, 아래 기대 키 검사는 그대로 유지합니다.
+    actual_group_keys = (
+        set(
+            evaluation.user_groups[["fold_id", "group"]].itertuples(
+                index=False, name=None
+            )
+        )
+        if not evaluation.user_groups.empty
+        else set()
+    )
+    if actual_group_keys != expected_group_keys or len(evaluation.user_groups) != len(
+        expected_group_keys
+    ):
+        raise ValueError("사용자 노출 그룹의 fold별 결과가 누락되거나 중복됐습니다.")
+    expected_pair_keys = {
+        (previous, current)
+        for index, current in enumerate(ordered_fold_ids)
+        for previous in ordered_fold_ids[:index]
+    }
+    for table in (evaluation.user_overlaps, evaluation.user_bootstrap):
+        # 단일 fold는 쌍 자체가 없지만, 복수 fold에서 빈 표가 오면 아래에서
+        # 누락으로 거부합니다. 둘을 같은 빈 표라도 다르게 판단해야 합니다.
+        actual_pair_keys = (
+            set(
+                table[["previous_fold_id", "current_fold_id"]].itertuples(
+                    index=False, name=None
+                )
+            )
+            if not table.empty
+            else set()
+        )
+        if actual_pair_keys != expected_pair_keys or len(table) != len(
+            expected_pair_keys
+        ):
+            raise ValueError("사용자 중복 또는 Bootstrap의 fold 쌍이 누락됐습니다.")
+    for fold, diagnostic in zip(
+        evaluation.folds.itertuples(),
+        evaluation.user_diagnostics.itertuples(),
+        strict=True,
+    ):
+        if (
+            fold.fold_id != diagnostic.fold_id
+            or fold.evaluation_user_count != diagnostic.evaluation_user_count
+        ):
+            raise ValueError(
+                "사용자 구성의 fold 또는 사용자 수가 평가 결과와 다릅니다."
+            )
+        if not isclose(
+            fold.brier_difference_aft_minus_lightgbm,
+            diagnostic.row_weighted_brier_difference,
+            abs_tol=1e-10,
+        ):
+            raise ValueError("사용자별 가중 오차 합계가 원래 fold Brier와 다릅니다.")
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "repurchase_rolling_user_composition_v1",
+        "evaluation_split": "historical_rolling_validation",
+        "test_accessed": False,
+        "brier_difference_direction": "aft_minus_lightgbm",
+        "group_definition": (
+            "immediate_previous_validation > earlier_validation_only > "
+            "common_train_only > "
+            "source_train_only_excluded > new_to_source_train; "
+            "fold 1 has no previous validation"
+        ),
+        "group_brier_denominator": "within_group_known_ipcw_weight",
+        "contribution_denominator": "whole_fold_known_ipcw_weight",
+        "bootstrap_scope": (
+            "paired union-user resampling; fitted models and IPCW weights fixed; "
+            "no retraining uncertainty"
+        ),
+        "folds": dataframe_to_nullable_records(evaluation.folds),
+        "user_groups": dataframe_to_nullable_records(evaluation.user_groups),
+        "user_diagnostics": dataframe_to_nullable_records(evaluation.user_diagnostics),
+        "user_overlaps": dataframe_to_nullable_records(evaluation.user_overlaps),
+        "user_bootstrap": dataframe_to_nullable_records(evaluation.user_bootstrap),
+    }
+
+
+def render_rolling_user_composition_report(report: dict[str, object]) -> str:
+    """fold별 사용자 재등장과 동일 사용자 성능을 읽기 쉬운 표로 만듭니다."""
+    lines = [
+        "# Rolling Validation 사용자 구성·중복 진단",
+        "",
+        "최종 Test는 사용하지 않았다. 두 모델은 fold마다 동일한 평가 행을 사용한다. "
+        "양수인 Brier 차이(AFT − LightGBM)는 LightGBM이 유리함을 뜻한다.",
+        "",
+        "## Fold별 학습 노출·사용자 집중도",
+        "",
+        "| Fold | 평가/정답 확인 사용자 | 공통 Train에 없던 사용자 | "
+        "LightGBM Train에 없던 사용자 | 사용자당 행 p50/p95/max | "
+        "전체 행 Top-1/Top-5·HHI | 정답 확인 IPCW 가중치 Top-1/Top-5·HHI | "
+        "행 가중 차이 | 사용자 동일 가중 차이 |",
+        "| --- | ---: | ---: | ---: | --- | --- | --- | ---: | ---: |",
+    ]
+    for row in report["user_diagnostics"]:
+        lines.append(
+            f"| {row['fold_id']} | {row['evaluation_user_count']:,}/"
+            f"{row['known_user_count']:,} | "
+            f"{row['evaluation_users_absent_common_train']:,} | "
+            f"{row['evaluation_users_absent_lightgbm_train']:,} | "
+            f"{row['user_row_count_p50']:.1f}/{row['user_row_count_p95']:.1f}/"
+            f"{row['user_row_count_max']:,} | "
+            f"{row['row_top1_share']:.2%}/{row['row_top5_share']:.2%}·"
+            f"{row['row_hhi']:.5f} | "
+            f"{row['known_weight_top1_share']:.2%}/"
+            f"{row['known_weight_top5_share']:.2%}·"
+            f"{row['known_weight_hhi']:.5f} | "
+            f"{row['row_weighted_brier_difference']:+.5f} | "
+            f"{row['equal_user_brier_difference']:+.5f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## 사용자별 절대 순기여 집중",
+            "",
+            "사용자별 `IPCW 가중 AFT 제곱오차 합 − LightGBM 제곱오차 합`을 먼저 구하고 "
+            "절댓값의 점유율을 계산했다. 큰 양·음의 기여가 서로 상쇄되는 전체 Brier "
+            "차이와는 다른 집중도다.",
+            "",
+            "| Fold | Top-1 | Top-5 | HHI |",
+            "| --- | ---: | ---: | ---: |",
+        ]
+    )
+    for row in report["user_diagnostics"]:
+        if row["absolute_net_contribution_hhi"] is None:
+            lines.append(f"| {row['fold_id']} | N/A | N/A | N/A |")
+            continue
+        lines.append(
+            f"| {row['fold_id']} | "
+            f"{row['absolute_net_contribution_top1_share']:.2%} | "
+            f"{row['absolute_net_contribution_top5_share']:.2%} | "
+            f"{row['absolute_net_contribution_hhi']:.5f} |"
+        )
+    lines.extend(
+        [
+            "",
+            "사용자 동일 가중 차이는 정답 확인 행이 있는 사용자마다 내부 IPCW Brier를 "
+            "계산한 뒤 사용자마다 1표씩 평균한 값이다. 전체 행 Top 점유율과 "
+            "정답 확인 IPCW 가중치 Top 점유율은 분모가 다르다.",
+            "",
+            "## 이전 Validation 노출별 성능",
+            "",
+            "`직전 Val`은 바로 앞선 창에 등장한 사용자, `더 이른 Val만`은 "
+            "바로 앞 창에는 없지만 그보다 앞선 창에 등장한 사용자다. "
+            "`공통 Train만`은 앞선 Val에는 없으나 "
+            "현재 공통 Train에 있는 사용자다. `원천 Train만`은 원천 Train에는 있었지만 "
+            "AFT용 0일 제외 후 공통 Train에는 없는 사용자다. `진짜 신규`는 "
+            "이전 Val과 원천 Train 어디에도 없던 사용자다. "
+            "검열로 정답이 불명인 행을 미재구매로 간주하지 않았다.",
+            "",
+            "| Fold | 그룹 | 사용자/행 | 확인/불명 | 사건/미사건 | IPCW 가중치 비중 | "
+            "그룹 내부 Brier 차이 | fold 전체 차이에 대한 기여 |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        ]
+    )
+    names = {
+        "immediate_previous_validation": "직전 Val",
+        "earlier_validation_only": "더 이른 Val만",
+        "common_train_only": "공통 Train만",
+        "source_train_only_excluded": "원천 Train만",
+        "new_to_source_train": "진짜 신규",
+    }
+    for row in report["user_groups"]:
+        group_difference = row["brier_difference"]
+        lines.append(
+            f"| {row['fold_id']} | {names[row['group']]} | "
+            f"{row['user_count']:,}/{row['sample_count']:,} | "
+            f"{row['known_count']:,}/{row['unknown_count']:,} | "
+            f"{row['event_count']:,}/{row['no_event_count']:,} | "
+            f"{row['known_weight_share']:.2%} | "
+            f"{group_difference:+.5f} | "
+            f"{row['fold_contribution']:+.5f} |"
+            if group_difference is not None
+            else f"| {row['fold_id']} | {names[row['group']]} | "
+            f"{row['user_count']:,}/{row['sample_count']:,} | "
+            f"{row['known_count']:,}/{row['unknown_count']:,} | "
+            f"{row['event_count']:,}/{row['no_event_count']:,} | "
+            f"{row['known_weight_share']:.2%} | 평가 불가 | +0.00000 |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Fold 간 사용자 재등장",
+            "",
+            "겹치는 사용자가 있더라도 서로 다른 구매 사건이다. 동일 구매 사건의 창 간 중복은 오류로 차단한다.",
+            "",
+            "| Fold 쌍 | 공통 사용자/합집합 | Jaccard | 이전 fold 대비 유지/이탈·현재 신규 | "
+            "현재 행 중 공통 사용자 비중 | "
+            "공통 상품쌍 | 동일 사용자 부분집합 Brier 차이(이전→현재) |",
+            "| --- | ---: | ---: | --- | ---: | ---: | --- |",
+        ]
+    )
+    shared_direction_notes: list[str] = []
+    for row in report["user_overlaps"]:
+        previous_difference = row["previous_shared_brier_difference"]
+        current_difference = row["current_shared_brier_difference"]
+        comparable = (
+            f"{previous_difference:+.5f} → {current_difference:+.5f}"
+            if previous_difference is not None and current_difference is not None
+            else "정답 확인 표본 부족"
+        )
+        lines.append(
+            f"| {row['previous_fold_id']} → {row['current_fold_id']} | "
+            f"{row['shared_user_count']:,}/{row['union_user_count']:,} | "
+            f"{row['user_jaccard']:.2%} | "
+            f"{row['previous_user_retention']:.2%}/"
+            f"{row['previous_user_exit_rate']:.2%}·"
+            f"{row['current_new_user_share']:.2%} | "
+            f"{row['current_shared_sample_share']:.2%} | "
+            f"{row['shared_user_product_pair_count']:,} | {comparable} |"
+        )
+        if (
+            previous_difference is not None
+            and current_difference is not None
+            and previous_difference * current_difference < 0
+        ):
+            shared_direction_notes.append(
+                f"{row['previous_fold_id']}→{row['current_fold_id']}는 공통 사용자만 "
+                "보아도 Brier 우위 방향이 바뀌었다. 따라서 신규 사용자 유입만으로 "
+                "이 변화를 설명할 수 없다."
+            )
+    lines.extend(["", *shared_direction_notes])
+    lines.extend(
+        [
+            "",
+            "## 사용자 합집합 단위 재표집",
+            "",
+            "각 fold를 독립적으로 뽑지 않고 사용자 합집합에서 한 번 뽑아 두 fold에 같은 횟수로 "
+            "적용했다. 구간은 모델과 IPCW를 고정한 평가 표본 불확실성만 반영한다.",
+            "",
+            "| Fold 쌍 | Brier 차이의 변화 | 95% 구간 | 상태 |",
+            "| --- | ---: | --- | --- |",
+        ]
+    )
+    for row in report["user_bootstrap"]:
+        interval = (
+            f"[{row['lower_95']:+.5f}, {row['upper_95']:+.5f}]"
+            if row["status"] == "evaluated"
+            else "평가 불가"
+        )
+        lines.append(
+            f"| {row['previous_fold_id']} → {row['current_fold_id']} | "
+            f"{row.get('point_change', 0):+.5f} | {interval} | {row['status']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "같은 사용자 부분집합 비교도 구매 사건·시점은 동일하지 않다. "
+            "앞선 Validation은 다음 fold의 Train으로 편입되어 학습 이력과 검열 관측 가능성도 변한다. "
+            "사용자 구성, 계절성, 학습량, 검열 분포가 동시에 변하므로 "
+            "이 분석만으로 fold별 성능 변화의 원인을 단정할 수 없다.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def main() -> None:
     """실제 UCI 데이터에서 세 과거 cutoff의 고정 모델 비교를 실행합니다."""
     source = load_uci_online_retail_ii()
@@ -1411,10 +1765,14 @@ def main() -> None:
     focus_bootstrap_trials_report = build_rolling_focus_bootstrap_trials_report(
         evaluation
     )
+    user_composition_report = build_rolling_user_composition_report(evaluation)
     markdown = render_rolling_cutoff_report(report)
     concentration_markdown = render_rolling_concentration_report(concentration_report)
     focus_bootstrap_markdown = render_rolling_focus_bootstrap_report(
         focus_bootstrap_report
+    )
+    user_composition_markdown = render_rolling_user_composition_report(
+        user_composition_report
     )
     write_text_atomically(
         ROLLING_REPORT_JSON_PATH,
@@ -1462,9 +1820,20 @@ def main() -> None:
     write_text_atomically(
         ROLLING_FOCUS_BOOTSTRAP_MARKDOWN_PATH, focus_bootstrap_markdown
     )
+    write_text_atomically(
+        ROLLING_USER_COMPOSITION_JSON_PATH,
+        json.dumps(
+            user_composition_report, ensure_ascii=False, indent=2, allow_nan=False
+        )
+        + "\n",
+    )
+    write_text_atomically(
+        ROLLING_USER_COMPOSITION_MARKDOWN_PATH, user_composition_markdown
+    )
     print(markdown)
     print(concentration_markdown)
     print(focus_bootstrap_markdown)
+    print(user_composition_markdown)
 
 
 if __name__ == "__main__":
