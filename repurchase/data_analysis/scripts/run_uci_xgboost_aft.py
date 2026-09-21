@@ -49,6 +49,7 @@ from .modeling.model_selection import (
     evaluate_xgboost_aft_ipcw_probability,
 )
 from .modeling.probability_baseline import fit_global_event_probability_baseline
+from .modeling.rolling_validation import validate_temporal_split_boundaries
 from .modeling.samples import (
     TemporalSplit,
     assign_temporal_splits,
@@ -196,11 +197,13 @@ def prepare_xgboost_aft_experiment(
     labels: pd.DataFrame,
     *,
     horizon_days: int = HORIZON_DAYS,
+    split: TemporalSplit | None = None,
 ) -> XGBoostAFTPreparedExperiment:
     """후보마다 반복할 필요가 없는 피처·분할·평가 기준을 한 번만 준비합니다."""
     samples = build_historical_interval_features(labels)
-    split = make_temporal_split(samples)
-    samples = assign_temporal_splits(samples, split)
+    selected_split = make_temporal_split(samples) if split is None else split
+    validate_temporal_split_boundaries(selected_split)
+    samples = assign_temporal_splits(samples, selected_split)
     training = samples.loc[samples["split"].eq("train")].copy()
     validation = samples.loc[samples["split"].eq("validation")].copy()
 
@@ -225,7 +228,7 @@ def prepare_xgboost_aft_experiment(
     )
     return XGBoostAFTPreparedExperiment(
         horizon_days=horizon_days,
-        split=split,
+        split=selected_split,
         training=training,
         training_data=training_data,
         validation=validation,
