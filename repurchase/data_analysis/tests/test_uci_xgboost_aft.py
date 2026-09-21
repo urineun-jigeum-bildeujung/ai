@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import warnings
+from dataclasses import replace
 
 import numpy as np
 import pandas as pd
@@ -25,22 +26,29 @@ from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_candidate_pair_bootstrap_trials_report,
     build_xgboost_aft_distribution_comparison_report,
     build_xgboost_aft_logistic_scale_comparison_report,
+    build_xgboost_aft_observed_time_comparison_report,
     build_xgboost_aft_report,
     build_xgboost_aft_round_comparison_report,
+    build_xgboost_aft_segment_comparison_report,
     compare_xgboost_aft_boosting_rounds,
     compare_xgboost_aft_loss_distribution_scales,
     compare_xgboost_aft_loss_distributions,
+    compare_xgboost_aft_observed_time_with_median_baselines,
     evaluate_xgboost_aft_candidate,
+    evaluate_xgboost_aft_observed_event_time,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_candidate_pair_bootstrap_report,
     render_xgboost_aft_distribution_comparison_report,
     render_xgboost_aft_logistic_scale_comparison_report,
+    render_xgboost_aft_observed_time_comparison_report,
     render_xgboost_aft_report,
     render_xgboost_aft_round_comparison_report,
+    render_xgboost_aft_segment_comparison_report,
     run_xgboost_aft_experiment,
     select_xgboost_aft_boosting_round,
     select_xgboost_aft_loss_distribution,
     select_xgboost_aft_loss_distribution_scale,
+    summarize_xgboost_aft_probability_by_count_segments,
     validate_selected_xgboost_aft_distribution_result,
     validate_selected_xgboost_aft_result,
     validate_selected_xgboost_aft_scale_result,
@@ -107,6 +115,7 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     assert len(trials_report["trials"]) == 20
     assert "C-index" in markdown
     assert "IPCW 가중 평균 예측확률 / 실제 사건률" in markdown
+    assert "관측 재구매 시점 오차" in markdown
     assert "기준 설정에서" in markdown
     assert "사용자 단위 Bootstrap" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
@@ -117,6 +126,213 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     undefined_skill_probability["brier_skill_score"] = None
     undefined_skill_report["validation_probability"] = undefined_skill_probability
     assert "N/A" in render_xgboost_aft_report(undefined_skill_report)
+
+
+def test_evaluate_xgboost_aft_observed_event_time_excludes_censored_rows(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """미래 target이 있어도 Validation에서 검열된 행은 시점 오차에서 제외합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    metrics = evaluate_xgboost_aft_observed_event_time(result)
+    event_rows = result.probability.rows.loc[
+        result.probability.rows["survival_event_observed"]
+    ]
+
+    assert metrics["sample_count"] == len(event_rows)
+    assert metrics["sample_count"] < len(result.probability.rows)
+    assert metrics["mae_days"] >= 0.0
+    assert metrics["median_absolute_error_days"] >= 0.0
+    assert 0.0 <= metrics["within_7_days_rate"] <= 1.0
+
+
+def test_compare_xgboost_aft_observed_time_candidates_uses_same_cohort(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """AFT와 중앙값 후보가 같은 0일 제외 Train·관측 Validation을 사용합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    training_before = prepared.training.copy(deep=True)
+    validation_before = prepared.validation.copy(deep=True)
+
+    comparison = compare_xgboost_aft_observed_time_with_median_baselines(
+        prepared,
+        result,
+        shrinkage_strengths=(1.0, 4.0),
+    )
+    observed_count = int(result.probability.rows["survival_event_observed"].sum())
+
+    assert comparison["candidate_name"].tolist() == [
+        "xgboost_aft",
+        "hierarchical_median",
+        "shrunk_hierarchical_median",
+        "shrunk_hierarchical_median",
+    ]
+    assert comparison["shrinkage_strength"].isna().tolist() == [
+        True,
+        True,
+        False,
+        False,
+    ]
+    assert comparison["sample_count"].eq(observed_count).all()
+    assert comparison["mae_days"].ge(0.0).all()
+    assert comparison["within_7_days_rate"].between(0.0, 1.0).all()
+    aft_row = comparison.loc[comparison["candidate_name"].eq("xgboost_aft")].iloc[0]
+    observed_metrics = evaluate_xgboost_aft_observed_event_time(result)
+    assert aft_row["sample_count"] == observed_metrics["sample_count"]
+    assert aft_row["mae_days"] == pytest.approx(observed_metrics["mae_days"])
+    assert aft_row["median_absolute_error_days"] == pytest.approx(
+        observed_metrics["median_absolute_error_days"]
+    )
+    assert aft_row["within_7_days_rate"] == pytest.approx(
+        observed_metrics["within_7_days_rate"]
+    )
+    assert aft_row["mae_improvement_vs_aft_days"] == pytest.approx(0.0)
+    assert aft_row["median_ae_improvement_vs_aft_days"] == pytest.approx(0.0)
+    assert aft_row["within_7_days_rate_improvement_vs_aft"] == pytest.approx(0.0)
+
+    report = build_xgboost_aft_observed_time_comparison_report(result, comparison)
+    markdown = render_xgboost_aft_observed_time_comparison_report(report)
+    assert report["evaluation_split"] == "validation"
+    assert report["evaluation_sample_count"] == observed_count
+    assert report["training_population"]["aft_actual_training_sample_count"] == len(
+        prepared.training_data.row_index
+    )
+    assert (
+        report["training_population"][
+            "median_actual_observed_event_training_sample_count"
+        ]
+        <= report["training_population"]["aft_actual_training_sample_count"]
+    )
+    assert len(report["candidates"]) == 4
+    assert "정확한 구매 시점 예측 역할" in report["scope"]
+    assert "AFT 대비 개선량은 양수" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+    pd.testing.assert_frame_equal(prepared.training, training_before)
+    pd.testing.assert_frame_equal(prepared.validation, validation_before)
+
+
+def test_compare_xgboost_aft_observed_time_rejects_mixed_experiment_rows(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """인덱스만 같고 구매 키나 정답이 다른 AFT 결과는 비교 전에 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    for column, changed_value in (
+        ("user_id", "MIXED_USER"),
+        (
+            "survival_event_observed",
+            not bool(result.probability.rows["survival_event_observed"].iat[0]),
+        ),
+        (
+            "target_duration_days",
+            float(result.probability.rows["target_duration_days"].dropna().iat[0])
+            + 100.0,
+        ),
+    ):
+        changed_rows = result.probability.rows.copy()
+        if column == "target_duration_days":
+            changed_index = changed_rows["target_duration_days"].first_valid_index()
+        else:
+            changed_index = changed_rows.index[0]
+        changed_rows.loc[changed_index, column] = changed_value
+        changed_probability = replace(result.probability, rows=changed_rows)
+        changed_result = replace(result, probability=changed_probability)
+
+        with pytest.raises(ValueError, match=column):
+            compare_xgboost_aft_observed_time_with_median_baselines(
+                prepared,
+                changed_result,
+            )
+
+
+def test_compare_xgboost_aft_observed_time_candidates_rejects_invalid_strengths(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """비어 있거나 중복된 수축 후보는 비교 학습 전에 명확하게 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    for strengths in ((), (1.0, 1.0)):
+        with pytest.raises(ValueError):
+            compare_xgboost_aft_observed_time_with_median_baselines(
+                prepared,
+                result,
+                shrinkage_strengths=strengths,
+            )
+
+
+def test_summarize_xgboost_aft_probability_by_count_segments_preserves_population(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """각 이력량 기준의 구간 합이 동일 AFT Validation 모집단을 보존합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    result = evaluate_xgboost_aft_candidate(
+        prepared,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    original_rows = result.probability.rows.copy(deep=True)
+
+    segments = summarize_xgboost_aft_probability_by_count_segments(result)
+
+    assert set(segments["count_column"]) == {
+        "history_interval_count",
+        "user_prior_order_count",
+    }
+    for count_column in segments["count_column"].unique():
+        column_rows = segments.loc[segments["count_column"].eq(count_column)]
+        assert column_rows["sample_count"].sum() == len(result.probability.rows)
+        assert column_rows["outcome_known_count"].sum() == int(
+            result.probability.rows["ipcw_outcome_known"].sum()
+        )
+    assert segments["validation_fallback_candidate"].dtype == bool
+    pd.testing.assert_frame_equal(result.probability.rows, original_rows)
+
+    report = build_xgboost_aft_segment_comparison_report(result, segments)
+    markdown = render_xgboost_aft_segment_comparison_report(report)
+    assert len(report["segments"]) == len(segments)
+    assert "fallback 검토 후보" in report["scope"]
+    assert "Train 상수확률 Brier - AFT Brier" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
 
 
 def test_evaluate_xgboost_aft_candidate_can_skip_bootstrap(

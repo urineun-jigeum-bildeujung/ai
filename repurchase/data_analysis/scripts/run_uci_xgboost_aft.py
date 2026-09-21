@@ -18,9 +18,16 @@ from typing import Final
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
+from .modeling.baseline import (
+    fit_hierarchical_median_baseline,
+    predict_hierarchical_median_baseline,
+    predict_shrunk_hierarchical_median_baseline,
+)
 from .modeling.evaluation import (
     IPCWUserBootstrapResult,
     bootstrap_ipcw_brier_pair_difference_by_user,
+    calculate_regression_metrics,
+    summarize_ipcw_probability_pair_by_count_segment,
 )
 from .modeling.maturity_analysis import (
     add_split_ipcw_weights,
@@ -104,6 +111,28 @@ CANDIDATE_PAIR_BOOTSTRAP_MARKDOWN_REPORT_PATH = (
 CANDIDATE_PAIR_BOOTSTRAP_TRIALS_REPORT_PATH = (
     REPORT_DIR / "uci_xgboost_aft_candidate_pair_bootstrap_trials.json"
 )
+SEGMENT_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_segment_comparison.json"
+)
+SEGMENT_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_segment_comparison.md"
+)
+AFT_SEGMENT_COUNT_COLUMNS: Final[tuple[str, ...]] = (
+    "history_interval_count",
+    "user_prior_order_count",
+)
+AFT_TIME_COMPARISON_SHRINKAGE_STRENGTHS: Final[tuple[float, ...]] = (
+    1.0,
+    2.0,
+    4.0,
+    8.0,
+)
+TIME_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_observed_time_comparison.json"
+)
+TIME_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_observed_time_comparison.md"
+)
 
 
 @dataclass(frozen=True)
@@ -127,6 +156,7 @@ class XGBoostAFTPreparedExperiment:
 
     horizon_days: int
     split: TemporalSplit
+    training: pd.DataFrame
     training_data: XGBoostAFTTrainingData
     validation: pd.DataFrame
     prediction_data: XGBoostAFTPredictionData
@@ -168,6 +198,7 @@ def prepare_xgboost_aft_experiment(
     return XGBoostAFTPreparedExperiment(
         horizon_days=horizon_days,
         split=split,
+        training=training,
         training_data=training_data,
         validation=validation,
         prediction_data=prediction_data,
@@ -272,6 +303,357 @@ def evaluate_xgboost_aft_candidate(
     )
 
 
+def evaluate_xgboost_aft_observed_event_time(
+    result: XGBoostAFTExperimentResult,
+) -> dict[str, float | int]:
+    """실제 재구매가 관측된 AFT 행에서만 시점 오차를 계산합니다."""
+    rows = result.probability.rows
+    required_columns = {
+        "survival_event_observed",
+        "survival_observed_duration_days",
+        "predicted_duration_days",
+    }
+    missing_columns = required_columns - set(rows.columns)
+    if missing_columns:
+        raise ValueError(
+            f"AFT 관측 사건 시점 평가 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    event_observed = rows["survival_event_observed"]
+    if event_observed.isna().any() or not pd.api.types.is_bool_dtype(
+        event_observed.dtype
+    ):
+        raise ValueError(
+            "AFT 관측 사건 여부에는 결측값 없는 boolean만 사용할 수 있습니다."
+        )
+    observed_rows = rows.loc[event_observed].copy()
+    if observed_rows.empty:
+        raise ValueError("시점 오차를 계산할 관측 재구매 사건이 없습니다.")
+    observed_rows["target_duration_days"] = observed_rows[
+        "survival_observed_duration_days"
+    ]
+    observed_rows["prediction_source"] = "xgboost_aft"
+    return calculate_regression_metrics(observed_rows)
+
+
+def compare_xgboost_aft_observed_time_with_median_baselines(
+    prepared: XGBoostAFTPreparedExperiment,
+    result: XGBoostAFTExperimentResult,
+    *,
+    shrinkage_strengths: Sequence[float] = (AFT_TIME_COMPARISON_SHRINKAGE_STRENGTHS),
+) -> pd.DataFrame:
+    """같은 AFT 학습·Validation 표본에서 시점 예측 후보를 비교합니다."""
+    strengths = tuple(shrinkage_strengths)
+    if not strengths:
+        raise ValueError("시점 비교에는 수축 강도 후보가 하나 이상 필요합니다.")
+    if len(set(strengths)) != len(strengths):
+        raise ValueError("시점 비교 수축 강도 후보에는 중복을 사용할 수 없습니다.")
+    if result.split != prepared.split:
+        raise ValueError("AFT 결과와 시점 비교 준비 데이터의 시간 분할이 다릅니다.")
+
+    # AFT가 실제로 사용한 0일 제외 Train 행만 중앙값 후보에도 제공합니다.
+    training_rows = prepared.training.loc[prepared.training_data.row_index].copy()
+    survival_training = add_split_survival_observation(training_rows)
+    aft_censored_training_count = int(
+        (~survival_training["survival_event_observed"]).sum()
+    )
+    median_model = fit_hierarchical_median_baseline(
+        training_rows,
+        trained_until=prepared.split.train_end_at,
+    )
+    median_training_sample_count = int(
+        survival_training["survival_event_observed"].sum()
+    )
+    if median_model.global_observation_count != median_training_sample_count:
+        raise RuntimeError(
+            "중앙값 모델의 실제 학습 사건 수가 공통 생존 관측 정의와 다릅니다."
+        )
+
+    aft_rows = result.probability.rows
+    expected_validation = add_split_survival_observation(prepared.validation)
+    expected_validation = expected_validation.loc[
+        expected_validation["survival_observed_duration_days"].ne(0)
+    ]
+    if not aft_rows.index.equals(expected_validation.index):
+        raise ValueError(
+            "AFT 결과와 시점 비교 준비 데이터의 0일 제외 Validation 행이 다릅니다."
+        )
+    comparison_contract_columns = (
+        *IPCW_CANDIDATE_ID_COLUMNS,
+        "target_duration_days",
+        "survival_event_observed",
+        "survival_observed_duration_days",
+    )
+    for column in comparison_contract_columns:
+        if not aft_rows[column].equals(expected_validation[column]):
+            raise ValueError(
+                f"AFT 결과와 시점 비교 준비 데이터의 {column} 값이 다릅니다."
+            )
+    observed_index = aft_rows.index[aft_rows["survival_event_observed"]]
+    if observed_index.empty:
+        raise ValueError("시점 후보를 비교할 관측 재구매 사건이 없습니다.")
+    if not observed_index.isin(prepared.validation.index).all():
+        raise ValueError("AFT 관측 사건을 공통 Validation 원본에 연결할 수 없습니다.")
+    validation_rows = prepared.validation.loc[observed_index].copy()
+    if validation_rows["target_duration_days"].isna().any():
+        raise ValueError("관측 사건의 실제 재구매 간격이 비어 있습니다.")
+
+    # AFT와 중앙값 후보가 같은 행 순서와 같은 정답을 사용하도록 명시합니다.
+    aft_predictions = validation_rows.copy()
+    aft_predictions["predicted_duration_days"] = aft_rows.loc[
+        observed_index,
+        "predicted_duration_days",
+    ]
+    aft_predictions["prediction_source"] = "xgboost_aft"
+
+    candidates: list[tuple[str, float | None, pd.DataFrame]] = [
+        ("xgboost_aft", None, aft_predictions),
+        (
+            "hierarchical_median",
+            None,
+            predict_hierarchical_median_baseline(median_model, validation_rows),
+        ),
+    ]
+    for strength in strengths:
+        predictions = predict_shrunk_hierarchical_median_baseline(
+            median_model,
+            validation_rows,
+            shrinkage_strength=strength,
+        )
+        normalized_strength = float(predictions["shrinkage_strength"].iat[0])
+        candidates.append(
+            ("shrunk_hierarchical_median", normalized_strength, predictions)
+        )
+
+    rows: list[dict[str, float | int | str | None]] = []
+    for candidate_name, strength, predictions in candidates:
+        if not predictions.index.equals(observed_index):
+            raise RuntimeError(
+                f"{candidate_name} 시점 예측의 Validation 행 순서가 달라졌습니다."
+            )
+        metrics = calculate_regression_metrics(predictions)
+        is_aft = candidate_name == "xgboost_aft"
+        rows.append(
+            {
+                "candidate_name": candidate_name,
+                "shrinkage_strength": strength,
+                "sample_count": int(metrics["sample_count"]),
+                "mae_days": float(metrics["mae_days"]),
+                "median_absolute_error_days": float(
+                    metrics["median_absolute_error_days"]
+                ),
+                "within_3_days_rate": float(metrics["within_3_days_rate"]),
+                "within_7_days_rate": float(metrics["within_7_days_rate"]),
+                "common_training_source_sample_count": len(training_rows),
+                "actual_training_sample_count": (
+                    len(training_rows) if is_aft else median_training_sample_count
+                ),
+                "used_censored_training_sample_count": (
+                    aft_censored_training_count if is_aft else 0
+                ),
+            }
+        )
+
+    comparison = pd.DataFrame(rows)
+    if comparison["sample_count"].nunique() != 1:
+        raise RuntimeError("시점 예측 후보별 평가 표본 수가 서로 다릅니다.")
+    aft_metrics = comparison.loc[comparison["candidate_name"].eq("xgboost_aft")]
+    if len(aft_metrics) != 1:
+        raise RuntimeError("시점 비교에는 XGBoost AFT 기준 결과가 하나여야 합니다.")
+    aft_metrics = aft_metrics.iloc[0]
+    comparison["mae_improvement_vs_aft_days"] = (
+        float(aft_metrics["mae_days"]) - comparison["mae_days"]
+    )
+    comparison["median_ae_improvement_vs_aft_days"] = (
+        float(aft_metrics["median_absolute_error_days"])
+        - comparison["median_absolute_error_days"]
+    )
+    comparison["within_7_days_rate_improvement_vs_aft"] = comparison[
+        "within_7_days_rate"
+    ] - float(aft_metrics["within_7_days_rate"])
+    return comparison
+
+
+def _nullable_float(value: object) -> float | None:
+    """pandas 결측값은 JSON의 비표준 NaN 대신 null로 바꿉니다."""
+    return None if pd.isna(value) else float(value)
+
+
+def build_xgboost_aft_observed_time_comparison_report(
+    result: XGBoostAFTExperimentResult,
+    comparison: pd.DataFrame,
+) -> dict[str, object]:
+    """같은 관측 사건에서 AFT와 중앙값 후보의 시점 오차를 요약합니다."""
+    required_columns = {
+        "candidate_name",
+        "shrinkage_strength",
+        "sample_count",
+        "mae_days",
+        "median_absolute_error_days",
+        "within_3_days_rate",
+        "within_7_days_rate",
+        "mae_improvement_vs_aft_days",
+        "median_ae_improvement_vs_aft_days",
+        "within_7_days_rate_improvement_vs_aft",
+        "common_training_source_sample_count",
+        "actual_training_sample_count",
+        "used_censored_training_sample_count",
+    }
+    missing_columns = required_columns - set(comparison.columns)
+    if missing_columns:
+        raise ValueError(
+            f"AFT 시점 비교 보고서 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    if comparison.empty or comparison["sample_count"].nunique() != 1:
+        raise ValueError(
+            "AFT 시점 비교 후보는 동일한 비어 있지 않은 표본이어야 합니다."
+        )
+
+    best_mae = comparison.loc[comparison["mae_days"].idxmin()]
+    best_median_ae = comparison.loc[comparison["median_absolute_error_days"].idxmin()]
+    best_within_seven = comparison.loc[comparison["within_7_days_rate"].idxmax()]
+    aft_row = comparison.loc[comparison["candidate_name"].eq("xgboost_aft")]
+    median_row = comparison.loc[comparison["candidate_name"].eq("hierarchical_median")]
+    if len(aft_row) != 1 or len(median_row) != 1:
+        raise ValueError("시점 비교에는 AFT와 계층형 중앙값 기준이 하나씩 필요합니다.")
+    aft_row = aft_row.iloc[0]
+    median_row = median_row.iloc[0]
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_observed_time_comparison_v1",
+        "evaluation_split": "validation",
+        "model": _build_xgboost_aft_candidate_identity(result),
+        "evaluation_sample_count": int(comparison["sample_count"].iat[0]),
+        "training_population": {
+            "common_zero_duration_excluded_source_sample_count": int(
+                aft_row["common_training_source_sample_count"]
+            ),
+            "aft_actual_training_sample_count": int(
+                aft_row["actual_training_sample_count"]
+            ),
+            "aft_used_censored_training_sample_count": int(
+                aft_row["used_censored_training_sample_count"]
+            ),
+            "median_actual_observed_event_training_sample_count": int(
+                median_row["actual_training_sample_count"]
+            ),
+        },
+        "candidates": dataframe_to_nullable_records(comparison),
+        "best_mae_candidate": {
+            "candidate_name": str(best_mae["candidate_name"]),
+            "shrinkage_strength": _nullable_float(best_mae["shrinkage_strength"]),
+            "mae_days": float(best_mae["mae_days"]),
+        },
+        "best_median_ae_candidate": {
+            "candidate_name": str(best_median_ae["candidate_name"]),
+            "shrinkage_strength": _nullable_float(best_median_ae["shrinkage_strength"]),
+            "median_absolute_error_days": float(
+                best_median_ae["median_absolute_error_days"]
+            ),
+        },
+        "best_within_7_days_candidate": {
+            "candidate_name": str(best_within_seven["candidate_name"]),
+            "shrinkage_strength": _nullable_float(
+                best_within_seven["shrinkage_strength"]
+            ),
+            "within_7_days_rate": float(best_within_seven["within_7_days_rate"]),
+        },
+        "scope": (
+            "두 모델은 동일한 0일 제외 Train 원본에서 시작합니다. AFT는 관측 "
+            "사건과 우측검열 행을 함께 학습하고, 중앙값 후보는 Train 종료 전에 "
+            "확정된 관측 사건만 학습하는 알고리즘 차이가 있습니다. "
+            "AFT Validation 중 실제 재구매가 관측된 동일 행에서만 시점 오차를 "
+            "비교했습니다. 검열 행과 Test는 사용하지 않았습니다. 이 결과는 "
+            "30일 이내 확률 성능이 아니라 정확한 구매 시점 예측 역할을 비교합니다."
+        ),
+    }
+
+
+def render_xgboost_aft_observed_time_comparison_report(
+    report: dict[str, object],
+) -> str:
+    """동일 표본 시점 예측 비교 결과를 사람이 검토할 Markdown으로 만듭니다."""
+    candidate_lines = []
+    for row in report["candidates"]:
+        strength = row["shrinkage_strength"]
+        label = str(row["candidate_name"])
+        if strength is not None:
+            label = f"{label} (k={float(strength):g})"
+        candidate_lines.append(
+            f"| {label} | {row['sample_count']:,} | {row['mae_days']:.2f}일 | "
+            f"{row['median_absolute_error_days']:.2f}일 | "
+            f"{row['within_7_days_rate']:.2%} | "
+            f"{row['mae_improvement_vs_aft_days']:+.2f}일 | "
+            f"{row['within_7_days_rate_improvement_vs_aft']:+.2%}p |"
+        )
+    model = report["model"]
+    training = report["training_population"]
+    lines = [
+        "# UCI XGBoost AFT 관측 시점 동일 표본 비교",
+        "",
+        f"- AFT 설정: `{model['loss_distribution']}`, "
+        f"`scale={model['loss_distribution_scale']}`, "
+        f"`{model['num_boost_round']} rounds`",
+        f"- 공통 관측 사건: `{report['evaluation_sample_count']:,}`건",
+        f"- 공통 0일 제외 Train 원본: "
+        f"`{training['common_zero_duration_excluded_source_sample_count']:,}`건",
+        f"- AFT 실제 학습: `{training['aft_actual_training_sample_count']:,}`건 "
+        f"(우측검열 `{training['aft_used_censored_training_sample_count']:,}`건 포함)",
+        "- 중앙값 후보 실제 학습: "
+        f"`{training['median_actual_observed_event_training_sample_count']:,}`건 "
+        "(확정된 관측 사건만)",
+        "- AFT 대비 개선량은 양수일수록 비교 후보가 더 좋습니다.",
+        "",
+        "| 후보 | 표본 | MAE | Median AE | ±7일 | MAE 개선 | ±7일 개선 |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        *candidate_lines,
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def summarize_xgboost_aft_probability_by_count_segments(
+    result: XGBoostAFTExperimentResult,
+    *,
+    count_columns: Sequence[str] = AFT_SEGMENT_COUNT_COLUMNS,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+) -> pd.DataFrame:
+    """이력량 구간별로 Train 상수확률과 AFT의 확률 성능을 비교합니다."""
+    columns = tuple(count_columns)
+    if not columns:
+        raise ValueError("AFT 세그먼트 분석에는 이력량 컬럼이 하나 이상 필요합니다.")
+    if len(set(columns)) != len(columns):
+        raise ValueError("AFT 세그먼트 분석 컬럼에는 중복을 사용할 수 없습니다.")
+
+    evaluation_rows = result.probability.rows.copy()
+    missing_columns = set(columns) - set(evaluation_rows.columns)
+    if missing_columns:
+        raise ValueError(
+            f"AFT 세그먼트 분석 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    evaluation_rows["reference_predicted_event_probability"] = float(
+        result.training_summary["training_reference_probability"]
+    )
+    evaluation_rows["candidate_predicted_event_probability"] = evaluation_rows[
+        "predicted_event_probability"
+    ]
+
+    summaries = [
+        summarize_ipcw_probability_pair_by_count_segment(
+            evaluation_rows,
+            count_column=count_column,
+            calibration_bin_count=calibration_bin_count,
+        )
+        for count_column in columns
+    ]
+    result_rows = pd.concat(summaries, ignore_index=True)
+    result_rows["validation_fallback_candidate"] = result_rows["brier_improvement"].le(
+        0.0
+    )
+    return result_rows
+
+
 def _build_xgboost_aft_comparison_metrics(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
@@ -281,6 +663,7 @@ def _build_xgboost_aft_comparison_metrics(
         raise ValueError("후보 모델의 AFT 학습 손실 이력이 비어 있습니다.")
 
     probability = result.probability.summary
+    observed_time = evaluate_xgboost_aft_observed_event_time(result)
     return {
         "final_training_aft_nloglik": float(training_loss[-1]),
         "minimum_training_aft_nloglik": float(min(training_loss)),
@@ -291,6 +674,12 @@ def _build_xgboost_aft_comparison_metrics(
         "expected_calibration_error": float(probability["expected_calibration_error"]),
         "maximum_calibration_error": float(probability["maximum_calibration_error"]),
         "weighted_calibration_gap": float(probability["weighted_calibration_gap"]),
+        "observed_event_time_sample_count": observed_time["sample_count"],
+        "observed_event_mae_days": observed_time["mae_days"],
+        "observed_event_median_absolute_error_days": observed_time[
+            "median_absolute_error_days"
+        ],
+        "observed_event_within_7_days_rate": observed_time["within_7_days_rate"],
         "horizon_days": int(probability["horizon_days"]),
         "validation_sample_count": int(probability["validation_sample_count"]),
         "outcome_known_count": int(probability["outcome_known_count"]),
@@ -415,6 +804,10 @@ def compare_xgboost_aft_loss_distributions(
                     "expected_calibration_error": None,
                     "maximum_calibration_error": None,
                     "weighted_calibration_gap": None,
+                    "observed_event_time_sample_count": None,
+                    "observed_event_mae_days": None,
+                    "observed_event_median_absolute_error_days": None,
+                    "observed_event_within_7_days_rate": None,
                     "horizon_days": prepared.horizon_days,
                     "validation_sample_count": None,
                     "outcome_known_count": None,
@@ -1336,6 +1729,81 @@ def render_xgboost_aft_candidate_pair_bootstrap_report(
     return "\n".join(lines)
 
 
+def build_xgboost_aft_segment_comparison_report(
+    result: XGBoostAFTExperimentResult,
+    segments: pd.DataFrame,
+) -> dict[str, object]:
+    """AFT 이력량 세그먼트별 기준선 비교와 fallback 후보를 저장합니다."""
+    required_columns = {
+        "count_column",
+        "count_bucket",
+        "sample_count",
+        "user_count",
+        "outcome_known_count",
+        "reference_ipcw_brier_score",
+        "candidate_ipcw_brier_score",
+        "brier_improvement",
+        "validation_fallback_candidate",
+    }
+    missing_columns = required_columns - set(segments.columns)
+    if missing_columns:
+        raise ValueError(
+            f"AFT 세그먼트 보고서 컬럼이 누락됐습니다: {sorted(missing_columns)}"
+        )
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_segment_comparison_v1",
+        "evaluation_split": "validation",
+        "model": _build_xgboost_aft_candidate_identity(result),
+        "reference": "train_global_event_probability",
+        "brier_improvement_direction": "reference_brier_minus_aft_brier",
+        "segments": dataframe_to_nullable_records(segments),
+        "scope": (
+            "같은 Validation 평가행에서 Train으로 추정한 상수확률과 AFT를 "
+            "이력량 구간별로 비교했습니다. Brier 개선량이 0 이하인 구간은 "
+            "fallback 검토 후보일 뿐 운영 규칙으로 확정하지 않으며 rolling "
+            "cutoff에서 재현되는지 추가 검증해야 합니다. Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def render_xgboost_aft_segment_comparison_report(
+    report: dict[str, object],
+) -> str:
+    """AFT 세그먼트별 Brier·Calibration과 fallback 후보를 Markdown으로 만듭니다."""
+    segment_lines = [
+        (
+            f"| {row['count_column']} | {row['count_bucket']} | "
+            f"{row['sample_count']:,} | {row['user_count']:,} | "
+            f"{row['outcome_known_count']:,} | "
+            f"{row['reference_ipcw_brier_score']:.6f} | "
+            f"{row['candidate_ipcw_brier_score']:.6f} | "
+            f"{row['brier_improvement']:+.6f} | "
+            f"{row['candidate_expected_calibration_error']:.6f} | "
+            f"{'검토' if row['validation_fallback_candidate'] else '-'} |"
+        )
+        for row in report["segments"]
+    ]
+    model = report["model"]
+    lines = [
+        "# UCI XGBoost AFT 이력량 세그먼트 비교",
+        "",
+        f"- 모델: `{model['loss_distribution']}`, "
+        f"`scale={model['loss_distribution_scale']}`, "
+        f"`{model['num_boost_round']} rounds`",
+        "- 개선량: `Train 상수확률 Brier - AFT Brier`",
+        "",
+        "| 기준 컬럼 | 구간 | 표본 | 사용자 | 정답 확인 | 기준 Brier | "
+        "AFT Brier | 개선량 | AFT ECE | fallback |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        *segment_lines,
+        "",
+        str(report["scope"]),
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def build_xgboost_aft_report(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
@@ -1353,6 +1821,7 @@ def build_xgboost_aft_report(
     if not isinstance(trained_until, pd.Timestamp):
         raise TypeError("AFT 학습 종료 시각은 pandas Timestamp여야 합니다.")
     training["trained_until"] = trained_until.isoformat()
+    observed_event_time = evaluate_xgboost_aft_observed_event_time(result)
 
     lower = float(bootstrap.summary["bootstrap_lower_95_brier_improvement"])
     upper = float(bootstrap.summary["bootstrap_upper_95_brier_improvement"])
@@ -1378,6 +1847,7 @@ def build_xgboost_aft_report(
         "training": training,
         "validation_concordance": result.concordance,
         "validation_probability": result.probability.summary,
+        "validation_observed_event_time": observed_event_time,
         "validation_calibration": dataframe_to_nullable_records(
             result.probability.calibration
         ),
@@ -1416,6 +1886,7 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
     training = report["training"]
     concordance = report["validation_concordance"]
     probability = report["validation_probability"]
+    observed_time = report["validation_observed_event_time"]
     bootstrap = report["validation_user_bootstrap"]
     calibration = report["validation_calibration"]
 
@@ -1465,6 +1936,17 @@ def render_xgboost_aft_report(report: dict[str, object]) -> str:
             f"{probability['expected_calibration_error']:.6f} | "
             f"{probability['maximum_calibration_error']:.6f} |"
         ),
+        "",
+        "## 관측 재구매 시점 오차",
+        "",
+        "실제 재구매가 Validation 기간 안에서 관측된 행만 사용하며 검열 행은 "
+        "제외합니다.",
+        "",
+        "| 관측 사건 | MAE | Median AE | ±7일 적중률 |",
+        "| ---: | ---: | ---: | ---: |",
+        f"| {observed_time['sample_count']:,} | {observed_time['mae_days']:.2f}일 | "
+        f"{observed_time['median_absolute_error_days']:.2f}일 | "
+        f"{observed_time['within_7_days_rate']:.2%} |",
         "",
         "## Calibration",
         "",
@@ -1568,6 +2050,25 @@ def main() -> None:
         distribution_comparison,
         result,
     )
+    segment_comparison = summarize_xgboost_aft_probability_by_count_segments(result)
+    segment_comparison_report = build_xgboost_aft_segment_comparison_report(
+        result,
+        segment_comparison,
+    )
+    segment_comparison_markdown = render_xgboost_aft_segment_comparison_report(
+        segment_comparison_report
+    )
+    time_comparison = compare_xgboost_aft_observed_time_with_median_baselines(
+        prepared,
+        result,
+    )
+    time_comparison_report = build_xgboost_aft_observed_time_comparison_report(
+        result,
+        time_comparison,
+    )
+    time_comparison_markdown = render_xgboost_aft_observed_time_comparison_report(
+        time_comparison_report
+    )
     logistic_candidate = None
     candidate_pair_bootstrap = None
     unavailable_reason = None
@@ -1654,6 +2155,24 @@ def main() -> None:
         )
         + "\n"
     )
+    segment_comparison_json = (
+        json.dumps(
+            segment_comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    time_comparison_json = (
+        json.dumps(
+            time_comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     report_json = (
         json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
     )
@@ -1703,6 +2222,22 @@ def main() -> None:
     write_text_atomically(
         CANDIDATE_PAIR_BOOTSTRAP_TRIALS_REPORT_PATH,
         candidate_pair_trials_json,
+    )
+    write_text_atomically(
+        SEGMENT_COMPARISON_JSON_REPORT_PATH,
+        segment_comparison_json,
+    )
+    write_text_atomically(
+        SEGMENT_COMPARISON_MARKDOWN_REPORT_PATH,
+        segment_comparison_markdown,
+    )
+    write_text_atomically(
+        TIME_COMPARISON_JSON_REPORT_PATH,
+        time_comparison_json,
+    )
+    write_text_atomically(
+        TIME_COMPARISON_MARKDOWN_REPORT_PATH,
+        time_comparison_markdown,
     )
     write_text_atomically(
         JSON_REPORT_PATH,

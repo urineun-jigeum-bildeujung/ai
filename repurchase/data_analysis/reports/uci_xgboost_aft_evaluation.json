@@ -97,6 +97,13 @@
     "maximum_calibration_error": 0.15655479085268664,
     "nonempty_calibration_bin_count": 10
   },
+  "validation_observed_event_time": {
+    "sample_count": 17665,
+    "mae_days": 97.61387351554045,
+    "median_absolute_error_days": 55.755393981933594,
+    "within_3_days_rate": 0.040022643645626944,
+    "within_7_days_rate": 0.09091423719218794
+  },
   "validation_calibration": [
     {
       "calibration_bin_index": 0,
