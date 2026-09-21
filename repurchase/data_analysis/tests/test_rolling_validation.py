@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.modeling.maturity_analysis import add_split_survival_observation
 from scripts.modeling.rolling_validation import (
     RollingValidationError,
     build_expanding_rolling_splits,
@@ -138,3 +139,31 @@ def test_prepare_xgboost_aft_experiment_uses_supplied_split(
     assert prepared.validation["anchor_at"].gt(custom_split.train_end_at).all()
     assert prepared.validation["anchor_at"].le(custom_split.validation_end_at).all()
     assert prepared.training.index.intersection(prepared.validation.index).empty
+
+
+def test_rolling_validation_censors_event_after_fold_cutoff() -> None:
+    """Fold 종료 뒤의 재구매는 미래 사건이므로 현재 fold에서는 검열합니다."""
+    rows = pd.DataFrame(
+        {
+            "anchor_at": [pd.Timestamp("2024-01-10")],
+            "next_same_product_at": [pd.Timestamp("2024-02-20")],
+            "event_observed": [True],
+            "target_duration_days": [41.0],
+        }
+    )
+    split = TemporalSplit(
+        start_at=pd.Timestamp("2024-01-01"),
+        train_end_at=pd.Timestamp("2024-01-05"),
+        validation_end_at=pd.Timestamp("2024-01-31"),
+        end_at=pd.Timestamp("2024-04-01"),
+        train_fraction=0.05,
+        validation_fraction=0.26,
+        test_fraction=0.69,
+    )
+
+    assigned = assign_temporal_splits(rows, split)
+    validation = assigned.loc[assigned["split"].eq("validation")]
+    observed = add_split_survival_observation(validation)
+
+    assert observed["survival_event_observed"].tolist() == [False]
+    assert observed["survival_observed_duration_days"].tolist() == [21.0]
