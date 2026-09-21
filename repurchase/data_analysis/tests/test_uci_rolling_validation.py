@@ -17,10 +17,13 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_rolling_validation import (
     RollingCutoffEvaluation,
     add_fold_brier_contributions,
+    add_fold_outcome_distribution,
     build_rolling_bootstrap_trials_report,
     build_rolling_cutoff_report,
+    classify_history_irregularity,
     evaluate_rolling_cutoff_models,
     render_rolling_cutoff_report,
+    summarize_history_irregularity_cohorts,
 )
 
 
@@ -154,6 +157,7 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     assert "원래 Test 사용: `아니요`" in markdown
     assert len(trials_report["trials"]) == 40
     assert report["cohorts"]
+    assert "과거 구매 간격 불규칙성별 사건·오차" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
 
@@ -166,6 +170,7 @@ def test_rolling_cohorts_partition_each_fold_without_losing_samples(
         "history_interval_count",
         "user_prior_order_count",
         "product_train_sample_count",
+        "history_relative_mad",
     }
     cohorts = rolling_evaluation.cohorts
     assert set(cohorts["count_column"]) == columns
@@ -178,10 +183,79 @@ def test_rolling_cohorts_partition_each_fold_without_losing_samples(
             assert int(selected["sample_count"].sum()) == fold.evaluation_sample_count
             assert selected["sample_rate"].sum() == pytest.approx(1.0)
             assert selected["outcome_known_count"].le(selected["sample_count"]).all()
+            assert selected["event_within_horizon_count"].sum() == (
+                fold.event_within_horizon_count
+            )
+            assert selected["no_event_within_horizon_count"].sum() == (
+                fold.no_event_within_horizon_count
+            )
             assert selected["known_ipcw_weight_share"].sum() == pytest.approx(1.0)
             assert selected["brier_difference_contribution"].sum() == pytest.approx(
                 fold.brier_difference_aft_minus_lightgbm
             )
+        irregularity = cohorts.loc[
+            cohorts["fold_id"].eq(fold.fold_id)
+            & cohorts["count_column"].eq("history_relative_mad")
+        ]
+        assert irregularity["outcome_known_count"].sum() == fold.outcome_known_count
+        assert irregularity["event_within_horizon_count"].sum() == (
+            fold.event_within_horizon_count
+        )
+        assert irregularity["no_event_within_horizon_count"].sum() == (
+            fold.no_event_within_horizon_count
+        )
+
+
+def test_irregularity_distinguishes_missing_zero_and_boundary() -> None:
+    """계산 불가를 규칙적인 간격 0과 합치지 않고 0.5 경계를 고정합니다."""
+    rows = pd.DataFrame({"history_relative_mad": [float("nan"), 0, 0.5, 0.6]})
+    assert classify_history_irregularity(rows).tolist() == [
+        "unavailable",
+        "relative_mad_le_0_5",
+        "relative_mad_le_0_5",
+        "relative_mad_gt_0_5",
+    ]
+    for invalid in (-0.1, float("inf"), float("-inf")):
+        with pytest.raises(RollingValidationError, match="유한값"):
+            classify_history_irregularity(
+                pd.DataFrame({"history_relative_mad": [invalid]})
+            )
+
+
+def test_irregularity_event_distribution_preserves_unknown_outcomes() -> None:
+    """검열로 정답이 불명인 행은 사건도 미사건도 아니며 표본에는 남깁니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["u1", "u2", "u3"],
+            "history_relative_mad": [None, 0.2, 0.7],
+            "ipcw_horizon_days": [30, 30, 30],
+            "ipcw_outcome_known": [True, False, True],
+            "ipcw_event_within_horizon": pd.array(
+                [True, pd.NA, False], dtype="boolean"
+            ),
+            "ipcw_weight": [2.0, 0.0, 1.0],
+            "reference_predicted_event_probability": [0.8, 0.4, 0.2],
+            "candidate_predicted_event_probability": [0.6, 0.3, 0.1],
+        }
+    )
+    labels = classify_history_irregularity(rows)
+    cohorts = summarize_history_irregularity_cohorts(rows, bucket_labels=labels)
+    cohorts = add_fold_brier_contributions(
+        cohorts, rows, count_column="history_relative_mad", bucket_labels=labels
+    )
+    cohorts = add_fold_outcome_distribution(
+        cohorts, rows, count_column="history_relative_mad", bucket_labels=labels
+    ).set_index("count_bucket")
+    assert cohorts["sample_count"].sum() == 3
+    assert cohorts["outcome_known_count"].sum() == 2
+    assert cohorts["event_within_horizon_count"].sum() == 1
+    assert cohorts["no_event_within_horizon_count"].sum() == 1
+    assert cohorts.loc["unavailable", "ipcw_weighted_event_rate"] == 1.0
+    assert pd.isna(cohorts.loc["relative_mad_le_0_5", "ipcw_weighted_event_rate"])
+    assert cohorts["known_ipcw_weight_share"].sum() == pytest.approx(1)
+    assert cohorts["brier_difference_contribution"].sum() == pytest.approx(
+        (2 * (0.2**2 - 0.4**2) + (0.2**2 - 0.1**2)) / 3
+    )
 
 
 def test_fold_brier_contributions_use_the_full_fold_denominator() -> None:
@@ -236,6 +310,20 @@ def test_rolling_report_rejects_inconsistent_cohort_contribution(
     cohorts.loc[cohorts.index[0], "brier_difference_contribution"] += 0.01
 
     with pytest.raises(ValueError, match="Brier 기여량 합계"):
+        build_rolling_cutoff_report(replace(rolling_evaluation, cohorts=cohorts))
+
+
+def test_rolling_report_rejects_irregularity_event_count_mismatch(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """사건 수가 전체 fold와 맞지 않으면 요약 보고서를 만들지 않습니다."""
+    cohorts = rolling_evaluation.cohorts.copy()
+    selected = cohorts.index[
+        cohorts["count_column"].eq("history_relative_mad")
+        & cohorts["fold_id"].eq("fold_1")
+    ]
+    cohorts.loc[selected[0], "event_within_horizon_count"] += 1
+    with pytest.raises(ValueError, match="사건 수 합계"):
         build_rolling_cutoff_report(replace(rolling_evaluation, cohorts=cohorts))
 
 

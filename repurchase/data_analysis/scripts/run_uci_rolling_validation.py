@@ -18,6 +18,7 @@ from .loaders import load_uci_online_retail_ii
 from .modeling.evaluation import (
     COUNT_SEGMENT_BINS,
     COUNT_SEGMENT_LABELS,
+    evaluate_ipcw_brier_score,
     summarize_ipcw_probability_pair_by_count_segment,
 )
 from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
@@ -98,6 +99,7 @@ def add_fold_brier_contributions(
     paired_rows: pd.DataFrame,
     *,
     count_column: str,
+    bucket_labels: pd.Series | None = None,
 ) -> pd.DataFrame:
     """구간별 오차 차이를 fold 전체 IPCW 분모에 대한 기여량으로 바꿉니다.
 
@@ -139,12 +141,17 @@ def add_fold_brier_contributions(
         known_rows["candidate_predicted_event_probability"].sub(actual).pow(2)
     )
     weighted_difference = aft_error.sub(lightgbm_error).mul(weights)
-    buckets = pd.cut(
-        known_rows[count_column],
-        bins=COUNT_SEGMENT_BINS,
-        labels=COUNT_SEGMENT_LABELS,
-        include_lowest=True,
-    )
+    if bucket_labels is None:
+        buckets = pd.cut(
+            known_rows[count_column],
+            bins=COUNT_SEGMENT_BINS,
+            labels=COUNT_SEGMENT_LABELS,
+            include_lowest=True,
+        )
+    else:
+        if not bucket_labels.index.equals(paired_rows.index):
+            raise RollingValidationError("구간 라벨과 평가 행의 인덱스가 다릅니다.")
+        buckets = bucket_labels.loc[known_rows.index]
     if buckets.isna().any():
         raise RollingValidationError(
             f"{count_column}의 Brier 기여 구간을 만들 수 없습니다."
@@ -174,6 +181,140 @@ def add_fold_brier_contributions(
     if not isclose(float(result["known_ipcw_weight_share"].sum()), 1.0, abs_tol=1e-10):
         raise RollingValidationError("구간별 IPCW 가중치 비율의 합은 1이어야 합니다.")
     return result
+
+
+def classify_history_irregularity(rows: pd.DataFrame) -> pd.Series:
+    """미계산과 상대 MAD의 절반 이하·초과를 혼동 없이 구분합니다."""
+    if "history_relative_mad" not in rows.columns:
+        raise RollingValidationError("history_relative_mad가 누락됐습니다.")
+    values = rows["history_relative_mad"]
+    available = values.notna()
+    measured = values.loc[available].astype("float64")
+    if not measured.map(isfinite).all() or measured.lt(0).any():
+        raise RollingValidationError(
+            "상대 MAD는 결측 또는 0 이상의 유한값이어야 합니다."
+        )
+    # 결측은 구매 간격이 충분하지 않아 계산하지 못한 상태이지 0이 아닙니다.
+    buckets = pd.Series("unavailable", index=rows.index, dtype="string")
+    buckets.loc[available] = "relative_mad_le_0_5"
+    buckets.loc[measured.loc[measured.gt(0.5)].index] = "relative_mad_gt_0_5"
+    return buckets
+
+
+def add_fold_outcome_distribution(
+    cohorts: pd.DataFrame,
+    paired_rows: pd.DataFrame,
+    *,
+    count_column: str,
+    bucket_labels: pd.Series | None = None,
+) -> pd.DataFrame:
+    """정답 확인 행의 사건·미사건 수와 가중 사건율을 구간별로 보탭니다."""
+    required = {
+        count_column,
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+    }
+    missing = required - set(paired_rows.columns)
+    if missing:
+        raise RollingValidationError(f"사건 분포 진단 열 누락: {sorted(missing)}")
+    if bucket_labels is None:
+        buckets = pd.cut(
+            paired_rows[count_column],
+            bins=COUNT_SEGMENT_BINS,
+            labels=COUNT_SEGMENT_LABELS,
+            include_lowest=True,
+        )
+    else:
+        if not bucket_labels.index.equals(paired_rows.index):
+            raise RollingValidationError("구간 라벨과 평가 행의 인덱스가 다릅니다.")
+        buckets = bucket_labels
+    if buckets.isna().any():
+        raise RollingValidationError("사건 분포 진단에서 표본의 구간이 누락됐습니다.")
+    known = paired_rows.loc[paired_rows["ipcw_outcome_known"]].copy()
+    known["bucket"] = buckets.loc[known.index].astype(str)
+    known["event"] = known["ipcw_event_within_horizon"].astype("int64")
+    known["weighted_event"] = known["event"].mul(known["ipcw_weight"])
+    group = known.groupby("bucket", sort=False).agg(
+        event_count=("event", "sum"),
+        known_count=("event", "size"),
+        event_weight=("weighted_event", "sum"),
+        known_weight=("ipcw_weight", "sum"),
+    )
+    result = cohorts.copy()
+    result["event_within_horizon_count"] = (
+        result["count_bucket"].map(group["event_count"]).fillna(0).astype("int64")
+    )
+    result["no_event_within_horizon_count"] = (
+        result["count_bucket"].map(group["known_count"]).fillna(0).astype("int64")
+        - result["event_within_horizon_count"]
+    )
+    result["ipcw_weighted_event_rate"] = result["count_bucket"].map(
+        group["event_weight"].div(group["known_weight"])
+    )
+    if (
+        not result["event_within_horizon_count"]
+        .add(result["no_event_within_horizon_count"])
+        .equals(result["outcome_known_count"])
+    ):
+        raise RollingValidationError(
+            "구간별 사건·미사건 합계가 정답 확인 수와 다릅니다."
+        )
+    return result
+
+
+def summarize_history_irregularity_cohorts(
+    paired_rows: pd.DataFrame,
+    *,
+    bucket_labels: pd.Series,
+) -> pd.DataFrame:
+    """불규칙성별 동일 평가 표본의 사건 분포와 두 모델의 Brier를 집계합니다."""
+    required = {
+        "user_id",
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    }
+    missing = required - set(paired_rows.columns)
+    if missing:
+        raise RollingValidationError(f"불규칙성 진단 열 누락: {sorted(missing)}")
+    if paired_rows.empty or not bucket_labels.index.equals(paired_rows.index):
+        raise RollingValidationError("불규칙성 구간과 평가 표본이 일치해야 합니다.")
+    if bucket_labels.isna().any():
+        raise RollingValidationError("불규칙성 진단에서 표본이 누락됐습니다.")
+
+    segmented = paired_rows.copy()
+    segmented["irregularity_bucket"] = bucket_labels
+    summaries: list[dict[str, object]] = []
+    for bucket, segment in segmented.groupby("irregularity_bucket", sort=True):
+        known = segment.loc[segment["ipcw_outcome_known"]]
+        summary: dict[str, object] = {
+            "count_column": "history_relative_mad",
+            "count_bucket": str(bucket),
+            "sample_count": int(len(segment)),
+            "user_count": int(segment["user_id"].nunique()),
+            "outcome_known_count": int(len(known)),
+        }
+        for role, column in (
+            ("reference", "reference_predicted_event_probability"),
+            ("candidate", "candidate_predicted_event_probability"),
+        ):
+            if known.empty:
+                summary[f"{role}_ipcw_brier_score"] = float("nan")
+                continue
+            evaluation_rows = segment.copy()
+            evaluation_rows["predicted_event_probability"] = segment[column]
+            score = evaluate_ipcw_brier_score(
+                evaluation_rows, reference_probability=0.5
+            )
+            summary[f"{role}_ipcw_brier_score"] = float(score["ipcw_brier_score"])
+        summary["brier_difference_aft_minus_lightgbm"] = float(
+            summary["reference_ipcw_brier_score"]
+        ) - float(summary["candidate_ipcw_brier_score"])
+        summaries.append(summary)
+    return pd.DataFrame(summaries)
 
 
 def evaluate_rolling_cutoff_models(
@@ -406,6 +547,9 @@ def evaluate_rolling_cutoff_models(
                 paired_rows,
                 count_column=count_column,
             )
+            cohorts = add_fold_outcome_distribution(
+                cohorts, paired_rows, count_column=count_column
+            )
             if int(cohorts["sample_count"].sum()) != len(paired_rows):
                 raise RollingValidationError(
                     f"{fold_id}: {count_column} 구간 표본 합계가 평가 표본과 다릅니다."
@@ -417,6 +561,33 @@ def evaluate_rolling_cutoff_models(
                 columns={"brier_improvement": "brier_difference_aft_minus_lightgbm"}
             )
             cohort_tables.append(cohorts)
+
+        # 상대 MAD는 적은 이력 때문에 아예 계산할 수 없는 행을 별도로 셉니다.
+        irregularity_labels = classify_history_irregularity(paired_rows)
+        irregularity_cohorts = summarize_history_irregularity_cohorts(
+            paired_rows, bucket_labels=irregularity_labels
+        )
+        irregularity_cohorts = add_fold_brier_contributions(
+            irregularity_cohorts,
+            paired_rows,
+            count_column="history_relative_mad",
+            bucket_labels=irregularity_labels,
+        )
+        irregularity_cohorts = add_fold_outcome_distribution(
+            irregularity_cohorts,
+            paired_rows,
+            count_column="history_relative_mad",
+            bucket_labels=irregularity_labels,
+        )
+        if int(irregularity_cohorts["sample_count"].sum()) != len(paired_rows):
+            raise RollingValidationError(
+                f"{fold_id}: 불규칙성 구간 표본 합계가 평가 표본과 다릅니다."
+            )
+        irregularity_cohorts.insert(0, "fold_id", fold_id)
+        irregularity_cohorts["sample_rate"] = irregularity_cohorts["sample_count"].div(
+            len(paired_rows)
+        )
+        cohort_tables.append(irregularity_cohorts)
 
         fold_calibration = comparison.calibration.copy()
         fold_calibration.insert(0, "fold_id", fold_id)
@@ -490,6 +661,7 @@ def build_rolling_cutoff_report(
             "history_interval_count",
             "user_prior_order_count",
             "product_train_sample_count",
+            "history_relative_mad",
         ):
             count_rows = fold_cohorts.loc[fold_cohorts["count_column"].eq(count_column)]
             if int(count_rows["sample_count"].sum()) != fold.evaluation_sample_count:
@@ -503,6 +675,24 @@ def build_rolling_cutoff_report(
             ):
                 raise ValueError(
                     f"{fold.fold_id}: {count_column} 구간 Brier 기여량 합계가 다릅니다."
+                )
+            if int(count_rows["outcome_known_count"].sum()) != fold.outcome_known_count:
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 정답 확인 합계가 다릅니다."
+                )
+            if (
+                int(count_rows["event_within_horizon_count"].sum())
+                != fold.event_within_horizon_count
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 사건 수 합계가 다릅니다."
+                )
+            if (
+                int(count_rows["no_event_within_horizon_count"].sum())
+                != fold.no_event_within_horizon_count
+            ):
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 미사건 수 합계가 다릅니다."
                 )
 
     train_end_at = pd.to_datetime(folds["train_end_at"], errors="raise")
@@ -707,6 +897,20 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
         )
         for row in report["folds"]
     ]
+    irregularity_lines = [
+        (
+            f"| {row['fold_id']} | {row['count_bucket']} | "
+            f"{row['sample_count']:,} ({row['sample_rate']:.2%}) | "
+            f"{row['outcome_known_count']:,} | "
+            f"{row['event_within_horizon_count']:,} | "
+            f"{_format_optional_float(row['ipcw_weighted_event_rate'])} | "
+            f"{_format_optional_float(row['reference_ipcw_brier_score'])} | "
+            f"{_format_optional_float(row['candidate_ipcw_brier_score'])} | "
+            f"{row['brier_difference_contribution']:+.6f} |"
+        )
+        for row in report["cohorts"]
+        if row["count_column"] == "history_relative_mad"
+    ]
     return "\n".join(
         [
             "# UCI 재구매 모델 Rolling cutoff 시간 강건성 검증",
@@ -749,6 +953,21 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
             f"{ipcw_stability_message} 다만 사건율과 "
             "표본 구성이 시점마다 달라 성능 변화의 원인을 하나로 단정하지 "
             "않습니다.",
+            "",
+            "## 과거 구매 간격 불규칙성별 사건·오차",
+            "",
+            "상대 MAD = 과거 간격의 중앙값 절대편차 / 과거 간격 중앙값. "
+            "간격이 부족해 계산하지 못한 표본은 unavailable로 유지합니다. "
+            "0.5는 편차가 대표 간격의 절반을 넘는지 보기 위한 고정 진단 "
+            "경계일 뿐 학습·모델 선택 임계값이 아닙니다. 사건 수는 정답 확인 "
+            "행만 세고, 검열로 정답을 모르는 행은 미사건으로 세지 않습니다. "
+            "각 구간 Brier는 구간 내 IPCW 평균이며 기여량은 fold 전체 "
+            "IPCW 분모를 쓰므로, 기여량을 더해야 전체 차이가 됩니다.",
+            "",
+            "| Fold | 상대 MAD 구간 | 평가 표본 (비율) | 정답 확인 | 사건 | "
+            "IPCW 가중 사건율 | AFT Brier | LightGBM Brier | 전체 차이 기여 |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            *irregularity_lines,
             "",
             str(report["decision"]),
             "",
