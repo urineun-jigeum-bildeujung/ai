@@ -23,11 +23,13 @@ from scripts.run_uci_rolling_validation import (
     build_rolling_cutoff_report,
     build_rolling_focus_bootstrap_report,
     build_rolling_focus_bootstrap_trials_report,
+    build_rolling_user_composition_report,
     classify_history_irregularity,
     evaluate_rolling_cutoff_models,
     render_rolling_concentration_report,
     render_rolling_cutoff_report,
     render_rolling_focus_bootstrap_report,
+    render_rolling_user_composition_report,
     summarize_history_irregularity_cohorts,
 )
 
@@ -670,3 +672,31 @@ def test_rolling_cutoff_markdown_reports_low_ipcw_effective_sample_rate(
     assert "최솟값이 50.00%" in markdown
     assert "99% 미만" in markdown
     assert "모든 fold에서 IPCW 유효 표본 수가" not in markdown
+
+
+def test_rolling_user_composition_report_preserves_original_scores(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """사용자 집계가 원래 fold Brier와 같고 식별자 없이 직렬화됩니다."""
+    report = build_rolling_user_composition_report(rolling_evaluation)
+    assert report["test_accessed"] is False
+    assert len(report["user_diagnostics"]) == 2
+    assert len(report["user_groups"]) == 4
+    assert len(report["user_overlaps"]) == 1
+    assert len(report["user_bootstrap"]) == 1
+    assert "user_id" not in json.dumps(report)
+    markdown = render_rolling_user_composition_report(report)
+    assert "사용자 구성·중복 진단" in markdown
+    assert "fold_1 → fold_2" in markdown
+
+
+def test_user_composition_report_rejects_missing_fold_pair(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """보고서 생성 직전에도 fold 쌍 누락을 검출합니다."""
+    changed = replace(
+        rolling_evaluation,
+        user_overlaps=rolling_evaluation.user_overlaps.iloc[0:0],
+    )
+    with pytest.raises(ValueError, match="fold 쌍"):
+        build_rolling_user_composition_report(changed)
