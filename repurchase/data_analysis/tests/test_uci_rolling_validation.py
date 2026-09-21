@@ -21,10 +21,13 @@ from scripts.run_uci_rolling_validation import (
     build_rolling_bootstrap_trials_report,
     build_rolling_concentration_report,
     build_rolling_cutoff_report,
+    build_rolling_focus_bootstrap_report,
+    build_rolling_focus_bootstrap_trials_report,
     classify_history_irregularity,
     evaluate_rolling_cutoff_models,
     render_rolling_concentration_report,
     render_rolling_cutoff_report,
+    render_rolling_focus_bootstrap_report,
     summarize_history_irregularity_cohorts,
 )
 
@@ -142,8 +145,11 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     report = build_rolling_cutoff_report(rolling_evaluation)
     trials_report = build_rolling_bootstrap_trials_report(rolling_evaluation)
     concentration_report = build_rolling_concentration_report(rolling_evaluation)
+    focus_report = build_rolling_focus_bootstrap_report(rolling_evaluation)
+    focus_trials = build_rolling_focus_bootstrap_trials_report(rolling_evaluation)
     markdown = render_rolling_cutoff_report(report)
     concentration_markdown = render_rolling_concentration_report(concentration_report)
+    focus_markdown = render_rolling_focus_bootstrap_report(focus_report)
 
     assert report["evaluation_split"] == "historical_rolling_validation"
     assert report["test_accessed"] is False
@@ -164,10 +170,17 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     assert concentration_report["test_accessed"] is False
     assert "원래 Test는 사용하지 않았습니다" in concentration_report["scope"]
     assert "재구매 Rolling 구간별 모델 우위 집중도" in concentration_markdown
+    assert focus_report["test_accessed"] is False
+    assert focus_trials["test_accessed"] is False
+    assert "구간 내부" in focus_report["scope"]
+    assert "사용자 Bootstrap" in focus_markdown
+    assert "uci_repurchase_rolling_focus_bootstrap_trials.json.gz" in focus_markdown
     assert "과거 구매 간격 불규칙성별 사건·오차" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
     json.dumps(concentration_report, ensure_ascii=False, allow_nan=False)
+    json.dumps(focus_report, ensure_ascii=False, allow_nan=False)
+    json.dumps(focus_trials, ensure_ascii=False, allow_nan=False)
 
 
 def test_concentration_report_requires_both_entities_and_matching_cohort() -> None:
@@ -196,11 +209,14 @@ def test_concentration_report_requires_both_entities_and_matching_cohort() -> No
                 "sample_count": [10],
                 "outcome_known_count": [8],
                 "brier_difference_contribution": [0.02],
+                "brier_difference_aft_minus_lightgbm": [0.02],
             }
         ),
         calibration=pd.DataFrame(),
         bootstrap_trials=pd.DataFrame(),
         concentration=concentration,
+        focus_bootstrap=pd.DataFrame(),
+        focus_bootstrap_trials=pd.DataFrame(),
     )
     assert len(build_rolling_concentration_report(evaluation)["results"]) == 2
     with pytest.raises(ValueError, match="누락"):
@@ -211,6 +227,74 @@ def test_concentration_report_requires_both_entities_and_matching_cohort() -> No
     changed.loc[0, "net_contribution_total"] = 0.03
     with pytest.raises(ValueError, match="순기여 합계"):
         build_rolling_concentration_report(replace(evaluation, concentration=changed))
+
+
+def test_focus_bootstrap_report_matches_existing_segment_and_trials() -> None:
+    """구간 점추정과 반복 원자료가 기존 구간 성능과 일치해야 합니다."""
+    focus = pd.DataFrame(
+        [
+            {
+                "fold_id": "fold_1",
+                "count_column": "history_interval_count",
+                "count_bucket": "8-15",
+                "sample_count": 10,
+                "outcome_known_count": 8,
+                "known_user_count": 3,
+                "bootstrap_replicates": 3,
+                "bootstrap_random_seed": 7,
+                "status": "evaluated",
+                "point_brier_difference_aft_minus_lightgbm": 0.02,
+                "bootstrap_lower_95_brier_difference": -0.0085,
+                "bootstrap_upper_95_brier_difference": 0.0295,
+                "bootstrap_lightgbm_improvement_rate": 2 / 3,
+            }
+        ]
+    )
+    trials = pd.DataFrame(
+        {
+            "fold_id": ["fold_1"] * 3,
+            "count_column": ["history_interval_count"] * 3,
+            "count_bucket": ["8-15"] * 3,
+            "replicate_index": [0, 1, 2],
+            "brier_improvement": [-0.01, 0.02, 0.03],
+        }
+    )
+    evaluation = RollingCutoffEvaluation(
+        folds=pd.DataFrame({"fold_id": ["fold_1"], "test_accessed": [False]}),
+        cohorts=pd.DataFrame(
+            {
+                "fold_id": ["fold_1"],
+                "count_column": ["history_interval_count"],
+                "count_bucket": ["8-15"],
+                "sample_count": [10],
+                "outcome_known_count": [8],
+                "brier_difference_aft_minus_lightgbm": [0.02],
+            }
+        ),
+        calibration=pd.DataFrame(),
+        bootstrap_trials=pd.DataFrame(),
+        concentration=pd.DataFrame(),
+        focus_bootstrap=focus,
+        focus_bootstrap_trials=trials,
+    )
+    report = build_rolling_focus_bootstrap_report(evaluation)
+    assert len(report["results"]) == 1
+    changed = focus.copy()
+    changed.loc[0, "point_brier_difference_aft_minus_lightgbm"] = 0.04
+    with pytest.raises(ValueError, match="점추정"):
+        build_rolling_focus_bootstrap_report(
+            replace(evaluation, focus_bootstrap=changed)
+        )
+    with pytest.raises(ValueError, match="반복 원자료 수"):
+        build_rolling_focus_bootstrap_report(
+            replace(evaluation, focus_bootstrap_trials=trials.iloc[:2])
+        )
+    changed_interval = focus.copy()
+    changed_interval.loc[0, "bootstrap_upper_95_brier_difference"] = 0.04
+    with pytest.raises(ValueError, match="요약값"):
+        build_rolling_focus_bootstrap_report(
+            replace(evaluation, focus_bootstrap=changed_interval)
+        )
 
 
 def test_rolling_cohorts_partition_each_fold_without_losing_samples(
