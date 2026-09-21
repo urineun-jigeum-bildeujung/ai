@@ -183,6 +183,28 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     json.dumps(focus_trials, ensure_ascii=False, allow_nan=False)
 
 
+def test_rolling_report_formats_cohort_event_rate_as_percent(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """구간별 가중 사건율도 전체 fold 표와 같은 백분율로 표시합니다."""
+    report = build_rolling_cutoff_report(rolling_evaluation)
+    irregularity_rows = [
+        row
+        for row in report["cohorts"]
+        if row["count_column"] == "history_relative_mad"
+    ]
+    assert len(irregularity_rows) >= 2
+    irregularity_rows[0]["ipcw_weighted_event_rate"] = 0.25
+    irregularity_rows[1]["ipcw_weighted_event_rate"] = None
+
+    markdown = render_rolling_cutoff_report(report)
+    lines = markdown.splitlines()
+    for row, expected in zip(irregularity_rows[:2], ["25.00%", "N/A"], strict=True):
+        prefix = f"| {row['fold_id']} | {row['count_bucket']} |"
+        line = next(line for line in lines if line.startswith(prefix))
+        assert f"| {expected} |" in line
+
+
 def test_concentration_report_requires_both_entities_and_matching_cohort() -> None:
     """사용자·상품 중 하나가 없거나 순기여가 원래 구간과 다르면 거절합니다."""
     concentration = pd.DataFrame(

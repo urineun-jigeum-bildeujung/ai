@@ -1320,7 +1320,7 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
             f"{row['sample_count']:,} ({row['sample_rate']:.2%}) | "
             f"{row['outcome_known_count']:,} | "
             f"{row['event_within_horizon_count']:,} | "
-            f"{_format_optional_float(row['ipcw_weighted_event_rate'])} | "
+            f"{_format_optional_percent(row['ipcw_weighted_event_rate'])} | "
             f"{_format_optional_float(row['reference_ipcw_brier_score'])} | "
             f"{_format_optional_float(row['candidate_ipcw_brier_score'])} | "
             f"{row['brier_difference_contribution']:+.6f} |"
