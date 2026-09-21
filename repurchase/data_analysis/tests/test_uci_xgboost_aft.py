@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -20,18 +21,22 @@ from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
     build_xgboost_aft_bootstrap_trials_report,
     build_xgboost_aft_distribution_comparison_report,
+    build_xgboost_aft_logistic_scale_comparison_report,
     build_xgboost_aft_report,
     build_xgboost_aft_round_comparison_report,
     compare_xgboost_aft_boosting_rounds,
+    compare_xgboost_aft_loss_distribution_scales,
     compare_xgboost_aft_loss_distributions,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
     render_xgboost_aft_distribution_comparison_report,
+    render_xgboost_aft_logistic_scale_comparison_report,
     render_xgboost_aft_report,
     render_xgboost_aft_round_comparison_report,
     run_xgboost_aft_experiment,
     select_xgboost_aft_boosting_round,
     select_xgboost_aft_loss_distribution,
+    select_xgboost_aft_loss_distribution_scale,
     validate_selected_xgboost_aft_distribution_result,
     validate_selected_xgboost_aft_result,
 )
@@ -383,6 +388,317 @@ def test_compare_xgboost_aft_loss_distributions_uses_fixed_evaluation_cohort(
         call_kwargs["bootstrap_replicates"] is None
         for _, call_kwargs in evaluation_calls
     )
+
+
+def test_compare_xgboost_aft_loss_distribution_scales_changes_only_scale(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """같은 logistic 설정에서 scale만 바꾸고 기존 실패 기록 규칙을 재사용합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    comparison_calls: list[dict[str, object]] = []
+    original_compare = compare_xgboost_aft_loss_distributions
+
+    def record_comparison_call(
+        prepared_argument: object,
+        **kwargs: object,
+    ) -> pd.DataFrame:
+        comparison_calls.append(kwargs.copy())
+        return original_compare(prepared_argument, **kwargs)
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.compare_xgboost_aft_loss_distributions",
+        record_comparison_call,
+    )
+
+    comparison = compare_xgboost_aft_loss_distribution_scales(
+        prepared,
+        loss_distribution="logistic",
+        num_boost_round=2,
+        scale_candidates=(0.5, 1.0, 2.0),
+    )
+
+    assert comparison["loss_distribution_scale"].tolist() == [0.5, 1.0, 2.0]
+    assert comparison["loss_distribution"].eq("logistic").all()
+    assert comparison["num_boost_round"].eq(2).all()
+    assert [call["loss_distribution_scale"] for call in comparison_calls] == [
+        0.5,
+        1.0,
+        2.0,
+    ]
+    assert all(
+        call["distribution_candidates"] == ("logistic",) for call in comparison_calls
+    )
+
+
+@pytest.mark.parametrize(
+    "statuses",
+    [
+        ("success", "failed"),
+        ("failed", "success"),
+        ("success", "success"),
+        ("failed", "failed"),
+    ],
+)
+def test_compare_xgboost_aft_loss_distribution_scales_preserves_schema_without_future_warning(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+    statuses: tuple[str, str],
+) -> None:
+    """성공·실패 순서와 무관하게 null·실제 0과 결과 스키마를 보존합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    def build_comparison_row(
+        prepared_argument: object,
+        **kwargs: object,
+    ) -> pd.DataFrame:
+        scale = float(kwargs["loss_distribution_scale"])
+        status = statuses[0] if scale == 1.0 else statuses[1]
+        success = status == "success"
+        return pd.DataFrame(
+            [
+                {
+                    "loss_distribution": "logistic",
+                    "loss_distribution_scale": scale,
+                    "num_boost_round": 20,
+                    "status": status,
+                    "failure_reason": None if success else "수치 실패",
+                    "prediction_sample_count": 100,
+                    "invalid_prediction_count": 0 if success else 80,
+                    "nan_count": 0,
+                    "positive_infinity_count": 0 if success else 60,
+                    "negative_infinity_count": 0,
+                    "nonpositive_finite_count": 0 if success else 20,
+                    "final_training_aft_nloglik": 2.0 if success else None,
+                    "minimum_training_aft_nloglik": 2.0 if success else None,
+                    "ipcw_concordance_index": 0.75 if success else None,
+                    "ipcw_brier_score": 0.08 if success else None,
+                    "ipcw_reference_brier_score": 0.10 if success else None,
+                    "brier_skill_score": 0.20 if success else None,
+                    "expected_calibration_error": 0.05 if success else None,
+                    "maximum_calibration_error": 0.10 if success else None,
+                    "weighted_calibration_gap": 0.01 if success else None,
+                    "horizon_days": 30,
+                    "validation_sample_count": 90 if success else None,
+                    "outcome_known_count": 70 if success else None,
+                    "ipcw_weight_sum": 90.0 if success else None,
+                    "reference_probability": 0.10 if success else None,
+                    "aft_evaluation_sample_count": 90 if success else None,
+                }
+            ]
+        )
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.compare_xgboost_aft_loss_distributions",
+        build_comparison_row,
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)
+        comparison = compare_xgboost_aft_loss_distribution_scales(
+            prepared,
+            loss_distribution="logistic",
+            num_boost_round=20,
+            scale_candidates=(1.0, 2.0),
+        )
+
+    assert len(comparison.columns) == 26
+    assert comparison["status"].tolist() == list(statuses)
+    assert comparison["invalid_prediction_count"].tolist() == [
+        0 if status == "success" else 80 for status in statuses
+    ]
+    failed_metrics = comparison.loc[
+        comparison["status"].eq("failed"), "ipcw_brier_score"
+    ]
+    assert failed_metrics.isna().all()
+
+
+def test_compare_xgboost_aft_loss_distribution_scales_rejects_changed_cohort(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """scale 외 Validation 모집단이 달라지면 비교 결과 생성을 중단합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+    original_compare = compare_xgboost_aft_loss_distributions
+
+    def change_one_prediction_count(
+        prepared_argument: object,
+        **kwargs: object,
+    ) -> pd.DataFrame:
+        result = original_compare(prepared_argument, **kwargs)
+        if kwargs["loss_distribution_scale"] == 2.0:
+            result = result.copy()
+            result["prediction_sample_count"] += 1
+        return result
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.compare_xgboost_aft_loss_distributions",
+        change_one_prediction_count,
+    )
+
+    with pytest.raises(RuntimeError, match="prediction_sample_count"):
+        compare_xgboost_aft_loss_distribution_scales(
+            prepared,
+            loss_distribution="logistic",
+            num_boost_round=2,
+            scale_candidates=(1.0, 2.0),
+        )
+
+
+@pytest.mark.parametrize(
+    "scale_candidates",
+    [(), (1.0, 1.0), (0.0,), (-1.0,), (float("inf"),), (float("nan"),), (True,)],
+)
+def test_compare_xgboost_aft_loss_distribution_scales_rejects_invalid_candidates_before_training(
+    uci_e2e_purchase_events: pd.DataFrame,
+    monkeypatch: pytest.MonkeyPatch,
+    scale_candidates: tuple[object, ...],
+) -> None:
+    """빈 값·중복·비양수·비유한 scale은 학습 전에 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels)
+
+    def fail_if_training_starts(*args: object, **kwargs: object) -> None:
+        raise AssertionError("잘못된 scale 후보를 검사하기 전에 학습이 시작됐습니다.")
+
+    monkeypatch.setattr(
+        "scripts.run_uci_xgboost_aft.compare_xgboost_aft_loss_distributions",
+        fail_if_training_starts,
+    )
+
+    with pytest.raises(ValueError):
+        compare_xgboost_aft_loss_distribution_scales(
+            prepared,
+            loss_distribution="logistic",
+            num_boost_round=2,
+            scale_candidates=scale_candidates,
+        )
+
+
+def test_select_xgboost_aft_loss_distribution_scale_ignores_failed_candidates() -> None:
+    """수치 실패 scale은 지표 선택에서 제외하고 성공 후보만 비교합니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution": ["logistic"] * 4,
+            "loss_distribution_scale": [0.5, 1.0, 2.0, 4.0],
+            "num_boost_round": [20] * 4,
+            "status": ["failed", "failed", "success", "success"],
+            "ipcw_brier_score": [None, None, 0.08, 0.09],
+            "ipcw_concordance_index": [None, None, 0.75, 0.80],
+            "expected_calibration_error": [None, None, 0.06, 0.04],
+            "weighted_calibration_gap": [None, None, 0.05, 0.03],
+        }
+    )
+
+    selected = select_xgboost_aft_loss_distribution_scale(comparison)
+
+    assert selected == 2.0
+
+
+def test_select_xgboost_aft_loss_distribution_scale_prefers_default_on_exact_tie() -> (
+    None
+):
+    """모든 지표가 같으면 배수상 기본 scale 1에 가장 가까운 값을 선택합니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution_scale": [2.0, 1.0, 0.5],
+            "status": ["success"] * 3,
+            "ipcw_brier_score": [0.08] * 3,
+            "ipcw_concordance_index": [0.75] * 3,
+            "expected_calibration_error": [0.06] * 3,
+            "weighted_calibration_gap": [0.05] * 3,
+        }
+    )
+
+    selected = select_xgboost_aft_loss_distribution_scale(comparison)
+
+    assert selected == 1.0
+
+
+def test_build_xgboost_aft_logistic_scale_report_preserves_failures() -> None:
+    """scale 보고서는 실패 진단을 null 안전 JSON과 Markdown에 함께 남깁니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution": ["logistic", "logistic"],
+            "loss_distribution_scale": [1.0, 2.0],
+            "num_boost_round": [20, 20],
+            "horizon_days": [30, 30],
+            "status": ["failed", "success"],
+            "prediction_sample_count": [100, 100],
+            "invalid_prediction_count": [80, 0],
+            "nan_count": [0, 0],
+            "positive_infinity_count": [60, 0],
+            "negative_infinity_count": [0, 0],
+            "nonpositive_finite_count": [20, 0],
+            "ipcw_brier_score": [None, 0.08],
+            "ipcw_concordance_index": [None, 0.75],
+            "expected_calibration_error": [None, 0.06],
+            "maximum_calibration_error": [None, 0.15],
+            "weighted_calibration_gap": [None, 0.05],
+        }
+    )
+
+    report = build_xgboost_aft_logistic_scale_comparison_report(
+        comparison,
+        selected_loss_distribution_scale=2.0,
+    )
+    markdown = render_xgboost_aft_logistic_scale_comparison_report(report)
+
+    assert report["selected_loss_distribution_scale"] == 2.0
+    assert report["candidates"][0]["ipcw_brier_score"] is None
+    assert "80/100" in markdown
+    assert "scale=1.0" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+
+def test_build_xgboost_aft_logistic_scale_report_allows_all_failed_diagnostic() -> None:
+    """모든 scale 실패도 선택값 없이 기록해 최종 normal 평가를 막지 않습니다."""
+    comparison = pd.DataFrame(
+        {
+            "loss_distribution": ["logistic", "logistic"],
+            "loss_distribution_scale": [0.5, 1.0],
+            "num_boost_round": [20, 20],
+            "horizon_days": [30, 30],
+            "status": ["failed", "failed"],
+            "prediction_sample_count": [100, 100],
+            "invalid_prediction_count": [100, 80],
+            "nan_count": [0, 0],
+            "positive_infinity_count": [100, 60],
+            "negative_infinity_count": [0, 0],
+            "nonpositive_finite_count": [0, 20],
+            "ipcw_brier_score": [None, None],
+            "ipcw_concordance_index": [None, None],
+            "expected_calibration_error": [None, None],
+            "maximum_calibration_error": [None, None],
+            "weighted_calibration_gap": [None, None],
+        }
+    )
+
+    report = build_xgboost_aft_logistic_scale_comparison_report(
+        comparison,
+        selected_loss_distribution_scale=None,
+    )
+    markdown = render_xgboost_aft_logistic_scale_comparison_report(report)
+
+    assert report["selected_loss_distribution_scale"] is None
+    assert "선택 scale: `N/A`" in markdown
+    assert "100/100" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
 
 
 def test_compare_xgboost_aft_loss_distributions_rejects_invalid_candidates_before_training(

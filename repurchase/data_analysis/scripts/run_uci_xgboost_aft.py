@@ -11,7 +11,7 @@ import platform
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
-from math import isclose
+from math import isclose, isfinite, log
 from numbers import Integral, Real
 from typing import Final
 
@@ -61,6 +61,13 @@ AFT_LOSS_DISTRIBUTION_CANDIDATES: Final[tuple[str, ...]] = (
     "logistic",
     "extreme",
 )
+AFT_LOGISTIC_SCALE_CANDIDATES: Final[tuple[float, ...]] = (
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    4.0,
+)
 JSON_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.json"
 MARKDOWN_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_evaluation.md"
 BOOTSTRAP_TRIALS_REPORT_PATH = REPORT_DIR / "uci_xgboost_aft_bootstrap_trials.json"
@@ -75,6 +82,12 @@ DISTRIBUTION_COMPARISON_JSON_REPORT_PATH = (
 )
 DISTRIBUTION_COMPARISON_MARKDOWN_REPORT_PATH = (
     REPORT_DIR / "uci_xgboost_aft_distribution_comparison.md"
+)
+LOGISTIC_SCALE_COMPARISON_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_logistic_scale_comparison.json"
+)
+LOGISTIC_SCALE_COMPARISON_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_logistic_scale_comparison.md"
 )
 
 
@@ -437,6 +450,85 @@ def compare_xgboost_aft_loss_distributions(
     return comparison
 
 
+def compare_xgboost_aft_loss_distribution_scales(
+    prepared: XGBoostAFTPreparedExperiment,
+    *,
+    loss_distribution: str,
+    num_boost_round: int,
+    scale_candidates: Sequence[float] = AFT_LOGISTIC_SCALE_CANDIDATES,
+    calibration_bin_count: int = CALIBRATION_BIN_COUNT,
+) -> pd.DataFrame:
+    """한 손실분포에서 scale만 바꿔 수치 안정성과 Validation 지표를 비교합니다."""
+    candidates = tuple(scale_candidates)
+    if not candidates:
+        raise ValueError("비교할 AFT scale 후보가 하나 이상 필요합니다.")
+    if loss_distribution not in AFT_LOSS_DISTRIBUTIONS:
+        raise ValueError(
+            "지원하지 않는 AFT 손실분포입니다: "
+            f"{loss_distribution}. 허용값: {sorted(AFT_LOSS_DISTRIBUTIONS)}"
+        )
+    invalid_candidates = [
+        candidate
+        for candidate in candidates
+        if isinstance(candidate, bool)
+        or not isinstance(candidate, Real)
+        or not isfinite(float(candidate))
+        or float(candidate) <= 0.0
+    ]
+    if invalid_candidates:
+        raise ValueError(
+            f"AFT scale 후보는 0보다 큰 유한한 실수여야 합니다: {invalid_candidates}"
+        )
+    normalized_candidates = tuple(float(candidate) for candidate in candidates)
+    if len(set(normalized_candidates)) != len(normalized_candidates):
+        raise ValueError("AFT scale 후보에는 중복된 값을 사용할 수 없습니다.")
+
+    comparisons = [
+        compare_xgboost_aft_loss_distributions(
+            prepared,
+            num_boost_round=num_boost_round,
+            distribution_candidates=(loss_distribution,),
+            calibration_bin_count=calibration_bin_count,
+            loss_distribution_scale=scale,
+        )
+        for scale in normalized_candidates
+    ]
+    comparison_columns = comparisons[0].columns
+    frames_without_all_missing_columns = [
+        frame.dropna(axis="columns", how="all") for frame in comparisons
+    ]
+    comparison = pd.concat(
+        frames_without_all_missing_columns,
+        ignore_index=True,
+    ).reindex(columns=comparison_columns)
+
+    for fixed_column in (
+        "loss_distribution",
+        "num_boost_round",
+        "horizon_days",
+        "prediction_sample_count",
+    ):
+        if comparison[fixed_column].nunique(dropna=False) != 1:
+            raise RuntimeError(
+                f"AFT scale 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
+            )
+
+    successful = comparison.loc[comparison["status"].eq("success")]
+    for fixed_column in (
+        "ipcw_reference_brier_score",
+        "aft_evaluation_sample_count",
+        "validation_sample_count",
+        "outcome_known_count",
+        "ipcw_weight_sum",
+        "reference_probability",
+    ):
+        if successful[fixed_column].nunique(dropna=False) > 1:
+            raise RuntimeError(
+                f"AFT scale 후보의 공통 평가 조건이 달라졌습니다: {fixed_column}"
+            )
+    return comparison
+
+
 def _validate_xgboost_aft_selection_table(
     comparison: pd.DataFrame,
     *,
@@ -561,6 +653,47 @@ def select_xgboost_aft_loss_distribution(comparison: pd.DataFrame) -> str:
         final_tie_breaker_columns=("distribution_preference",),
     )
     return str(ranked.iloc[0]["loss_distribution"])
+
+
+def select_xgboost_aft_loss_distribution_scale(comparison: pd.DataFrame) -> float:
+    """성공한 후보 중 Brier를 우선해 한 손실분포의 scale을 선택합니다."""
+    if "status" not in comparison.columns:
+        raise ValueError("AFT scale 후보 결과에 상태 컬럼이 없습니다.")
+    statuses = comparison["status"]
+    if statuses.isna().any() or not statuses.isin({"success", "failed"}).all():
+        raise ValueError("AFT scale 후보 상태는 success 또는 failed여야 합니다.")
+
+    selection_rows = comparison.loc[statuses.eq("success")]
+    _validate_xgboost_aft_selection_table(
+        selection_rows,
+        candidate_column="loss_distribution_scale",
+    )
+    scale_values = comparison["loss_distribution_scale"].tolist()
+    if any(
+        isinstance(value, bool)
+        or not isinstance(value, Real)
+        or not isfinite(float(value))
+        or float(value) <= 0.0
+        for value in scale_values
+    ):
+        raise ValueError("AFT 후보 scale은 0보다 큰 유한한 실수여야 합니다.")
+    if comparison["loss_distribution_scale"].duplicated().any():
+        raise ValueError("AFT 후보 선택 결과에 중복된 scale이 있습니다.")
+
+    candidates_with_preference = selection_rows.copy()
+    candidates_with_preference["scale_distance_from_one"] = (
+        candidates_with_preference["loss_distribution_scale"]
+        .astype(float)
+        .map(lambda value: abs(log(value)))
+    )
+    ranked = _rank_xgboost_aft_candidates(
+        candidates_with_preference,
+        final_tie_breaker_columns=(
+            "scale_distance_from_one",
+            "loss_distribution_scale",
+        ),
+    )
+    return float(ranked.iloc[0]["loss_distribution_scale"])
 
 
 def validate_selected_xgboost_aft_result(
@@ -823,6 +956,112 @@ def render_xgboost_aft_distribution_comparison_report(
     return "\n".join(lines)
 
 
+def build_xgboost_aft_logistic_scale_comparison_report(
+    comparison: pd.DataFrame,
+    *,
+    selected_loss_distribution_scale: float | None,
+) -> dict[str, object]:
+    """logistic scale 후보의 수치 안정성과 Validation 결과를 저장합니다."""
+    successful = comparison.loc[comparison["status"].eq("success")]
+    if successful.empty:
+        if selected_loss_distribution_scale is not None:
+            raise ValueError(
+                "모든 logistic scale이 실패해 선택 scale을 지정할 수 없습니다."
+            )
+    else:
+        selected_by_policy = select_xgboost_aft_loss_distribution_scale(comparison)
+        if selected_loss_distribution_scale is None or not isclose(
+            selected_loss_distribution_scale,
+            selected_by_policy,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(
+                "전달된 선택 scale이 사전에 정의한 AFT 후보 선택 규칙과 다릅니다."
+            )
+    distributions = comparison["loss_distribution"].drop_duplicates().tolist()
+    if distributions != ["logistic"]:
+        raise ValueError("logistic scale 비교 보고서에는 logistic 후보만 허용합니다.")
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_logistic_scale_comparison_v1",
+        "evaluation_split": "validation",
+        "horizon_days": int(comparison["horizon_days"].iloc[0]),
+        "loss_distribution": "logistic",
+        "num_boost_round": int(comparison["num_boost_round"].iloc[0]),
+        "selected_loss_distribution_scale": selected_loss_distribution_scale,
+        "selection_policy": [
+            "exclude_numerically_failed_candidates",
+            "lowest_ipcw_brier_score",
+            "highest_ipcw_concordance_index_on_exact_brier_tie",
+            "lowest_expected_calibration_error_on_exact_tie",
+            "lowest_absolute_weighted_calibration_gap_on_exact_tie",
+            "closest_multiplicative_distance_to_scale_one_on_exact_tie",
+            "lowest_scale_on_exact_tie",
+        ],
+        "candidates": dataframe_to_nullable_records(comparison),
+        "scope": (
+            "같은 Train·Validation·피처·logistic 분포·반복 횟수·horizon·IPCW "
+            "기준선에서 scale만 변경했습니다. 실패 후보는 삭제하거나 보정하지 "
+            "않고 무효 예측 유형과 개수를 기록했습니다. 선택 scale은 logistic "
+            "분포 내부의 수치 안정성·민감도 진단 결과이며 normal을 포함한 전체 "
+            "AFT 후보의 최종 선택을 변경하지 않습니다. Test는 사용하지 않았습니다."
+        ),
+    }
+
+
+def render_xgboost_aft_logistic_scale_comparison_report(
+    report: dict[str, object],
+) -> str:
+    """logistic scale별 성공·실패와 지표를 사람이 검토할 Markdown으로 만듭니다."""
+    candidate_lines = []
+    failure_lines = []
+    for row in report["candidates"]:
+        scale = row["loss_distribution_scale"]
+        if row["status"] == "failed":
+            candidate_lines.append(
+                f"| {scale} | 실패 | {row['invalid_prediction_count']:,} | "
+                "N/A | N/A | N/A | N/A | N/A |"
+            )
+            failure_lines.append(
+                f"- `scale={scale}`: 무효 예측 "
+                f"`{row['invalid_prediction_count']:,}/"
+                f"{row['prediction_sample_count']:,}`건 "
+                f"(NaN {row['nan_count']:,}, +inf "
+                f"{row['positive_infinity_count']:,}, -inf "
+                f"{row['negative_infinity_count']:,}, 유한한 0 이하 "
+                f"{row['nonpositive_finite_count']:,})"
+            )
+            continue
+        candidate_lines.append(
+            f"| {scale} | 성공 | 0 | {row['ipcw_brier_score']:.6f} | "
+            f"{row['ipcw_concordance_index']:.6f} | "
+            f"{row['expected_calibration_error']:.6f} | "
+            f"{row['maximum_calibration_error']:.6f} | "
+            f"{row['weighted_calibration_gap']:+.6f} |"
+        )
+
+    selected_scale = report["selected_loss_distribution_scale"]
+    selected_scale_text = "N/A" if selected_scale is None else str(selected_scale)
+    lines = [
+        "# UCI XGBoost AFT logistic scale 비교",
+        "",
+        f"- logistic 내부 선택 scale: `{selected_scale_text}`",
+        f"- 고정 반복 횟수: `{report['num_boost_round']}`",
+        "- 수치 실패 후보를 먼저 제외하고 성공 후보의 IPCW Brier Score를 "
+        "1순위로 비교합니다.",
+        "",
+        "| scale | 상태 | 무효 예측 | AFT Brier | C-index | ECE | MCE | 확률 편향 |",
+        "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+        *candidate_lines,
+        "",
+    ]
+    if failure_lines:
+        lines.extend(["## 수치 실패 진단", "", *failure_lines, ""])
+    lines.extend([str(report["scope"]), ""])
+    return "\n".join(lines)
+
+
 def build_xgboost_aft_report(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
@@ -1021,6 +1260,31 @@ def main() -> None:
         )
     )
 
+    logistic_scale_comparison = compare_xgboost_aft_loss_distribution_scales(
+        prepared,
+        loss_distribution="logistic",
+        num_boost_round=selected_num_boost_round,
+    )
+    successful_logistic_scales = logistic_scale_comparison.loc[
+        logistic_scale_comparison["status"].eq("success")
+    ]
+    selected_logistic_scale = (
+        None
+        if successful_logistic_scales.empty
+        else select_xgboost_aft_loss_distribution_scale(logistic_scale_comparison)
+    )
+    logistic_scale_comparison_report = (
+        build_xgboost_aft_logistic_scale_comparison_report(
+            logistic_scale_comparison,
+            selected_loss_distribution_scale=selected_logistic_scale,
+        )
+    )
+    logistic_scale_comparison_markdown = (
+        render_xgboost_aft_logistic_scale_comparison_report(
+            logistic_scale_comparison_report
+        )
+    )
+
     result = evaluate_xgboost_aft_candidate(
         prepared,
         loss_distribution=selected_loss_distribution,
@@ -1045,6 +1309,15 @@ def main() -> None:
     distribution_comparison_json = (
         json.dumps(
             distribution_comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    logistic_scale_comparison_json = (
+        json.dumps(
+            logistic_scale_comparison_report,
             ensure_ascii=False,
             indent=2,
             allow_nan=False,
@@ -1080,6 +1353,14 @@ def main() -> None:
     write_text_atomically(
         DISTRIBUTION_COMPARISON_MARKDOWN_REPORT_PATH,
         distribution_comparison_markdown,
+    )
+    write_text_atomically(
+        LOGISTIC_SCALE_COMPARISON_JSON_REPORT_PATH,
+        logistic_scale_comparison_json,
+    )
+    write_text_atomically(
+        LOGISTIC_SCALE_COMPARISON_MARKDOWN_REPORT_PATH,
+        logistic_scale_comparison_markdown,
     )
     write_text_atomically(
         JSON_REPORT_PATH,
