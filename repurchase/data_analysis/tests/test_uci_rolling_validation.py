@@ -152,8 +152,46 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     assert "## 14일 확률 성능" in markdown
     assert "원래 Test 사용: `아니요`" in markdown
     assert len(trials_report["trials"]) == 40
+    assert report["cohorts"]
     json.dumps(report, ensure_ascii=False, allow_nan=False)
     json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
+
+
+def test_rolling_cohorts_partition_each_fold_without_losing_samples(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """각 이력 구간을 합하면 같은 fold의 원래 평가 표본이 됩니다."""
+    columns = {
+        "history_interval_count",
+        "user_prior_order_count",
+        "product_train_sample_count",
+    }
+    cohorts = rolling_evaluation.cohorts
+    assert set(cohorts["count_column"]) == columns
+    for fold in rolling_evaluation.folds.itertuples():
+        for count_column in columns:
+            selected = cohorts.loc[
+                cohorts["fold_id"].eq(fold.fold_id)
+                & cohorts["count_column"].eq(count_column)
+            ]
+            assert int(selected["sample_count"].sum()) == fold.evaluation_sample_count
+            assert selected["sample_rate"].sum() == pytest.approx(1.0)
+            assert selected["outcome_known_count"].le(selected["sample_count"]).all()
+
+
+def test_rolling_report_rejects_missing_cohort_samples(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """구간 행이 빠져 평가 모집단이 축소되면 보고서를 만들지 않습니다."""
+    cohorts = rolling_evaluation.cohorts.copy()
+    selected = cohorts.loc[
+        cohorts["fold_id"].eq("fold_1")
+        & cohorts["count_column"].eq("history_interval_count")
+    ]
+    cohorts = cohorts.drop(index=selected.index[0])
+
+    with pytest.raises(ValueError, match="구간 합계"):
+        build_rolling_cutoff_report(replace(rolling_evaluation, cohorts=cohorts))
 
 
 def test_rolling_cutoff_decision_requires_consistent_intervals(

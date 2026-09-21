@@ -15,6 +15,7 @@ from typing import Final
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
+from .modeling.evaluation import summarize_ipcw_probability_pair_by_count_segment
 from .modeling.maturity_analysis import summarize_validation_ipcw_weight_stability
 from .modeling.rolling_validation import (
     RollingValidationError,
@@ -52,6 +53,7 @@ class RollingCutoffEvaluation:
     """Fold별 핵심 지표와 상세 Calibration·Bootstrap 원자료를 보관합니다."""
 
     folds: pd.DataFrame
+    cohorts: pd.DataFrame
     calibration: pd.DataFrame
     bootstrap_trials: pd.DataFrame
 
@@ -109,6 +111,7 @@ def evaluate_rolling_cutoff_models(
     )
 
     fold_records: list[dict[str, object]] = []
+    cohort_tables: list[pd.DataFrame] = []
     calibration_tables: list[pd.DataFrame] = []
     bootstrap_tables: list[pd.DataFrame] = []
     for fold_index, split in enumerate(rolling_splits, start=1):
@@ -289,6 +292,40 @@ def evaluate_rolling_cutoff_models(
             }
         )
 
+        # 상품 표본 수는 현재 fold의 Train 구매만 세어 Validation 미래 정보가
+        # 진단 구간에도 섞이지 않게 합니다. 표본 수는 모델 피처가 아닙니다.
+        paired_rows = comparison.paired_rows.copy()
+        product_train_counts = prepared.training.groupby(
+            "product_id", observed=True, sort=False
+        ).size()
+        paired_rows["product_train_sample_count"] = (
+            paired_rows["product_id"]
+            .map(product_train_counts)
+            .fillna(0)
+            .astype("int64")
+        )
+        for count_column in (
+            "history_interval_count",
+            "user_prior_order_count",
+            "product_train_sample_count",
+        ):
+            cohorts = summarize_ipcw_probability_pair_by_count_segment(
+                paired_rows,
+                count_column=count_column,
+                calibration_bin_count=calibration_bin_count,
+            )
+            if int(cohorts["sample_count"].sum()) != len(paired_rows):
+                raise RollingValidationError(
+                    f"{fold_id}: {count_column} 구간 표본 합계가 평가 표본과 다릅니다."
+                )
+            cohorts.insert(0, "fold_id", fold_id)
+            cohorts["sample_rate"] = cohorts["sample_count"].div(len(paired_rows))
+            # 기존 비교 함수에서 reference=AFT, candidate=LightGBM입니다.
+            cohorts = cohorts.rename(
+                columns={"brier_improvement": "brier_difference_aft_minus_lightgbm"}
+            )
+            cohort_tables.append(cohorts)
+
         fold_calibration = comparison.calibration.copy()
         fold_calibration.insert(0, "fold_id", fold_id)
         calibration_tables.append(fold_calibration)
@@ -298,6 +335,7 @@ def evaluate_rolling_cutoff_models(
 
     return RollingCutoffEvaluation(
         folds=pd.DataFrame(fold_records),
+        cohorts=pd.concat(cohort_tables, ignore_index=True),
         calibration=pd.concat(calibration_tables, ignore_index=True),
         bootstrap_trials=pd.concat(bootstrap_tables, ignore_index=True),
     )
@@ -326,6 +364,7 @@ def build_rolling_cutoff_report(
 ) -> dict[str, object]:
     """Rolling cutoff 결과를 표준 JSON으로 저장할 수 있게 요약합니다."""
     folds = evaluation.folds
+    cohorts = evaluation.cohorts
     required_columns = {
         "fold_id",
         "train_end_at",
@@ -353,6 +392,18 @@ def build_rolling_cutoff_report(
         raise ValueError("Rolling cutoff fold는 비어 있지 않고 고유해야 합니다.")
     if folds["test_accessed"].astype(bool).any():
         raise ValueError("Rolling cutoff 보고서에는 Test 결과를 포함할 수 없습니다.")
+    for fold in folds.itertuples():
+        fold_cohorts = cohorts.loc[cohorts["fold_id"].eq(fold.fold_id)]
+        for count_column in (
+            "history_interval_count",
+            "user_prior_order_count",
+            "product_train_sample_count",
+        ):
+            count_rows = fold_cohorts.loc[fold_cohorts["count_column"].eq(count_column)]
+            if int(count_rows["sample_count"].sum()) != fold.evaluation_sample_count:
+                raise ValueError(
+                    f"{fold.fold_id}: {count_column} 구간 합계가 평가 표본과 다릅니다."
+                )
 
     train_end_at = pd.to_datetime(folds["train_end_at"], errors="raise")
     validation_start_at = pd.to_datetime(
@@ -463,6 +514,7 @@ def build_rolling_cutoff_report(
         "brier_difference_min": float(differences.min()),
         "brier_difference_max": float(differences.max()),
         "folds": dataframe_to_nullable_records(folds),
+        "cohorts": dataframe_to_nullable_records(cohorts),
         "calibration": dataframe_to_nullable_records(evaluation.calibration),
         "decision": decision,
         "scope": (
