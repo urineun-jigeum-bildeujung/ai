@@ -89,6 +89,40 @@ def _validate_contract(feature_columns: tuple[str, ...], horizon_days: int) -> N
         raise ModelArtifactError("모델 피처가 현재 허용 목록과 일치하지 않습니다.")
 
 
+def _validate_native_aft_configuration(
+    booster: xgb.Booster, *, distribution: str, scale: float
+) -> None:
+    """확률 계산에 쓸 분포·scale이 Booster의 실제 학습 설정인지 확인합니다."""
+    config = json.loads(booster.save_config())
+    objective = config.get("learner", {}).get("objective", {})
+    if objective.get("name") != "survival:aft":
+        raise ModelArtifactError(
+            "AFT 모델의 네이티브 목적함수가 survival:aft가 아닙니다."
+        )
+    loss_parameters = objective.get("aft_loss_param", {})
+    if loss_parameters.get("aft_loss_distribution") != distribution:
+        raise ModelArtifactError("AFT 모델의 네이티브 손실분포가 manifest와 다릅니다.")
+    try:
+        native_scale = float(loss_parameters["aft_loss_distribution_scale"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ModelArtifactError(
+            "AFT 모델의 네이티브 scale을 읽을 수 없습니다."
+        ) from error
+    # XGBoost 설정은 부동소수점 문자열로 저장되므로 직렬화 오차만 허용합니다.
+    if not np.isfinite(native_scale) or not np.isclose(
+        native_scale, scale, rtol=1e-9, atol=1e-12
+    ):
+        raise ModelArtifactError("AFT 모델의 네이티브 scale이 manifest와 다릅니다.")
+
+
+def _validate_native_lightgbm_configuration(booster: lgb.Booster) -> None:
+    """회귀 Booster를 확률 모델로 오인하지 않도록 이진 목적함수를 검사합니다."""
+    if booster.params.get("objective") != "binary":
+        raise ModelArtifactError(
+            "LightGBM 모델의 네이티브 목적함수가 binary가 아닙니다."
+        )
+
+
 def save_model_artifact(
     model: XGBoostAFTTrainingResult | LGBMClassifier,
     directory: Path,
@@ -125,6 +159,11 @@ def save_model_artifact(
             raise ModelArtifactError(
                 "AFT 손실분포와 scale이 올바르지 않습니다."
             ) from error
+        _validate_native_aft_configuration(
+            model.booster,
+            distribution=model.loss_distribution,
+            scale=model.loss_distribution_scale,
+        )
     elif isinstance(model, LGBMClassifier):
         family = "lightgbm"
         if not hasattr(model, "booster_") or list(model.classes_) != [0, 1]:
@@ -136,6 +175,7 @@ def save_model_artifact(
             raise ModelArtifactError(
                 "LightGBM 학습 기간과 저장할 평가 기간이 다릅니다."
             )
+        _validate_native_lightgbm_configuration(model.booster_)
     else:
         raise ModelArtifactError("지원하지 않는 재구매 모델 유형입니다.")
 
@@ -268,6 +308,9 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
                     "AFT 분포·반복 횟수·손실 이력이 올바르지 않습니다."
                 )
             booster = xgb.Booster(model_file=str(model_path))
+            _validate_native_aft_configuration(
+                booster, distribution=loss_distribution, scale=loss_distribution_scale
+            )
             if (
                 booster.feature_names != list(feature_columns)
                 or booster.num_boosted_rounds() != num_boost_round
@@ -285,6 +328,7 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
             )
         else:
             model = lgb.Booster(model_file=str(model_path))
+            _validate_native_lightgbm_configuration(model)
             if tuple(model.feature_name()) != feature_columns:
                 raise ModelArtifactError(
                     "LightGBM 모델의 피처 이름·순서가 manifest와 다릅니다."

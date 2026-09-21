@@ -7,10 +7,13 @@ import json
 import numpy as np
 import pandas as pd
 import pytest
+import xgboost as xgb
+from lightgbm import LGBMRegressor
 
 from scripts.modeling.artifacts import (
     ModelArtifactError,
     _artifact_id,
+    _sha256,
     load_model_artifact,
     predict_artifact_probability,
     save_model_artifact,
@@ -216,4 +219,73 @@ def test_artifact_rejects_nonstandard_json_number(tmp_path) -> None:
     )
 
     with pytest.raises(ModelArtifactError, match="허용되지 않는 숫자"):
+        load_model_artifact(directory)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("loss_distribution", "logistic", "손실분포"),
+        ("loss_distribution_scale", 1.5, "scale"),
+    ],
+)
+def test_aft_artifact_rejects_native_distribution_mismatch(
+    tmp_path, field: str, value: object, message: str
+) -> None:
+    """ID를 다시 계산한 manifest도 네이티브 AFT 분포와 다르면 거절합니다."""
+    directory = save_model_artifact(
+        _trained_aft_model(), tmp_path / "aft", horizon_days=30
+    )
+    manifest_file = directory / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest[field] = value
+    manifest["artifact_id"] = _artifact_id(manifest)
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ModelArtifactError, match=message):
+        load_model_artifact(directory)
+
+
+def test_aft_artifact_rejects_non_aft_native_objective(tmp_path) -> None:
+    """파일 해시까지 갱신해도 회귀 모델을 AFT 모델로 읽지 않습니다."""
+    directory = save_model_artifact(
+        _trained_aft_model(), tmp_path / "aft", horizon_days=30
+    )
+    features = _feature_rows()
+    matrix = xgb.DMatrix(features, label=[0.1, 0.2, 0.3, 0.4])
+    regression = xgb.train(
+        {"objective": "reg:squarederror", "nthread": 1},
+        matrix,
+        num_boost_round=5,
+    )
+    model_file = directory / "model.json"
+    regression.save_model(model_file)
+    manifest_file = directory / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest["model_sha256"] = _sha256(model_file)
+    manifest["artifact_id"] = _artifact_id(manifest)
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ModelArtifactError, match="survival:aft"):
+        load_model_artifact(directory)
+
+
+def test_lightgbm_artifact_rejects_regression_native_objective(tmp_path) -> None:
+    """0~1로 예측할 수도 있는 회귀 Booster를 이진 확률 모델로 읽지 않습니다."""
+    directory = save_model_artifact(
+        _trained_lightgbm_model(), tmp_path / "lightgbm", horizon_days=30
+    )
+    features = pd.concat([_feature_rows()] * 10, ignore_index=True)
+    regression = LGBMRegressor(verbosity=-1, n_jobs=1).fit(
+        features, [0.1, 0.2, 0.3, 0.4] * 10
+    )
+    model_file = directory / "model.txt"
+    regression.booster_.save_model(str(model_file))
+    manifest_file = directory / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest["model_sha256"] = _sha256(model_file)
+    manifest["artifact_id"] = _artifact_id(manifest)
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ModelArtifactError, match="binary"):
         load_model_artifact(directory)
