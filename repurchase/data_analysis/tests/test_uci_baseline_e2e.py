@@ -61,36 +61,9 @@ def test_build_probability_refit_population_hides_future_outcomes() -> None:
     assert result["target_duration_days"].notna().tolist() == [True, False]
 
 
-def make_purchase_events() -> pd.DataFrame:
-    """반복 구매와 단발 구매가 함께 있는 작은 E2E 구매 이력을 만듭니다."""
-    rows: list[dict[str, object]] = []
-    for user_id, product_id, start_at, interval_days, event_count in (
-        ("u1", "p1", "2026-01-01", 5, 24),
-        ("u2", "p2", "2026-01-03", 8, 16),
-    ):
-        for index in range(event_count):
-            rows.append(
-                {
-                    "user_id": user_id,
-                    "order_id": f"{user_id}-o{index:02d}",
-                    "product_id": product_id,
-                    "ordered_at": pd.Timestamp(start_at)
-                    + pd.Timedelta(days=interval_days * index),
-                }
-            )
-    # 관측 기간이 충분히 지난 단발 구매로 Train의 미재구매 정답을 만듭니다.
-    rows.append(
-        {
-            "user_id": "u3",
-            "order_id": "u3-o00",
-            "product_id": "p3",
-            "ordered_at": pd.Timestamp("2026-01-04"),
-        }
-    )
-    return pd.DataFrame(rows)
-
-
-def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
+def test_feature_comparison_matches_existing_full_feature_baseline(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
     """네 피처 후보가 기존 단일 평가를 재현하고 보고서는 표준 JSON으로 저장됩니다."""
     from scripts.modeling.model_selection import evaluate_lightgbm_probability_candidate
     from scripts.modeling.samples import (
@@ -99,7 +72,7 @@ def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
         make_temporal_split,
     )
 
-    events = make_purchase_events()
+    events = uci_e2e_purchase_events
     labels = build_same_product_repurchase_labels(
         events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
     )
@@ -119,9 +92,11 @@ def test_feature_comparison_matches_existing_full_feature_baseline() -> None:
     json.dumps(report, allow_nan=False)
 
 
-def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json() -> None:
+def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
     """B/C 사용자 재표집 결과가 Validation에 한정되고 표준 JSON으로 저장됩니다."""
-    events = make_purchase_events()
+    events = uci_e2e_purchase_events
     labels = build_same_product_repurchase_labels(
         events, observation_end_at=pd.Timestamp(events["ordered_at"].max())
     )
@@ -162,9 +137,11 @@ def test_bc_bootstrap_uses_validation_users_and_serializes_standard_json() -> No
     json.dumps(report, allow_nan=False)
 
 
-def test_baseline_cycle_connects_split_training_evaluation_and_prediction() -> None:
+def test_baseline_cycle_connects_split_training_evaluation_and_prediction(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
     """작은 고정 표본에서 두 평가 구간과 현재 시점 예측이 모두 생성됩니다."""
-    events = make_purchase_events()
+    events = uci_e2e_purchase_events
     labels = build_same_product_repurchase_labels(
         events,
         observation_end_at=pd.Timestamp(events["ordered_at"].max()),

@@ -1,0 +1,131 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "experiment_version": "xgboost_aft_observed_time_comparison_v1",
+  "evaluation_split": "validation",
+  "model": {
+    "loss_distribution": "normal",
+    "loss_distribution_scale": 1.0,
+    "num_boost_round": 20,
+    "feature_columns": [
+      "history_interval_count",
+      "history_median_days",
+      "history_relative_mad",
+      "user_prior_order_count"
+    ]
+  },
+  "evaluation_sample_count": 17665,
+  "training_population": {
+    "common_zero_duration_excluded_source_sample_count": 494213,
+    "aft_actual_training_sample_count": 494213,
+    "aft_used_censored_training_sample_count": 330284,
+    "median_actual_observed_event_training_sample_count": 163929
+  },
+  "candidates": [
+    {
+      "candidate_name": "xgboost_aft",
+      "shrinkage_strength": null,
+      "sample_count": 17665,
+      "mae_days": 97.61387351554045,
+      "median_absolute_error_days": 55.755393981933594,
+      "within_3_days_rate": 0.040022643645626944,
+      "within_7_days_rate": 0.09091423719218794,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 494213,
+      "used_censored_training_sample_count": 330284,
+      "mae_improvement_vs_aft_days": 0.0,
+      "median_ae_improvement_vs_aft_days": 0.0,
+      "within_7_days_rate_improvement_vs_aft": 0.0
+    },
+    {
+      "candidate_name": "hierarchical_median",
+      "shrinkage_strength": null,
+      "sample_count": 17665,
+      "mae_days": 35.82118556782086,
+      "median_absolute_error_days": 20.40555555555555,
+      "within_3_days_rate": 0.09997169544296632,
+      "within_7_days_rate": 0.21205774129634872,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 163929,
+      "used_censored_training_sample_count": 0,
+      "mae_improvement_vs_aft_days": 61.792687947719585,
+      "median_ae_improvement_vs_aft_days": 35.34983842637804,
+      "within_7_days_rate_improvement_vs_aft": 0.12114350410416078
+    },
+    {
+      "candidate_name": "shrunk_hierarchical_median",
+      "shrinkage_strength": 1.0,
+      "sample_count": 17665,
+      "mae_days": 29.96503275563154,
+      "median_absolute_error_days": 20.460987103174602,
+      "within_3_days_rate": 0.08678177186527031,
+      "within_7_days_rate": 0.19235776960090575,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 163929,
+      "used_censored_training_sample_count": 0,
+      "mae_improvement_vs_aft_days": 67.64884075990891,
+      "median_ae_improvement_vs_aft_days": 35.29440687875899,
+      "within_7_days_rate_improvement_vs_aft": 0.10144353240871781
+    },
+    {
+      "candidate_name": "shrunk_hierarchical_median",
+      "shrinkage_strength": 2.0,
+      "sample_count": 17665,
+      "mae_days": 28.058862461073648,
+      "median_absolute_error_days": 20.82847222222222,
+      "within_3_days_rate": 0.08174356071327483,
+      "within_7_days_rate": 0.18205491084064535,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 163929,
+      "used_censored_training_sample_count": 0,
+      "mae_improvement_vs_aft_days": 69.5550110544668,
+      "median_ae_improvement_vs_aft_days": 34.92692175971138,
+      "within_7_days_rate_improvement_vs_aft": 0.0911406736484574
+    },
+    {
+      "candidate_name": "shrunk_hierarchical_median",
+      "shrinkage_strength": 4.0,
+      "sample_count": 17665,
+      "mae_days": 26.714804019351458,
+      "median_absolute_error_days": 21.64404761904762,
+      "within_3_days_rate": 0.07596943107840362,
+      "within_7_days_rate": 0.1682988961222757,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 163929,
+      "used_censored_training_sample_count": 0,
+      "mae_improvement_vs_aft_days": 70.89906949618899,
+      "median_ae_improvement_vs_aft_days": 34.111346362885975,
+      "within_7_days_rate_improvement_vs_aft": 0.07738465893008775
+    },
+    {
+      "candidate_name": "shrunk_hierarchical_median",
+      "shrinkage_strength": 8.0,
+      "sample_count": 17665,
+      "mae_days": 26.21871776870449,
+      "median_absolute_error_days": 22.399305555555557,
+      "within_3_days_rate": 0.06753467308236626,
+      "within_7_days_rate": 0.15516558165864705,
+      "common_training_source_sample_count": 494213,
+      "actual_training_sample_count": 163929,
+      "used_censored_training_sample_count": 0,
+      "mae_improvement_vs_aft_days": 71.39515574683595,
+      "median_ae_improvement_vs_aft_days": 33.35608842637804,
+      "within_7_days_rate_improvement_vs_aft": 0.06425134446645911
+    }
+  ],
+  "best_mae_candidate": {
+    "candidate_name": "shrunk_hierarchical_median",
+    "shrinkage_strength": 8.0,
+    "mae_days": 26.21871776870449
+  },
+  "best_median_ae_candidate": {
+    "candidate_name": "hierarchical_median",
+    "shrinkage_strength": null,
+    "median_absolute_error_days": 20.40555555555555
+  },
+  "best_within_7_days_candidate": {
+    "candidate_name": "hierarchical_median",
+    "shrinkage_strength": null,
+    "within_7_days_rate": 0.21205774129634872
+  },
+  "scope": "두 모델은 동일한 0일 제외 Train 원본에서 시작합니다. AFT는 관측 사건과 우측검열 행을 함께 학습하고, 중앙값 후보는 Train 종료 전에 확정된 관측 사건만 학습하는 알고리즘 차이가 있습니다. AFT Validation 중 실제 재구매가 관측된 동일 행에서만 시점 오차를 비교했습니다. 검열 행과 Test는 사용하지 않았습니다. 이 결과는 30일 이내 확률 성능이 아니라 정확한 구매 시점 예측 역할을 비교합니다."
+}

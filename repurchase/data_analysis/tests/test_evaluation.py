@@ -471,3 +471,31 @@ def test_probability_pair_count_segments_reject_fractional_counts() -> None:
             rows,
             count_column="history_interval_count",
         )
+
+
+def test_probability_pair_count_segments_keep_unknown_outcome_segment() -> None:
+    """정답 미확인 구간은 삭제하지 않고 성능값만 계산 불가로 남깁니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["U1", "U2"],
+            "history_interval_count": [0, 1],
+            "reference_predicted_event_probability": [0.6, 0.3],
+            "candidate_predicted_event_probability": [0.7, 0.2],
+            "ipcw_event_within_horizon": pd.Series([True, pd.NA], dtype="boolean"),
+            "ipcw_horizon_days": [30, 30],
+            "ipcw_outcome_known": [True, False],
+            "ipcw_weight": [1.0, 1.0],
+        }
+    )
+
+    result = summarize_ipcw_probability_pair_by_count_segment(
+        rows,
+        count_column="history_interval_count",
+    )
+
+    unknown = result.loc[result["count_bucket"].eq("1")].iloc[0]
+    assert unknown["sample_count"] == 1
+    assert unknown["outcome_known_count"] == 0
+    assert pd.isna(unknown["reference_ipcw_brier_score"])
+    assert pd.isna(unknown["candidate_ipcw_brier_score"])
+    assert pd.isna(unknown["brier_improvement"])
