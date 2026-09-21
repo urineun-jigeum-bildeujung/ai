@@ -213,8 +213,11 @@ def summarize_fold_user_composition(
             *(set(previous.users.index) for previous in folds[:index])
         )
         if index:
+            immediate_users = set(folds[index - 1].users.index)
+            earlier_users = previous_users - immediate_users
             masks = {
-                "previous_validation": users.index.isin(previous_users),
+                "immediate_previous_validation": users.index.isin(immediate_users),
+                "earlier_validation_only": users.index.isin(earlier_users),
                 "common_train_only": users.index.isin(
                     fold.common_train_users - previous_users
                 ),
@@ -360,7 +363,9 @@ def summarize_fold_user_composition(
                     "union_user_count": len(union),
                     "user_jaccard": len(shared) / len(union),
                     "previous_user_retention": len(shared) / len(prior_users),
+                    "previous_user_exit_rate": 1 - len(shared) / len(prior_users),
                     "current_shared_user_share": len(shared) / len(current_users),
+                    "current_new_user_share": 1 - len(shared) / len(current_users),
                     "previous_shared_sample_count": int(
                         previous_shared["sample_count"].sum()
                     ),

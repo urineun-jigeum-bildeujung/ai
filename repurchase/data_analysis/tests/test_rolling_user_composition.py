@@ -56,7 +56,8 @@ def test_user_groups_preserve_rows_weights_and_brier() -> None:
     groups, diagnostics, overlaps = summarize_fold_user_composition([first, second])
     current = groups.loc[groups["fold_id"].eq("fold_2")]
     assert dict(zip(current["group"], current["user_count"], strict=True)) == {
-        "previous_validation": 1,
+        "immediate_previous_validation": 1,
+        "earlier_validation_only": 0,
         "common_train_only": 1,
         "source_train_only_excluded": 1,
         "new_to_source_train": 0,
@@ -75,6 +76,8 @@ def test_user_groups_preserve_rows_weights_and_brier() -> None:
     assert diagnostics.loc[1, "evaluation_users_absent_lightgbm_train"] == 2
     assert overlaps.loc[0, "shared_user_count"] == 1
     assert overlaps.loc[0, "current_shared_sample_share"] == pytest.approx(1 / 3)
+    assert overlaps.loc[0, "previous_user_exit_rate"] == pytest.approx(2 / 3)
+    assert overlaps.loc[0, "current_new_user_share"] == pytest.approx(2 / 3)
     assert diagnostics.loc[1, "known_user_count"] == 2
     assert diagnostics.loc[1, "row_weighted_brier_difference"] == pytest.approx(
         (0.24 - 0.22) / 3
@@ -113,6 +116,19 @@ def test_true_new_user_is_not_the_same_as_excluded_training_user() -> None:
     current = groups.loc[groups["fold_id"].eq("fold_2")].set_index("group")
     assert current.loc["source_train_only_excluded", "user_count"] == 0
     assert current.loc["new_to_source_train", "user_count"] == 1
+
+
+def test_immediate_and_earlier_validation_users_are_separate() -> None:
+    """fold 3에서는 직전 fold와 그보다 앞선 fold에만 있던 사용자를 나눕니다."""
+    first = _fold("fold_1", ["a", "b"], ["a"], ["a"], ["a"])
+    second = _fold("fold_2", ["b", "c"], ["b"], ["b"], ["b"])
+    third = _fold("fold_3", ["a", "c", "d"], ["a", "c"], ["a", "c"], ["a"])
+    groups, _, overlaps = summarize_fold_user_composition([first, second, third])
+    current = groups.loc[groups["fold_id"].eq("fold_3")].set_index("group")
+    assert current.loc["immediate_previous_validation", "user_count"] == 1
+    assert current.loc["earlier_validation_only", "user_count"] == 1
+    assert current.loc["new_to_source_train", "user_count"] == 1
+    assert len(overlaps) == 3
 
 
 def test_invalid_probability_and_duplicate_key_fail_before_summary() -> None:

@@ -681,7 +681,7 @@ def test_rolling_user_composition_report_preserves_original_scores(
     report = build_rolling_user_composition_report(rolling_evaluation)
     assert report["test_accessed"] is False
     assert len(report["user_diagnostics"]) == 2
-    assert len(report["user_groups"]) == 4
+    assert len(report["user_groups"]) == 5
     assert len(report["user_overlaps"]) == 1
     assert len(report["user_bootstrap"]) == 1
     assert "user_id" not in json.dumps(report)

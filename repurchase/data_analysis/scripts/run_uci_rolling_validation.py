@@ -1482,7 +1482,8 @@ def build_rolling_user_composition_report(
         (fold_id, group)
         for fold_id in ordered_fold_ids[1:]
         for group in (
-            "previous_validation",
+            "immediate_previous_validation",
+            "earlier_validation_only",
             "common_train_only",
             "source_train_only_excluded",
             "new_to_source_train",
@@ -1535,7 +1536,8 @@ def build_rolling_user_composition_report(
         "test_accessed": False,
         "brier_difference_direction": "aft_minus_lightgbm",
         "group_definition": (
-            "previous_validation > common_train_only > "
+            "immediate_previous_validation > earlier_validation_only > "
+            "common_train_only > "
             "source_train_only_excluded > new_to_source_train; "
             "fold 1 has no previous validation"
         ),
@@ -1617,7 +1619,9 @@ def render_rolling_user_composition_report(report: dict[str, object]) -> str:
             "",
             "## 이전 Validation 노출별 성능",
             "",
-            "`이전 Val`은 앞선 창에 등장한 사용자, `공통 Train만`은 이전 Val에는 없으나 "
+            "`직전 Val`은 바로 앞선 창에 등장한 사용자, `더 이른 Val만`은 "
+            "바로 앞 창에는 없지만 그보다 앞선 창에 등장한 사용자다. "
+            "`공통 Train만`은 앞선 Val에는 없으나 "
             "현재 공통 Train에 있는 사용자다. `원천 Train만`은 원천 Train에는 있었지만 "
             "AFT용 0일 제외 후 공통 Train에는 없는 사용자다. `진짜 신규`는 "
             "이전 Val과 원천 Train 어디에도 없던 사용자다. "
@@ -1629,7 +1633,8 @@ def render_rolling_user_composition_report(report: dict[str, object]) -> str:
         ]
     )
     names = {
-        "previous_validation": "이전 Val",
+        "immediate_previous_validation": "직전 Val",
+        "earlier_validation_only": "더 이른 Val만",
         "common_train_only": "공통 Train만",
         "source_train_only_excluded": "원천 Train만",
         "new_to_source_train": "진짜 신규",
@@ -1658,9 +1663,10 @@ def render_rolling_user_composition_report(report: dict[str, object]) -> str:
             "",
             "겹치는 사용자가 있더라도 서로 다른 구매 사건이다. 동일 구매 사건의 창 간 중복은 오류로 차단한다.",
             "",
-            "| Fold 쌍 | 공통 사용자/합집합 | Jaccard | 현재 행 중 공통 사용자 비중 | "
+            "| Fold 쌍 | 공통 사용자/합집합 | Jaccard | 이전 fold 대비 유지/이탈·현재 신규 | "
+            "현재 행 중 공통 사용자 비중 | "
             "공통 상품쌍 | 동일 사용자 부분집합 Brier 차이(이전→현재) |",
-            "| --- | ---: | ---: | ---: | ---: | --- |",
+            "| --- | ---: | ---: | --- | ---: | ---: | --- |",
         ]
     )
     shared_direction_notes: list[str] = []
@@ -1676,6 +1682,9 @@ def render_rolling_user_composition_report(report: dict[str, object]) -> str:
             f"| {row['previous_fold_id']} → {row['current_fold_id']} | "
             f"{row['shared_user_count']:,}/{row['union_user_count']:,} | "
             f"{row['user_jaccard']:.2%} | "
+            f"{row['previous_user_retention']:.2%}/"
+            f"{row['previous_user_exit_rate']:.2%}·"
+            f"{row['current_new_user_share']:.2%} | "
             f"{row['current_shared_sample_share']:.2%} | "
             f"{row['shared_user_product_pair_count']:,} | {comparable} |"
         )
