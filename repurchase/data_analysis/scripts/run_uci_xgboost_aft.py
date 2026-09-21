@@ -18,12 +18,18 @@ from typing import Final
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
+from .modeling.evaluation import (
+    IPCWUserBootstrapResult,
+    bootstrap_ipcw_brier_pair_difference_by_user,
+)
 from .modeling.maturity_analysis import (
     add_split_ipcw_weights,
     add_split_survival_observation,
 )
 from .modeling.model_selection import (
+    IPCW_CANDIDATE_ID_COLUMNS,
     XGBoostAFTProbabilityEvaluation,
+    build_paired_probability_predictions,
     evaluate_xgboost_aft_ipcw_concordance,
     evaluate_xgboost_aft_ipcw_probability,
 )
@@ -88,6 +94,15 @@ LOGISTIC_SCALE_COMPARISON_JSON_REPORT_PATH = (
 )
 LOGISTIC_SCALE_COMPARISON_MARKDOWN_REPORT_PATH = (
     REPORT_DIR / "uci_xgboost_aft_logistic_scale_comparison.md"
+)
+CANDIDATE_PAIR_BOOTSTRAP_JSON_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_candidate_pair_bootstrap.json"
+)
+CANDIDATE_PAIR_BOOTSTRAP_MARKDOWN_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_candidate_pair_bootstrap.md"
+)
+CANDIDATE_PAIR_BOOTSTRAP_TRIALS_REPORT_PATH = (
+    REPORT_DIR / "uci_xgboost_aft_candidate_pair_bootstrap_trials.json"
 )
 
 
@@ -529,6 +544,74 @@ def compare_xgboost_aft_loss_distribution_scales(
     return comparison
 
 
+def bootstrap_xgboost_aft_candidate_pair_by_user(
+    reference: XGBoostAFTExperimentResult,
+    candidate: XGBoostAFTExperimentResult,
+    *,
+    bootstrap_replicates: int = BOOTSTRAP_REPLICATES,
+    random_seed: int = BOOTSTRAP_RANDOM_SEED,
+) -> IPCWUserBootstrapResult:
+    """같은 AFT Validation 표본에서 두 후보의 Brier 차이를 사용자별 추정합니다."""
+    reference_rows = reference.probability.rows
+    candidate_rows = candidate.probability.rows
+    reference_horizon = reference.probability.summary["horizon_days"]
+    candidate_horizon = candidate.probability.summary["horizon_days"]
+    if reference_horizon != candidate_horizon:
+        raise ValueError(
+            "AFT 후보 쌍의 요약 평가 horizon이 다릅니다: "
+            f"기준={reference_horizon}, 후보={candidate_horizon}"
+        )
+    shared_evaluation_columns = (
+        "ipcw_horizon_days",
+        "ipcw_outcome_known",
+        "ipcw_event_within_horizon",
+        "ipcw_weight",
+    )
+    for column in shared_evaluation_columns:
+        if column not in reference_rows or column not in candidate_rows:
+            raise ValueError(f"AFT 후보 쌍 평가 필수 컬럼이 누락됐습니다: {column}")
+        reference_values = reference_rows[column].reset_index(drop=True)
+        candidate_values = candidate_rows[column].reset_index(drop=True)
+        if not reference_values.equals(candidate_values):
+            raise ValueError(f"AFT 후보 쌍의 정답·검열·IPCW 조건이 다릅니다: {column}")
+
+    prediction_columns = [
+        *IPCW_CANDIDATE_ID_COLUMNS,
+        "predicted_event_probability",
+    ]
+    paired_rows = build_paired_probability_predictions(
+        reference_rows,
+        reference_rows.loc[:, prediction_columns],
+        candidate_rows.loc[:, prediction_columns],
+    )
+    bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
+        paired_rows,
+        bootstrap_replicates=bootstrap_replicates,
+        random_seed=random_seed,
+    )
+
+    expected_scores = {
+        "point_reference_brier_score": reference.probability.summary[
+            "ipcw_brier_score"
+        ],
+        "point_candidate_brier_score": candidate.probability.summary[
+            "ipcw_brier_score"
+        ],
+    }
+    for metric, expected_value in expected_scores.items():
+        actual_value = bootstrap.summary[metric]
+        if not isclose(
+            float(actual_value),
+            float(expected_value),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise RuntimeError(
+                f"AFT 후보 쌍 Bootstrap 점 지표가 개별 평가와 다릅니다: {metric}"
+            )
+    return bootstrap
+
+
 def _validate_xgboost_aft_selection_table(
     comparison: pd.DataFrame,
     *,
@@ -781,6 +864,52 @@ def validate_selected_xgboost_aft_distribution_result(
             raise RuntimeError(
                 "최종 AFT 재학습 결과가 손실분포 비교 시점과 일치하지 "
                 f"않습니다: {metric}"
+            )
+
+
+def validate_selected_xgboost_aft_scale_result(
+    comparison: pd.DataFrame,
+    result: XGBoostAFTExperimentResult,
+) -> None:
+    """재학습한 scale 후보의 설정·점 지표가 선택 시점과 같은지 확인합니다."""
+    selected_scale = select_xgboost_aft_loss_distribution_scale(comparison)
+    selected_row = comparison.loc[
+        comparison["loss_distribution_scale"].eq(selected_scale)
+    ].iloc[0]
+    training = result.training_summary
+    if training["loss_distribution"] != selected_row["loss_distribution"]:
+        raise RuntimeError("재학습한 AFT scale 후보의 손실분포가 선택 결과와 다릅니다.")
+    if training["num_boost_round"] != int(selected_row["num_boost_round"]):
+        raise RuntimeError(
+            "재학습한 AFT scale 후보의 반복 횟수가 선택 결과와 다릅니다."
+        )
+    if not isclose(
+        float(training["loss_distribution_scale"]),
+        selected_scale,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        raise RuntimeError("재학습한 AFT scale 후보의 scale이 선택 결과와 다릅니다.")
+
+    actual_metrics = _build_xgboost_aft_comparison_metrics(result)
+    for metric, actual_value in actual_metrics.items():
+        if metric not in selected_row:
+            continue
+        expected_value = selected_row[metric]
+        if actual_value is None or expected_value is None:
+            if actual_value is not expected_value:
+                raise RuntimeError(
+                    f"재학습한 AFT scale 후보가 선택 시점과 일치하지 않습니다: {metric}"
+                )
+            continue
+        if not isclose(
+            float(actual_value),
+            float(expected_value),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise RuntimeError(
+                f"재학습한 AFT scale 후보가 선택 시점과 일치하지 않습니다: {metric}"
             )
 
 
@@ -1062,6 +1191,151 @@ def render_xgboost_aft_logistic_scale_comparison_report(
     return "\n".join(lines)
 
 
+def _build_xgboost_aft_candidate_identity(
+    result: XGBoostAFTExperimentResult,
+) -> dict[str, object]:
+    """후보 쌍 보고서에서 모델을 재현할 최소 학습 설정을 추출합니다."""
+    training = result.training_summary
+    return {
+        "loss_distribution": training["loss_distribution"],
+        "loss_distribution_scale": training["loss_distribution_scale"],
+        "num_boost_round": training["num_boost_round"],
+        "feature_columns": list(training["feature_columns"]),
+    }
+
+
+def build_xgboost_aft_candidate_pair_bootstrap_report(
+    reference: XGBoostAFTExperimentResult,
+    candidate: XGBoostAFTExperimentResult | None,
+    bootstrap: IPCWUserBootstrapResult | None,
+    *,
+    unavailable_reason: str | None = None,
+) -> dict[str, object]:
+    """기준 AFT와 비교 후보의 paired Bootstrap 판단을 저장합니다."""
+    reference_identity = _build_xgboost_aft_candidate_identity(reference)
+    common_scope = (
+        "고정된 두 모델의 동일 Validation 행·정답·IPCW 가중치에서 사용자를 "
+        "함께 복원추출했습니다. Test는 사용하지 않았습니다. 이 구간은 사용자 "
+        "구성의 불확실성만 반영하며 모델 재학습과 같은 Validation 후보 선택의 "
+        "낙관성은 포함하지 않습니다."
+    )
+    if candidate is None or bootstrap is None:
+        if candidate is not None or bootstrap is not None or not unavailable_reason:
+            raise ValueError(
+                "후보 쌍 비교 불가 보고서에는 후보·Bootstrap 없이 사유가 필요합니다."
+            )
+        return {
+            "dataset": "uci_online_retail_ii",
+            "experiment_version": "xgboost_aft_candidate_pair_bootstrap_v1",
+            "evaluation_split": "validation",
+            "status": "unavailable",
+            "reference": reference_identity,
+            "candidate": {
+                "loss_distribution": "logistic",
+                "loss_distribution_scale": None,
+                "num_boost_round": reference_identity["num_boost_round"],
+                "feature_columns": reference_identity["feature_columns"],
+            },
+            "improvement_direction": "reference_brier_minus_candidate_brier",
+            "summary": None,
+            "decision": unavailable_reason,
+            "scope": common_scope,
+        }
+
+    summary = bootstrap.summary
+    candidate_identity = _build_xgboost_aft_candidate_identity(candidate)
+    reference_name = str(reference_identity["loss_distribution"])
+    candidate_name = str(candidate_identity["loss_distribution"])
+    lower = float(summary["bootstrap_lower_95_brier_improvement"])
+    upper = float(summary["bootstrap_upper_95_brier_improvement"])
+    if lower > 0.0:
+        decision = (
+            f"{candidate_name} 후보의 Brier 우위가 사용자 재표본에서도 일관됐습니다."
+        )
+    elif upper < 0.0:
+        decision = (
+            f"{reference_name} 기준의 Brier 우위가 사용자 재표본에서도 일관됐습니다."
+        )
+    else:
+        decision = "95% Bootstrap 구간이 0을 포함해 두 후보의 우위를 확정하지 않습니다."
+    return {
+        "dataset": "uci_online_retail_ii",
+        "experiment_version": "xgboost_aft_candidate_pair_bootstrap_v1",
+        "evaluation_split": "validation",
+        "status": "complete",
+        "reference": reference_identity,
+        "candidate": candidate_identity,
+        "improvement_direction": "reference_brier_minus_candidate_brier",
+        "summary": summary,
+        "decision": decision,
+        "scope": common_scope,
+    }
+
+
+def build_xgboost_aft_candidate_pair_bootstrap_trials_report(
+    report: dict[str, object],
+    bootstrap: IPCWUserBootstrapResult | None,
+) -> dict[str, object]:
+    """후보 쌍 Bootstrap 반복 원자료를 판단 요약과 분리해 저장합니다."""
+    trials = (
+        [] if bootstrap is None else dataframe_to_nullable_records(bootstrap.trials)
+    )
+    return {
+        "dataset": report["dataset"],
+        "experiment_version": report["experiment_version"],
+        "evaluation_split": report["evaluation_split"],
+        "status": report["status"],
+        "improvement_direction": report["improvement_direction"],
+        "summary": report["summary"],
+        "trials": trials,
+    }
+
+
+def render_xgboost_aft_candidate_pair_bootstrap_report(
+    report: dict[str, object],
+) -> str:
+    """두 AFT 후보의 사용자 paired Bootstrap 결과를 Markdown으로 만듭니다."""
+    reference = report["reference"]
+    candidate = report["candidate"]
+    lines = [
+        "# UCI XGBoost AFT 후보 쌍 사용자 Bootstrap",
+        "",
+        f"- 기준: `{reference['loss_distribution']}`, "
+        f"`scale={reference['loss_distribution_scale']}`",
+        f"- 후보: `{candidate['loss_distribution']}`, "
+        f"`scale={candidate['loss_distribution_scale']}`",
+        f"- 개선량 방향: `기준 {reference['loss_distribution']} Brier - "
+        f"후보 {candidate['loss_distribution']} Brier`",
+        "",
+    ]
+    if report["status"] == "unavailable":
+        lines.extend([f"비교 불가: {report['decision']}", "", str(report["scope"]), ""])
+        return "\n".join(lines)
+
+    summary = report["summary"]
+    lines.extend(
+        [
+            f"- 사용자 수: `{summary['user_count']:,}`명",
+            f"- 반복 수 / seed: `{summary['bootstrap_replicates']:,}` / "
+            f"`{summary['random_seed']}`",
+            f"- normal 점 Brier: `{summary['point_reference_brier_score']:.6f}`",
+            f"- logistic 점 Brier: `{summary['point_candidate_brier_score']:.6f}`",
+            f"- 점 개선량: `{summary['point_brier_improvement']:+.6f}`",
+            f"- 평균 개선량: `{summary['bootstrap_mean_brier_improvement']:+.6f}`",
+            f"- 95% 구간: "
+            f"`[{summary['bootstrap_lower_95_brier_improvement']:+.6f}, "
+            f"{summary['bootstrap_upper_95_brier_improvement']:+.6f}]`",
+            f"- 양수 개선 비율: `{summary['bootstrap_positive_improvement_rate']:.2%}`",
+            "",
+            str(report["decision"]),
+            "",
+            str(report["scope"]),
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def build_xgboost_aft_report(
     result: XGBoostAFTExperimentResult,
 ) -> dict[str, object]:
@@ -1294,6 +1568,44 @@ def main() -> None:
         distribution_comparison,
         result,
     )
+    logistic_candidate = None
+    candidate_pair_bootstrap = None
+    unavailable_reason = None
+    if selected_logistic_scale is None:
+        unavailable_reason = (
+            "성공한 logistic scale 후보가 없어 쌍 비교를 수행하지 않았습니다."
+        )
+    else:
+        logistic_candidate = evaluate_xgboost_aft_candidate(
+            prepared,
+            bootstrap_replicates=None,
+            loss_distribution="logistic",
+            loss_distribution_scale=selected_logistic_scale,
+            num_boost_round=selected_num_boost_round,
+        )
+        validate_selected_xgboost_aft_scale_result(
+            logistic_scale_comparison,
+            logistic_candidate,
+        )
+        candidate_pair_bootstrap = bootstrap_xgboost_aft_candidate_pair_by_user(
+            result,
+            logistic_candidate,
+        )
+    candidate_pair_report = build_xgboost_aft_candidate_pair_bootstrap_report(
+        result,
+        logistic_candidate,
+        candidate_pair_bootstrap,
+        unavailable_reason=unavailable_reason,
+    )
+    candidate_pair_trials_report = (
+        build_xgboost_aft_candidate_pair_bootstrap_trials_report(
+            candidate_pair_report,
+            candidate_pair_bootstrap,
+        )
+    )
+    candidate_pair_markdown = render_xgboost_aft_candidate_pair_bootstrap_report(
+        candidate_pair_report
+    )
     report = build_xgboost_aft_report(result)
     bootstrap_trials = build_xgboost_aft_bootstrap_trials_report(result)
     markdown = render_xgboost_aft_report(report)
@@ -1318,6 +1630,24 @@ def main() -> None:
     logistic_scale_comparison_json = (
         json.dumps(
             logistic_scale_comparison_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    candidate_pair_json = (
+        json.dumps(
+            candidate_pair_report,
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    )
+    candidate_pair_trials_json = (
+        json.dumps(
+            candidate_pair_trials_report,
             ensure_ascii=False,
             indent=2,
             allow_nan=False,
@@ -1361,6 +1691,18 @@ def main() -> None:
     write_text_atomically(
         LOGISTIC_SCALE_COMPARISON_MARKDOWN_REPORT_PATH,
         logistic_scale_comparison_markdown,
+    )
+    write_text_atomically(
+        CANDIDATE_PAIR_BOOTSTRAP_JSON_REPORT_PATH,
+        candidate_pair_json,
+    )
+    write_text_atomically(
+        CANDIDATE_PAIR_BOOTSTRAP_MARKDOWN_REPORT_PATH,
+        candidate_pair_markdown,
+    )
+    write_text_atomically(
+        CANDIDATE_PAIR_BOOTSTRAP_TRIALS_REPORT_PATH,
+        candidate_pair_trials_json,
     )
     write_text_atomically(
         JSON_REPORT_PATH,

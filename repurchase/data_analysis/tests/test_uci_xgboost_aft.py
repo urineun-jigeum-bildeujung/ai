@@ -19,7 +19,10 @@ from scripts.modeling.xgboost_aft import (
 )
 from scripts.preprocessing.labels import build_same_product_repurchase_labels
 from scripts.run_uci_xgboost_aft import (
+    bootstrap_xgboost_aft_candidate_pair_by_user,
     build_xgboost_aft_bootstrap_trials_report,
+    build_xgboost_aft_candidate_pair_bootstrap_report,
+    build_xgboost_aft_candidate_pair_bootstrap_trials_report,
     build_xgboost_aft_distribution_comparison_report,
     build_xgboost_aft_logistic_scale_comparison_report,
     build_xgboost_aft_report,
@@ -29,6 +32,7 @@ from scripts.run_uci_xgboost_aft import (
     compare_xgboost_aft_loss_distributions,
     evaluate_xgboost_aft_candidate,
     prepare_xgboost_aft_experiment,
+    render_xgboost_aft_candidate_pair_bootstrap_report,
     render_xgboost_aft_distribution_comparison_report,
     render_xgboost_aft_logistic_scale_comparison_report,
     render_xgboost_aft_report,
@@ -39,6 +43,7 @@ from scripts.run_uci_xgboost_aft import (
     select_xgboost_aft_loss_distribution_scale,
     validate_selected_xgboost_aft_distribution_result,
     validate_selected_xgboost_aft_result,
+    validate_selected_xgboost_aft_scale_result,
 )
 
 
@@ -698,6 +703,233 @@ def test_build_xgboost_aft_logistic_scale_report_allows_all_failed_diagnostic() 
     assert report["selected_loss_distribution_scale"] is None
     assert "선택 scale: `N/A`" in markdown
     assert "100/100" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+
+
+def test_bootstrap_xgboost_aft_candidate_pair_uses_same_users_and_rows(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """두 AFT 후보의 동일 Validation 행을 사용자 단위로 함께 재표본합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    reference = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="normal",
+        loss_distribution_scale=1.0,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="extreme",
+        loss_distribution_scale=1.0,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    bootstrap = bootstrap_xgboost_aft_candidate_pair_by_user(
+        reference,
+        candidate,
+        bootstrap_replicates=20,
+        random_seed=7,
+    )
+
+    assert bootstrap.summary["bootstrap_replicates"] == 20
+    assert bootstrap.summary["random_seed"] == 7
+    assert bootstrap.summary["point_reference_brier_score"] == pytest.approx(
+        reference.probability.summary["ipcw_brier_score"]
+    )
+    assert bootstrap.summary["point_candidate_brier_score"] == pytest.approx(
+        candidate.probability.summary["ipcw_brier_score"]
+    )
+    assert len(bootstrap.trials) == 20
+
+
+@pytest.mark.parametrize("changed_column", ["ipcw_weight", "ipcw_horizon_days"])
+def test_bootstrap_xgboost_aft_candidate_pair_rejects_changed_ipcw_condition(
+    uci_e2e_purchase_events: pd.DataFrame,
+    changed_column: str,
+) -> None:
+    """두 후보의 평가 시점·검열 가중치가 다르면 Bootstrap 전에 거절합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    reference = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="normal",
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="logistic",
+        loss_distribution_scale=2.0,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate.probability.rows.loc[
+        candidate.probability.rows.index[0], changed_column
+    ] += 1.0
+
+    with pytest.raises(ValueError, match=changed_column):
+        bootstrap_xgboost_aft_candidate_pair_by_user(
+            reference,
+            candidate,
+            bootstrap_replicates=20,
+        )
+
+
+def test_bootstrap_xgboost_aft_candidate_pair_rejects_changed_summary_horizon(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """행이 같아도 요약 평가 horizon이 다르면 쌍 비교하지 않습니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    reference = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="normal",
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="logistic",
+        loss_distribution_scale=2.0,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate.probability.summary["horizon_days"] = 30
+
+    with pytest.raises(ValueError, match="요약 평가 horizon"):
+        bootstrap_xgboost_aft_candidate_pair_by_user(
+            reference,
+            candidate,
+            bootstrap_replicates=20,
+        )
+
+
+def test_validate_selected_xgboost_aft_scale_result_matches_comparison(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """paired 비교용 재학습 후보가 scale 선택 당시 지표와 같은지 확인합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    comparison = compare_xgboost_aft_loss_distribution_scales(
+        prepared,
+        loss_distribution="logistic",
+        num_boost_round=2,
+        scale_candidates=(1.0, 2.0),
+    )
+    selected_scale = select_xgboost_aft_loss_distribution_scale(comparison)
+    selected_result = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="logistic",
+        loss_distribution_scale=selected_scale,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    validate_selected_xgboost_aft_scale_result(comparison, selected_result)
+
+    comparison.loc[
+        comparison["loss_distribution_scale"].eq(selected_scale),
+        "ipcw_brier_score",
+    ] -= 0.001
+    with pytest.raises(RuntimeError, match="ipcw_brier_score"):
+        validate_selected_xgboost_aft_scale_result(comparison, selected_result)
+
+
+def test_build_xgboost_aft_candidate_pair_bootstrap_report_records_direction(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """후보 쌍 보고서는 개선량 방향·요약·반복 원자료를 함께 연결합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    reference = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="normal",
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    candidate = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="logistic",
+        loss_distribution_scale=2.0,
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+    bootstrap = bootstrap_xgboost_aft_candidate_pair_by_user(
+        reference,
+        candidate,
+        bootstrap_replicates=20,
+        random_seed=7,
+    )
+
+    report = build_xgboost_aft_candidate_pair_bootstrap_report(
+        reference,
+        candidate,
+        bootstrap,
+    )
+    trials_report = build_xgboost_aft_candidate_pair_bootstrap_trials_report(
+        report,
+        bootstrap,
+    )
+    markdown = render_xgboost_aft_candidate_pair_bootstrap_report(report)
+
+    assert report["status"] == "complete"
+    assert report["improvement_direction"] == ("reference_brier_minus_candidate_brier")
+    assert len(trials_report["trials"]) == 20
+    assert "기준 normal Brier - 후보 logistic Brier" in markdown
+    json.dumps(report, ensure_ascii=False, allow_nan=False)
+    json.dumps(trials_report, ensure_ascii=False, allow_nan=False)
+
+
+def test_build_xgboost_aft_candidate_pair_bootstrap_report_records_unavailable(
+    uci_e2e_purchase_events: pd.DataFrame,
+) -> None:
+    """logistic이 모두 실패하면 빈 반복 결과와 비교 불가 사유를 기록합니다."""
+    labels = build_same_product_repurchase_labels(
+        uci_e2e_purchase_events,
+        observation_end_at=pd.Timestamp(uci_e2e_purchase_events["ordered_at"].max()),
+    )
+    prepared = prepare_xgboost_aft_experiment(labels, horizon_days=14)
+    reference = evaluate_xgboost_aft_candidate(
+        prepared,
+        loss_distribution="normal",
+        num_boost_round=2,
+        bootstrap_replicates=None,
+    )
+
+    report = build_xgboost_aft_candidate_pair_bootstrap_report(
+        reference,
+        None,
+        None,
+        unavailable_reason="성공한 logistic scale 후보가 없습니다.",
+    )
+    trials_report = build_xgboost_aft_candidate_pair_bootstrap_trials_report(
+        report,
+        None,
+    )
+    markdown = render_xgboost_aft_candidate_pair_bootstrap_report(report)
+
+    assert report["status"] == "unavailable"
+    assert report["candidate"]["loss_distribution_scale"] is None
+    assert trials_report["trials"] == []
+    assert "비교 불가" in markdown
     json.dumps(report, ensure_ascii=False, allow_nan=False)
 
 

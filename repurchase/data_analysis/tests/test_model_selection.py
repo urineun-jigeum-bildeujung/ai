@@ -297,6 +297,9 @@ def test_evaluate_xgboost_aft_ipcw_probability_uses_same_rows_for_calibration(
 
     summary = result.summary
     calibration = result.calibration
+    assert result.rows.index.tolist() == [30, 20, 40]
+    assert result.rows["predicted_event_probability"].tolist() == [0.4, 0.1, 0.9]
+    assert result.rows["ipcw_outcome_known"].tolist() == [True, False, True]
     assert summary["source_validation_sample_count"] == 4
     assert summary["excluded_zero_duration_count"] == 1
     assert summary["aft_evaluation_sample_count"] == 3

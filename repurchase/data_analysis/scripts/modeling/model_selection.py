@@ -89,6 +89,7 @@ class IPCWProbabilityCandidateEvaluation:
 class XGBoostAFTProbabilityEvaluation:
     """한 AFT 후보의 확률 평가와 선택적인 사용자 Bootstrap을 보관합니다."""
 
+    rows: pd.DataFrame
     summary: dict[str, float | int | None]
     calibration: pd.DataFrame
     user_bootstrap: IPCWUserBootstrapResult | None
@@ -722,6 +723,7 @@ def evaluate_xgboost_aft_ipcw_probability(
             random_seed=bootstrap_random_seed,
         )
     return XGBoostAFTProbabilityEvaluation(
+        rows=evaluation.rows,
         summary=summary,
         calibration=calibration,
         user_bootstrap=user_bootstrap,
