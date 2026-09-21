@@ -37,11 +37,21 @@ from .lightgbm_baseline import (
     predict_lightgbm_repurchase_probability,
     train_lightgbm_classifier,
 )
-from .maturity_analysis import add_split_ipcw_weights, add_validation_ipcw_weights
+from .maturity_analysis import (
+    add_split_ipcw_weights,
+    add_validation_ipcw_weights,
+    add_validation_survival_observation,
+)
 from .probability_baseline import (
     fit_global_event_probability_baseline,
     fit_hierarchical_event_probability_baseline,
     predict_hierarchical_event_probability_baseline,
+)
+from .xgboost_aft import (
+    AFTLabelBounds,
+    XGBoostAFTTrainingResult,
+    build_xgboost_aft_evaluation_rows,
+    calculate_xgboost_aft_event_probability,
 )
 
 IPCW_CANDIDATE_ID_COLUMNS = ("user_id", "order_id", "product_id")
@@ -71,6 +81,16 @@ class IPCWProbabilityCandidateEvaluation:
     """확률 후보 비교표와 후보별 Calibration 구간 상세를 함께 보관합니다."""
 
     comparison: pd.DataFrame
+    calibration: pd.DataFrame
+    user_bootstrap: IPCWUserBootstrapResult | None
+
+
+@dataclass(frozen=True)
+class XGBoostAFTProbabilityEvaluation:
+    """한 AFT 후보의 확률 평가와 선택적인 사용자 Bootstrap을 보관합니다."""
+
+    rows: pd.DataFrame
+    summary: dict[str, float | int | None]
     calibration: pd.DataFrame
     user_bootstrap: IPCWUserBootstrapResult | None
 
@@ -528,6 +548,186 @@ def _attach_candidate_predictions(
         "predicted_duration_days"
     ].to_numpy(copy=True)
     return evaluation_rows
+
+
+def _prepare_xgboost_aft_ipcw_evaluation_rows(
+    validation_samples: pd.DataFrame,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+) -> AFTLabelBounds:
+    """0일을 먼저 제외한 동일 Validation 집단에서 IPCW 평가 행을 만듭니다."""
+    observed_samples = add_validation_survival_observation(validation_samples)
+    aligned_evaluation = build_xgboost_aft_evaluation_rows(
+        observed_samples,
+        predictions,
+    )
+    included_index = aligned_evaluation.rows.index
+    weighted_samples = add_validation_ipcw_weights(
+        validation_samples.loc[included_index],
+        horizon_days=horizon_days,
+    )
+    weighted_samples["predicted_duration_days"] = aligned_evaluation.rows[
+        "predicted_duration_days"
+    ]
+    return AFTLabelBounds(
+        rows=weighted_samples,
+        source_sample_count=aligned_evaluation.source_sample_count,
+        excluded_zero_duration_count=(aligned_evaluation.excluded_zero_duration_count),
+    )
+
+
+def evaluate_xgboost_aft_ipcw_concordance(
+    validation_samples: pd.DataFrame,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+) -> dict[str, float | int]:
+    """AFT 평가 집단에서 공통 IPCW C-index와 표본 흐름을 계산합니다."""
+    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+        validation_samples,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    metrics = evaluate_ipcw_concordance_index(evaluation.rows)
+    return {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **metrics,
+    }
+
+
+def evaluate_xgboost_aft_ipcw_brier(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+    training_reference_probability: float,
+) -> dict[str, float | int | None]:
+    """AFT 확률의 IPCW Brier를 같은 시점의 Train 기준 확률과 비교합니다.
+
+    training_reference_probability는 동일 horizon의 Train에서 계산해 전달하며,
+    Validation의 실제 결과로 다시 추정하지 않습니다.
+    """
+    evaluation = _prepare_xgboost_aft_ipcw_probability_rows(
+        validation_samples,
+        training_result,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    metrics = evaluate_ipcw_brier_score(
+        evaluation.rows,
+        reference_probability=training_reference_probability,
+    )
+    return {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **metrics,
+    }
+
+
+def _prepare_xgboost_aft_ipcw_probability_rows(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+) -> AFTLabelBounds:
+    """공통 AFT 평가 집단에 동일 모델의 고정 시점 재구매 확률을 추가합니다."""
+    evaluation = _prepare_xgboost_aft_ipcw_evaluation_rows(
+        validation_samples,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    probability_rows = evaluation.rows.copy()
+    probability_rows["predicted_event_probability"] = (
+        calculate_xgboost_aft_event_probability(
+            training_result,
+            probability_rows["predicted_duration_days"],
+            horizon_days=horizon_days,
+        )
+    )
+    return AFTLabelBounds(
+        rows=probability_rows,
+        source_sample_count=evaluation.source_sample_count,
+        excluded_zero_duration_count=evaluation.excluded_zero_duration_count,
+    )
+
+
+def evaluate_xgboost_aft_ipcw_probability(
+    validation_samples: pd.DataFrame,
+    training_result: XGBoostAFTTrainingResult,
+    predictions: pd.Series,
+    *,
+    horizon_days: int,
+    training_reference_probability: float,
+    calibration_bin_count: int = 10,
+    bootstrap_replicates: int | None = None,
+    bootstrap_random_seed: int = 42,
+) -> XGBoostAFTProbabilityEvaluation:
+    """같은 AFT 확률 행에서 IPCW Brier와 Calibration을 함께 계산합니다.
+
+    training_reference_probability는 동일 horizon의 Train에서 계산해 전달하며,
+    Validation의 실제 결과로 다시 추정하지 않습니다.
+    """
+    evaluation = _prepare_xgboost_aft_ipcw_probability_rows(
+        validation_samples,
+        training_result,
+        predictions,
+        horizon_days=horizon_days,
+    )
+    brier_metrics = evaluate_ipcw_brier_score(
+        evaluation.rows,
+        reference_probability=training_reference_probability,
+    )
+    calibration = summarize_ipcw_calibration(
+        evaluation.rows,
+        bin_count=calibration_bin_count,
+    )
+    weighted_mean_predicted_probability = float(
+        calibration["mean_predicted_probability"]
+        .mul(calibration["ipcw_weight_share"])
+        .sum()
+    )
+    weighted_observed_event_rate = float(
+        calibration["observed_event_rate"].mul(calibration["ipcw_weight_share"]).sum()
+    )
+    summary: dict[str, float | int | None] = {
+        "source_validation_sample_count": evaluation.source_sample_count,
+        "excluded_zero_duration_count": evaluation.excluded_zero_duration_count,
+        "aft_evaluation_sample_count": evaluation.included_sample_count,
+        **brier_metrics,
+        "requested_calibration_bin_count": calibration_bin_count,
+        "weighted_mean_predicted_probability": (weighted_mean_predicted_probability),
+        "weighted_observed_event_rate": weighted_observed_event_rate,
+        "weighted_calibration_gap": (
+            weighted_mean_predicted_probability - weighted_observed_event_rate
+        ),
+        "expected_calibration_error": float(
+            calibration["weighted_absolute_gap_contribution"].sum()
+        ),
+        "maximum_calibration_error": float(
+            calibration["absolute_calibration_gap"].max()
+        ),
+        "nonempty_calibration_bin_count": int(len(calibration)),
+    }
+    user_bootstrap = None
+    if bootstrap_replicates is not None:
+        user_bootstrap = bootstrap_ipcw_brier_difference_by_user(
+            evaluation.rows,
+            reference_probability=training_reference_probability,
+            bootstrap_replicates=bootstrap_replicates,
+            random_seed=bootstrap_random_seed,
+        )
+    return XGBoostAFTProbabilityEvaluation(
+        rows=evaluation.rows,
+        summary=summary,
+        calibration=calibration,
+        user_bootstrap=user_bootstrap,
+    )
 
 
 def evaluate_ipcw_shrinkage_candidates(

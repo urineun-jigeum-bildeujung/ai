@@ -1,0 +1,36 @@
+"""여러 재구매 E2E 테스트가 공유하는 작은 고정 입력을 제공합니다."""
+
+from __future__ import annotations
+
+import pandas as pd
+import pytest
+
+
+@pytest.fixture
+def uci_e2e_purchase_events() -> pd.DataFrame:
+    """반복 구매와 단발 구매가 함께 있는 작은 구매 이력을 만듭니다."""
+    rows: list[dict[str, object]] = []
+    for user_id, product_id, start_at, interval_days, event_count in (
+        ("u1", "p1", "2026-01-01", 5, 24),
+        ("u2", "p2", "2026-01-03", 8, 16),
+    ):
+        for index in range(event_count):
+            rows.append(
+                {
+                    "user_id": user_id,
+                    "order_id": f"{user_id}-o{index:02d}",
+                    "product_id": product_id,
+                    "ordered_at": pd.Timestamp(start_at)
+                    + pd.Timedelta(days=interval_days * index),
+                }
+            )
+    # 관측 기간이 충분히 지난 단발 구매로 Train의 미재구매 정답을 만듭니다.
+    rows.append(
+        {
+            "user_id": "u3",
+            "order_id": "u3-o00",
+            "product_id": "p3",
+            "ordered_at": pd.Timestamp("2026-01-04"),
+        }
+    )
+    return pd.DataFrame(rows)
