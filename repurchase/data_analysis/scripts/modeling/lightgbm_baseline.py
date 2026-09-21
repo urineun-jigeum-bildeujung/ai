@@ -158,6 +158,8 @@ def train_lightgbm_classifier(
         training_data.target,
         sample_weight=training_data.sample_weight,
     )
+    # 30일 정답으로 학습한 모델을 다른 기간의 확률로 잘못 배포하지 않도록 보존합니다.
+    model.repurchase_horizon_days = training_data.horizon_days
     return model
 
 
