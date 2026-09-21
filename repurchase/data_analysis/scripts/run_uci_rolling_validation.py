@@ -413,16 +413,17 @@ def build_rolling_cutoff_report(
                 f"Rolling cutoff마다 고정 모델 조건이 다릅니다: {fixed_column}"
             )
 
+    horizon_days = int(folds["horizon_days"].iat[0])
     status = _selection_status(folds)
     if status == "lightgbm_supported":
         decision = (
             "모든 과거 cutoff의 점추정과 사용자 Bootstrap 95% 구간이 "
-            "LightGBM의 낮은 30일 Brier를 지지했습니다."
+            f"LightGBM의 낮은 {horizon_days}일 Brier를 지지했습니다."
         )
     elif status == "aft_supported":
         decision = (
             "모든 과거 cutoff의 점추정과 사용자 Bootstrap 95% 구간이 "
-            "AFT의 낮은 30일 Brier를 지지했습니다."
+            f"AFT의 낮은 {horizon_days}일 Brier를 지지했습니다."
         )
     elif status == "direction_only":
         decision = (
@@ -442,7 +443,7 @@ def build_rolling_cutoff_report(
         "test_accessed": False,
         "fold_count": len(folds),
         "fixed_model_configuration": {
-            "horizon_days": int(folds["horizon_days"].iat[0]),
+            "horizon_days": horizon_days,
             "feature_columns": list(folds["feature_columns"].iat[0]),
             "aft_loss_distribution": str(folds["aft_loss_distribution"].iat[0]),
             "aft_loss_distribution_scale": float(
@@ -500,6 +501,21 @@ def _format_optional_float(value: object) -> str:
 def render_rolling_cutoff_report(report: dict[str, object]) -> str:
     """Rolling cutoff 결과를 사람이 검토하기 쉬운 Markdown으로 만듭니다."""
     horizon_days = int(report["fixed_model_configuration"]["horizon_days"])
+    minimum_effective_sample_rate = min(
+        float(row["ipcw_effective_to_known_sample_rate"]) for row in report["folds"]
+    )
+    if minimum_effective_sample_rate >= 0.99:
+        ipcw_stability_message = (
+            "모든 fold에서 IPCW 유효 표본 수가 정답 확인 표본의 99% 이상으로 "
+            "극단 가중치가 비교를 지배한 흔적은 없었습니다."
+        )
+    else:
+        ipcw_stability_message = (
+            "IPCW 유효 표본 수 비율의 최솟값이 "
+            f"{minimum_effective_sample_rate:.2%}로 99% 미만입니다. "
+            "소수의 큰 가중치가 비교 결과를 불안정하게 만들었는지 추가로 "
+            "확인해야 합니다."
+        )
     fold_lines = [
         (
             f"| {row['fold_id']} | {row['train_end_at'][:10]} | "
@@ -578,8 +594,7 @@ def render_rolling_cutoff_report(report: dict[str, object]) -> str:
             "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
             *stability_lines,
             "",
-            "모든 fold에서 IPCW 유효 표본 수가 정답 확인 표본의 99% 이상으로 "
-            "극단 가중치가 비교를 지배한 흔적은 없었습니다. 다만 사건율과 "
+            f"{ipcw_stability_message} 다만 사건율과 "
             "표본 구성이 시점마다 달라 성능 변화의 원인을 하나로 단정하지 "
             "않습니다.",
             "",

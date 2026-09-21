@@ -149,6 +149,7 @@ def test_rolling_cutoff_report_is_standard_json_and_explains_scope(
     }
     assert "독립 반복 실험이 아닙니다" in report["scope"]
     assert "원래 Test는 사용하지 않았습니다" in report["scope"]
+    assert "## 14일 확률 성능" in markdown
     assert "원래 Test 사용: `아니요`" in markdown
     assert len(trials_report["trials"]) == 40
     json.dumps(report, ensure_ascii=False, allow_nan=False)
@@ -179,6 +180,7 @@ def test_rolling_cutoff_decision_requires_consistent_intervals(
         build_rolling_cutoff_report(supported)["model_selection_status"]
         == "lightgbm_supported"
     )
+    assert "14일 Brier" in build_rolling_cutoff_report(supported)["decision"]
 
     mixed_folds = supported_folds.copy()
     mixed_folds.loc[mixed_folds.index[-1], "point_lower_brier_model"] = "xgboost_aft"
@@ -276,3 +278,21 @@ def test_rolling_cutoff_models_report_fold_id_for_invalid_evaluation_class(
             bootstrap_random_seed=7,
             num_boost_round=2,
         )
+
+
+def test_rolling_cutoff_markdown_reports_low_ipcw_effective_sample_rate(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """IPCW 유효 표본 비율이 낮으면 안정적이라는 고정 문구를 쓰지 않습니다."""
+    changed_folds = rolling_evaluation.folds.copy()
+    changed_folds.loc[
+        changed_folds.index[0],
+        "ipcw_effective_to_known_sample_rate",
+    ] = 0.5
+    changed = replace(rolling_evaluation, folds=changed_folds)
+
+    markdown = render_rolling_cutoff_report(build_rolling_cutoff_report(changed))
+
+    assert "최솟값이 50.00%" in markdown
+    assert "99% 미만" in markdown
+    assert "모든 fold에서 IPCW 유효 표본 수가" not in markdown
