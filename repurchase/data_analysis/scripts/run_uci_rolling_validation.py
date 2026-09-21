@@ -1489,8 +1489,16 @@ def build_rolling_user_composition_report(
             "new_to_source_train",
         )
     }
-    actual_group_keys = set(
-        evaluation.user_groups[["fold_id", "group"]].itertuples(index=False, name=None)
+    # fold가 하나라면 비교할 이전 Validation이 없어 이 표는 열 없이 비어 있습니다.
+    # 빈 표를 정상적인 0개 그룹으로 읽되, 아래 기대 키 검사는 그대로 유지합니다.
+    actual_group_keys = (
+        set(
+            evaluation.user_groups[["fold_id", "group"]].itertuples(
+                index=False, name=None
+            )
+        )
+        if not evaluation.user_groups.empty
+        else set()
     )
     if actual_group_keys != expected_group_keys or len(evaluation.user_groups) != len(
         expected_group_keys
@@ -1502,10 +1510,16 @@ def build_rolling_user_composition_report(
         for previous in ordered_fold_ids[:index]
     }
     for table in (evaluation.user_overlaps, evaluation.user_bootstrap):
-        actual_pair_keys = set(
-            table[["previous_fold_id", "current_fold_id"]].itertuples(
-                index=False, name=None
+        # 단일 fold는 쌍 자체가 없지만, 복수 fold에서 빈 표가 오면 아래에서
+        # 누락으로 거부합니다. 둘을 같은 빈 표라도 다르게 판단해야 합니다.
+        actual_pair_keys = (
+            set(
+                table[["previous_fold_id", "current_fold_id"]].itertuples(
+                    index=False, name=None
+                )
             )
+            if not table.empty
+            else set()
         )
         if actual_pair_keys != expected_pair_keys or len(table) != len(
             expected_pair_keys

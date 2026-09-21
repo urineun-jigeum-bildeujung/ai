@@ -690,13 +690,47 @@ def test_rolling_user_composition_report_preserves_original_scores(
     assert "fold_1 → fold_2" in markdown
 
 
-def test_user_composition_report_rejects_missing_fold_pair(
+@pytest.mark.parametrize(
+    ("table_name", "error_message"),
+    [
+        ("user_groups", "노출 그룹"),
+        ("user_overlaps", "fold 쌍"),
+        ("user_bootstrap", "fold 쌍"),
+    ],
+)
+def test_user_composition_report_rejects_missing_comparison_table(
     rolling_evaluation: RollingCutoffEvaluation,
+    table_name: str,
+    error_message: str,
 ) -> None:
-    """보고서 생성 직전에도 fold 쌍 누락을 검출합니다."""
+    """복수 fold에서는 그룹이나 쌍의 빈 표를 정상 결과로 보지 않습니다."""
     changed = replace(
         rolling_evaluation,
-        user_overlaps=rolling_evaluation.user_overlaps.iloc[0:0],
+        **{table_name: pd.DataFrame()},
     )
-    with pytest.raises(ValueError, match="fold 쌍"):
+    with pytest.raises(ValueError, match=error_message):
         build_rolling_user_composition_report(changed)
+
+
+def test_user_composition_report_accepts_single_fold_without_comparison_tables(
+    rolling_evaluation: RollingCutoffEvaluation,
+) -> None:
+    """한 fold만 있으면 비교 그룹·fold 쌍이 없는 것이 정상입니다."""
+    single_fold = replace(
+        rolling_evaluation,
+        folds=rolling_evaluation.folds.iloc[:1].copy(),
+        user_compositions=rolling_evaluation.user_compositions[:1],
+        user_diagnostics=rolling_evaluation.user_diagnostics.iloc[:1].copy(),
+        user_groups=pd.DataFrame(),
+        user_overlaps=pd.DataFrame(),
+        user_bootstrap=pd.DataFrame(),
+    )
+
+    report = build_rolling_user_composition_report(single_fold)
+    markdown = render_rolling_user_composition_report(report)
+
+    assert len(report["folds"]) == 1
+    assert report["user_groups"] == []
+    assert report["user_overlaps"] == []
+    assert report["user_bootstrap"] == []
+    assert "fold_1" in markdown
