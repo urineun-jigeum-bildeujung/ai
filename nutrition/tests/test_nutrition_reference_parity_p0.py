@@ -5,7 +5,8 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
 sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / "nutrition")]
 
 from nutrition.reference_parity import build_artifact, select_reference, validate_rows

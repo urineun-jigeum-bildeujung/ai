@@ -14,8 +14,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# 동일 폴더의 danawa_adapter 임포트
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# 제출 패키지의 실제 모듈 위치를 사용한다.
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts" / "nutrition"))
 from danawa_adapter import (  # noqa: E402
     danawa_to_product,
     _parse_pct,

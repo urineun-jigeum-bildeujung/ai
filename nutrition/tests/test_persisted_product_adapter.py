@@ -3,7 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
 sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / "nutrition")]
 
 from api_nutrition import app

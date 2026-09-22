@@ -7,8 +7,8 @@
 - GET  /health                  서비스 상태
 
 실행:
-    cd "/Users/aku/Documents/통합 프로젝트(우리는지금빌드중)/ai"
-    uvicorn ai.scripts.api_nutrition:app --reload --port 8002
+    cd nutrition
+    python -m uvicorn scripts.api_nutrition:app --reload --port 8002
 
 테스트:
     curl -s http://localhost:8002/health
