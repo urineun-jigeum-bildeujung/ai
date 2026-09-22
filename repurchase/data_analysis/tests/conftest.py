@@ -24,6 +24,13 @@ def cloud_source_contract() -> dict[str, object]:
 
 
 @pytest.fixture
+def prediction_publication_contract() -> dict[str, object]:
+    """완료·실패·작성 중 배치를 함께 가진 결과 발행 고정 예제를 읽습니다."""
+    path = CLOUD_CONTRACT_FIXTURE_DIRECTORY / "prediction_publications.json"
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@pytest.fixture
 def uci_e2e_purchase_events() -> pd.DataFrame:
     """반복 구매와 단발 구매가 함께 있는 작은 구매 이력을 만듭니다."""
     rows: list[dict[str, object]] = []
