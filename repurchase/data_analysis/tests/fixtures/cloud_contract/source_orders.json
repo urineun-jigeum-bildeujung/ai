@@ -1,0 +1,200 @@
+{
+  "orders": [
+    {
+      "order_id": "order-paid",
+      "user_id": "user-1",
+      "paid_at": "2026-01-01T09:00:00+09:00",
+      "order_status": "PAID",
+      "purchase_type": "ONE_TIME"
+    },
+    {
+      "order_id": "order-partial-refund",
+      "user_id": "user-1",
+      "paid_at": "2026-02-01T00:00:00Z",
+      "order_status": "PARTIAL_REFUND",
+      "purchase_type": "SUBSCRIPTION"
+    },
+    {
+      "order_id": "order-cancelled",
+      "user_id": "user-2",
+      "paid_at": null,
+      "order_status": "CANCELLED",
+      "purchase_type": "ONE_TIME"
+    }
+  ],
+  "order_items": [
+    {
+      "order_item_id": "item-food-a",
+      "order_id": "order-paid",
+      "product_id": "food-small",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "quantity": 2,
+      "item_status": "PAID",
+      "cancelled_quantity": 0,
+      "returned_quantity": 0
+    },
+    {
+      "order_item_id": "item-food-b",
+      "order_id": "order-paid",
+      "product_id": "food-large",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "quantity": 1,
+      "item_status": "PAID",
+      "cancelled_quantity": 0,
+      "returned_quantity": 0
+    },
+    {
+      "order_item_id": "item-treat",
+      "order_id": "order-paid",
+      "product_id": "treat-single",
+      "product_group_id_snapshot": "treat-group",
+      "category_code_snapshot": "TREAT",
+      "is_replenishable_snapshot": false,
+      "pet_id": null,
+      "quantity": 1,
+      "item_status": "PAID",
+      "cancelled_quantity": 0,
+      "returned_quantity": 0
+    },
+    {
+      "order_item_id": "item-partial-return",
+      "order_id": "order-partial-refund",
+      "product_id": "food-small",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "quantity": 3,
+      "item_status": "PARTIAL_RETURN",
+      "cancelled_quantity": 0,
+      "returned_quantity": 1
+    },
+    {
+      "order_item_id": "item-fully-cancelled",
+      "order_id": "order-partial-refund",
+      "product_id": "pad-single",
+      "product_group_id_snapshot": "pad-group",
+      "category_code_snapshot": "PAD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "quantity": 1,
+      "item_status": "CANCELLED",
+      "cancelled_quantity": 1,
+      "returned_quantity": 0
+    },
+    {
+      "order_item_id": "item-cancelled-order",
+      "order_id": "order-cancelled",
+      "product_id": "food-small",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": null,
+      "quantity": 1,
+      "item_status": "PAID",
+      "cancelled_quantity": 0,
+      "returned_quantity": 0
+    }
+  ],
+  "expected_valid_order_items": [
+    {
+      "order_item_id": "item-food-a",
+      "user_id": "user-1",
+      "order_id": "order-paid",
+      "product_id": "food-small",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "paid_at": "2026-01-01T00:00:00Z",
+      "purchase_type": "ONE_TIME",
+      "net_quantity": 2
+    },
+    {
+      "order_item_id": "item-food-b",
+      "user_id": "user-1",
+      "order_id": "order-paid",
+      "product_id": "food-large",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "paid_at": "2026-01-01T00:00:00Z",
+      "purchase_type": "ONE_TIME",
+      "net_quantity": 1
+    },
+    {
+      "order_item_id": "item-treat",
+      "user_id": "user-1",
+      "order_id": "order-paid",
+      "product_id": "treat-single",
+      "product_group_id_snapshot": "treat-group",
+      "category_code_snapshot": "TREAT",
+      "is_replenishable_snapshot": false,
+      "pet_id": null,
+      "paid_at": "2026-01-01T00:00:00Z",
+      "purchase_type": "ONE_TIME",
+      "net_quantity": 1
+    },
+    {
+      "order_item_id": "item-partial-return",
+      "user_id": "user-1",
+      "order_id": "order-partial-refund",
+      "product_id": "food-small",
+      "product_group_id_snapshot": "food-group",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "pet_id": "pet-1",
+      "paid_at": "2026-02-01T00:00:00Z",
+      "purchase_type": "SUBSCRIPTION",
+      "net_quantity": 2
+    }
+  ],
+  "expected_purchase_events": [
+    {
+      "user_id": "user-1",
+      "order_id": "order-paid",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "pet_id": "pet-1",
+      "paid_at": "2026-01-01T00:00:00Z",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "purchase_type": "ONE_TIME",
+      "net_unit_count": 3,
+      "source_order_item_count": 2
+    },
+    {
+      "user_id": "user-1",
+      "order_id": "order-paid",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "treat-group",
+      "pet_id": null,
+      "paid_at": "2026-01-01T00:00:00Z",
+      "category_code_snapshot": "TREAT",
+      "is_replenishable_snapshot": false,
+      "purchase_type": "ONE_TIME",
+      "net_unit_count": 1,
+      "source_order_item_count": 1
+    },
+    {
+      "user_id": "user-1",
+      "order_id": "order-partial-refund",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "pet_id": "pet-1",
+      "paid_at": "2026-02-01T00:00:00Z",
+      "category_code_snapshot": "FOOD",
+      "is_replenishable_snapshot": true,
+      "purchase_type": "SUBSCRIPTION",
+      "net_unit_count": 2,
+      "source_order_item_count": 1
+    }
+  ]
+}
