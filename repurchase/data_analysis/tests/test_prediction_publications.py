@@ -74,11 +74,16 @@ def test_same_idempotency_key_and_payload_do_not_create_duplicates(
         candidate_batch,
         candidate_results,
     )
+    reordered_batch = candidate_batch.astype(
+        {"expected_result_count": "int32", "feature_generation_version": "int32"}
+    )
+    reordered_results = candidate_results.iloc[::-1].reset_index(drop=True)
+    reordered_results["window_days"] = reordered_results["window_days"].astype("int32")
     rerun_batches, rerun_results = merge_idempotent_publication(
         stored_batches,
         stored_results,
-        candidate_batch,
-        candidate_results,
+        reordered_batch,
+        reordered_results,
     )
 
     assert len(rerun_batches) == 1

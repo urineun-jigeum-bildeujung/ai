@@ -269,15 +269,32 @@ def merge_idempotent_publication(
     if same_key.any():
         current_batch = existing_batches.loc[same_key].reset_index(drop=True)
         current_publication_id = current_batch.loc[0, "publication_id"]
-        current_results = existing_results.loc[
-            existing_results["publication_id"].eq(current_publication_id)
-        ].reset_index(drop=True)
-        if not current_batch.equals(new_batches) or not current_results.equals(
-            new_results
-        ):
+        current_results = (
+            existing_results.loc[
+                existing_results["publication_id"].eq(current_publication_id)
+            ]
+            .sort_values(list(RESULT_KEY_COLUMNS), kind="stable", na_position="first")
+            .reset_index(drop=True)
+        )
+        comparable_new_results = new_results.sort_values(
+            list(RESULT_KEY_COLUMNS), kind="stable", na_position="first"
+        ).reset_index(drop=True)
+        try:
+            # 저장소 조회 순서와 정수 폭은 달라도 같은 키·값이면 동일 payload입니다.
+            pd.testing.assert_frame_equal(
+                current_batch,
+                new_batches,
+                check_dtype=False,
+            )
+            pd.testing.assert_frame_equal(
+                current_results,
+                comparable_new_results,
+                check_dtype=False,
+            )
+        except AssertionError as error:
             raise PredictionPublicationError(
                 "같은 idempotency_key에 서로 다른 발행 내용이 전달됐습니다."
-            )
+            ) from error
         return existing_batches.copy(), existing_results.copy()
 
     merged_batches = pd.concat(
