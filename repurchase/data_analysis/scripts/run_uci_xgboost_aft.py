@@ -16,6 +16,7 @@ from numbers import Integral, Real
 from typing import Final
 
 import pandas as pd
+import xgboost
 
 from .loaders import load_uci_online_retail_ii
 from .modeling.baseline import (
@@ -2175,7 +2176,9 @@ def build_xgboost_aft_report(
         "split": split,
         "runtime": {
             "python": platform.python_version(),
-            **{name: version(name) for name in ("xgboost", "pandas", "numpy")},
+            # 일반 wheel과 CPU 전용 wheel은 배포 이름이 다르지만 같은 모듈을 제공합니다.
+            "xgboost": xgboost.__version__,
+            **{name: version(name) for name in ("pandas", "numpy")},
         },
         "training": training,
         "validation_concordance": result.concordance,
