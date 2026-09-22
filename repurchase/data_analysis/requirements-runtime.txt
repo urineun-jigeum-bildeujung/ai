@@ -1,0 +1,12 @@
+# 재구매 배치 추론에서 사용하는 수치·모델 라이브러리 버전을 고정합니다.
+numpy==2.4.6
+pandas==2.3.3
+scipy==1.17.1
+scikit-learn==1.9.1
+lightgbm==4.7.0
+
+# 운영·CI의 Linux AMD64는 GPU 의존성이 없는 CPU 전용 wheel로 크기를 줄입니다.
+xgboost-cpu==3.2.0; platform_system == "Linux" and platform_machine == "x86_64"
+
+# XGBoost 3.2의 CPU 전용 wheel이 없는 ARM64·macOS는 일반 wheel을 사용합니다.
+xgboost==3.2.0; platform_system != "Linux" or platform_machine != "x86_64"

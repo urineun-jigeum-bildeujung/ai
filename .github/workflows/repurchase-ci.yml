@@ -80,7 +80,26 @@ jobs:
             fi
           fi
 
+          if [[ "${should_run}" != "true" ]]; then
+            container_changed="false"
+          elif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            container_changed="true"
+          elif [[ -z "${base_sha:-}" || "${base_sha}" =~ ^0+$ ]]; then
+            container_changed="true"
+          elif ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            container_changed="true"
+          elif git diff --quiet "${base_sha}" "${head_sha}" -- \
+            repurchase/data_analysis/Dockerfile \
+            repurchase/data_analysis/.dockerignore \
+            repurchase/data_analysis/requirements-runtime.txt \
+            repurchase/data_analysis/scripts/run_repurchase_batch.py; then
+            container_changed="false"
+          else
+            container_changed="true"
+          fi
+
           echo "run=${should_run}" >> "${GITHUB_OUTPUT}"
+          echo "container_changed=${container_changed}" >> "${GITHUB_OUTPUT}"
           echo "${reason}"
 
       - name: Python 3.11 설정 및 pip 캐시 복원
@@ -91,6 +110,7 @@ jobs:
           python-version: "3.11.15"
           cache: pip
           cache-dependency-path: |
+            repurchase/data_analysis/requirements-runtime.txt
             repurchase/data_analysis/requirements.txt
             repurchase/data_analysis/requirements-dev.txt
 
@@ -114,6 +134,25 @@ jobs:
           python -m pytest
           --junitxml="${RUNNER_TEMP}/repurchase-test-results/junit.xml"
           -o junit_logging=no
+
+      - name: 재구매 배치 Docker 이미지 빌드
+        if: steps.changes.outputs.container_changed == 'true'
+        working-directory: .
+        run: >-
+          docker build
+          --tag "gollajugaenyang-repurchase-batch:${GITHUB_SHA}"
+          repurchase/data_analysis
+
+      - name: 재구매 배치 컨테이너 계약 smoke test
+        if: steps.changes.outputs.container_changed == 'true'
+        working-directory: .
+        run: >-
+          docker run --rm
+          --volume "${GITHUB_WORKSPACE}/repurchase/data_analysis/tests/fixtures/cloud_contract:/input:ro"
+          "gollajugaenyang-repurchase-batch:${GITHUB_SHA}"
+          contract-check
+          --source-contract /input/source_orders.json
+          --publication-contract /input/prediction_publications.json
 
       - name: 테스트 결과 파일 보관
         # 테스트 실패 후에도 업로드하되, 미실행·취소된 실행은 제외합니다.
