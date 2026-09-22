@@ -1,0 +1,19 @@
+# 로컬 가상환경과 캐시는 호스트마다 달라 이미지에 포함하지 않습니다.
+.venv/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+**/*.py[cod]
+
+# 원본 데이터·분석 결과·테스트는 운영 Runtime 이미지의 책임이 아닙니다.
+data/
+reports/
+tests/
+
+# 개발 설정과 편집기 파일도 실행 이미지에서 제외합니다.
+.git/
+.gitignore
+.python-version
+pyproject.toml
+requirements-dev.txt
+README.md

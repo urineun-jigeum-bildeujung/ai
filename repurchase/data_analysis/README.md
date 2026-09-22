@@ -164,3 +164,67 @@ GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 �
 - 전처리 결과를 저장할 경우 `data/processed/`에 두고 원본에서 재생성합니다.
 - 출처·버전·라이선스·SHA-256 검증 결과는 `reports/data_source_manifest.json`에 기록합니다.
 - 표·그래프·요약 결과는 `reports/`에 저장합니다.
+
+## 재구매 배치 Runtime
+
+재구매 배치는 API 서버처럼 계속 실행되지 않습니다. 입력과 모델을 읽어 한 번의
+작업을 수행한 뒤 종료되는 Job입니다. Docker 이미지는 Python 코드와 실행
+라이브러리만 포함하며 모델 아티팩트·입력 데이터·출력 결과·Secret은 실행 시
+외부에서 주입합니다.
+
+현재 서비스 상품군 모델과 클라우드 DB는 아직 확정되지 않았으므로 실제 추론이나
+적재를 가장하지 않습니다. `contract-check` 명령으로 고정된 원천 데이터와 결과
+발행 계약을 끝까지 검사하는 기준선만 제공합니다.
+
+### 로컬 계약 점검
+
+`repurchase/data_analysis`에서 다음 명령을 실행합니다.
+
+```bash
+.venv/bin/python -m scripts.run_repurchase_batch contract-check \
+  --source-contract tests/fixtures/cloud_contract/source_orders.json \
+  --publication-contract tests/fixtures/cloud_contract/prediction_publications.json
+```
+
+성공하면 입력 파일의 SHA-256과 단계별 처리 건수가 JSON 한 줄로 출력되고 종료
+코드 `0`을 반환합니다. 계약 위반은 `2`, 예상하지 못한 시스템 장애는 `1`입니다.
+
+### Docker 이미지와 smoke test
+
+저장소 루트에서 재구매 디렉터리를 빌드 컨텍스트로 사용합니다.
+
+```bash
+docker build \
+  --tag gollajugaenyang-repurchase-batch:local \
+  repurchase/data_analysis
+```
+
+고정 예제는 이미지에 복사하지 않고 읽기 전용으로 마운트합니다.
+
+```bash
+docker run --rm \
+  --volume "$PWD/repurchase/data_analysis/tests/fixtures/cloud_contract:/input:ro" \
+  gollajugaenyang-repurchase-batch:local \
+  contract-check \
+  --source-contract /input/source_orders.json \
+  --publication-contract /input/prediction_publications.json
+```
+
+### 이미지에 포함하지 않는 항목
+
+- 원본 데이터와 분석 리포트
+- 테스트 코드와 로컬 가상환경
+- 모델 아티팩트와 예측 결과
+- DB 주소·계정·비밀번호·API 키
+
+실제 모델 추론 단계에서는 검증된 아티팩트를 읽기 전용 볼륨 또는 객체 저장소로
+주입합니다. 클라우드 연결 정보는 Secret 관리 기능으로 전달하고 로그에 값을
+출력하지 않습니다. 실제 DB 어댑터·스케줄러·결과 적재는 데이터 계약 확정 후
+별도 작업에서 연결합니다.
+
+운영·CI의 Linux AMD64 환경은 GPU 의존성을 포함하지 않는 `xgboost-cpu`를
+사용합니다. XGBoost 3.2에서 CPU 전용 wheel을 제공하지 않는 ARM64·macOS는 같은
+버전의 일반 `xgboost`를 사용합니다. 따라서 Apple Silicon의 로컬 이미지는 운영용
+AMD64 이미지보다 클 수 있으며, 실제 배포 이미지 크기는 CI의 AMD64 빌드 결과를
+기준으로 판단합니다. Python 기반 이미지는 태그가 가리키는 내용이 바뀌지 않도록
+멀티 아키텍처 manifest digest까지 고정합니다.
