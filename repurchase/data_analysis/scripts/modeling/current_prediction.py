@@ -11,6 +11,7 @@ from numbers import Integral
 import pandas as pd
 
 from .artifacts import LoadedModelArtifact, ModelArtifactError
+from .features import FEATURE_GENERATION_VERSION
 from .inference_features import build_current_features_from_valid_purchases
 from .xgboost_aft import (
     XGBoostAFTTrainingResult,
@@ -34,6 +35,8 @@ def predict_current_repurchase_probability(
         raise ModelArtifactError(
             "고정 기간 LightGBM 확률은 현재 시점 조건부 확률로 변환할 수 없습니다."
         )
+    if artifact.feature_generation_version != FEATURE_GENERATION_VERSION:
+        raise ModelArtifactError("모델의 피처 생성 규칙 버전과 현재 코드가 다릅니다.")
     if (
         isinstance(window_days, bool)
         or not isinstance(window_days, Integral)

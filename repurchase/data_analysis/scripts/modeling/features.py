@@ -21,6 +21,9 @@ class ModelFeatureError(ValueError):
 
 # 첫 실험에서는 이미 검증한 과거 구매 이력 피처만 사용합니다.
 # 피처를 추가할 때는 Validation 성능과 누수 여부를 각각 다시 검증합니다.
+# 아래 버전은 열 이름뿐 아니라 과거 간격·주문 수의 계산 의미를 나타냅니다.
+# samples.py와 inference_features.py의 계산 규칙이 바뀌면 버전을 올리고 재학습합니다.
+FEATURE_GENERATION_VERSION: Final[int] = 1
 MINIMAL_MODEL_FEATURE_COLUMNS: Final[tuple[str, ...]] = (
     "history_interval_count",
     "history_median_days",

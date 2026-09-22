@@ -19,7 +19,11 @@ import pandas as pd
 import xgboost as xgb
 from lightgbm import LGBMClassifier
 
-from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
+from .features import (
+    FEATURE_GENERATION_VERSION,
+    MINIMAL_MODEL_FEATURE_COLUMNS,
+    select_minimal_model_features,
+)
 from .xgboost_aft import (
     XGBoostAFTTrainingResult,
     build_xgboost_aft_prediction_data,
@@ -28,7 +32,7 @@ from .xgboost_aft import (
     predict_xgboost_aft_duration,
 )
 
-ARTIFACT_SCHEMA_VERSION = 1
+ARTIFACT_SCHEMA_VERSION = 2
 MANIFEST_FILENAME = "manifest.json"
 MODEL_FILENAMES = {"xgboost_aft": "model.json", "lightgbm": "model.txt"}
 
@@ -44,6 +48,7 @@ class LoadedModelArtifact:
     family: Literal["xgboost_aft", "lightgbm"]
     model: XGBoostAFTTrainingResult | lgb.Booster
     feature_columns: tuple[str, ...]
+    feature_generation_version: int
     horizon_days: int
     artifact_id: str
 
@@ -204,6 +209,7 @@ def save_model_artifact(
             "model_sha256": _sha256(model_path),
             "library_version": library_version,
             "feature_columns": list(feature_columns),
+            "feature_generation_version": FEATURE_GENERATION_VERSION,
             "horizon_days": horizon_days,
             **aft_metadata,
         }
@@ -243,6 +249,7 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
         "model_sha256",
         "library_version",
         "feature_columns",
+        "feature_generation_version",
         "horizon_days",
         "artifact_id",
     }
@@ -266,6 +273,11 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
     ):
         raise ModelArtifactError("모델 피처 목록이 올바르지 않습니다.")
     feature_columns = tuple(columns)
+    if (
+        type(manifest.get("feature_generation_version")) is not int
+        or manifest["feature_generation_version"] != FEATURE_GENERATION_VERSION
+    ):
+        raise ModelArtifactError("모델의 피처 생성 규칙 버전과 현재 코드가 다릅니다.")
     horizon_days = manifest.get("horizon_days")
     _validate_contract(feature_columns, horizon_days)
     if manifest.get("artifact_id") != _artifact_id(manifest):
@@ -349,6 +361,7 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
         family=family,
         model=model,
         feature_columns=feature_columns,
+        feature_generation_version=manifest["feature_generation_version"],
         horizon_days=horizon_days,
         artifact_id=manifest["artifact_id"],
     )
@@ -365,6 +378,8 @@ def predict_artifact_probability(
         raise ModelArtifactError(
             "추론 표본은 비어 있지 않고 행 인덱스가 고유해야 합니다."
         )
+    if artifact.feature_generation_version != FEATURE_GENERATION_VERSION:
+        raise ModelArtifactError("모델의 피처 생성 규칙 버전과 현재 코드가 다릅니다.")
     if artifact.family == "xgboost_aft":
         if not isinstance(artifact.model, XGBoostAFTTrainingResult):
             raise ModelArtifactError("AFT 모델 유형이 아티팩트 선언과 다릅니다.")

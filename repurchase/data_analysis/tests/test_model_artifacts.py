@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,7 @@ from scripts.modeling.artifacts import (
     predict_artifact_probability,
     save_model_artifact,
 )
+from scripts.modeling.features import FEATURE_GENERATION_VERSION
 from scripts.modeling.lightgbm_baseline import (
     LightGBMTrainingData,
     predict_lightgbm_repurchase_probability,
@@ -86,10 +88,12 @@ def test_aft_artifact_roundtrip_preserves_probability(tmp_path) -> None:
 
     assert artifact.family == "xgboost_aft"
     assert artifact.horizon_days == 30
+    assert artifact.feature_generation_version == FEATURE_GENERATION_VERSION
     assert restored.index.equals(rows.index)
     np.testing.assert_allclose(restored.to_numpy(), original.to_numpy())
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     assert "user_id" not in manifest
+    assert manifest["feature_generation_version"] == FEATURE_GENERATION_VERSION
 
 
 def test_lightgbm_artifact_roundtrip_preserves_probability(tmp_path) -> None:
@@ -193,6 +197,49 @@ def test_artifact_rejects_incompatible_library_version(tmp_path) -> None:
 
     with pytest.raises(ModelArtifactError, match="라이브러리 버전"):
         load_model_artifact(directory)
+
+
+def test_artifact_rejects_incompatible_feature_generation_version(tmp_path) -> None:
+    """ID를 다시 계산해도 다른 계산 규칙으로 만든 모델은 읽지 않습니다."""
+    directory = save_model_artifact(
+        _trained_aft_model(), tmp_path / "aft", horizon_days=30
+    )
+    manifest_file = directory / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest["feature_generation_version"] = FEATURE_GENERATION_VERSION + 1
+    manifest["artifact_id"] = _artifact_id(manifest)
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ModelArtifactError, match="피처 생성 규칙 버전"):
+        load_model_artifact(directory)
+
+
+def test_artifact_rejects_legacy_schema_without_feature_version(tmp_path) -> None:
+    """피처 의미를 기록하지 않은 이전 형식은 호환되는 척하지 않습니다."""
+    directory = save_model_artifact(
+        _trained_aft_model(), tmp_path / "aft", horizon_days=30
+    )
+    manifest_file = directory / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest["artifact_schema_version"] = 1
+    del manifest["feature_generation_version"]
+    manifest["artifact_id"] = _artifact_id(manifest)
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ModelArtifactError, match="아티팩트 형식"):
+        load_model_artifact(directory)
+
+
+def test_prediction_rejects_stale_loaded_feature_version(tmp_path) -> None:
+    """이미 메모리에 있는 모델도 다른 규칙의 입력에는 사용하지 않습니다."""
+    directory = save_model_artifact(
+        _trained_lightgbm_model(), tmp_path / "lightgbm", horizon_days=30
+    )
+    artifact = load_model_artifact(directory)
+    stale = replace(artifact, feature_generation_version=FEATURE_GENERATION_VERSION + 1)
+
+    with pytest.raises(ModelArtifactError, match="피처 생성 규칙 버전"):
+        predict_artifact_probability(stale, _feature_rows())
 
 
 def test_artifact_rejects_invalid_model_family_without_python_error(tmp_path) -> None:
