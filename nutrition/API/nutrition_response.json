@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "purpose": "nutrition 분석 API 응답 스키마 placeholder (v4, 9/4 16:30 KST v3_draft v4 정합)",
+    "version": "draft-v4 (9/4 16:30 KST)",
+    "status": "placeholder, 9/8 Phase 2 nutrition_ai_api_spec_v2 와 동기화 예정",
+    "related": [
+      "단계/3단계_구현/API/nutrition_api_spec.md",
+      "단계/3단계_구현/API/nutrition_request.json",
+      "단계/3단계_구현/API/error_response.json"
+    ]
+  },
+  "response_wrapper": {
+    "request_id": "string (ULID/UUID)",
+    "status": "READY | SAFETY_BLOCKED | INSUFFICIENT_DATA | SERVICE_DEGRADED | FAILED",
+    "data": "object (도메인 결과, status 에 따라 구조 다름)",
+    "warnings": ["string"]
+  },
+  "data.analyze": {
+    "pet_id": "string",
+    "product_id": "string",
+    "overall_judgment": "IN_RANGE | CAUTION | NOT_RECOMMENDED | INSUFFICIENT_DATA",
+    "aafco_match": {
+      "life_stage": "string",
+      "product_life_stage": "string",
+      "is_match": "boolean",
+      "aafco_pass_per_product": {
+        "policy": "P0D (CURRENT) | MIN_1_PASS (DEPRECATED)",
+        "policy_status": "CURRENT | LEGACY | DEPRECATED",
+        "value": "TRUE | FALSE | UNKNOWN",
+        "note": "string (P0-D UNKNOWN = 데이터 부족, 결함 아님)"
+      }
+    },
+    "nutrition_analysis": [
+      {
+        "nutrient_code": "string (CRUDE_PROTEIN, CRUDE_FAT, ...)",
+        "actual_value": "number | null",
+        "actual_unit": "string (PERCENT, mg/100g, ...)",
+        "reference_min": "number | null",
+        "reference_max": "number | null",
+        "comparison_status": "IN_RANGE | OUT_OF_RANGE | UNKNOWN | NOT_APPLICABLE",
+        "display_grade": "ADEQUATE | DEFICIENT | EXCESS | UNKNOWN",
+        "reference_id": "string (e.g. NIAS_2024_DOG_ADULT_CRUDE_PROTEIN)",
+        "reason_text": "string (한국어, persona_friendly 가능)"
+      }
+    ],
+    "allergy_check": {
+      "status": "OK | CONFLICT",
+      "matched_allergens": [
+        { "allergen_code": "string", "detected_keyword": "string" }
+      ]
+    },
+    "excluded": [
+      { "reason_code": "ALLERGY_CONFLICT | SPECIES_MISMATCH | LIFE_STAGE_MISMATCH | SAFETY_DATA_INSUFFICIENT" }
+    ],
+    "warnings": [
+      { "warning_code": "MISSING_MOISTURE_FOR_DM_CONVERSION | ..." }
+    ],
+    "persona_friendly": {
+      "summary": "string (한국어)",
+      "easy_terms": { "조단백질": "단백질 함량", "조지방": "지방 함량" }
+    },
+    "confidence": "HIGH | MEDIUM | LOW | INSUFFICIENT_DATA",
+    "reference_version": "REFERENCE_2024",
+    "generated_at": "ISO 8601 KST"
+  },
+  "data.diff": {
+    "pet_id": "string",
+    "base_product_id": "string",
+    "compare_product_id": "string",
+    "aafco_comparison": {
+      "base_product_pass": "TRUE | FALSE | UNKNOWN",
+      "compare_product_pass": "TRUE | FALSE | UNKNOWN"
+    },
+    "allergy_check": {
+      "base_product": { "status": "OK | WARNING", "matched_allergens": ["string"] },
+      "compare_product": { "status": "OK | WARNING", "matched_allergens": ["string"] }
+    },
+    "nutrients": [
+      {
+        "nutrient_code": "string",
+        "nutrient_name": "string",
+        "base_value": "number | null",
+        "compare_value": "number | null",
+        "unit": "string",
+        "difference": "number | null (= compare_value - base_value)"
+      }
+    ],
+    "warnings": ["string"]
+  },
+  "data.exclusions": {
+    "pet_id": "string",
+    "product_id": "string",
+    "is_excluded": "boolean",
+    "exclusion_reasons": [
+      {
+        "reason_code": "ALLERGY_CONFLICT | SPECIES_MISMATCH | LIFE_STAGE_MISMATCH | SAFETY_DATA_INSUFFICIENT",
+        "reason_text": "string"
+      }
+    ]
+  },
+  "v4_removed_or_unified": {
+    "canonical_status": "API 응답에서 제외 (내부 데이터 품질 상태)",
+    "model_version / pipeline_version / feature_version / reference_matrix_version / reference_policy_version": "reference_version 단일 필드로 통합",
+    "derived_reference_life_stage": "API 응답에서 제외 (백엔드 매핑 로직에서 처리)",
+    "P0-D 평가 데이터 (TRUE/FALSE/UNKNOWN 건수)": "API 응답에 미포함, 평가 문서 (docs/BASELINE_DECISION_v3.md §1.3) 에서 관리"
+  }
+}
