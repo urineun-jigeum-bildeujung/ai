@@ -2,8 +2,25 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pandas as pd
 import pytest
+
+CLOUD_CONTRACT_FIXTURE_DIRECTORY = Path(__file__).parent / "fixtures" / "cloud_contract"
+
+
+@pytest.fixture
+def cloud_source_contract() -> dict[str, object]:
+    """클라우드 원천 주문의 공식 고정 예제를 매 테스트마다 새로 읽습니다.
+
+    파일을 매번 새로 읽어 한 테스트의 데이터 변경이 다른 테스트로 전파되지
+    않게 합니다. JSON은 백엔드·클라우드 팀과도 같은 값을 확인할 수 있는
+    언어 중립적인 계약 예제로 사용합니다.
+    """
+    path = CLOUD_CONTRACT_FIXTURE_DIRECTORY / "source_orders.json"
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @pytest.fixture
