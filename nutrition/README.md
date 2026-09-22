@@ -28,7 +28,7 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 - `POST /api/nutrition/analyze/by-product-id` — 로컬 선택 artifact에서 `product_id`를 조회하는 demonstrator
 - `POST /api/nutrition/safety`
 - `POST /api/nutrition/report`
-- `POST /api/nutrition/compare` — 현재 HTTP 501
+- `POST /api/nutrition/compare` — **Future / Not Implemented**, 현재 HTTP 501. 비교 기능은 현재 Runtime scope 밖이며 구현 완료 API가 아니다.
 
 FE의 최종 최소 identifier 요청은 논리적으로 `{ "pet_id": "...", "product_id": "..." }`이지만, 실제 AWS schema·Repository·E2E가 없는 현재에는 runtime endpoint로 구현하지 않았다.
 
@@ -53,6 +53,12 @@ FE의 최종 최소 identifier 요청은 논리적으로 `{ "pet_id": "...", "pr
 - ingredient/allergy evidence가 부족하면 `UNKNOWN` 또는 `SAFETY_DATA_INSUFFICIENT`로 fail-close한다.
 
 `UNKNOWN != PASS`, `UNKNOWN != FAIL`, `INSUFFICIENT_DATA != 영양 부적합`, `READY != nutritional completeness`, `HTTP 200 != nutritional suitability`이다.
+
+### E2E 검증 범위
+
+- **Local Runtime HTTP E2E — VERIFIED**: `tests/test_runtime_e2e.py`가 FastAPI `TestClient`로 health, request-scoped 분석, safety fail-close, persisted local product 조회, unknown ID 404, non-food, determinism, runtime artifact 존재를 검증한다.
+- **Persisted Local Product E2E — VERIFIED**: 위 테스트의 `by-product-id` 경로는 repository에 포함된 로컬 artifact를 `product_input_adapter`로 읽어 Rule Engine까지 전달한다. 해당 fixture의 domain 결과가 `READY`라는 뜻은 아니다.
+- **AWS Service DB E2E — NOT IMPLEMENTED**: AWS Service DB 조회, AI Result Store, FE → AI → AWS DB → Result Store → FE 흐름은 아직 구현·검증되지 않았다.
 
 ## 실행과 검증
 
