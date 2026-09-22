@@ -1,5 +1,10 @@
 # 영양성분 분석 AI API 명세 — BE/FE 협의용 (v3 draft → v7, 9/4 16:48 KST)
 
+> **Status: SUPERSEDED**
+>
+> **Superseded by:** 2026-09-21 FE → Nutrition AI direct integration architecture
+> 이 문서는 이전 `FE → BE → AI` 구조를 전제로 한 historical target contract다. `/internal/v1/nutrition/*`는 현재 FastAPI runtime이나 현재 Nutrition 서비스 통합 필수 endpoint가 아니다. 현재 서비스 구조는 `service_integration_architecture.md`를 기준으로 한다.
+
 **문서명**: 영양성분 분석 AI API 명세 — BE/FE 협의용
 **버전**: v3 draft → v7 (BE/FE 협의용 확정)
 **상태**: pre-PR / 9/8 Phase 2 머지 예정 / BE/FE 협의 진행 가능

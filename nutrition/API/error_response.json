@@ -1,7 +1,9 @@
 {
   "_meta": {
-    "purpose": "Target BE integration contract draft",
+    "purpose": "Historical Target Contract",
     "implementation_status": "NOT_IMPLEMENTED",
+    "integration_status": "SUPERSEDED_BY_2026_09_21_FE_TO_AI_DIRECT_ARCHITECTURE",
+    "note": "Not part of the current Nutrition service integration path. Retained for history only.",
     "version": "draft-v4 (9/4 16:30 KST)",
     "status": "placeholder"
   },
