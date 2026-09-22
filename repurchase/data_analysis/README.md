@@ -52,6 +52,7 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.run_uci_baseline_e2e
 .venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
+.venv/bin/python -m scripts.run_uci_conditional_validation
 .venv/bin/python -m scripts.run_uci_lightgbm_bc_bootstrap
 .venv/bin/python -m scripts.visualize_uci_lightgbm_calibration
 .venv/bin/python -m scripts.visualize_uci_events
