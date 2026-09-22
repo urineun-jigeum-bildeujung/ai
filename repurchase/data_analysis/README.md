@@ -53,6 +53,7 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.run_uci_baseline_e2e
 .venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
 .venv/bin/python -m scripts.run_uci_conditional_validation
+.venv/bin/python -m scripts.run_uci_conditional_bootstrap
 .venv/bin/python -m scripts.run_uci_lightgbm_bc_bootstrap
 .venv/bin/python -m scripts.visualize_uci_lightgbm_calibration
 .venv/bin/python -m scripts.visualize_uci_events
@@ -87,6 +88,13 @@ LightGBM 후보의 구매 후 고정 30일 확률을 현재 시점 조건부 확
 현재 시점 조건부 확률에 대한 별도의 시간별 Calibration·운영 검증을 마치기 전에는
 실제 구매 알림이나 API 응답으로 사용하지 않습니다. 원본 주문 상태 정규화,
 상품군·반려동물 단위 정의와 운영 모델 승인은 후속 작업입니다.
+
+`run_uci_conditional_bootstrap`은 구매 후 0·7·14·30일 Validation 위험집단에서
+고정 AFT 후보와 각 시점의 Train 전체확률 기준선 간 IPCW Brier 차이를 사용자
+단위로 1,000회 복원추출합니다. 같은 사용자의 구매 행을 함께 뽑되 모델과 IPCW
+가중치는 고정하므로, 구간은 평가 표본의 변동만 나타냅니다. 요약·반복별 원자료는
+각각 `reports/uci_aft_conditional_bootstrap.json`과
+`reports/uci_aft_conditional_bootstrap_trials.json.gz`에 저장합니다.
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
