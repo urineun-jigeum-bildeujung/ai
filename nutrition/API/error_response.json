@@ -1,0 +1,34 @@
+{
+  "_meta": {
+    "purpose": "Historical Target Contract",
+    "implementation_status": "NOT_IMPLEMENTED",
+    "integration_status": "SUPERSEDED_BY_2026_09_21_FE_TO_AI_DIRECT_ARCHITECTURE",
+    "note": "Not part of the current Nutrition service integration path. Retained for history only.",
+    "version": "draft-v4 (9/4 16:30 KST)",
+    "status": "placeholder"
+  },
+  "error_wrapper": {
+    "request_id": "string (ULID/UUID)",
+    "status": "FAILED | SERVICE_DEGRADED",
+    "data": null,
+    "warnings": [],
+    "error": {
+      "code": "integer (400 | 401 | 403 | 404 | 422 | 500 | 503)",
+      "reason": "string",
+      "detail": "string | null",
+      "timestamp": "ISO 8601 KST"
+    }
+  },
+  "http_status_codes": {
+    "200 + status=SAFETY_BLOCKED": "알레르기·대상 종 등 안전 조건 충돌 (정상 분석 결과)",
+    "200 + status=INSUFFICIENT_DATA": "영양성분·기준·반려동물 정보 부족 (정상 분석 결과)",
+    "400": "필수 파라미터 누락 또는 요청 형식 오류",
+    "401": "인증 실패 (내부 서비스 인증 헤더 누락·만료)",
+    "403": "해당 데이터 접근 권한 없음",
+    "404": "pet_id / product_id 존재하지 않음",
+    "422": "지원하지 않는 enum·단위·요청 값",
+    "500": "AI 서버 내부 처리 오류",
+    "503": "데이터베이스·외부 API 등 필수 의존 서비스 이용 불가"
+  },
+  "note": "status 필드와 HTTP 코드는 별개. 정상 domain 상태 (SAFETY_BLOCKED, INSUFFICIENT_DATA) 는 HTTP 200 + status 필드로 구분. 5xx 는 진짜 시스템 오류 (DB down, AI 서비스 분석 불가) 일 때만 사용."
+}

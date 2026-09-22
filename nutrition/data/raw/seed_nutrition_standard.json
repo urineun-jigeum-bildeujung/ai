@@ -1,0 +1,542 @@
+{
+  "_comment": "시드 1: 영양표준 (NIAS 2024 + FEDIAF + AAFCO 통합). 출처: 농촌진흥청 국립축산과학원 「반려동물 사료 영양표준」 2024-10 (PDF 33, 42-54쪽 표 2-10/2-17a-h). 성화섭 수기 작성 2026-08-13.",
+  "_source": {
+    "primary": "국립축산과학원 반려동물 사료 영양표준 (2024-10 초판)",
+    "primary_url": "https://www.nongsaro.go.kr/portal/portalMain.do (PDF 첨부파일)",
+    "secondary": "FEDIAF 2024 + AAFCO 2024",
+    "extracted_pages": "PDF p.33 (표 2-10 대사체중당), p.42-49 (표 2-17a-d 성견/성장기 건물100g+1000kcal), p.50- (2-17e-h 성묘/성장기)"
+  },
+  "_checked_at": "2026-09-08",
+  "_phase1_anchor": "PR-B-1 (max_safe provenance 정합 — adult_cat 재구성, growing life-stage 부분 보강, 5 conditional 값은 데이터 모델 결정 후 별도 PR)",
+  "version": "2.1",
+  "units": {
+    "per_dm_100g": "건물(Dry Matter) 100g 당 권장량 (사료 내 함량 기준)",
+    "per_1000kcal": "1,000kcal 대사에너지 당 권장량 (에너지 밀도 기준)",
+    "per_kg_bw_075": "체중^0.75 당 일일 권장 섭취량 (대사체중, 성견/자견용)",
+    "per_kg_bw_067": "체중^0.67 당 일일 권장 섭취량 (대사체중, 성묘/자묘용)"
+  },
+  "energy_reference": {
+    "adult_dog_kcal_per_kg_bw_075": 110,
+    "adult_cat_kcal_per_kg_bw_067": {
+      "indoor_neutered": 75,
+      "active": 100
+    },
+    "conversion_dm_to_1000kcal": "단위/건물 100g × 2.5 = 단위/1,000kcal (4.0kcal ME/g 가정)"
+  },
+  "reference_tables": {
+    "adult_dog_per_dm_100g_NIAS": {
+      "_source": "PDF p.44-45 표 2-17b (성견, 건물 100g)",
+      "단백질_g": 18.0,
+      "아르지닌_g": 0.51,
+      "히스티딘_g": 0.19,
+      "이소루신_g": 0.38,
+      "류신_g": 0.68,
+      "라이신_g": 0.42,
+      "메치오닌_g": 0.33,
+      "메치오닌_시스틴_g": 0.65,
+      "페닐알라닌_g": 0.45,
+      "페닐알라닌_티로신_g": 0.74,
+      "트레오닌_g": 0.48,
+      "트립토판_g": 0.16,
+      "발린_g": 0.49,
+      "지방_g": 5.5,
+      "리놀레산_오메가6_g": 1.1,
+      "칼슘_g": 0.5,
+      "인_g": 0.4,
+      "칼슘_인비율": "1:1 ~ 2:1",
+      "칼륨_g": 0.5,
+      "나트륨_g": 0.08,
+      "염소_g": 0.12,
+      "마그네슘_g": 0.06,
+      "구리_mg": 0.72,
+      "요오드_mg": 0.1,
+      "철_mg": 3.6,
+      "망간_mg": 0.5,
+      "셀레늄_μg": 18.0,
+      "아연_mg": 7.2,
+      "비타민A_IU": 500,
+      "비타민D_IU": 50,
+      "비타민E_IU": 3.6,
+      "비타민B1_mg": 0.21,
+      "비타민B2_mg": 0.52,
+      "비타민B5_mg": 1.2,
+      "비타민B6_mg": 0.15,
+      "비타민B12_μg": 2.8,
+      "비타민B3_mg": 1.36,
+      "비타민B9_μg": 21.6,
+      "콜린_mg": 136,
+      "_max_safe": {
+        "요오드_mg": 1.1,
+        "셀레늄_μg": 200,
+        "비타민A_IU": 40000,
+        "비타민D_IU": 320,
+        "칼슘_g": 2.5,
+        "인_g": 1.6
+      },
+      "_max_safe_provenance": {
+        "요오드_mg": {
+          "value": 1.1,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "셀레늄_μg": {
+          "value": 200,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민A_IU": {
+          "value": 40000,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민D_IU": {
+          "value": 320,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "칼슘_g": {
+          "value": 2.5,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "인_g": {
+          "value": 1.6,
+          "source": "NIAS_2024",
+          "table": "2-17b",
+          "page": "44-45",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        }
+      }
+    },
+    "adult_cat_per_dm_100g_NIAS": {
+      "_source": "PDF p.52-53 표 2-17f (성묘, 건물 100g)",
+      "단백질_g": 26.0,
+      "아르지닌_g": 1.04,
+      "히스티딘_g": 0.31,
+      "이소루신_g": 0.52,
+      "류신_g": 1.24,
+      "라이신_g": 0.83,
+      "메치오닌_g": 0.43,
+      "메치오닌_시스틴_g": 0.88,
+      "페닐알라닌_g": 0.48,
+      "페닐알라닌_티로신_g": 1.88,
+      "트레오닌_g": 0.73,
+      "트립토판_g": 0.16,
+      "발린_g": 0.62,
+      "타우린_건사료_g": 0.1,
+      "타우린_통조림_g": 0.2,
+      "지방_g": 9.0,
+      "리놀레산_오메가6_g": 0.55,
+      "아라키돈산_오메가6_mg": 20.0,
+      "칼슘_g": 0.5,
+      "인_g": 0.4,
+      "칼슘_인비율": "1:1 ~ 2:1",
+      "칼륨_g": 0.6,
+      "나트륨_g": 0.1,
+      "염소_g": 0.15,
+      "마그네슘_g": 0.05,
+      "구리_mg": 0.5,
+      "요오드_mg": 0.1,
+      "철_mg": 8.0,
+      "망간_mg": 0.5,
+      "셀레늄_μg": 15.0,
+      "아연_mg": 7.5,
+      "비타민A_IU": 333,
+      "비타민D_IU": 25,
+      "비타민E_IU": 3.8,
+      "비타민B1_mg": 0.55,
+      "비타민B2_mg": 0.4,
+      "비타민B5_mg": 0.7,
+      "비타민B6_mg": 0.4,
+      "비타민B12_μg": 2.0,
+      "비타민B3_mg": 4.0,
+      "비타민B9_μg": 7.5,
+      "비타민B7_μg": 7.5,
+      "콜린_mg": 240,
+      "_max_safe": {
+        "요오드_mg": 1.1,
+        "비타민A_IU": 40000,
+        "비타민D_IU": 3008
+      },
+      "_max_safe_provenance": {
+        "요오드_mg": {
+          "value": 1.1,
+          "source": "NIAS_2024",
+          "table": "2-17f",
+          "page": "52-53",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민A_IU": {
+          "value": 40000,
+          "source": "NIAS_2024",
+          "table": "2-17f",
+          "page": "52-53",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민D_IU": {
+          "value": 3008,
+          "source": "NIAS_2024",
+          "table": "2-17f",
+          "page": "52-53",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        }
+      },
+      "_max_safe_excluded": {
+        "메치오닌_g_성장기": {
+          "ni_values": [
+            1.5
+          ],
+          "applicability": "life_stage_subtype",
+          "reason": "NIAS '1.5(성장)' 명시. adult_cat이 성장기 아님. growing_cat에 NIAS 값이 속함",
+          "deferred_to": "PR-B-2"
+        },
+        "트립토판_g_성장기": {
+          "ni_values": [
+            1.7
+          ],
+          "applicability": "life_stage_subtype",
+          "reason": "NIAS '1.7(성장)' 명시. adult_cat이 성장기 아님. growing_cat에 NIAS 값이 속함",
+          "deferred_to": "PR-B-2"
+        },
+        "셀레늄_μg": {
+          "ni_values": [],
+          "applicability": "undefined_in_nias",
+          "reason": "NIAS adult_cat 표 2-17f에 NIAS 최대 컬럼 부재 (셀레늄 NIAS max 미정의). 시드 작성자 임의값 200 — provenance 부재로 삭제",
+          "deferred_to": "삭제 (값 검증 불가)"
+        }
+      }
+    },
+    "growing_dog_per_dm_100g_NIAS": {
+      "_source": "PDF p.42 표 2-17a (성장 및 번식기, 건물 100g)",
+      "_note": "초기성장(14주 미만)·번식 / 후기성장(14주 이상) 두 값, 첫번째는 후기성장 기준",
+      "단백질_g": 20.0,
+      "아르지닌_g": 0.74,
+      "히스티딘_g": 0.25,
+      "이소루신_g": 0.5,
+      "류신_g": 0.8,
+      "라이신_g": 0.7,
+      "메치오닌_g": 0.26,
+      "메치오닌_시스틴_g": 0.53,
+      "페닐알라닌_g": 0.5,
+      "페닐알라닌_티로신_g": 1.0,
+      "트레오닌_g": 0.64,
+      "트립토판_g": 0.2,
+      "발린_g": 0.56,
+      "지방_g": 8.5,
+      "리놀레산_오메가6_g": 1.3,
+      "알파리놀렌산_오메가3_g": 0.08,
+      "EPA_DHA_오메가3_g": 0.05,
+      "칼슘_g": 0.8,
+      "인_g": 0.7,
+      "칼슘_인비율": "1:1 ~ 2:1",
+      "칼륨_g": 0.44,
+      "나트륨_g": 0.22,
+      "염소_g": 0.33,
+      "마그네슘_g": 0.04,
+      "구리_mg": 1.1,
+      "요오드_mg": 0.1,
+      "철_mg": 8.8,
+      "망간_mg": 0.56,
+      "셀레늄_μg": 35.0,
+      "아연_mg": 10.0,
+      "비타민A_IU": 500,
+      "비타민D_IU": 50,
+      "비타민E_IU": 5.0,
+      "비타민B1_mg": 0.18,
+      "비타민B2_mg": 0.42,
+      "비타민B5_mg": 1.2,
+      "비타민B6_mg": 0.12,
+      "비타민B12_μg": 2.8,
+      "비타민B3_mg": 1.36,
+      "비타민B9_μg": 21.6,
+      "콜린_mg": 136,
+      "_max_safe": {
+        "요오드_mg": 1.1,
+        "셀레늄_μg": 200,
+        "비타민A_IU": 40000,
+        "비타민D_IU": 320
+      },
+      "_max_safe_provenance": {
+        "요오드_mg": {
+          "value": 1.1,
+          "source": "NIAS_2024",
+          "table": "2-17a",
+          "page": "42-43",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "셀레늄_μg": {
+          "value": 200,
+          "source": "NIAS_2024",
+          "table": "2-17a",
+          "page": "42-43",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민A_IU": {
+          "value": 40000,
+          "source": "NIAS_2024",
+          "table": "2-17a",
+          "page": "42-43",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": "번식기 40,000 여부는 미확인"
+        },
+        "비타민D_IU": {
+          "value": 320,
+          "source": "NIAS_2024",
+          "table": "2-17a",
+          "page": "42-43",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        }
+      },
+      "_max_safe_excluded": {
+        "칼슘_g": {
+          "ni_values": [
+            2.5,
+            1.8
+          ],
+          "applicability": "conditional",
+          "reason": "NIAS 각주 d: 체중 31.75kg+ 견종은 1.8, 기타 2.5. single scalar로 표현 불가",
+          "deferred_to": "PR-B-2 (conditional 데이터 모델)"
+        },
+        "인_g": {
+          "ni_values": [
+            1.6
+          ],
+          "applicability": "conditional",
+          "reason": "NIAS 각주 e: 성장기 자체 NIAS max 부재, 전연령 사료는 성견 1.6 적용. growing_dog 자체에는 max 미정의",
+          "deferred_to": "PR-B-2 (conditional 데이터 모델)"
+        }
+      }
+    },
+    "growing_cat_per_dm_100g_NIAS": {
+      "_source": "PDF p.50 표 2-17e (성장 및 번식기, 건물 100g)",
+      "단백질_g_성장": 28.0,
+      "단백질_g_번식": 30.0,
+      "아르지닌_g_성장": 1.07,
+      "아르지닌_g_번식": 1.11,
+      "히스티딘_g": 0.33,
+      "이소루신_g": 0.54,
+      "류신_g": 1.28,
+      "라이신_g": 0.85,
+      "메치오닌_g": 0.44,
+      "메치오닌_시스틴_g": 0.88,
+      "페닐알라닌_g": 0.5,
+      "페닐알라닌_티로신_g": 1.91,
+      "트레오닌_g": 0.65,
+      "트립토판_g": 0.16,
+      "발린_g": 0.64,
+      "타우린_건사료_g": 0.1,
+      "타우린_통조림_g": 0.25,
+      "지방_g": 9.0,
+      "리놀레산_오메가6_g": 0.55,
+      "아라키돈산_오메가6_mg": 20.0,
+      "알파리놀렌산_오메가3_g": 0.02,
+      "EPA_DHA_오메가3_g": 0.01,
+      "칼슘_g": 1.0,
+      "인_g": 0.84,
+      "칼슘_인비율": "1:1 ~ 2:1",
+      "칼륨_g": 0.6,
+      "나트륨_g": 0.2,
+      "염소_g": 0.3,
+      "마그네슘_g": 0.05,
+      "구리_mg": 1.25,
+      "요오드_mg": 0.13,
+      "철_mg": 10.0,
+      "망간_mg": 0.6,
+      "셀레늄_μg": 20.0,
+      "아연_mg": 11.0,
+      "비타민A_IU": 500,
+      "비타민D_IU": 30,
+      "비타민E_IU": 4.0,
+      "비타민B1_mg": 0.4,
+      "비타민B2_mg": 0.4,
+      "비타민B5_mg": 1.4,
+      "비타민B6_mg": 0.3,
+      "비타민B12_μg": 2.0,
+      "비타민B3_mg": 3.0,
+      "비타민B9_μg": 15.0,
+      "콜린_mg": 240,
+      "_max_safe": {
+        "요오드_mg": 1.1,
+        "비타민D_IU": 3008
+      },
+      "_max_safe_provenance": {
+        "요오드_mg": {
+          "value": 1.1,
+          "source": "NIAS_2024",
+          "table": "2-17e",
+          "page": "50-51",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        },
+        "비타민D_IU": {
+          "value": 3008,
+          "source": "NIAS_2024",
+          "table": "2-17e",
+          "page": "50-51",
+          "basis": "dry_matter",
+          "applicability": "unconditional",
+          "note": null
+        }
+      },
+      "_max_safe_excluded": {
+        "메치오닌_g": {
+          "ni_values": [
+            1.5
+          ],
+          "applicability": "life_stage_subtype",
+          "reason": "NIAS '1.5(성장)' 명시. 번식기 값 미정. single canonical key로 표현 불가",
+          "deferred_to": "PR-B-2 (life_stage_subtype 데이터 모델)"
+        },
+        "트립토판_g": {
+          "ni_values": [
+            1.7
+          ],
+          "applicability": "life_stage_subtype",
+          "reason": "NIAS '1.7(성장)' 명시. 번식기 값 미정. single canonical key로 표현 불가",
+          "deferred_to": "PR-B-2 (life_stage_subtype 데이터 모델)"
+        },
+        "비타민A_IU": {
+          "ni_values": {
+            "growth": 40000,
+            "reproduction": 33333
+          },
+          "applicability": "life_stage_subtype",
+          "reason": "NIAS '40,000(성장) / 33,333(번식)'. single canonical key로 growth/reproduction 분기 표현 불가",
+          "deferred_to": "PR-B-2 (life_stage_subtype 데이터 모델)"
+        }
+      }
+    }
+  },
+  "persona_overrides": {
+    "joint_health_maru": {
+      "boost_pct": {
+        "EPA_DHA_오메가3_g": 50,
+        "_note": "관절 보호 영양소 +30~50% 권장 (마루 슬관절)"
+      },
+      "consideration": "글루코사민·콘드로이틴은 NIAS에 없음. 사료 내 첨가물로 별도 표기"
+    },
+    "skin_allergy_coco": {
+      "restrict": [
+        "닭고기",
+        "소고기",
+        "유제품",
+        "계란",
+        "밀"
+      ],
+      "boost_pct": {
+        "리놀레산_오메가6_g": 30,
+        "EPA_DHA_오메가3_g": 50,
+        "아연_mg": 30,
+        "_note": "오메가3·아연 +30~50%"
+      }
+    },
+    "senior_low_activity_chichi": {
+      "restrict": {
+        "나트륨_g": 0.05,
+        "인_g": 0.3,
+        "_note": "나트륨·인 줄이기 (신장 부담)"
+      },
+      "boost_pct": {
+        "비타민E_IU": 50,
+        "EPA_DHA_오메가3_g": 30
+      },
+      "vet_referral_required": true,
+      "diagnostic_expressions_forbidden": true
+    },
+    "kitten_growing": {
+      "_note": "growing_cat_per_dm_100g_NIAS 그대로 적용"
+    },
+    "puppy_growing": {
+      "_note": "growing_dog_per_dm_100g_NIAS 그대로 적용"
+    }
+  },
+  "energy_requirement_formulas": {
+    "adult_dog_per_kg_bw_075": {
+      "1-2y": 130,
+      "3-7y": 110,
+      ">=7y_senior": 95,
+      "low_activity": 95,
+      "moderate_1_3h": 110,
+      "active_1_3h": 125,
+      "high_activity_3_6h": "150-175",
+      "obesity_risk_max": 90
+    },
+    "adult_cat_per_kg_bw_067": {
+      "indoor_neutered": 75,
+      "active": 100
+    },
+    "puppy": "8주-1년: (254.1 - 135.0 × [현재체중/예상성체체중]) × 현재체중^0.75",
+    "kitten": "-4개월: 유지×2.0-2.5 / 4-9개월: 유지×1.75-2.0 / 9-12개월: 유지×1.5"
+  },
+  "food_hazard_reference": {
+    "_source": "PDF p.86-90 (7.4 사료 부작용)",
+    "common_dog_hazards": [
+      "포도·건포도",
+      "초콜릿",
+      "양파·마늘",
+      "자일리톨",
+      "아보카도",
+      "마카다미아",
+      "알코올",
+      "카페인"
+    ],
+    "common_cat_hazards": [
+      "양파·마늘",
+      "초콜릿",
+      "포도·건포도",
+      "자일리톨",
+      "알로에",
+      "백합",
+      "essential oils"
+    ],
+    "essential_amino_acid_diff": {
+      "taurine_cats_only": "고양이는 타우린 합성 불가 — 사료에 0.1% 이상 필수 (건사료) / 0.2% (통조림)",
+      "arachidonic_acid_cats_only": "고양이는 아라키돈산 합성 불가 — 0.02% 이상 필수"
+    }
+  },
+  "matched_policies": {
+    "P0_junior_friendly": "의사·영양학 용어 → 일상에 가까운 언어 50개 매핑 (시드 3 easy_term_dictionary)",
+    "P1_proposal_only": "권장량 비교는 '부족 / 적정 / 과다' 카드만, 사료 변경은 사용자 승인",
+    "P2_confidence_disclosure": "매칭 점수 80% 미만은 '참고용' 명시, 60% 미만은 보류",
+    "P3_recommend_with_reason": "권장량 비교 결과 + 알레르기 사유 카드 함께 제시",
+    "P5_no_health_diagnosis": "진단 표현 금지 (P5) — '관절에 좋은 성분' 같은 안내만",
+    "P6_evidence_scope": "NIAS 2024 / FEDIAF 2024 / AAFCO 2024 출처 명시"
+  },
+  "_change_summary": "max_safe 정합성 보정 — adult_cat NIAS adult_cat 기준 재구성, growing life-stage 부분 보강 (unconditional 한정), 5 conditional 값은 데이터 모델 결정 후 별도 PR (PR-B-2)"
+}

@@ -1,0 +1,858 @@
+{
+  "_comment": "시드 11 v2: 알레르기 ↔ 사료 성분 키워드 매핑 (확장판). v1 11종(반려동물 사료 원료) + WHO/IUIS 16종(사람→반려동물 항원) + EU 1169/2011 14종(식품 라벨 의무) + FDA FALCPA 8종(미국 라벨 의무) → 30종 통합. 시드 11 v3.11 스키마 호환 (severity_default 추가).",
+  "_source": {
+    "primary": "AAFCO Pet Food Label + WHO/IUIS Allergen Nomenclature (MDPI IJMS 25(19) 10520) + EU Regulation 1169/2011 Annex II + FDA FALCPA 21 CFR 117 + NIAS 2024",
+    "extracted_at": "2026-08-24",
+    "version": "2.0",
+    "phase1_anchor": "골라주개 Phase 1 — 알레르기 자동 제외 + 안전 카드 (P0 안전원칙) + 글로벌 규제 정합"
+  },
+  "version": "3.0",
+  "match_rule": {
+    "type": "keyword_substring",
+    "case_insensitive": true,
+    "normalization": "NFKC + lowercase + strip whitespace",
+    "match_threshold": 1,
+    "fallback_severity": "moderate"
+  },
+  "all_count": 30,
+  "regulatory_anchors": {
+    "AAFCO_2024": "반려동물 사료 원료 정의 (8종)",
+    "WHO_IUIS_2024": "국제알레르기명명법 — 반려동물 유래 항원 16종 (Fel d 1~8 + Can f 1~8)",
+    "EU_1169_2011_Annex_II": "EU 식품 라벨 의무 알레르기 14종",
+    "FDA_FALCPA_21_CFR_117": "미국 식품 알레르기 라벨링 및 소비자 보호법 8종",
+    "NIAS_2024": "한국 농진청 반려동물 사료 영양표준"
+  },
+  "items": [
+    {
+      "allergen_code": "chicken",
+      "allergen_name_ko": "닭고기",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "CHKN-MEAT",
+        "CHKN-BYPRODUCT-MEAL",
+        "CHKN-FAT",
+        "CHKN-LIVER",
+        "CHKN-HEART",
+        "CHKN-BROTH"
+      ],
+      "matched_keywords": [
+        "닭고기",
+        "닭",
+        "치킨",
+        "닭가슴살",
+        "닭안심",
+        "닭다리",
+        "닭날개",
+        "닭발",
+        "닭껍질",
+        "닭간",
+        "chicken",
+        "poultry",
+        "volaille",
+        "poulet",
+        "pollo",
+        "huhn",
+        "kyckling",
+        "kip",
+        "broiler",
+        "gallina"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "beef",
+      "allergen_name_ko": "소고기",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "BEEF-MEAT",
+        "BEEF-MEAL",
+        "BEEF-FAT",
+        "BEEF-LIVER",
+        "BEEF-HEART",
+        "BEEF-BROTH"
+      ],
+      "matched_keywords": [
+        "소고기",
+        "쇠고기",
+        "비프",
+        "소",
+        "우육",
+        "소간",
+        "소심장",
+        "소혀",
+        "사태",
+        "양지",
+        "beef",
+        "boeuf",
+        "bœuf",
+        "ternera",
+        "rindfleisch",
+        "carne",
+        "manzo",
+        "buey",
+        "vaca"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "dairy",
+      "allergen_name_ko": "유제품",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "WHEY",
+        "WPC",
+        "CASEIN",
+        "LACTOSE",
+        "MILK-FAT",
+        "CHEESE"
+      ],
+      "matched_keywords": [
+        "우유",
+        "분유",
+        "치즈",
+        "요거트",
+        "유청",
+        "유청단백질",
+        "카제인",
+        "유크림",
+        "연유",
+        "유당",
+        "whey",
+        "casein",
+        "milk",
+        "dairy",
+        "lactose"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "egg",
+      "allergen_name_ko": "계란",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "EGG-WHOLE",
+        "EGG-WHITE",
+        "EGG-YOLK",
+        "EGG-DRIED"
+      ],
+      "matched_keywords": [
+        "계란",
+        "달걀",
+        "난백",
+        "난황",
+        "전란",
+        "에그",
+        "egg",
+        "whole egg",
+        "dried egg",
+        "albumin"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "lamb",
+      "allergen_name_ko": "양고기",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "LAMB-MEAT",
+        "LAMB-MEAL",
+        "LAMB-FAT",
+        "LAMB-LIVER"
+      ],
+      "matched_keywords": [
+        "양고기",
+        "램",
+        "양",
+        "양육",
+        "양간",
+        "머튼",
+        "lamb",
+        "mutton",
+        "agneau",
+        "cordero",
+        "lamm",
+        "abbacchio"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "pork",
+      "allergen_name_ko": "돼지고기",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "PORK-MEAT",
+        "PORK-MEAL",
+        "PORK-FAT",
+        "PORK-LIVER"
+      ],
+      "matched_keywords": [
+        "돼지고기",
+        "돈육",
+        "포크",
+        "돼지",
+        "돼지간",
+        "베이컨",
+        "햄",
+        "돈창",
+        "pork",
+        "porc",
+        "maiale",
+        "cerdo",
+        "schweinefleisch",
+        "svinekjøtt"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "fish",
+      "allergen_name_ko": "생선",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "SALMON",
+        "TUNA",
+        "MACKEREL",
+        "HERRING",
+        "SARDINE",
+        "WHITEFISH",
+        "FISH-MEAL",
+        "FISH-OIL"
+      ],
+      "matched_keywords": [
+        "연어",
+        "참치",
+        "고등어",
+        "청어",
+        "정어리",
+        "삼치",
+        "생선",
+        "어류",
+        "생선분",
+        "연어유",
+        "salmon",
+        "tuna",
+        "fish",
+        "whitefish",
+        "mackerel",
+        "poisson",
+        "pesce",
+        "pescado",
+        "fisch",
+        "fisk"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "wheat",
+      "allergen_name_ko": "밀 / 글루텐",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "WHEAT",
+        "WHEAT-GLUTEN",
+        "WHEAT-FLOUR",
+        "WHEAT-BRAN"
+      ],
+      "matched_keywords": [
+        "밀",
+        "글루텐",
+        "소맥",
+        "강력분",
+        "박력분",
+        "통밀",
+        "밀기울",
+        "wheat",
+        "gluten",
+        "whole wheat",
+        "wheat flour"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "soy",
+      "allergen_name_ko": "대두",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "SOYBEAN-MEAL",
+        "SOY-PROTEIN",
+        "SOY-OIL",
+        "TOFU"
+      ],
+      "matched_keywords": [
+        "대두",
+        "콩",
+        "두부",
+        "된장",
+        "청국장",
+        "콩비지",
+        "대두단백",
+        "soybean",
+        "soy",
+        "soy protein"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "corn",
+      "allergen_name_ko": "옥수수",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "CORN",
+        "CORN-GLUTEN-MEAL",
+        "CORN-STARCH",
+        "MAIZE"
+      ],
+      "matched_keywords": [
+        "옥수수",
+        "콘",
+        "옥전분",
+        "옥수수글루텐",
+        "전분",
+        "corn",
+        "maize",
+        "corn gluten",
+        "maïs",
+        "mais",
+        "granoturco",
+        "maíz"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "potato",
+      "allergen_name_ko": "감자 / 고구마",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "POTATO",
+        "POTATO-STARCH",
+        "SWEET-POTATO",
+        "TAPIOCA"
+      ],
+      "matched_keywords": [
+        "감자",
+        "고구마",
+        "감자전분",
+        "타피오카",
+        "potato",
+        "sweet potato",
+        "tapioca",
+        "yam"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "tree_nuts",
+      "allergen_name_ko": "견과류 (호두, 아몬드, 캐슈 등)",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "WALNUT",
+        "ALMOND",
+        "CASHEW",
+        "HAZELNUT",
+        "PECAN",
+        "PISTACHIO",
+        "BRAZIL-NUT",
+        "MACADAMIA"
+      ],
+      "matched_keywords": [
+        "호두",
+        "아몬드",
+        "캐슈",
+        "헤이즐넛",
+        "피칸",
+        "피스타치오",
+        "마카다미아",
+        "브라질넛",
+        "견과",
+        "walnut",
+        "almond",
+        "cashew",
+        "hazelnut",
+        "pecan",
+        "pistachio",
+        "macadamia",
+        "brazil nut",
+        "tree nut"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "peanut",
+      "allergen_name_ko": "땅콩",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "PEANUT",
+        "PEANUT-BUTTER",
+        "PEANUT-OIL",
+        "PEANUT-FLOUR"
+      ],
+      "matched_keywords": [
+        "땅콩",
+        "피넛",
+        "땅콩버터",
+        "땅콩유",
+        "peanut",
+        "peanut butter",
+        "groundnut"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "shellfish",
+      "allergen_name_ko": "갑각류 (새우, 게, 랍스터 등)",
+      "severity_default": "critical",
+      "ingredient_codes": [
+        "SHRIMP",
+        "CRAB",
+        "LOBSTER",
+        "CRAWFISH",
+        "PRAWN",
+        "KRILL"
+      ],
+      "matched_keywords": [
+        "새우",
+        "게",
+        "랍스터",
+        "가재",
+        "크릴",
+        "갑각류",
+        "shrimp",
+        "crab",
+        "lobster",
+        "prawn",
+        "crawfish",
+        "shellfish",
+        "crustacean"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "mollusk",
+      "allergen_name_ko": "연체류 (오징어, 조개, 홍합 등)",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "SQUID",
+        "OCTOPUS",
+        "CLAM",
+        "MUSSEL",
+        "OYSTER",
+        "SCALLOP"
+      ],
+      "matched_keywords": [
+        "오징어",
+        "문어",
+        "조개",
+        "홍합",
+        "굴",
+        "가리비",
+        "연체류",
+        "squid",
+        "octopus",
+        "clam",
+        "mussel",
+        "oyster",
+        "scallop",
+        "mollusk"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "sesame",
+      "allergen_name_ko": "참깨 / 들깨",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "SESAME",
+        "SESAME-OIL",
+        "SESAME-SEED",
+        "PERILLA"
+      ],
+      "matched_keywords": [
+        "참깨",
+        "들깨",
+        "깨",
+        "참기름",
+        "들기름",
+        "sesame",
+        "sesame oil",
+        "perilla"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "celery",
+      "allergen_name_ko": "셀러리",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "CELERY",
+        "CELERY-SEED",
+        "CELERY-ROOT"
+      ],
+      "matched_keywords": [
+        "셀러리",
+        "celery",
+        "celery seed"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "mustard",
+      "allergen_name_ko": "겨자",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "MUSTARD",
+        "MUSTARD-SEED",
+        "MUSTARD-OIL"
+      ],
+      "matched_keywords": [
+        "겨자",
+        "겨자가루",
+        "겨자유",
+        "mustard",
+        "mustard seed"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "sulfite",
+      "allergen_name_ko": "아황산염",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "SULFITE",
+        "SODIUM-METABISULFITE",
+        "POTASSIUM-METABISULFITE"
+      ],
+      "matched_keywords": [
+        "아황산",
+        "아황산나트륨",
+        "메타중아황산",
+        "이산화황",
+        "sulfite",
+        "sodium metabisulfite",
+        "sulfur dioxide",
+        "e220"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011",
+        "FDA_FALCPA"
+      ]
+    },
+    {
+      "allergen_code": "lupin",
+      "allergen_name_ko": "루핀",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "LUPIN",
+        "LUPIN-FLOUR",
+        "LUPIN-PROTEIN"
+      ],
+      "matched_keywords": [
+        "루핀",
+        "lupin",
+        "lupine",
+        "lupin flour"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "fel_d_allergen",
+      "allergen_name_ko": "고양이 비듬 항원 (Fel d 1~8) — 사람 알레르기",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "FEL-D-1",
+        "FEL-D-2",
+        "FEL-D-3",
+        "FEL-D-4",
+        "FEL-D-5",
+        "FEL-D-6",
+        "FEL-D-7",
+        "FEL-D-8"
+      ],
+      "matched_keywords": [
+        "fel d 1",
+        "fel d 2",
+        "fel d 3",
+        "fel d 4",
+        "fel d 5",
+        "fel d 6",
+        "fel d 7",
+        "fel d 8",
+        "cat dander",
+        "cat saliva",
+        "cat allergen"
+      ],
+      "regulatory_source": [
+        "WHO_IUIS_2024"
+      ],
+      "note": "사람→고양이 알레르기 항원. 사료 자체가 아닌 반려동물 환경에서 사람에게 영향. 매칭 시 사람 보호자 알레르기 표시용."
+    },
+    {
+      "allergen_code": "can_f_allergen",
+      "allergen_name_ko": "개 비듬 항원 (Can f 1~8) — 사람 알레르기",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "CAN-F-1",
+        "CAN-F-2",
+        "CAN-F-3",
+        "CAN-F-4",
+        "CAN-F-5",
+        "CAN-F-6",
+        "CAN-F-7",
+        "CAN-F-8"
+      ],
+      "matched_keywords": [
+        "can f 1",
+        "can f 2",
+        "can f 3",
+        "can f 4",
+        "can f 5",
+        "can f 6",
+        "can f 7",
+        "can f 8",
+        "dog dander",
+        "dog saliva",
+        "dog allergen"
+      ],
+      "regulatory_source": [
+        "WHO_IUIS_2024"
+      ],
+      "note": "사람→개 알레르기 항원. 사료 자체가 아닌 반려동물 환경에서 사람에게 영향."
+    },
+    {
+      "allergen_code": "barley",
+      "allergen_name_ko": "보리",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "BARLEY",
+        "BARLEY-FLOUR",
+        "BARLEY-GLUTEN"
+      ],
+      "matched_keywords": [
+        "보리",
+        "보리쌀",
+        "보리가루",
+        "보리글루텐",
+        "barley",
+        "barley flour",
+        "barley gluten"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "rye",
+      "allergen_name_ko": "호밀",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "RYE",
+        "RYE-FLOUR",
+        "RYE-BRAN"
+      ],
+      "matched_keywords": [
+        "호밀",
+        "호밀가루",
+        "호밀빵",
+        "rye",
+        "rye flour",
+        "rye bran"
+      ],
+      "regulatory_source": [
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "oat",
+      "allergen_name_ko": "귀리",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "OAT",
+        "OAT-FLOUR",
+        "OAT-BRAN",
+        "OATMEAL"
+      ],
+      "matched_keywords": [
+        "귀리",
+        "귀리가루",
+        "오트밀",
+        "오트",
+        "oat",
+        "oatmeal",
+        "oat bran"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "rice",
+      "allergen_name_ko": "쌀",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "RICE",
+        "RICE-FLOUR",
+        "RICE-BRAN",
+        "BROWN-RICE"
+      ],
+      "matched_keywords": [
+        "쌀",
+        "백미",
+        "현미",
+        "찹쌀",
+        "멥쌀",
+        "쌀가루",
+        "rice",
+        "brown rice",
+        "rice flour"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "buckwheat",
+      "allergen_name_ko": "메밀",
+      "severity_default": "severe",
+      "ingredient_codes": [
+        "BUCKWHEAT",
+        "BUCKWHEAT-FLOUR"
+      ],
+      "matched_keywords": [
+        "메밀",
+        "메밀가루",
+        "buckwheat",
+        "soba"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024",
+        "EU_1169_2011"
+      ]
+    },
+    {
+      "allergen_code": "yeast",
+      "allergen_name_ko": "효모",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "YEAST",
+        "BREWERS-YEAST",
+        "YEAST-EXTRACT"
+      ],
+      "matched_keywords": [
+        "효모",
+        "맥주효모",
+        "이스트",
+        "효모추출물",
+        "yeast",
+        "brewers yeast",
+        "yeast extract"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    },
+    {
+      "allergen_code": "tomato",
+      "allergen_name_ko": "토마토",
+      "severity_default": "moderate",
+      "ingredient_codes": [
+        "TOMATO",
+        "TOMATO-PASTE",
+        "TOMATO-POMACE"
+      ],
+      "matched_keywords": [
+        "토마토",
+        "토마토페이스트",
+        "토마토펄프",
+        "tomato",
+        "tomato paste"
+      ],
+      "regulatory_source": [
+        "AAFCO_2024"
+      ]
+    }
+  ],
+  "usage": {
+    "match_api": "POST /api/match/filter { pet_id, product_ingredient_text, user_allergen_profile }",
+    "rule": "pet.allergies 와 items[].allergen_code 매칭 → ingredient_text에 items[].matched_keywords 중 1개 이상 substring → 제외 + 이유 카드 표시 (severity_default 적용)",
+    "user_human_allergy": "fel_d_allergen / can_f_allergen은 사람 보호자 알레르기 매칭용 — 사람 user_allergen_profile에 등록 시 환경 알림",
+    "fallback": "수기 매칭 결과가 0이면 AAFCO 표준명 cross-reference로 1차 보정",
+    "fallback_severity": "moderate (v3.11 신규 — 알레르기 코드는 severity_default 박지, 미지정 시 moderate)"
+  },
+  "diff_from_v1": {
+    "added_19": [
+      "tree_nuts",
+      "peanut",
+      "shellfish",
+      "mollusk",
+      "sesame",
+      "celery",
+      "mustard",
+      "sulfite",
+      "lupin",
+      "fel_d_allergen (8종 묶음)",
+      "can_f_allergen (8종 묶음)",
+      "barley",
+      "rye",
+      "oat",
+      "rice",
+      "buckwheat",
+      "yeast",
+      "tomato"
+    ],
+    "schema_change": "v3.11: severity → severity_default (컬럼명 변경, 의미 동일)",
+    "regulatory_coverage": "AAFCO + EU + FDA + WHO/IUIS = 4개 글로벌 규제 정합"
+  },
+  "_v3_changelog": "다국어 synonyms 12종 추가 (FR/ES/DE/IT/SV) — OPFF 박지 다국어 표기 매칭 보강"
+}
