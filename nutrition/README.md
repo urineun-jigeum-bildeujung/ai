@@ -15,10 +15,32 @@
 ## 실행 환경
 
 - Python 3.11 사용을 전제로 한다.
-- 의존성 설치: `python -m pip install -r requirements.lock`
-- 테스트 실행: `python -m pytest tests -q`
+- 패키지 루트에서 의존성 설치: `python -m pip install -r requirements.lock`
+- 패키지 루트에서 테스트 실행: `python -m pytest tests -q`
+- FastAPI 실행: `python -m uvicorn scripts.api_nutrition:app --reload --port 8002`
 
-이 브랜치를 만들 때 Python 3.11 문법 검사는 통과했다. 다만 해당 로컬 환경에는 `pytest`가 설치되어 있지 않아 전체 테스트를 새로 실행하지 않았다.
+## API 계약 구분
+
+### 현재 Runtime API
+
+`scripts/api_nutrition.py`에 실제 구현된 경로는 다음과 같다.
+
+- `GET /health`
+- `POST /api/nutrition/analyze`
+- `POST /api/nutrition/analyze/by-product-id`
+- `POST /api/nutrition/safety`
+- `POST /api/nutrition/report`
+- `POST /api/nutrition/compare` (현재 HTTP 501)
+
+### Target BE integration contract draft
+
+`API/nutrition_request.json`, `API/nutrition_response.json`, `API/error_response.json`은 목표 BE 연동 계약 초안이다. 이 문서의 `/internal/v1/nutrition/*` 경로는 현재 runtime에 구현되어 있지 않으며, 실제 FastAPI route 또는 응답 스키마로 해석하면 안 된다.
+
+## 현재 구현 범위
+
+완료된 범위는 deterministic runtime, persisted-product adapter, P0-D, 알레르기·종·생애주기 safety, 5축 상태 계약이다.
+
+아직 구현 중이거나 미구현인 범위는 최종 BE internal API, Shared SafetyDecision, Feeding, Human Gold 확장, 10K functional matrix, 100K regression이다.
 
 ## 해석 주의
 
@@ -26,5 +48,6 @@
 - HTTP 200은 분석 성공이나 `READY`를 의미하지 않는다.
 - `data/raw/`와 `data/processed/`에는 이 패키지 실행·감사에 필요한 선택 파일만 포함한다. 전체 로컬 원천 데이터와 archive는 포함하지 않는다.
 - 현재 API runtime에 적용되지 않은 BE 변경안은 이 패키지에 포함하지 않았다.
+- `data/processed/baseline_manifest_v3.json`은 2026-09-04 당시 생성된 historical reproduction manifest이며, 현재 GitHub branch/commit metadata를 의미하지 않는다.
 
 자세한 현재 상태와 한계는 `docs/nutrition_persisted_product_e2e_audit_v1.md`를 기준으로 확인한다.

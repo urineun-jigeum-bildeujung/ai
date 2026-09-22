@@ -3,7 +3,8 @@ from pathlib import Path
 import sys
 import unittest
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(SCRIPTS / "nutrition"))
 

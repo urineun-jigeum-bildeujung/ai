@@ -1,6 +1,7 @@
 {
   "_meta": {
-    "purpose": "nutrition 분석 API 응답 스키마 placeholder (v4, 9/4 16:30 KST v3_draft v4 정합)",
+    "purpose": "Target BE integration contract draft",
+    "implementation_status": "NOT_IMPLEMENTED",
     "version": "draft-v4 (9/4 16:30 KST)",
     "status": "placeholder, 9/8 Phase 2 nutrition_ai_api_spec_v2 와 동기화 예정",
     "related": [

@@ -3,7 +3,8 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPTS = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
 sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / "nutrition")]
 
 from allergen_service import canonicalize_profile, evaluate_safety, product_allergen_refs
@@ -65,4 +66,3 @@ class P0Contracts(unittest.TestCase):
                 {"product_id": "x", "nutrient_code": "CRUDE_PROTEIN", "aligned_value": 18, "basis": "AS_FED"}]
         self.assertEqual(normalize_basis(rows)[1]["basis_normalized_value"], 20)
         self.assertIsNone(normalize_basis(rows[1:])[0]["basis_normalized_value"])
-
