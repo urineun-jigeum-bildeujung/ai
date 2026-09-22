@@ -3,7 +3,7 @@
 - POST /api/nutrition/analyze   1사료 분석 (FR-AI-1-01~05)
 - POST /api/nutrition/safety    안전 7원칙 P0 검증
 - POST /api/nutrition/report    리포트 생성 (FR-AI-1-06)
-- POST /api/nutrition/compare   LLM 비교 (Phase 2, 9월)
+- POST /api/nutrition/compare   Future / Not Implemented (HTTP 501)
 - GET  /health                  서비스 상태
 
 실행:
@@ -60,7 +60,7 @@ from pipeline_p1c_v1 import (  # type: ignore  # noqa: E402
 app = FastAPI(
     title="골라주개냥 영양성분 분석 API",
     version="1.0.0",
-    description="사료 성분 분석 + 알레르기 hard filter + NIAS 2024 비교 (8/20 시작)",
+    description="사료 성분 분석 + 알레르기 hard filter + NIAS 2024 비교",
 )
 
 SEED_FEED_CODES = load_seed("seed_feed_codes.json")
@@ -339,12 +339,23 @@ def health() -> dict[str, Any]:
         "status": "ok",
         "service": "nutrition",
         "version": app.version,
+        # Keep ``endpoints`` as the backward-compatible list of endpoints that
+        # can produce a current runtime response.  Future routes are reported
+        # separately so an HTTP 501 route is never mistaken for an available
+        # Nutrition capability.
         "endpoints": [
             "POST /api/nutrition/analyze",
             "POST /api/nutrition/analyze/by-product-id",
             "POST /api/nutrition/safety",
             "POST /api/nutrition/report",
-            "POST /api/nutrition/compare (Phase 2)",
+        ],
+        "future_endpoints": [
+            {
+                "method": "POST",
+                "path": "/api/nutrition/compare",
+                "status": "NOT_IMPLEMENTED",
+                "http_status": 501,
+            },
         ],
     }
 
@@ -433,8 +444,8 @@ def report(req: AnalyzeRequest) -> dict[str, Any]:
 
 @app.post("/api/nutrition/compare")
 def compare() -> dict[str, Any]:
-    """LLM 비교 (Phase 2, 9월 구현 예정)"""
-    raise HTTPException(status_code=501, detail="Phase 2 (9월) 구현 예정 — sentence-transformers + GPT-4o-mini")
+    """Reserved comparison route; it is outside the current runtime scope."""
+    raise HTTPException(status_code=501, detail="NOT_IMPLEMENTED: comparison is outside the current Nutrition runtime scope")
 
 
 def _now_iso() -> str:
