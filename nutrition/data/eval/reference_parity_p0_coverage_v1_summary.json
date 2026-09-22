@@ -1,0 +1,264 @@
+{
+  "total_products": 394,
+  "food_products": 205,
+  "form_counts": {
+    "ALL|MOISTURE_DERIVED|DRY": 4,
+    "FOOD|MOISTURE_DERIVED|DRY": 4,
+    "ALL|UNKNOWN|UNKNOWN": 291,
+    "FOOD|UNKNOWN|UNKNOWN": 102,
+    "ALL|MOISTURE_DERIVED|CANNED": 2,
+    "FOOD|MOISTURE_DERIVED|CANNED": 2,
+    "ALL|EXPLICIT|DRY": 88,
+    "FOOD|EXPLICIT|DRY": 88,
+    "ALL|EXPLICIT|CANNED": 9,
+    "FOOD|EXPLICIT|CANNED": 9
+  },
+  "life_stage_counts": {
+    "UNKNOWN": 302,
+    "ADULT_MAINTENANCE": 11,
+    "ALL_LIFE_STAGES": 74,
+    "GROWTH_REPRODUCTION": 7
+  },
+  "life_stage_detail_counts": {
+    "UNKNOWN": 7
+  },
+  "source_inventory": {
+    "OPFF": {
+      "product_count": 108,
+      "category:food": 108,
+      "species:UNKNOWN": 108,
+      "life_stage:UNKNOWN": 108,
+      "nutrition_items_present": 25,
+      "ingredients_present": 28,
+      "moisture_present": 6,
+      "explicit_product_form_present": 0
+    },
+    "OEM": {
+      "product_count": 189,
+      "category:UNKNOWN": 189,
+      "species:DOG": 176,
+      "life_stage:UNKNOWN": 189,
+      "nutrition_items_present": 0,
+      "ingredients_present": 44,
+      "moisture_present": 0,
+      "explicit_product_form_present": 0,
+      "species:CAT": 13
+    },
+    "GLOBAL": {
+      "product_count": 97,
+      "category:food": 97,
+      "species:CAT": 35,
+      "life_stage:ADULT_MAINTENANCE": 11,
+      "nutrition_items_present": 0,
+      "ingredients_present": 47,
+      "moisture_present": 0,
+      "explicit_product_form_present": 97,
+      "species:DOG": 33,
+      "life_stage:ALL_LIFE_STAGES": 74,
+      "life_stage:GROWTH_REPRODUCTION": 7,
+      "species:UNKNOWN": 29,
+      "life_stage:UNKNOWN": 5
+    }
+  },
+  "nutrient_coverage": {
+    "ALL_PRODUCTS:CALCIUM": {
+      "present": 0,
+      "valid": 0,
+      "missing": 394,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "ALL_PRODUCTS:CRUDE_FAT": {
+      "present": 22,
+      "valid": 19,
+      "missing": 372,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "ALL_PRODUCTS:CRUDE_PROTEIN": {
+      "present": 22,
+      "valid": 20,
+      "missing": 372,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "ALL_PRODUCTS:MOISTURE": {
+      "present": 6,
+      "valid": 6,
+      "missing": 388,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "ALL_PRODUCTS:PHOSPHORUS": {
+      "present": 0,
+      "valid": 0,
+      "missing": 394,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "ALL_PRODUCTS:TAURINE": {
+      "present": 0,
+      "valid": 0,
+      "missing": 394,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "DOG:CRUDE_PROTEIN": {
+      "present": 0,
+      "valid": 0,
+      "missing": 209,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "DOG:CRUDE_FAT": {
+      "present": 0,
+      "valid": 0,
+      "missing": 209,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "DOG:MOISTURE": {
+      "present": 0,
+      "valid": 0,
+      "missing": 209,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "DOG:CALCIUM": {
+      "present": 0,
+      "valid": 0,
+      "missing": 209,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "DOG:PHOSPHORUS": {
+      "present": 0,
+      "valid": 0,
+      "missing": 209,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:CRUDE_PROTEIN": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:CRUDE_FAT": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:MOISTURE": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:CALCIUM": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:PHOSPHORUS": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    },
+    "CAT:TAURINE": {
+      "present": 0,
+      "valid": 0,
+      "missing": 48,
+      "unit_missing": 0,
+      "basis_missing": 0,
+      "invalid": 0
+    }
+  },
+  "reference_applicability": {
+    "NO_VALUE": 7,
+    "NO_REF_STAGE_OR_SPECIES_UNKNOWN": 53
+  },
+  "transition_counts": {
+    "NOT_COMPARABLE": 60
+  },
+  "evaluability": {
+    "INSUFFICIENT_DATA": 205,
+    "UNSUPPORTED": 189
+  },
+  "reference_coverage": {
+    "threshold_rules": 293,
+    "unique_nutrients": 31,
+    "by_species": {
+      "DOG": 160,
+      "CAT": 130,
+      "BOTH": 3
+    },
+    "by_life_stage": {
+      "GROWTH_REPRODUCTION": 170,
+      "ADULT_MAINTENANCE": 112,
+      "ALL_LIFE_STAGES": 11
+    },
+    "by_basis": {
+      "DRY_MATTER": 133,
+      "PER_1000KCAL": 133,
+      "AS_FED": 27
+    },
+    "by_threshold_type": {
+      "MINIMUM": 274,
+      "MAXIMUM": 19
+    },
+    "by_reference_form": {
+      "GENERIC": 261,
+      "CANNED": 16,
+      "DRY": 16
+    },
+    "by_authority": {
+      "국립축산과학원": 266,
+      "LEGACY_COMPATIBILITY": 27
+    },
+    "by_edition": {
+      "2024": 266,
+      "OFF_HILLS": 2,
+      "OFF_PURINA_PRO_PLAN": 1,
+      "OFF_PURINA": 5,
+      "OFF_ROYAL_CANIN": 3,
+      "NIAS_2024": 16
+    },
+    "life_stage_detail_specific_rules": 108,
+    "form_specific_rules": 32
+  },
+  "pr_cs": {
+    "total_products": 394,
+    "calcium_present": 0,
+    "phosphorus_present": 0,
+    "both_present": 0,
+    "both_valid": 0,
+    "same_basis": 0,
+    "ratio_computable": 0,
+    "reference_resolvable": 0
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "source_audit": "data/eval/알레르기_Human_Precision_Audit_AI사전라벨_한글번역 (1).xlsx",
+  "human_review_status": "COMPLETE",
+  "rule": "Human labels are authoritative; this file records follow-up candidates only and changes no dictionary, mapping, runtime, or safety policy.",
+  "candidates": [
+    {
+      "row_number": "21",
+      "product_id": "OFF_KR_0015561526531",
+      "source_dataset": "OEM",
+      "raw_ingredient_text": "sweet potato",
+      "matched_text": "sweet potato",
+      "matched_alias": "sweet potato",
+      "allergen_code": "potato",
+      "mapping_method": "CANONICAL_EXACT",
+      "review_label": "INCORRECT",
+      "reviewer_note": "고구마와 감자는 식물학적 분류 및 알레르기 유발 항원이 다름"
+    },
+    {
+      "row_number": "22",
+      "product_id": "OFF_KR_0015561526517",
+      "source_dataset": "OEM",
+      "raw_ingredient_text": "sweet potato",
+      "matched_text": "sweet potato",
+      "matched_alias": "sweet potato",
+      "allergen_code": "potato",
+      "mapping_method": "CANONICAL_EXACT",
+      "review_label": "INCORRECT",
+      "reviewer_note": "고구마와 감자는 식물학적 분류 및 알레르기 유발 항원이 다름"
+    },
+    {
+      "row_number": "24",
+      "product_id": "OFF_KR_4260358511412",
+      "source_dataset": "OEM",
+      "raw_ingredient_text": "poultry protein (12%",
+      "matched_text": "poultry",
+      "matched_alias": "poultry",
+      "allergen_code": "chicken",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "가금류는 오리, 칠면조를 포함하므로 닭고기로 한정하면 데이터 유실 위험 있음"
+    },
+    {
+      "row_number": "29",
+      "product_id": "OFF_KR_4260358511474",
+      "source_dataset": "OEM",
+      "raw_ingredient_text": "protéine de volaille (10 %",
+      "matched_text": "volaille",
+      "matched_alias": "volaille",
+      "allergen_code": "chicken",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "가금류는 오리, 칠면조를 포함하므로 닭고기로 한정하면 데이터 유실 위험 있음"
+    },
+    {
+      "row_number": "45",
+      "product_id": "OFF_0052742935706",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "farine de gluten de maïs",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "글루텐은 보리, 호밀에도 들어있으므로 '밀'로만 한정하는 것은 엄밀히 따지면 불완전함. 단, 사료 유통 관행상 용인되기도 함"
+    },
+    {
+      "row_number": "47",
+      "product_id": "OFF_3182550720816",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "gluten de blé",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "글루텐은 보리, 호밀에도 들어있으므로 '밀'로만 한정하는 것은 엄밀히 따지면 불완전함. 단, 사료 유통 관행상 용인되기도 함"
+    },
+    {
+      "row_number": "48",
+      "product_id": "OFF_00680910",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "gluten de maïs",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "글루텐은 보리, 호밀에도 들어있으므로 '밀'로만 한정하는 것은 엄밀히 따지면 불완전함. 단, 사료 유통 관행상 용인되기도 함"
+    },
+    {
+      "row_number": "49",
+      "product_id": "OFF_3182550787581",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "gluten fibres végétales",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": "글루텐은 보리, 호밀에도 들어있으므로 '밀'로만 한정하는 것은 엄밀히 따지면 불완전함. 단, 사료 유통 관행상 용인되기도 함"
+    },
+    {
+      "row_number": "53",
+      "product_id": "OFF_0052742005447",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "corn gluten meal",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": ""
+    },
+    {
+      "row_number": "54",
+      "product_id": "OFF_0052742024523",
+      "source_dataset": "GLOBAL",
+      "raw_ingredient_text": "maize gluten meal",
+      "matched_text": "gluten",
+      "matched_alias": "gluten",
+      "allergen_code": "wheat",
+      "mapping_method": "CANONICAL_ALIAS",
+      "review_label": "AMBIGUOUS",
+      "reviewer_note": ""
+    }
+  ]
+}

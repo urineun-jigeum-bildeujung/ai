@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-09-20T10:55:58.387482+00:00",
+  "source_records": 394,
+  "numeric_source_id_clusters_before_gtin_validation": 329,
+  "valid_gtin_records": 388,
+  "valid_gtin_clusters": 323,
+  "metadata_compatible_valid_gtin_clusters": 301,
+  "multisource_valid_gtin_clusters": 62,
+  "multisource_metadata_compatible_clusters": 40,
+  "projected_field_complete_clusters": 0,
+  "nutrition_clusters": 25,
+  "cap_clusters": 0,
+  "cat_taurine_clusters": 0,
+  "gold_ready": 0,
+  "gold_near_ready": 12,
+  "opff_image_availability": {
+    "opff_records": 108,
+    "front_image_url_present": 99,
+    "nutrition_image_metadata_present": 0,
+    "ingredients_image_metadata_present": 0,
+    "packaging_image_metadata_present": 0,
+    "interpretation": "URL presence only; no image retrieval or OCR performed."
+  }
+}

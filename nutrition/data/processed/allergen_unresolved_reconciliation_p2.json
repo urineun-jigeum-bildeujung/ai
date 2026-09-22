@@ -1,0 +1,532 @@
+{
+  "component_unresolved_total": 2468,
+  "evidence_unresolved_total": 2416,
+  "difference": 52,
+  "by_source": {
+    "OPFF": 2,
+    "OEM": 23,
+    "GLOBAL": 27
+  },
+  "reconciled_rows": [
+    {
+      "source_dataset": "OPFF",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OPFF:aggregate:0",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OPFF",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OPFF:aggregate:1",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:0",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:1",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:2",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:3",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:4",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:5",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:6",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:7",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:8",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:9",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:10",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:11",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:12",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:13",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:14",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:15",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:16",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:17",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:18",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:19",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:20",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:21",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "OEM",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "OEM:aggregate:22",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:0",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:1",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:2",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:3",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:4",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:5",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:6",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:7",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:8",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:9",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:10",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:11",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:12",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:13",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:14",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:15",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:16",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:17",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:18",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:19",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:20",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:21",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:22",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:23",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:24",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:25",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    },
+    {
+      "source_dataset": "GLOBAL",
+      "product_id": null,
+      "raw_component": null,
+      "normalized_component": null,
+      "component_identity": "GLOBAL:aggregate:26",
+      "evidence_identity": null,
+      "reconciliation_status": "UNEXPLAINED",
+      "reason": "component occurrence identity not retained by P1 baseline"
+    }
+  ]
+}

@@ -6,11 +6,11 @@
 
 - NIAS reference 비교 및 Rule Engine: `scripts/pipeline_p1c_v1.py`
 - FastAPI 영양 분석 API: `scripts/api_nutrition.py`
-- 알레르기, GTIN, readiness, product input adapter, reference parity, Danawa adapter: `scripts/nutrition/`
+- 알레르기 P0/P1/P2 persistence·lineage·precision evaluator, GTIN/Gold evidence, readiness, product input adapter, reference parity, Danawa adapter: `scripts/nutrition/`
 - API request/response 예시: `API/`
-- 선택된 raw/processed reference 및 Gold evidence 평가 근거: `data/`
-- P0 계약, persisted-product adapter, Gold evidence, reference parity, Danawa adapter 테스트: `tests/`
-- 상태 계약, reference edition, API 초안, persisted-product E2E 감사 문서: `docs/`
+- 선택된 raw/processed reference, P1.1/P2 allergen catalog, Gold evidence 및 evaluability 평가 근거: `data/`
+- P0 계약, P1 Gold evidence, P2 persistence·lineage·precision, persisted-product adapter, reference parity, Danawa adapter 테스트: `tests/`
+- 상태 계약, reference edition, API 초안, persisted-product E2E, P0/P1/P2 safety·lineage 문서: `docs/`
 
 ## 실행 환경
 
@@ -38,9 +38,11 @@
 
 ## 현재 구현 범위
 
-완료된 범위는 deterministic runtime, persisted-product adapter, P0-D, 알레르기·종·생애주기 safety, 5축 상태 계약이다.
+완료된 범위는 deterministic runtime, persisted-product adapter, P0-D, 알레르기·종·생애주기 safety, P1.1/P2 allergen persistence·lineage, human precision evaluation, 5축 상태 계약이다.
 
 아직 구현 중이거나 미구현인 범위는 최종 BE internal API, Shared SafetyDecision, Feeding, Human Gold 확장, 10K functional matrix, 100K regression이다.
+
+이 패키지의 현재 회귀 테스트는 Python 3.11에서 137 passed, 1 warning이다. 이는 제출 패키지에 포함된 테스트 결과이며, 원본 저장소의 historical SQL parity test는 현 runtime과 다른 legacy policy를 검증하므로 이 패키지에 포함하지 않았다.
 
 ## 해석 주의
 

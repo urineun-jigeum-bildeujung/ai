@@ -1,0 +1,114 @@
+{
+  "artifact_version": "NIAS_2024_PARITY_P0_V1",
+  "legacy_source": "data/raw/seed_14_nutrition_reference_v5.json",
+  "new_source": "data/processed/nutrition_reference_nias_2024_parity_p0_v1.json",
+  "comparison_unit": "applicability-specific canonical threshold rows",
+  "entries": [
+    {
+      "nutrient": "TAURINE",
+      "species": "CAT",
+      "life_stage": "ADULT_MAINTENANCE",
+      "life_stage_detail": null,
+      "basis": "DRY_MATTER",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 1,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "TAURINE",
+      "species": "CAT",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": null,
+      "basis": "DRY_MATTER",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 1,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "TAURINE",
+      "species": "CAT",
+      "life_stage": "ADULT_MAINTENANCE",
+      "life_stage_detail": null,
+      "basis": "PER_1000KCAL",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 1,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "TAURINE",
+      "species": "CAT",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": null,
+      "basis": "PER_1000KCAL",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 1,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "COPPER",
+      "species": "CAT",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": null,
+      "basis": "DRY_MATTER",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 0,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "COPPER",
+      "species": "CAT",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": null,
+      "basis": "PER_1000KCAL",
+      "reference_form": [
+        "CANNED",
+        "DRY"
+      ],
+      "old_rule_count": 0,
+      "new_rule_count": 2,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "CRUDE_PROTEIN",
+      "species": "DOG",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": "EARLY_GROWTH_AND_REPRODUCTION",
+      "basis": "DRY_MATTER",
+      "reference_form": [],
+      "old_rule_count": 1,
+      "new_rule_count": 1,
+      "information_loss_fixed": true
+    },
+    {
+      "nutrient": "CRUDE_PROTEIN",
+      "species": "DOG",
+      "life_stage": "GROWTH_REPRODUCTION",
+      "life_stage_detail": "LATE_GROWTH",
+      "basis": "DRY_MATTER",
+      "reference_form": [],
+      "old_rule_count": 1,
+      "new_rule_count": 1,
+      "information_loss_fixed": true
+    }
+  ]
+}

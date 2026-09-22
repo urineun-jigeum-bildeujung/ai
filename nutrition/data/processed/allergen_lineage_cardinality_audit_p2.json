@@ -1,0 +1,27 @@
+{
+  "artifact_version": "p2.0",
+  "integrity_policy": "APPLICATION_LEVEL_FAIL_CLOSED",
+  "component_rows": 2814,
+  "raw_evidence_rows": 2856,
+  "catalog_evidence_rows": 2852,
+  "deduplicated_rows": 4,
+  "evidence_cardinality": {
+    "zero": 0,
+    "one": 2777,
+    "two": 32,
+    "three_or_more": 5,
+    "max": 3
+  },
+  "source_dataset_counts": {
+    "GLOBAL": 901,
+    "OEM": 1470,
+    "OPFF": 443
+  },
+  "processing_status_counts": {
+    "PARTIALLY_RESOLVED": 5,
+    "RESOLVED": 398,
+    "UNRESOLVED": 2411
+  },
+  "orphan_evidence_rows": 0,
+  "components_without_terminal_status": 0
+}

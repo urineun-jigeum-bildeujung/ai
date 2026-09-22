@@ -1,0 +1,4 @@
+ambiguous_exact_pairs,brand_conflicts,candidate_name_pairs_not_approved,exact_identity_keys,exact_pairs,left_records,left_source,metadata_conflict_pairs,right_records,right_source,unmatched_left,unmatched_right
+0,41,2,60,60,108,OPFF,60,189,OEM,48,129
+0,2,0,5,5,108,OPFF,5,97,GLOBAL,103,92
+0,0,0,3,3,189,OEM,1,97,GLOBAL,186,94

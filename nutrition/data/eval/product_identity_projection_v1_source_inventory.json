@@ -1,0 +1,44 @@
+{
+  "sources": {
+    "OPFF": 108,
+    "OEM": 189,
+    "GLOBAL": 97
+  },
+  "guaranteed_analysis": {
+    "rows": 60,
+    "product_ids": 25
+  },
+  "danawa": {
+    "products": 508,
+    "stable_source_id": "pcode",
+    "barcode_or_gtin_present": 0,
+    "species_from_source_split": {
+      "DOG": 298,
+      "CAT": 210
+    },
+    "life_stage_known": 443,
+    "nutrition_nonempty": 464,
+    "calcium_present": 346,
+    "phosphorus_present": 348,
+    "moisture_present": 331,
+    "ingredients_present": 257,
+    "form_explicit": "not a separate adapter field; inferred from description and therefore not identity evidence"
+  },
+  "legacy_mapping": {
+    "verified_mapping_artifact": null,
+    "legacy_evidence": [
+      "scripts/p2_sql_v1.py:to_ean13()",
+      "docs/canonical_data_contract_v1.md: OFF_KR prefix normalization discussion"
+    ],
+    "legacy_product_master": {
+      "path": "data/processed/verify_P2_v1.db",
+      "product_count": 286,
+      "fields": [
+        "product_id",
+        "name",
+        "category",
+        "target_species"
+      ]
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "scope": "persisted local product metadata; no pet profile or defaults",
+  "product_count": 394,
+  "counts": {
+    "INSUFFICIENT_DATA": 205,
+    "UNSUPPORTED": 189
+  },
+  "by_source": {
+    "OPFF": {
+      "INSUFFICIENT_DATA": 108
+    },
+    "OEM": {
+      "UNSUPPORTED": 189
+    },
+    "GLOBAL": {
+      "INSUFFICIENT_DATA": 97
+    }
+  },
+  "reason_code_counts": {
+    "PERSISTED_PRODUCT_METADATA": 113,
+    "PRODUCT_TARGET_STAGE_MISSING": 108,
+    "NUTRITION_ITEMS_MISSING": 181,
+    "CATEGORY_NOT_FOOD": 189,
+    "MISSING_REQUIRED_NUTRIENTS": 18,
+    "UNSUPPORTED_REFERENCE_COMBINATION": 74,
+    "UNSUPPORTED_PRODUCT_TARGET_STAGE": 5
+  }
+}

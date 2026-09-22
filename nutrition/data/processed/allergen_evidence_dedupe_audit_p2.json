@@ -1,0 +1,159 @@
+{
+  "original_rows": 2856,
+  "groups": [
+    {
+      "identity": "c45d8c570d472d86e43dc0a9e90889b09c4e8e32842268bca9ff25d89898ad87",
+      "original_count": 3,
+      "kept_row": {
+        "product_id": "OFF_3222270552745",
+        "allergen_code": "fish",
+        "normalized_text": "fisk og fiskeprodukter",
+        "matched_text": "fisk",
+        "mapping_method": "CANONICAL_ALIAS",
+        "confidence": 1.0,
+        "source_version": "seed_9_global_brands_v2.json",
+        "dictionary_version": "allergen_sot_v1",
+        "raw_ingredient_text": "fisk og fiskeprodukter",
+        "evidence_scope": "PRODUCT_LABEL",
+        "source_dataset": "GLOBAL",
+        "ingredient_source": "PRODUCT_LABEL",
+        "segmented_text": [
+          "fisk og fiskeprodukter"
+        ],
+        "matched_alias": "fisk",
+        "evidence_status": "RESOLVED",
+        "usable_for_safety": true,
+        "pipeline_version": "product_allergen_refs_p1.0",
+        "created_at": "2026-09-15T07:34:34+00:00",
+        "source_row_id": 51
+      },
+      "removed_rows": [
+        {
+          "product_id": "OFF_3222270552745",
+          "allergen_code": "fish",
+          "normalized_text": "fisk og fiskeprodukter",
+          "matched_text": "fisk",
+          "mapping_method": "CANONICAL_ALIAS",
+          "confidence": 1.0,
+          "source_version": "seed_9_global_brands_v2.json",
+          "dictionary_version": "allergen_sot_v1",
+          "raw_ingredient_text": "fisk og fiskeprodukter",
+          "evidence_scope": "PRODUCT_LABEL",
+          "source_dataset": "GLOBAL",
+          "ingredient_source": "PRODUCT_LABEL",
+          "segmented_text": [
+            "fisk og fiskeprodukter"
+          ],
+          "matched_alias": "fisk",
+          "evidence_status": "RESOLVED",
+          "usable_for_safety": true,
+          "pipeline_version": "product_allergen_refs_p1.0",
+          "created_at": "2026-09-15T07:34:34+00:00",
+          "source_row_id": 51
+        },
+        {
+          "product_id": "OFF_3222270552745",
+          "allergen_code": "fish",
+          "normalized_text": "fisk og fiskeprodukter",
+          "matched_text": "fisk",
+          "mapping_method": "CANONICAL_ALIAS",
+          "confidence": 1.0,
+          "source_version": "seed_9_global_brands_v2.json",
+          "dictionary_version": "allergen_sot_v1",
+          "raw_ingredient_text": "fisk og fiskeprodukter",
+          "evidence_scope": "PRODUCT_LABEL",
+          "source_dataset": "GLOBAL",
+          "ingredient_source": "PRODUCT_LABEL",
+          "segmented_text": [
+            "fisk og fiskeprodukter"
+          ],
+          "matched_alias": "fisk",
+          "evidence_status": "RESOLVED",
+          "usable_for_safety": true,
+          "pipeline_version": "product_allergen_refs_p1.0",
+          "created_at": "2026-09-15T07:34:34+00:00",
+          "source_row_id": 51
+        }
+      ],
+      "source_version_difference": false,
+      "valid_dedupe": true
+    },
+    {
+      "identity": "fe51b4d8f37a08a7b491ac3d60ead316ee52b488586c957d7cf2a3e6e0a5476e",
+      "original_count": 3,
+      "kept_row": {
+        "product_id": "OFF_7613036632355",
+        "allergen_code": "fish",
+        "normalized_text": "fisk og fiskprodukter",
+        "matched_text": "fisk",
+        "mapping_method": "CANONICAL_ALIAS",
+        "confidence": 1.0,
+        "source_version": "seed_9_global_brands_v2.json",
+        "dictionary_version": "allergen_sot_v1",
+        "raw_ingredient_text": "fisk og fiskprodukter",
+        "evidence_scope": "PRODUCT_LABEL",
+        "source_dataset": "GLOBAL",
+        "ingredient_source": "PRODUCT_LABEL",
+        "segmented_text": [
+          "fisk og fiskprodukter"
+        ],
+        "matched_alias": "fisk",
+        "evidence_status": "RESOLVED",
+        "usable_for_safety": true,
+        "pipeline_version": "product_allergen_refs_p1.0",
+        "created_at": "2026-09-15T07:34:34+00:00",
+        "source_row_id": 57
+      },
+      "removed_rows": [
+        {
+          "product_id": "OFF_7613036632355",
+          "allergen_code": "fish",
+          "normalized_text": "fisk og fiskprodukter",
+          "matched_text": "fisk",
+          "mapping_method": "CANONICAL_ALIAS",
+          "confidence": 1.0,
+          "source_version": "seed_9_global_brands_v2.json",
+          "dictionary_version": "allergen_sot_v1",
+          "raw_ingredient_text": "fisk og fiskprodukter",
+          "evidence_scope": "PRODUCT_LABEL",
+          "source_dataset": "GLOBAL",
+          "ingredient_source": "PRODUCT_LABEL",
+          "segmented_text": [
+            "fisk og fiskprodukter"
+          ],
+          "matched_alias": "fisk",
+          "evidence_status": "RESOLVED",
+          "usable_for_safety": true,
+          "pipeline_version": "product_allergen_refs_p1.0",
+          "created_at": "2026-09-15T07:34:34+00:00",
+          "source_row_id": 57
+        },
+        {
+          "product_id": "OFF_7613036632355",
+          "allergen_code": "fish",
+          "normalized_text": "fisk og fiskprodukter",
+          "matched_text": "fisk",
+          "mapping_method": "CANONICAL_ALIAS",
+          "confidence": 1.0,
+          "source_version": "seed_9_global_brands_v2.json",
+          "dictionary_version": "allergen_sot_v1",
+          "raw_ingredient_text": "fisk og fiskprodukter",
+          "evidence_scope": "PRODUCT_LABEL",
+          "source_dataset": "GLOBAL",
+          "ingredient_source": "PRODUCT_LABEL",
+          "segmented_text": [
+            "fisk og fiskprodukter"
+          ],
+          "matched_alias": "fisk",
+          "evidence_status": "RESOLVED",
+          "usable_for_safety": true,
+          "pipeline_version": "product_allergen_refs_p1.0",
+          "created_at": "2026-09-15T07:34:34+00:00",
+          "source_row_id": 57
+        }
+      ],
+      "source_version_difference": false,
+      "valid_dedupe": true
+    }
+  ]
+}

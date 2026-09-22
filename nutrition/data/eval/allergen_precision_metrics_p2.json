@@ -1,0 +1,256 @@
+{
+  "status": "COMPLETE",
+  "precision": 0.8333333333333334,
+  "overall": {
+    "total": 60,
+    "reviewed_rows": 60,
+    "remaining_rows": 0,
+    "correct": 50,
+    "incorrect": 2,
+    "ambiguous": 8,
+    "status": "COMPLETE",
+    "strict_precision": 0.8333333333333334,
+    "determinate_precision": 0.9615384615384616,
+    "ambiguous_rate": 0.13333333333333333,
+    "incorrect_rate": 0.03333333333333333,
+    "ci95_lower": 0.7196814850279217,
+    "ci95_upper": 0.9068692279867897,
+    "n": 60
+  },
+  "breakdown": {
+    "source_dataset": {
+      "GLOBAL": {
+        "total": 20,
+        "reviewed_rows": 20,
+        "remaining_rows": 0,
+        "correct": 14,
+        "incorrect": 0,
+        "ambiguous": 6,
+        "status": "COMPLETE",
+        "strict_precision": 0.7,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.3,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.4810232237710206,
+        "ci95_upper": 0.854524726031006,
+        "n": 20
+      },
+      "OEM": {
+        "total": 20,
+        "reviewed_rows": 20,
+        "remaining_rows": 0,
+        "correct": 16,
+        "incorrect": 2,
+        "ambiguous": 2,
+        "status": "COMPLETE",
+        "strict_precision": 0.8,
+        "determinate_precision": 0.8888888888888888,
+        "ambiguous_rate": 0.1,
+        "incorrect_rate": 0.1,
+        "ci95_lower": 0.5839782779742401,
+        "ci95_upper": 0.9193436467288,
+        "n": 20
+      },
+      "OPFF": {
+        "total": 20,
+        "reviewed_rows": 20,
+        "remaining_rows": 0,
+        "correct": 20,
+        "incorrect": 0,
+        "ambiguous": 0,
+        "status": "COMPLETE",
+        "strict_precision": 1.0,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.0,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.8388698745050668,
+        "ci95_upper": 0.9999999999999999,
+        "n": 20
+      }
+    },
+    "mapping_method": {
+      "CANONICAL_ALIAS": {
+        "total": 50,
+        "reviewed_rows": 50,
+        "remaining_rows": 0,
+        "correct": 42,
+        "incorrect": 0,
+        "ambiguous": 8,
+        "status": "COMPLETE",
+        "strict_precision": 0.84,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.16,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.7148551903823401,
+        "ci95_upper": 0.9166267863791231,
+        "n": 50
+      },
+      "CANONICAL_EXACT": {
+        "total": 10,
+        "reviewed_rows": 10,
+        "remaining_rows": 0,
+        "correct": 8,
+        "incorrect": 2,
+        "ambiguous": 0,
+        "status": "COMPLETE",
+        "strict_precision": 0.8,
+        "determinate_precision": 0.8,
+        "ambiguous_rate": 0.0,
+        "incorrect_rate": 0.2,
+        "ci95_lower": 0.49015684672072335,
+        "ci95_upper": 0.9433190520193067,
+        "n": 10
+      }
+    },
+    "text_class": {
+      "COMPOUND": {
+        "total": 10,
+        "reviewed_rows": 10,
+        "remaining_rows": 0,
+        "correct": 10,
+        "incorrect": 0,
+        "ambiguous": 0,
+        "status": "COMPLETE",
+        "strict_precision": 1.0,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.0,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.7224598312333834,
+        "ci95_upper": 1.0,
+        "n": 10
+      },
+      "EN": {
+        "total": 28,
+        "reviewed_rows": 28,
+        "remaining_rows": 0,
+        "correct": 23,
+        "incorrect": 2,
+        "ambiguous": 3,
+        "status": "COMPLETE",
+        "strict_precision": 0.8214285714285714,
+        "determinate_precision": 0.92,
+        "ambiguous_rate": 0.10714285714285714,
+        "incorrect_rate": 0.07142857142857142,
+        "ci95_lower": 0.644082084514089,
+        "ci95_upper": 0.9212161417056989,
+        "n": 28
+      },
+      "MULTILINGUAL": {
+        "total": 21,
+        "reviewed_rows": 21,
+        "remaining_rows": 0,
+        "correct": 16,
+        "incorrect": 0,
+        "ambiguous": 5,
+        "status": "COMPLETE",
+        "strict_precision": 0.7619047619047619,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.23809523809523808,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.5490841802765406,
+        "ci95_upper": 0.8937214361088773,
+        "n": 21
+      },
+      "OCR_NOISY": {
+        "total": 1,
+        "reviewed_rows": 1,
+        "remaining_rows": 0,
+        "correct": 1,
+        "incorrect": 0,
+        "ambiguous": 0,
+        "status": "COMPLETE",
+        "strict_precision": 1.0,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.0,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.20654329147389294,
+        "ci95_upper": 1.0,
+        "n": 1
+      }
+    }
+  },
+  "safety_tier_candidates": {
+    "CANONICAL_ALIAS": {
+      "candidate": "TIER_B_REVIEW",
+      "metrics": {
+        "total": 50,
+        "reviewed_rows": 50,
+        "remaining_rows": 0,
+        "correct": 42,
+        "incorrect": 0,
+        "ambiguous": 8,
+        "status": "COMPLETE",
+        "strict_precision": 0.84,
+        "determinate_precision": 1.0,
+        "ambiguous_rate": 0.16,
+        "incorrect_rate": 0.0,
+        "ci95_lower": 0.7148551903823401,
+        "ci95_upper": 0.9166267863791231,
+        "n": 50
+      },
+      "runtime_policy_changed": false,
+      "note": "Human precision evidence is required; no threshold is set automatically."
+    },
+    "CANONICAL_EXACT": {
+      "candidate": "TIER_B_REVIEW",
+      "metrics": {
+        "total": 10,
+        "reviewed_rows": 10,
+        "remaining_rows": 0,
+        "correct": 8,
+        "incorrect": 2,
+        "ambiguous": 0,
+        "status": "COMPLETE",
+        "strict_precision": 0.8,
+        "determinate_precision": 0.8,
+        "ambiguous_rate": 0.0,
+        "incorrect_rate": 0.2,
+        "ci95_lower": 0.49015684672072335,
+        "ci95_upper": 0.9433190520193067,
+        "n": 10
+      },
+      "runtime_policy_changed": false,
+      "note": "Human precision evidence is required; no threshold is set automatically."
+    }
+  },
+  "coverage": {
+    "products_total": 394,
+    "products_with_ingredient_data": 119,
+    "NO_INGREDIENT_DATA": 275,
+    "FULLY_RESOLVABLE": 2,
+    "PARTIALLY_RESOLVED": 82,
+    "UNRESOLVED": 35,
+    "KNOWN_LIST": {
+      "SAFETY_EVALUABLE": 2,
+      "SAFETY_DATA_INSUFFICIENT": 392
+    },
+    "by_source": {
+      "OPFF": {
+        "products_total": 108,
+        "products_with_ingredient_data": 28,
+        "no_ingredient_data": 80
+      },
+      "OEM": {
+        "products_total": 189,
+        "products_with_ingredient_data": 44,
+        "no_ingredient_data": 145
+      },
+      "GLOBAL": {
+        "products_total": 97,
+        "products_with_ingredient_data": 47,
+        "no_ingredient_data": 50
+      }
+    }
+  },
+  "gates": {
+    "GATE_A_PERSISTENCE": "PASS",
+    "GATE_B_LINEAGE": "PASS",
+    "GATE_C_FAIL_CLOSE": "PASS",
+    "GATE_D_FRESH_REBUILD": "PASS",
+    "GATE_E_AUTOMATED_REGRESSION": "PASS",
+    "GATE_F_HUMAN_PRECISION": "PASS",
+    "GATE_G_PRODUCT_COVERAGE": "MEASURE_ONLY",
+    "P2_STRUCTURE": "COMPLETE",
+    "P2_PRECISION": "COMPLETE"
+  }
+}

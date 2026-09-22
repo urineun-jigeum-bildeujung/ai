@@ -1,0 +1,15 @@
+chart,count,label
+evaluability,205,INSUFFICIENT_DATA
+evaluability,189,UNSUPPORTED
+reference_applicability,7,NO_VALUE
+reference_applicability,53,NO_REF_STAGE_OR_SPECIES_UNKNOWN
+legacy_new_transition,60,NOT_COMPARABLE
+life_stage,302,UNKNOWN
+life_stage,11,ADULT_MAINTENANCE
+life_stage,74,ALL_LIFE_STAGES
+life_stage,7,GROWTH_REPRODUCTION
+product_form_all,4,MOISTURE_DERIVED|DRY
+product_form_all,291,UNKNOWN|UNKNOWN
+product_form_all,2,MOISTURE_DERIVED|CANNED
+product_form_all,88,EXPLICIT|DRY
+product_form_all,9,EXPLICIT|CANNED

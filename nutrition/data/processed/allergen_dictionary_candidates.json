@@ -1,0 +1,34 @@
+{
+  "dictionary_version": "allergen_sot_v1",
+  "candidates": [
+    {
+      "candidate_code": "turkey",
+      "aliases": [
+        "dinde"
+      ],
+      "languages": [
+        "fr"
+      ],
+      "occurrence_count": 30,
+      "example_products": [
+        "0052742121109",
+        "0052742282602",
+        "0052742935706",
+        "0064992280543",
+        "0064992718862",
+        "OFF_0052742935706",
+        "OFF_3182550724388",
+        "OFF_3222270185318",
+        "OFF_3560071174767",
+        "OFF_KR_0064992280543"
+      ],
+      "evidence_source": [
+        "GLOBAL",
+        "OEM",
+        "OPFF"
+      ],
+      "proposed_status": "PROPOSED",
+      "review_required": true
+    }
+  ]
+}

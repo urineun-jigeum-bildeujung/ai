@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "executed": false,
+  "execution_scope": "REAL_PERSISTED_PRODUCT_GOLD_E2E",
+  "execution_rule": "Run only when strict human validation and runtime eligibility are both true.",
+  "reason": "No human-validated runtime-eligible persisted Gold evidence exists.",
+  "eligible_candidates": [],
+  "candidate_results": []
+}

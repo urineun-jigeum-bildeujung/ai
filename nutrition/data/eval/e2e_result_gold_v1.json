@@ -1,0 +1,18 @@
+{
+  "version": "v1",
+  "executed": false,
+  "execution_rule": "Run only when verified=true and runtime_eligible=true.",
+  "reason": "Both candidates are BLOCKED; no verified persisted-product evidence exists.",
+  "candidates": [
+    {
+      "candidate_id": "ORIJEN_ORIGINAL_CAT_17KG",
+      "status": "NOT_RUN_BLOCKED",
+      "blocked_reason": "OFFICIAL_PAGE_DOES_NOT_EXPOSE_GTIN_OR_GTIN_LABEL_IMAGE"
+    },
+    {
+      "candidate_id": "ORIJEN_SIX_FISH_1_8KG",
+      "status": "NOT_RUN_BLOCKED",
+      "blocked_reason": "OFFICIAL_PAGE_DOES_NOT_EXPOSE_GTIN_OR_GTIN_LABEL_IMAGE; DOG_CAT_VARIANT_NOT_RESOLVED_BY_APPROVED_IDENTITY_EVIDENCE"
+    }
+  ]
+}

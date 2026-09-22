@@ -1,0 +1,70 @@
+[
+  {
+    "candidate_id": "ORIJEN_ORIGINAL_CAT_US",
+    "identity_verified": false,
+    "runtime_eligible_for_persisted_product": false,
+    "execution_scope": "REQUEST_SCOPED_ONLY",
+    "input_readiness": "READY",
+    "nutrition_comparison_status": "TRUE",
+    "analysis_status": "READY",
+    "safety_status": "NOT_APPLICABLE",
+    "nutrient_results": [
+      {
+        "nutrient_code": "CRUDE_PROTEIN",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "CRUDE_FAT",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "MOISTURE",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "CALCIUM",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "PHOSPHORUS",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "TAURINE",
+        "nias_compare_status": "IN_RANGE"
+      }
+    ]
+  },
+  {
+    "candidate_id": "ORIJEN_ORIGINAL_DOG_CA",
+    "identity_verified": false,
+    "runtime_eligible_for_persisted_product": false,
+    "execution_scope": "REQUEST_SCOPED_ONLY",
+    "input_readiness": "READY",
+    "nutrition_comparison_status": "FALSE",
+    "analysis_status": "READY",
+    "safety_status": "NOT_APPLICABLE",
+    "nutrient_results": [
+      {
+        "nutrient_code": "CRUDE_PROTEIN",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "CRUDE_FAT",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "MOISTURE",
+        "nias_compare_status": "OUT_OF_RANGE"
+      },
+      {
+        "nutrient_code": "CALCIUM",
+        "nias_compare_status": "IN_RANGE"
+      },
+      {
+        "nutrient_code": "PHOSPHORUS",
+        "nias_compare_status": "IN_RANGE"
+      }
+    ]
+  }
+]

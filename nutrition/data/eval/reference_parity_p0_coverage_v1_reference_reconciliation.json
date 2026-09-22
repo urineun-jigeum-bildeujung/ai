@@ -1,0 +1,3605 @@
+{
+  "legacy_rows": 325,
+  "new_threshold_rows": 293,
+  "legacy_mapping_counts": {
+    "SPLIT_OR_APPLICABILITY_RESTORED": 66,
+    "REMOVED_OR_UNMATCHED": 106,
+    "MAPPED": 153
+  },
+  "new_rows_without_legacy_four_dimension_match": 8,
+  "unmatched_legacy_by_nutrient": {
+    "ARACHIDONIC_ACID": 2,
+    "BIOTIN": 4,
+    "CHOLINE": 8,
+    "FOLIC_ACID": 8,
+    "IODINE": 8,
+    "ISOLEUCINE": 8,
+    "LEUCINE": 8,
+    "NIACIN": 8,
+    "PANTOTHENIC_ACID": 8,
+    "PHENYLALANINE_TYROSINE": 8,
+    "SELENIUM": 8,
+    "VALINE": 8,
+    "VITAMIN_B12": 8,
+    "VITAMIN_B6": 8,
+    "VITAMIN_K": 4
+  },
+  "old_rows": [
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARGININE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "HISTIDINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LYSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "THREONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VALINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ALPHA_LINOLENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CALCIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "POTASSIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SODIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "COPPER",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IODINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IRON",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SELENIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ZINC",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "NIACIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CHOLINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17a"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARGININE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "HISTIDINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LYSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "THREONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VALINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CALCIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "POTASSIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SODIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "COPPER",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IODINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IRON",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SELENIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ZINC",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "NIACIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CHOLINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17b"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARGININE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "HISTIDINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LYSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "THREONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VALINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ALPHA_LINOLENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CALCIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "POTASSIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SODIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "COPPER",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IODINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IRON",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SELENIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ZINC",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "NIACIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CHOLINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17c"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARGININE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "HISTIDINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LYSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "THREONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VALINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CALCIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "POTASSIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SODIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "COPPER",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IODINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IRON",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SELENIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ZINC",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "NIACIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CHOLINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17d"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARGININE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "HISTIDINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LYSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "THREONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VALINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TAURINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ALPHA_LINOLENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CALCIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "POTASSIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SODIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IODINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IRON",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SELENIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ZINC",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "NIACIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "BIOTIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CHOLINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_K",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17e"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARGININE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "HISTIDINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LEUCINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LYSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "THREONINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VALINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TAURINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CALCIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "POTASSIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SODIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IODINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IRON",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SELENIUM",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ZINC",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "NIACIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "BIOTIN",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CHOLINE",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_K",
+        "basis": "DRY_MATTER",
+        "table_id": "2-17f"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARGININE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "HISTIDINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LYSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "THREONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VALINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "TAURINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ALPHA_LINOLENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CALCIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "POTASSIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SODIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IODINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "IRON",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "SELENIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "ZINC",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "NIACIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "BIOTIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "CHOLINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "VITAMIN_K",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17g"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_PROTEIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARGININE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "HISTIDINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ISOLEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LEUCINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LYSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "METHIONINE_CYSTINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHENYLALANINE_TYROSINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "THREONINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TRYPTOPHAN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VALINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "TAURINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 2
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CRUDE_FAT",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "LINOLEIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ARACHIDONIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CALCIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PHOSPHORUS",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "POTASSIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SODIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MAGNESIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IODINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "IRON",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "SELENIUM",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "ZINC",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_A",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_D",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_E",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B1",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B2",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "PANTOTHENIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B6",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_B12",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "NIACIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "FOLIC_ACID",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "BIOTIN",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "CHOLINE",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "VITAMIN_K",
+        "basis": "PER_1000KCAL",
+        "table_id": "2-17h"
+      },
+      "mapping": "REMOVED_OR_UNMATCHED",
+      "new_match_count": 0
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "CRUDE_FIBER",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "CRUDE_FIBER",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "ENERGY_KCAL",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "BOTH",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "BOTH",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "CRUDE_FIBER",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "ENERGY_KCAL",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "BOTH",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "ENERGY_KCAL",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "CRUDE_ASH",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "CRUDE_ASH",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ALL_LIFE_STAGES",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "OFF_BRANDED"
+      },
+      "mapping": "MAPPED",
+      "new_match_count": 1
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-DRY"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-DRY"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-DRY"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-DRY"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-WET"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "DOG",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-WET"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "ADULT_MAINTENANCE",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-WET"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    },
+    {
+      "legacy_key": {
+        "species": "CAT",
+        "life_stage": "GROWTH_REPRODUCTION",
+        "nutrient_code": "MOISTURE",
+        "basis": "AS_FED",
+        "table_id": "MOISTURE-WET"
+      },
+      "mapping": "SPLIT_OR_APPLICABILITY_RESTORED",
+      "new_match_count": 4
+    }
+  ],
+  "explanation": "new rows are threshold-level rules; form/detail splits can increase rules while unsupported legacy nutrient mappings can reduce total rows"
+}

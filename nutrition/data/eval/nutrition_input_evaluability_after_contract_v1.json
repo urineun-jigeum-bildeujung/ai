@@ -1,0 +1,3480 @@
+{
+  "scope": "local artifact-backed input completeness; no user allergy profile applied",
+  "before": {
+    "READY": 0,
+    "PARTIAL": 24,
+    "INSUFFICIENT_DATA": 370,
+    "SAFETY_BLOCKED": 0,
+    "UNSUPPORTED": 0
+  },
+  "after": {
+    "READY": 0,
+    "PARTIAL": 24,
+    "INSUFFICIENT_DATA": 181,
+    "SAFETY_BLOCKED": 0,
+    "UNSUPPORTED": 189
+  },
+  "delta": {
+    "READY": 0,
+    "PARTIAL": 0,
+    "INSUFFICIENT_DATA": -189,
+    "SAFETY_BLOCKED": 0,
+    "UNSUPPORTED": 189
+  },
+  "reason_code_counts": {
+    "CATEGORY_NOT_FOOD": 189,
+    "MISSING_REQUIRED_NUTRIENTS": 205,
+    "NUTRITION_ITEMS_MISSING": 181,
+    "PRODUCT_TARGET_STAGE_MISSING": 108,
+    "UNSUPPORTED_PRODUCT_TARGET_STAGE": 5
+  },
+  "product_count": 394,
+  "rows": [
+    {
+      "product_id": "0022808385103",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0030111493255",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742005355",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742024127",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742024271",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742035963",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742047393",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742054902",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742057569",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742121109",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742210605",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742223209",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742282602",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742429403",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742567006",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742840802",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742896502",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0052742935706",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "00639088",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992090685",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992106133",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992107253",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992130565",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992180126",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992180201",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992182601",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992184124",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992184209",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992186128",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992186708",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992280178",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992280345",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992280543",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992281182",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992281342",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992500115",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992500603",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992510688",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992523206",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992541118",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992560218",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992613105",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992714482",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992714628",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992714642",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992714697",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992714710",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992718862",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0064992720179",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198611379",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612215",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612277",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612291",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612369",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612468",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198612659",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198613908",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198613939",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198614240",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198614271",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0074198614592",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344088875",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344107156",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344107170",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344107279",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344108122",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344108320",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344116356",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344118459",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344118473",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344118480",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0076344893110",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "01184716",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0810037580396",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "0815436018860",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3010734089322",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550702379",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550702423",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550708180",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550716918",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550728102",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550751988",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550768481",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550771252",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550771290",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550793612",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "3182550831383",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "4311596625079",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276020208",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276021021",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276021922",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276025197",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276030467",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276032690",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276032751",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276033239",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276033253",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276033376",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276036698",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276040121",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8010276040169",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "8016434900573",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579000366",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579003923",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579308943",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579309445",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579311301",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "9003579311660",
+      "input_readiness": "PARTIAL",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "PRODUCT_TARGET_STAGE_MISSING"
+      ],
+      "source_dataset": "OPFF"
+    },
+    {
+      "product_id": "OFF_0005274277490",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0017800101851",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0017800431194",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0030111541567",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0050000172375",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0050000574988",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742000633",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742005447",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742024523",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742026855",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742177601",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742211107",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742269801",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742428109",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742534800",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0052742935706",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0055800249050",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0064992280178",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_00680910",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0072554001918",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0076344107156",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0076344108122",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_01520651",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_05587239",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_0769949602026",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3010470154575",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3010470181120",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550710398",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550720816",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550724388",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550729321",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550761970",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550764551",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550783392",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550786201",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "UNSUPPORTED_PRODUCT_TARGET_STAGE"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550787581",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550803274",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3182550805292",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3222270185318",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3222270552745",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3222270884136",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3480200313105",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_3560071174767",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_4627109380312",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_60394552",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613031204458",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613032452506",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613032720995",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613032721022",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613032721657",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033303081",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "UNSUPPORTED_PRODUCT_TARGET_STAGE"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033562792",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033565830",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033575730",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033776281",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613033926754",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034152664",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034231864",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034262868",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034370792",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034643780",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034913166",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034957894",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613034976987",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035057104",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035122796",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035164000",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035179073",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035214798",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035378612",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035378742",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035419322",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035419742",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035611702",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613035839700",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036354127",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036354318",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036435604",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036442640",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "UNSUPPORTED_PRODUCT_TARGET_STAGE"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036508377",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "UNSUPPORTED_PRODUCT_TARGET_STAGE"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036632355",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036724135",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613036908108",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613038125695",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613038660813",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_7613287080080",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_8002205356625",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_8410168195562",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_8410168399892",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING",
+        "UNSUPPORTED_PRODUCT_TARGET_STAGE"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579000359",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579007129",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579008249",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579018941",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579307953",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579310151",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579311301",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_9003579311745",
+      "input_readiness": "INSUFFICIENT_DATA",
+      "reason_codes": [
+        "MISSING_REQUIRED_NUTRIENTS",
+        "NUTRITION_ITEMS_MISSING"
+      ],
+      "source_dataset": "GLOBAL"
+    },
+    {
+      "product_id": "OFF_KR_0015561525367",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561525527",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561526517",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561526531",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561528702",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561763936",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0015561765213",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0022808385103",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0034846541212",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0034846718218",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_00639088",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992090685",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992106133",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992107253",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992130565",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992180126",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992180201",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992180607",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992181123",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992181604",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992182205",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992182601",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992183127",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992183202",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992184124",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992184209",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992185121",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992185206",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992186128",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992186203",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992186609",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992186708",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992187200",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992280178",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992280345",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992280543",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992281182",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992281342",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992282189",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992283186",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992500115",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992500603",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992510688",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992523206",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992541118",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992560218",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992613105",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992711979",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714482",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714628",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714642",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714697",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714710",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714765",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992714772",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992716240",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992718862",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992718916",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992718930",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992720179",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0064992727352",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0072705105571",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0072705115204",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0072705115938",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0072705117048",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0072705118687",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198004201",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198010509",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198607389",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198608126",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198608430",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198610679",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198611379",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612215",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612277",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612291",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612369",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612468",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198612659",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198613908",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198613939",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198614240",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198614271",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0074198614592",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344088875",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344107156",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344107170",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344107279",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344108122",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344108320",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344116356",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344118459",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344118473",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344118480",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0076344893110",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0079105116152",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0079105122153",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_01184716",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_01268140",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0404777714562",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0628451123248",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0669125941386",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0723633147996",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0723633772921",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0723633808309",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0810027372024",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0810037580396",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0815260000772",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0815260003247",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0815260006873",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0815260007887",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0815436018860",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0840243125319",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_0859610007684",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_20303754",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_3010734089322",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_3760080533047",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_3760080533160",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_3760080534365",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4008429117640",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4012783114030",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777102168",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777121435",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777121480",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777122326",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777124986",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777125013",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777125020",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777145127",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777145611",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777145612",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777149880",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777149897",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777152873",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777153023",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777153054",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777161394",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777166627",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777166863",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777170402",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777173946",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777177425",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777177845",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777178071",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777178811",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777178842",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777179214",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777179528",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777184690",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777185215",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777217671",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777217701",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777226512",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4047777259053",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4062911003606",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4062911010871",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358511412",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358511450",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358511474",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358513898",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358514574",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4260358515854",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_4401777118527",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_73267843",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_76445330",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870071",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870194",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870224",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870316",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870347",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870354",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870781",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870941",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591870965",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591871214",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898591871368",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988041",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988089",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988195",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988270",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988331",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988379",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988393",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988812",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988980",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_7898950988997",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_8016434900573",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_9001182000513",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    },
+    {
+      "product_id": "OFF_KR_9120041363030",
+      "input_readiness": "UNSUPPORTED",
+      "reason_codes": [
+        "CATEGORY_NOT_FOOD"
+      ],
+      "source_dataset": "OEM"
+    }
+  ]
+}

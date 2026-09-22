@@ -1,0 +1,26 @@
+{
+  "old_component_denominator": 2468,
+  "new_component_denominator": 2814,
+  "delta": 346,
+  "delta_reason": "P1.1 uses persisted raw component groups, not legacy coverage counter",
+  "stats": {
+    "total_components": 2814,
+    "components_by_source": {
+      "OPFF": 443,
+      "GLOBAL": 901,
+      "OEM": 1470
+    },
+    "components_by_processing_status": {
+      "RESOLVED": 398,
+      "UNRESOLVED": 2411,
+      "PARTIALLY_RESOLVED": 5
+    },
+    "evidence_rows": 2856,
+    "evidence_linked_components": 2814,
+    "zero_evidence_components": 0,
+    "multi_evidence_components": 37,
+    "orphan_evidence_count": 0,
+    "components_without_terminal_status": 0,
+    "unexplained_count": 0
+  }
+}

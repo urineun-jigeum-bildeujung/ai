@@ -1,0 +1,166 @@
+{
+  "version": "v1",
+  "scope": "fallback shortlist, human intake validation, and runtime gate",
+  "existing_blocked_preserved": [
+    {
+      "candidate_id": "ORIJEN_ORIGINAL_CAT_17KG",
+      "status": "BLOCKED",
+      "blocked_reason": "OFFICIAL_PAGE_DOES_NOT_EXPOSE_GTIN_OR_GTIN_LABEL_IMAGE"
+    },
+    {
+      "candidate_id": "ORIJEN_SIX_FISH_1_8KG",
+      "status": "BLOCKED",
+      "blocked_reason": "OFFICIAL_PAGE_DOES_NOT_EXPOSE_GTIN_OR_GTIN_LABEL_IMAGE; DOG_CAT_VARIANT_NOT_RESOLVED_BY_APPROVED_IDENTITY_EVIDENCE"
+    }
+  ],
+  "human_intake": {
+    "source_path": "data/eval/human_gold_evidence_intake_v1.csv",
+    "input_missing": true,
+    "rows": 0,
+    "accepted": 0,
+    "rejected": 0,
+    "rejection_reason_counts": {}
+  },
+  "shortlist_gate_results": [
+    {
+      "candidate_id": "GOLD_CAT_052742935706",
+      "canonical_gtin": "052742935706",
+      "identity_state": "LOCAL_IDENTITY_CONSISTENT",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    },
+    {
+      "candidate_id": "GOLD_CAT_9003579311301",
+      "canonical_gtin": "9003579311301",
+      "identity_state": "LOCAL_IDENTITY_CONSISTENT",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    },
+    {
+      "candidate_id": "GOLD_CAT_052742177601",
+      "canonical_gtin": "052742177601",
+      "identity_state": "IDENTITY_PARTIAL",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    },
+    {
+      "candidate_id": "GOLD_DOG_076344107156",
+      "canonical_gtin": "076344107156",
+      "identity_state": "LOCAL_IDENTITY_CONSISTENT",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    },
+    {
+      "candidate_id": "GOLD_DOG_076344108122",
+      "canonical_gtin": "076344108122",
+      "identity_state": "LOCAL_IDENTITY_CONSISTENT",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    },
+    {
+      "candidate_id": "GOLD_DOG_052742005447",
+      "canonical_gtin": "052742005447",
+      "identity_state": "IDENTITY_PARTIAL",
+      "runtime_eligible": false,
+      "reason_codes": [
+        "IDENTITY_NOT_VERIFIED",
+        "IDENTITY_PROVENANCE_INSUFFICIENT",
+        "LIFE_STAGE_PROVENANCE_UNVERIFIED",
+        "PRODUCT_FORM_PROVENANCE_UNVERIFIED",
+        "DOG_GROWTH_LIFE_STAGE_DETAIL_UNRESOLVED",
+        "DOG_GROWTH_LIFE_STAGE_DETAIL_PROVENANCE_UNVERIFIED",
+        "REQUIRED_NUTRIENT_EVIDENCE_MISSING"
+      ],
+      "missing_nutrients": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "evidence_row_count": 0,
+      "evidence_state": "CANDIDATE"
+    }
+  ],
+  "verified_cat_candidates": 0,
+  "verified_dog_candidates": 0,
+  "runtime_eligible_count": 0
+}

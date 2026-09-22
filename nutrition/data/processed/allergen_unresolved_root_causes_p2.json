@@ -1,0 +1,57 @@
+{
+  "PRODUCT_LABEL": {
+    "unresolved_total": 2416,
+    "root_causes": {
+      "UNKNOWN_ALIAS": 1804,
+      "MODIFIER_ATTACHMENT": 237,
+      "LANGUAGE_VARIANT": 275,
+      "COMPOUND_PHRASE": 55,
+      "NON_INGREDIENT_TEXT": 19,
+      "OCR_CORRUPTION": 26
+    },
+    "examples": {
+      "UNKNOWN_ALIAS": [
+        "calcium carbonate",
+        "dried plain beet pulp",
+        "fructooligosaccharides",
+        "monocalcium phosphate",
+        "natural flavors"
+      ],
+      "MODIFIER_ATTACHMENT": [
+        "1%). Sources de glucides : Riz de brasserie.\nCONSTITUANTS ANALYTIQUES : Protéines 32",
+        "extraits de protéines végétales",
+        "graines. Source de protéines : Concentré de protéines de riz",
+        "farine de soja",
+        "graines de lin"
+      ],
+      "LANGUAGE_VARIANT": [
+        "Céréales",
+        "Teneur en matière grasse 15",
+        "sous-produits d'origine végétale",
+        "substances minérales",
+        "Teneur en matières grasses 14"
+      ],
+      "COMPOUND_PHRASE": [
+        "viandes et sous-produits animaux",
+        "protéines déshydratées de poulet et de dinde",
+        "Protéines déshydratées de poulet et de dinde",
+        "protéines déshydratées de poulet et de dinde",
+        "racine de chicorée déshydratée (source de fructo-oligosaccharides et d'inuline) 0"
+      ],
+      "NON_INGREDIENT_TEXT": [
+        "poudre d'épinard. Constituants Analytiques: Tableau 1. Additifs par kg (Additifs Nutritionnels) : Tableau",
+        "acide pantothénique romarin. Antioxydants: extraits riches en tocophérols d'origine d entiers déshydratés",
+        "blue 2. every ingredient has a purpose manufactured by: nestle purina petcare company st. louis",
+        "7% di latte scremato in polvere equivalente a 4% di latte scremato nelle crocchette a forma di osso",
+        "l-carnitine : 200mg - conservateurs - constituants analytiques : 30 % - matières grasses brutes : 11 % - cendres brutes : 6"
+      ],
+      "OCR_CORRUPTION": [
+        "4 t dépens* 21 _ oc a t ch",
+        "ch wtr.uonc&ntquenîqnt prise on • &quot",
+        "07% latte scremato in polvere***).\r\n*equivalente al 16% di carni e derivati reidratati",
+        "6% ortaggi disidratati**)",
+        "carni e derivati (8%*)"
+      ]
+    }
+  }
+}

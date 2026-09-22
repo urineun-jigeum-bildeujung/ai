@@ -1,0 +1,3 @@
+# 일부 평가 CSV는 원재료 원문을 quoted multi-line field로 보존한다.
+# 해당 field의 줄 끝 공백은 diff whitespace 오류로 해석하지 않는다.
+nutrition/data/eval/*.csv -whitespace

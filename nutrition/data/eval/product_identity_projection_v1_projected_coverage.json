@@ -1,0 +1,6747 @@
+{
+  "scope": "exact barcode/source-id join projection only; no raw merge",
+  "identity_clusters": 329,
+  "current_field_coverage": {
+    "products": 329,
+    "species": 329,
+    "nutrition": 25,
+    "ingredients": 103,
+    "stage": 87,
+    "form": 92
+  },
+  "projected_field_coverage": {
+    "products": 329,
+    "species": 329,
+    "nutrition": 25,
+    "ingredients": 103,
+    "stage": 92,
+    "form": 97
+  },
+  "delta": {
+    "form": 5,
+    "nutrition": 0,
+    "ingredients": 0,
+    "species": 0,
+    "stage": 5,
+    "products": 0
+  },
+  "projected_ready_candidate_count": 0,
+  "projected_rows": [
+    {
+      "identity_key": "3182550702423",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579000366",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550793612",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579311660",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550831383",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550768481",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550771290",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550771252",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579003923",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550716918",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579309445",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0030111493255",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550708180",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550728102",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550751988",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579308943",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579311301",
+      "member_sources": [
+        "GLOBAL",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "CANNED",
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550702379",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742567006",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742035963",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742047393",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742024127",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742024271",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4311596625079",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742210605",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742005355",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742054902",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742282602",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742057569",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742429403",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742840802",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742223209",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742121109",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742935706",
+      "member_sources": [
+        "GLOBAL",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742896502",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992180201",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992184124",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992180126",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992186128",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992184209",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992090685",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992130565",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992107253",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992280543",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "01184716",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992720179",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992281342",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992106133",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992281182",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992280345",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992280178",
+      "member_sources": [
+        "GLOBAL",
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 3,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN",
+        "MOISTURE"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992186708",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992718862",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992182601",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992541118",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992560218",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992523206",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992613105",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714482",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714642",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714697",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714628",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714710",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992500115",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992500603",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992510688",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344107170",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344108122",
+      "member_sources": [
+        "GLOBAL",
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 3,
+      "species": "BOTH",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3010734089322",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8016434900573",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344107156",
+      "member_sources": [
+        "GLOBAL",
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 3,
+      "species": "BOTH",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344088875",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344893110",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344108320",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0815436018860",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344107279",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344118473",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344118480",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344118459",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0076344116356",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0810037580396",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198613939",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612215",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612659",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612369",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612291",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198611379",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612468",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198613908",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198614240",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198614271",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198612277",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198614592",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276020208",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276033376",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276025197",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [
+        "CRUDE_FAT",
+        "CRUDE_FIBER",
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276030467",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276033253",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276021021",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [
+        "CRUDE_PROTEIN"
+      ],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276021922",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276036698",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276040169",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276040121",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276032690",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276032751",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8010276033239",
+      "member_sources": [
+        "OPFF"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "00639088",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0022808385103",
+      "member_sources": [
+        "OEM",
+        "OPFF"
+      ],
+      "member_count": 2,
+      "species": "BOTH",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0723633808309",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777153054",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777166627",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0815260003247",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561528702",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0034846718218",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358513898",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072705117048",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0079105116152",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3760080534365",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0859610007684",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0815260000772",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358511412",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358511474",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "76445330",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777173946",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072705115204",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3760080533160",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198607389",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3760080533047",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198608126",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777184690",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777121435",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777122326",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0723633772921",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561765213",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9120041363030",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0840243125319",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198010509",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9001182000513",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4008429117640",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777102168",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4012783114030",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777179528",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777178071",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777177845",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777153023",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988270",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4062911003606",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870224",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870347",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870354",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870316",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870194",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870941",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591871368",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870965",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591871214",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870781",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988379",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988195",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988331",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988812",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988041",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988980",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988997",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988393",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898950988089",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "73267843",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358515854",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777145127",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777149897",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777124986",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777152873",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561525367",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561763936",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561525527",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198610679",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777226512",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0723633147996",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072705118687",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198608430",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0074198004201",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4401777118527",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777217671",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777217701",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777161394",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358514574",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "01268140",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777177425",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777179214",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0079105122153",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0404777714562",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777145612",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777145611",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777166863",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777185215",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777178811",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777178842",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777121480",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777125013",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0034846541212",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072705105571",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0815260007887",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0815260006873",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0669125941386",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0628451123248",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0810027372024",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072705115938",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777149880",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4062911010871",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4260358511450",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992718930",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992282189",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992718916",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777125020",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7898591870071",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "20303754",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992181123",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561526517",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0015561526531",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992716240",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777170402",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992186609",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992186203",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992283186",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992185206",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714765",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992187200",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992183202",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992182205",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992180607",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992181604",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992714772",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992183127",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992711979",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992185121",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0064992727352",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4047777259053",
+      "member_sources": [
+        "OEM"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": null,
+      "form": null,
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742000633",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3010470181120",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "00680910",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "4627109380312",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034152664",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035164000",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035214798",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613032721022",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613032720995",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613032721657",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035179073",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033575730",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033562792",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033565830",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035419742",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035419322",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035057104",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034262868",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613032452506",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035122796",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033926754",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034957894",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3480200313105",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579307953",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579310151",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579311745",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579000359",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550729321",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550724388",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550803274",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550764551",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550787581",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550786201",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3222270884136",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550783392",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550710398",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742428109",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550805292",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742177601",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742269801",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742211107",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034913166",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "60394552",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0030111541567",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "CANNED",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550761970",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742005447",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036508377",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036354318",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036354127",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034231864",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3222270552745",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742024523",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742534800",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3222270185318",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0769949602026",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036632355",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034976987",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613031204458",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0052742026855",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579008249",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ADULT_MAINTENANCE",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579007129",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "CANNED",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0017800431194",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036442640",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": null,
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8410168399892",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613038660813",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035611702",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "05587239",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036908108",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034370792",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8002205356625",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613287080080",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035378742",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613034643780",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033303081",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": null,
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613033776281",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036435604",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "9003579018941",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0055800249050",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3010470154575",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3182550720816",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "BOTH",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613036724135",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0005274277490",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "01520651",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0017800101851",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613038125695",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0072554001918",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0050000172375",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "0050000574988",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "GROWTH_REPRODUCTION",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "3560071174767",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035378612",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "7613035839700",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "CAT",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": true,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS",
+        "TAURINE"
+      ],
+      "expected_readiness": "NOT_READY"
+    },
+    {
+      "identity_key": "8410168195562",
+      "member_sources": [
+        "GLOBAL"
+      ],
+      "member_count": 1,
+      "species": "DOG",
+      "stage": "ALL_LIFE_STAGES",
+      "form": "DRY",
+      "ingredients_present": false,
+      "nutrition_codes": [],
+      "missing_minimum": [
+        "CALCIUM",
+        "CRUDE_FAT",
+        "CRUDE_PROTEIN",
+        "MOISTURE",
+        "PHOSPHORUS"
+      ],
+      "expected_readiness": "NOT_READY"
+    }
+  ]
+}

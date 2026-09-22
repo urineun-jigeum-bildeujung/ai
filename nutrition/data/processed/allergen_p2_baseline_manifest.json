@@ -1,0 +1,16 @@
+{
+  "baseline_name": "Nutrition Allergen P2 automatic closure",
+  "component_rows": 2814,
+  "raw_evidence_rows": 2856,
+  "catalog_evidence_rows": 2852,
+  "semantic_duplicates": 4,
+  "orphan_evidence_rows": 0,
+  "missing_terminal_status_rows": 0,
+  "tests": 63,
+  "change_reporting_required_fields": [
+    "before",
+    "after",
+    "delta",
+    "reason"
+  ]
+}
