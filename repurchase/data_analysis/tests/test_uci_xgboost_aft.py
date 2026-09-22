@@ -9,6 +9,7 @@ from dataclasses import replace
 import numpy as np
 import pandas as pd
 import pytest
+import xgboost
 
 from scripts.modeling.samples import (
     assign_temporal_splits,
@@ -115,6 +116,7 @@ def test_run_xgboost_aft_experiment_uses_train_and_validation_only(
     trials_report = build_xgboost_aft_bootstrap_trials_report(result)
     markdown = render_xgboost_aft_report(report)
     assert report["evaluation_split"] == "validation"
+    assert report["runtime"]["xgboost"] == xgboost.__version__
     assert report["training"]["trained_until"] == result.split.train_end_at.isoformat()
     assert len(trials_report["trials"]) == 20
     assert "C-index" in markdown
