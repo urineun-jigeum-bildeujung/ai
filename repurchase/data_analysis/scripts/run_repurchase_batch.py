@@ -13,7 +13,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import cast
+from typing import NoReturn, cast
 
 import pandas as pd
 
@@ -36,6 +36,14 @@ CONTRACT_CHECK_SCHEMA_VERSION = 1
 
 class BatchRuntimeError(ValueError):
     """배치가 작업을 시작하기 전에 입력·설정 계약을 거절할 때 발생합니다."""
+
+
+class _BatchArgumentParser(argparse.ArgumentParser):
+    """CLI 문법 오류를 구조화된 배치 계약 오류로 변환합니다."""
+
+    def error(self, message: str) -> NoReturn:
+        """기본 사용법 출력과 즉시 종료 대신 호출자가 처리할 오류를 발생시킵니다."""
+        raise BatchRuntimeError(message)
 
 
 @dataclass(frozen=True)
@@ -189,10 +197,14 @@ def run_contract_check(
     )
 
 
-def _build_parser() -> argparse.ArgumentParser:
+def _build_parser() -> _BatchArgumentParser:
     """현재 지원하는 배치 명령과 필수 외부 파일 인자를 정의합니다."""
-    parser = argparse.ArgumentParser(prog="repurchase-batch")
-    commands = parser.add_subparsers(dest="command", required=True)
+    parser = _BatchArgumentParser(prog="repurchase-batch")
+    commands = parser.add_subparsers(
+        dest="command",
+        required=True,
+        parser_class=_BatchArgumentParser,
+    )
     contract_check = commands.add_parser(
         "contract-check",
         help="실제 DB 쓰기 없이 고정 입력·결과 발행 계약을 검증합니다.",
@@ -222,8 +234,8 @@ def _write_json(payload: dict[str, object], *, stream: object) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """명령을 실행하고 운영 환경이 구분할 수 있는 종료 코드를 반환합니다."""
-    arguments = _build_parser().parse_args(argv)
     try:
+        arguments = _build_parser().parse_args(argv)
         if arguments.command != "contract-check":
             raise BatchRuntimeError(f"지원하지 않는 명령입니다: {arguments.command}")
         summary = run_contract_check(

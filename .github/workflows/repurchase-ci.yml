@@ -92,7 +92,7 @@ jobs:
             repurchase/data_analysis/Dockerfile \
             repurchase/data_analysis/.dockerignore \
             repurchase/data_analysis/requirements-runtime.txt \
-            repurchase/data_analysis/scripts/run_repurchase_batch.py; then
+            repurchase/data_analysis/scripts/; then
             container_changed="false"
           else
             container_changed="true"

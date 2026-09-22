@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.run_repurchase_batch import (
     CONTRACT_REJECTION_EXIT_CODE,
     SUCCESS_EXIT_CODE,
@@ -15,6 +17,34 @@ from scripts.run_repurchase_batch import (
 CONTRACT_DIRECTORY = Path(__file__).parent / "fixtures" / "cloud_contract"
 SOURCE_CONTRACT = CONTRACT_DIRECTORY / "source_orders.json"
 PUBLICATION_CONTRACT = CONTRACT_DIRECTORY / "prediction_publications.json"
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        [],
+        [
+            "contract-check",
+            "--source-contract",
+            str(SOURCE_CONTRACT),
+        ],
+    ],
+    ids=["missing-command", "missing-subcommand-option"],
+)
+def test_cli_rejects_syntax_errors_as_one_json_record(
+    arguments: list[str], capsys: object
+) -> None:
+    """최상위·하위 명령 문법 오류도 동일한 JSON 거절 계약을 따릅니다."""
+    exit_code = main(arguments)
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.err)
+    assert exit_code == CONTRACT_REJECTION_EXIT_CODE
+    assert captured.out == ""
+    assert len(captured.err.splitlines()) == 1
+    assert payload["event"] == "repurchase_batch_rejected"
+    assert payload["status"] == "REJECTED"
+    assert payload["error_type"] == "BatchRuntimeError"
 
 
 def test_contract_check_reports_reproducible_stage_counts() -> None:
