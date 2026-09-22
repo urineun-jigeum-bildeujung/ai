@@ -105,12 +105,15 @@ upsert = upsert_refs
 
 def get_refs(product_id, dictionary_version, pipeline_version, path=DB):
     """Return precomputed evidence only when parent lineage and serialization are valid."""
+    connection = None
     try:
         connection = connect(path)
         rows = [dict(row) for row in connection.execute("select r.*, c.processing_status as parent_processing_status from product_allergen_refs r left join product_ingredient_components c on r.component_occurrence_id=c.component_occurrence_id where r.product_id=?", (product_id,))]
-        connection.close()
     except sqlite3.Error:
         return [], "LINEAGE_INTEGRITY_ERROR"
+    finally:
+        if connection is not None:
+            connection.close()
     if not rows: return [], "NO_EVIDENCE"
     if any(row["dictionary_version"] != dictionary_version or row["pipeline_version"] != pipeline_version for row in rows): return [], "STALE_EVIDENCE"
     required = ("evidence_id", "component_occurrence_id", "product_id", "raw_ingredient_text", "normalized_text", "mapping_method", "source_dataset")

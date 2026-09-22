@@ -225,7 +225,7 @@
   - `life_stage` / `product_life_stage` / `is_match` / `aafco_pass_per_product` (4필드)
 - `allergy_check`: 알레르기 충돌 여부
   - `status` (`OK` / `CONFLICT`) / `matched_allergens[]` (allergen_code + detected_keyword)
-- `nutrients`: 영양성분별 기준 비교 결과 배열
+- `nutrition_analysis`: 영양성분별 기준 비교 결과 배열
   - 각 항목: `nutrient_code` / `nutrient_name` / `actual_value` / `actual_unit` / `reference_min` / `reference_max` / `comparison_status` / `display_grade` / `reason_text`
 - `excluded`: 추천/분석 대상에서 제외된 경우 사유 배열 (`reason_code` + `reason_text`)
 - `warnings`: 데이터 부족·주의사항 배열 (`warning_code`)

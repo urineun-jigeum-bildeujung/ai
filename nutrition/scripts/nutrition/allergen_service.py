@@ -127,7 +127,9 @@ def _product_stage(value: str | None) -> str | None:
 def evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
     """Shared fail-closed safety result for API, direct matchers, and batch callers."""
     category = product.get("category", "food")
-    raw_allergies = product.get("allergies", pet.get("allergies", []))
+    # Allergy profiles belong to the pet.  Product-provided values are
+    # untrusted product metadata and must not override the user's profile.
+    raw_allergies = pet.get("allergies") or []
     profile_status = pet.get("allergy_profile_status") or ("KNOWN_LIST" if raw_allergies else "KNOWN_NONE")
     profile = canonicalize_profile(raw_allergies, profile_status)
     if profile["status"] == "UNKNOWN" or profile["unresolved"]:

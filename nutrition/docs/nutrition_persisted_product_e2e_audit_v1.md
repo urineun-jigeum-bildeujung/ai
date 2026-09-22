@@ -120,10 +120,10 @@ OEM 189개를 임의로 food로 강제하지 않는다. 이들은 재계산에�
 | 분류 | 위치 | 근거 |
 |---|---|---|
 | `SAFE_NEW_CALLER` | `scripts/api_nutrition.py`의 `_run_p0d` 두 호출 | species/stage map을 모두 명시 전달 |
-| `LEGACY_EXPLICIT` | `scripts/tests/test_nutrition_readiness.py`의 unsupported-reference test | 지원하지 않는 map을 명시 전달해 fail-close 검증 |
+| `LEGACY_EXPLICIT` | `tests/test_nutrition_readiness.py`의 unsupported-reference test | 지원하지 않는 map을 명시 전달해 fail-close 검증 |
 | `LEGACY_IMPLICIT_DEFAULT` | `scripts/pipeline_p1c_v1.py:1107-1117` | `compare_nias`와 `compute_aafco_pass`에 species map만 전달, stage map 없음 |
 | `LEGACY_IMPLICIT_DEFAULT` | `scripts/e2e1_p2_final_v1.py:123-129`, `scripts/p2_regen_v1.py:101-111` | 동일한 batch regeneration 경로 |
-| `LEGACY_IMPLICIT_DEFAULT` | `scripts/tests/test_p0_contracts.py:55-61`, `scripts/tests/test_p0_nutrition_safety.py:119-124` | old no-map 동작을 사용하는 단위 테스트 |
+| `LEGACY_IMPLICIT_DEFAULT` | `tests/test_p0_contracts.py:55-61`, `tests/test_p0_nutrition_safety.py:119-124` | old no-map 동작을 사용하는 단위 테스트 |
 
 `verify_7_queries*`의 동명 함수는 `pipeline_p1c_v1.compute_nutrition_comparison_status()`가 아니라 해당 파일 내부의 다른 legacy 구현이므로 이 caller 집계에서 제외했다.
 

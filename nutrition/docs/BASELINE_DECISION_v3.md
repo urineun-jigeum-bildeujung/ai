@@ -216,9 +216,9 @@ CAT product 는 AAFCO Ca:P 미요구 → NOT_APPLICABLE (별도 집계).
 
 ## 6. 발표 자료 / 핸드오프 / ZEP 인용 정책
 
-### 6.1 본 v3 (status: verified) 인용 가능 (9/4 12:55 ~)
+### 6.1 본 v3 (status: verified_via_parity_test_only) 인용 가능 (9/4 12:55 ~)
 
-- 인용 표현: "POST-PR-canonical-status-precision (V3 verified, 9/4 12:55, commit 98cad1f1), SQL 8-step exact replication, 0행 차이"
+- 인용 표현: "POST-PR-canonical-status-precision (V3 verified_via_parity_test_only, 9/4 12:55, commit 98cad1f1), SQL 8-step exact replication, 0행 차이"
 - 모든 발표 자료 / 핸드오프 / ZEP 산출물 3 의 분포 인용은 본 v3 의 82/507/48/10 = 647 으로 통일
 - 발표 자료 표현 교체 (Wave 6) 시 본 v3 분포 적용
 
@@ -240,7 +240,7 @@ CAT product 는 AAFCO Ca:P 미요구 → NOT_APPLICABLE (별도 집계).
 
 ---
 
-## 8. 재현 게이트 (verified 충족)
+## 8. 재현 게이트 (verified_via_parity_test_only 충족)
 
 ```
 $ git clone <repo>
@@ -265,7 +265,7 @@ Loaded species_map from seed_9b: 189 products
   "NOT_APPLICABLE": 0
 }
 
-✓ TOTAL 647 일치. 0행 차이. PR-canonical-status-precision V3 exact replication 완료. status: verified
+✓ TOTAL 647 일치. 0행 차이. PR-canonical-status-precision V3 exact replication 완료. status: verified_via_parity_test_only
 ```
 
 → **재현 게이트 충족**. 동일 입력 + 동일 환경에서 stage별 건수와 4-state 분포 manifest 와 완전 일치.

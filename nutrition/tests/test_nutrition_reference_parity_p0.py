@@ -1,6 +1,7 @@
 """Parity P0 regressions for raw NIAS applicability preservation."""
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -9,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path[:0] = [str(SCRIPTS), str(SCRIPTS / "nutrition")]
 
-from nutrition.reference_parity import build_artifact, select_reference, validate_rows
+from nutrition.reference_parity import RAW_TABLES, build_artifact, build_rows, select_reference, validate_rows
 from pipeline_p1c_v1 import compare_nias
 
 
@@ -25,6 +26,13 @@ class NutritionReferenceParityP0Tests(unittest.TestCase):
     def test_generator_invariants(self):
         validate_rows(self.rows)
         self.assertEqual(self.artifact["artifact_version"], "NIAS_2024_PARITY_P0_V1")
+
+    def test_rejects_source_table_when_minimum_header_moves(self):
+        raw = json.loads(RAW_TABLES.read_text(encoding="utf-8"))
+        growth_page = next(page for page in raw["tables"] if page["page"] == 42)
+        growth_page["tables"][0][1][4] = "aNIAS 최대"
+        with self.assertRaisesRegex(ValueError, "minimum column"):
+            build_rows(raw, {"rows": []})
 
     def test_cat_taurine_adult_dry_and_canned_dm_are_distinct(self):
         dry = self.select(species="CAT", life_stage="ADULT_MAINTENANCE", nutrient_code="TAURINE", basis="DRY_MATTER", reference_form="DRY")

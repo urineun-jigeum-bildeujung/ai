@@ -98,7 +98,7 @@
 기존 `scripts/pipeline_p1c_v1.py:38-47` 의 `TARGET_NUTRIENTS_18` + AAFCO 필수 추가 (Arachidonic for CAT) + Ca:P 비율 규칙 + MOISTURE (basis_conversion_input은 별도).
 
 세부:
-- `DOG ADULT_MAINTENANCE`: 17 영양소 (CP/CF/MOIS/Ca/P/Na/Mg/K/Fe/Cu/Zn/VitA/VitD/VitE/VitB1/VitB2) + 1 Ca:P 규칙 + 1 MOISTURE = 19행
+- `DOG ADULT_MAINTENANCE`: 17 영양소 (CP/CF/CRUDE_FIBER/MOIS/Ca/P/Na/Mg/K/Fe/Cu/Zn/VitA/VitD/VitE/VitB1/VitB2) + 1 Ca:P 규칙 + 1 MOISTURE = 19행
 - `DOG GROWTH_REPRODUCTION`: 동일 17 + 1 Ca:P + 1 MOISTURE = 19행
 - `CAT ADULT_MAINTENANCE`: 17 영양소 + Arachidonic + Taurine DRY + Taurine WET + 1 MOISTURE = 21행
 - `CAT GROWTH_REPRODUCTION`: 동일 21행

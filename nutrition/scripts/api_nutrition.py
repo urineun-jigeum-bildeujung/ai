@@ -206,8 +206,21 @@ def _analyze_product(req: AnalyzeRequest) -> dict[str, Any]:
         result.update(safety)
         result["analysis_engine"] = "match_v1_1_category"
         result["p0_d_applied"] = False
+        result["input_readiness"] = {
+            "input_readiness": "UNSUPPORTED",
+            "reason_codes": ["CATEGORY_NOT_FOOD"],
+        }
+        result["nutrition_coverage"] = {
+            "nutrition_coverage": "UNKNOWN",
+            "reason_codes": ["CATEGORY_NOT_FOOD"],
+        }
         result["nutrition_comparison_status"] = "NOT_APPLICABLE"
         result["aafco_pass"] = None
+        result["analysis_status"] = (
+            "INSUFFICIENT_DATA"
+            if safety["safety_status"] in {"SAFETY_BLOCKED", "SAFETY_DATA_INSUFFICIENT"}
+            else "READY"
+        )
 
     result["ingredient_normalized"] = [
         normalize_ingredient(ingredient) for ingredient in product.ingredient_list

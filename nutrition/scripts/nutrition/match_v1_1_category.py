@@ -50,6 +50,9 @@ def _pet_to_persona(pet: dict) -> dict:
         "age_years": pet.get("age_years", 0),
         "weight_kg": pet.get("weight_kg", 0),
         "allergies": pet.get("allergies", []),
+        # ``match_nutrients`` consumes ``life_stage``.  Keep the historical
+        # spelling too because label compatibility helpers still consume it.
+        "life_stage": lifestage,
         "lifestage": lifestage,
     }
 

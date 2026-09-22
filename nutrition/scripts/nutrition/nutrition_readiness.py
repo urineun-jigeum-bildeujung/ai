@@ -161,8 +161,21 @@ def evaluate_nutrition_coverage(
             "reason_codes": ["COMPREHENSIVE_MATRIX_REFERENCE_UNRESOLVED"],
         }
 
+    try:
+        matrix_rows = _comprehensive_matrix_rows()
+    except OSError:
+        # Coverage is descriptive rather than an execution gate.  A missing or
+        # unreadable matrix must not turn a domain result into an HTTP 500 or
+        # accidentally claim coverage.
+        return {
+            "nutrition_coverage": "UNKNOWN",
+            "matrix_source": str(COMPREHENSIVE_MATRIX_PATH.relative_to(ROOT)),
+            "applicable_nutrients": [], "present_comparable_nutrients": [],
+            "missing_nutrients": [], "unavailable_nutrients": [],
+            "reason_codes": ["COMPREHENSIVE_MATRIX_REFERENCE_UNRESOLVED"],
+        }
     rows = [
-        row for row in _comprehensive_matrix_rows()
+        row for row in matrix_rows
         if row.get("species") == species and row.get("life_stage") == stage
     ]
     # CA_P_RATIO is a derived comparison, not a label nutrient input. Tier 3 is

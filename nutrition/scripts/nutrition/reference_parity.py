@@ -117,6 +117,28 @@ def _iter_data_rows(table: list[list[Any]]) -> list[list[Any]]:
     return [row for row in table if row and row[0] and str(row[0]).strip() not in {"영양소", "미네랄", "비타민"}]
 
 
+def _header_cell(row: list[Any], index: int) -> str:
+    """Normalize a source header cell without weakening its column contract."""
+    return re.sub(r"\s+", "", str(row[index] if len(row) > index else ""))
+
+
+def _validate_source_header(table: list[list[Any]], mode: str) -> None:
+    """Reject a raw table whose threshold columns no longer match this parser."""
+    if len(table) < 2 or _header_cell(table[0], 0) != "영양소" or _header_cell(table[0], 1) != "단위":
+        raise ValueError("NIAS source header is missing nutrient/unit columns")
+    if _header_cell(table[1], 2) != "FEDIAF" or _header_cell(table[1], 3) != "AAFCO":
+        raise ValueError("NIAS source header has unexpected comparison columns")
+    if _header_cell(table[1], 4) != "aNIAS최소":
+        raise ValueError("NIAS source header has unexpected minimum column")
+    if mode == "DOG_GROWTH_DETAIL":
+        if len(table) < 3 or _header_cell(table[1], 6) != "aNIAS최대":
+            raise ValueError("NIAS dog-growth source header has unexpected maximum column")
+        if _header_cell(table[2], 4) != "초기성장b및번식" or _header_cell(table[2], 5) != "후기성장c":
+            raise ValueError("NIAS dog-growth source header has unexpected detail columns")
+    elif _header_cell(table[1], 5) != "aNIAS최대":
+        raise ValueError("NIAS source header has unexpected maximum column")
+
+
 def build_rows(raw_tables: dict[str, Any], legacy: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for page_data in raw_tables["tables"]:
@@ -125,6 +147,7 @@ def build_rows(raw_tables: dict[str, Any], legacy: dict[str, Any]) -> list[dict[
             continue
         species, stage, basis, table_id, mode = TABLE_CONTEXT[page]
         for table in page_data.get("tables", []):
+            _validate_source_header(table, mode)
             for source_row in _iter_data_rows(table):
                 label = str(source_row[0]).replace("\n", " ").strip()
                 code, form_raw, form = _label_parts(label)

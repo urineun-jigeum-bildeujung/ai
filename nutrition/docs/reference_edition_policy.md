@@ -41,7 +41,7 @@
 |---|---|---|---|
 | `AAFCO 2014 Nutrient Profiles` | AAFCO 2014 OP Appendix A (revised 092214). Dog/Cat Food Nutrient Profiles 본문 | https://www.aafco.org/wp-content/uploads/2023/01/Pet_Food_Report_Annual_2014-Appendix_A-Revised_AAFCO_Nutrient_Profiles-Final_092214.pdf | 2014 |
 | `AAFCO 2024 OP` | AAFCO 2024 Official Publication. 2014 profile 인용 (개정 없음) | https://www.aafco.org/ | 2024 |
-| `NIAS 2024_v5` | 농림축산식품부 반려동물 사료 영양표준 v5 (8/27 17:43). 우리 프로젝트 내부 reference | (내부 seed_14_nutrition_reference_v5.json) | 2024 |
+| `NIAS 2024_v5` | 농촌진흥청 국립축산과학원(NIAS) 반려동물 사료 영양표준 v5 (8/27 17:43). 우리 프로젝트 내부 reference | (내부 seed_14_nutrition_reference_v5.json) | 2024 |
 | `FEDIAF 2024 Nutritional Guidelines` | European Pet Food Industry Federation 2024 가이드라인 (참고용, 미사용) | (별도) | 2024 |
 
 ### 1.2 publication_year enum (OP 발행 연도)

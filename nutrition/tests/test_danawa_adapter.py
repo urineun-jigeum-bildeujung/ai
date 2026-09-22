@@ -45,6 +45,23 @@ def check(name: str, cond: bool, detail: str = ""):
     else:
         FAIL += 1
         RESULTS.append((name, False, detail))
+        raise AssertionError(f"{name}: {detail}")
+
+
+def test_check_raises_for_a_failed_condition():
+    """A failed helper condition must fail pytest, not only increment a counter."""
+    global PASS, FAIL
+    before_counts = PASS, FAIL
+    before_results = len(RESULTS)
+    try:
+        check("intentional regression guard", False, "expected failure")
+    except AssertionError as exc:
+        assert "intentional regression guard" in str(exc)
+    else:  # pragma: no cover - protects the helper's test contract
+        raise AssertionError("check() accepted a failed condition")
+    finally:
+        PASS, FAIL = before_counts
+        del RESULTS[before_results:]
 
 
 # ============ 1) 파싱 테스트 ============

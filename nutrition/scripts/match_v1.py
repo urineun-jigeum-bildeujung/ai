@@ -62,8 +62,8 @@ def match_nutrients(feed: dict, persona: dict, seed_nutrition: dict) -> dict:
     ref = seed_nutrition["reference_tables"]
     if persona["species"] == "dog":
         life_stage = persona.get("life_stage", "adult")
-        if life_stage == "puppy" or life_stage == "senior":
-            table = ref.get(f"growing_dog_per_dm_100g_NIAS", ref["adult_dog_per_dm_100g_NIAS"])
+        if life_stage == "puppy":
+            table = ref.get("growing_dog_per_dm_100g_NIAS", ref["adult_dog_per_dm_100g_NIAS"])
         else:
             table = ref["adult_dog_per_dm_100g_NIAS"]
     else:  # cat

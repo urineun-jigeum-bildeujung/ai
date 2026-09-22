@@ -75,8 +75,8 @@
       "compare_product_pass": "TRUE | FALSE | UNKNOWN"
     },
     "allergy_check": {
-      "base_product": { "status": "OK | WARNING", "matched_allergens": ["string"] },
-      "compare_product": { "status": "OK | WARNING", "matched_allergens": ["string"] }
+      "base_product": { "status": "OK | CONFLICT", "matched_allergens": ["string"] },
+      "compare_product": { "status": "OK | CONFLICT", "matched_allergens": ["string"] }
     },
     "nutrients": [
       {
