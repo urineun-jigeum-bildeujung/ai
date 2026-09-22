@@ -228,3 +228,23 @@ docker run --rm \
 AMD64 이미지보다 클 수 있으며, 실제 배포 이미지 크기는 CI의 AMD64 빌드 결과를
 기준으로 판단합니다. Python 기반 이미지는 태그가 가리키는 내용이 바뀌지 않도록
 멀티 아키텍처 manifest digest까지 고정합니다.
+
+### GHCR 이미지 등록
+
+`main`에 Dockerfile·런타임 의존성·실행 스크립트·재구매 CI 변경이 병합되면
+GitHub Actions가 Linux AMD64 이미지를 다시 빌드하고 계약 smoke test를 수행합니다.
+검증을 통과한 이미지만 아래 GitHub Container Registry 경로에 등록합니다.
+
+```text
+ghcr.io/urineun-jigeum-bildeujung/ai-repurchase-batch
+```
+
+한 번 발행한 커밋 버전을 다시 찾을 수 있도록 `sha-<Git commit SHA>` 태그를
+불변 버전으로 사용합니다. `stable`은 최신 검증본을 확인하기 위한 이동 태그이며,
+PR 검증과 수동 워크플로 실행에서는 Registry에 이미지를 등록하지 않습니다.
+
+클라우드 배포 시에는 `stable`을 직접 참조하기보다 Actions 실행 요약에 기록된
+digest를 사용합니다. digest를 고정하면 이후 `stable`이 새 이미지로 이동해도
+실행 중인 배포가 의도치 않게 바뀌지 않고 같은 이미지를 재현하거나 롤백할 수
+있습니다. 이미지 등록과 실제 클라우드 배포는 분리하며, 배포 자동화는 실행 환경과
+승인 정책이 확정된 뒤 별도 워크플로로 구성합니다.
