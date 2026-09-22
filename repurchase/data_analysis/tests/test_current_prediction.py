@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,6 +16,7 @@ from scripts.modeling.artifacts import (
     save_model_artifact,
 )
 from scripts.modeling.current_prediction import predict_current_repurchase_probability
+from scripts.modeling.features import FEATURE_GENERATION_VERSION
 from scripts.modeling.xgboost_aft import (
     XGBoostAFTError,
     XGBoostAFTTrainingResult,
@@ -163,12 +166,29 @@ def test_loaded_aft_artifact_predicts_current_window_without_future_leakage(
     pd.testing.assert_frame_equal(purchases, original)
 
 
+def test_current_prediction_rejects_stale_feature_generation_version(tmp_path) -> None:
+    """현재 구매 이력을 계산하기 전에 오래된 피처 규칙의 모델을 거절합니다."""
+    artifact = load_model_artifact(
+        save_model_artifact(_trained_model(), tmp_path / "aft", horizon_days=30)
+    )
+    stale = replace(artifact, feature_generation_version=FEATURE_GENERATION_VERSION + 1)
+
+    with pytest.raises(ModelArtifactError, match="피처 생성 규칙 버전"):
+        predict_current_repurchase_probability(
+            stale,
+            _purchase_events(),
+            as_of_timestamp=pd.Timestamp("2026-01-21T00:00:00Z"),
+            window_days=30,
+        )
+
+
 def test_fixed_horizon_lightgbm_is_not_a_conditional_survival_model() -> None:
     """고정 기간 분류 모델을 현재 시점 조건부 모델처럼 사용하지 않습니다."""
     artifact = LoadedModelArtifact(
         family="lightgbm",
         model=xgb.Booster(),  # 모델 유형 검사가 먼저 실패해야 합니다.
         feature_columns=("history_interval_count",),
+        feature_generation_version=FEATURE_GENERATION_VERSION,
         horizon_days=30,
         artifact_id="lightgbm-test",
     )
