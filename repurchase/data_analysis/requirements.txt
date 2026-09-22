@@ -1,10 +1,6 @@
-pandas>=2.2,<3.0
+# 분석·학습 환경도 운영 배치와 같은 핵심 수치·모델 버전을 사용합니다.
+-r requirements-runtime.txt
+
 openpyxl>=3.1,<4.0
 pyreadr>=0.5,<1.0
 matplotlib>=3.9,<4.0
-
-# 재구매 확률 모델의 학습 결과와 실행 환경을 동일하게 재현하도록 버전을 고정합니다.
-lightgbm==4.7.0
-scikit-learn==1.9.1
-xgboost==3.2.0
-scipy==1.17.1
