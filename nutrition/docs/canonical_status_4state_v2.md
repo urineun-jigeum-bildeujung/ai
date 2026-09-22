@@ -169,7 +169,7 @@ ALTER TABLE product_nutrition_analysis ADD CONSTRAINT chk_canonical_ncs_invalid
 ```python
 def _canonical_status_10step(r: dict) -> str:
     """canonical_status 4-state 결정 (v2 10단계 — 1~8 item-level, 9~10 product-level).
-    
+
     1) OFF_BRANDED / TAURINE_DOG → NOT_APPLICABLE
     2) NO_VALUE / NO_REF / NEEDS_REVIEW → UNKNOWN
     3) mineral + SKIPPED_NO_MOISTURE → INVALID
@@ -186,7 +186,7 @@ def _canonical_status_10step(r: dict) -> str:
 
 def compute_ca_p_ratio_status(product_id: str, items: list, product_species_map: dict) -> str:
     """DOG only. Ca/P ratio 1:1~2:0 AAFCO 2014 결정 (product-level).
-    
+
     CAT: NOT_APPLICABLE (AAFCO Ca:P 미요구)
     DOG + Ca or P null: UNKNOWN (NON_COMPARABLE)
     DOG + Ca/P 모두 존재: ratio = Ca/P, 1.0~2.0 → IN_RANGE
@@ -194,19 +194,19 @@ def compute_ca_p_ratio_status(product_id: str, items: list, product_species_map:
     sp = (product_species_map or {}).get(product_id, "DOG").upper()
     if sp != "DOG":
         return "NOT_APPLICABLE"
-    
+
     ca_row = next((r for r in items if r.get("nutrient_code") == "CALCIUM" and r.get("product_id") == product_id), None)
     p_row = next((r for r in items if r.get("nutrient_code") == "PHOSPHORUS" and r.get("product_id") == product_id), None)
-    
+
     if not ca_row or not p_row:
         return "UNKNOWN"
-    
+
     ca_value = ca_row.get("canonical_value") or ca_row.get("aligned_value")
     p_value = p_row.get("canonical_value") or p_row.get("aligned_value")
-    
+
     if ca_value is None or p_value is None or p_value == 0:
         return "UNKNOWN"
-    
+
     ratio = ca_value / p_value
     if ratio < 1.0:
         return "OUT_OF_RANGE_LOW"
