@@ -13,7 +13,11 @@ from typing import Final
 import pandas as pd
 
 from .loaders import load_uci_online_retail_ii
-from .modeling.evaluation import evaluate_ipcw_brier_score, summarize_ipcw_calibration
+from .modeling.evaluation import (
+    bootstrap_ipcw_brier_difference_by_user,
+    evaluate_ipcw_brier_score,
+    summarize_ipcw_calibration,
+)
 from .modeling.landmark_validation import build_split_landmark_cohort
 from .modeling.maturity_analysis import add_split_ipcw_weights
 from .modeling.probability_baseline import fit_global_event_probability_baseline
@@ -44,6 +48,8 @@ def evaluate_conditional_landmarks(
     *,
     landmark_days: tuple[int, ...] = LANDMARK_DAYS,
     window_days: int = WINDOW_DAYS,
+    bootstrap_replicates: int | None = None,
+    bootstrap_random_seed: int = 42,
 ) -> dict[str, object]:
     """Train 기준 확률과 고정 AFT 후보를 사용해 Validation 시점별 성능을 봅니다."""
     if not landmark_days or len(set(landmark_days)) != len(landmark_days):
@@ -95,28 +101,42 @@ def evaluate_conditional_landmarks(
             reference_probability=reference.global_event_probability,
         )
         calibration = summarize_ipcw_calibration(validation_weighted)
-        results.append(
-            {
-                "elapsed_days": elapsed_days,
-                "train_at_risk_count": len(train_cohort.rows),
-                "train_outcome_known_count": reference.global_outcome_known_count,
-                "source_validation_count": validation_cohort.source_sample_count,
-                "excluded_prior_event_count": validation_cohort.excluded_prior_event_count,
-                "excluded_prior_censor_count": validation_cohort.excluded_prior_censor_count,
-                "at_risk_count": len(validation_cohort.rows),
-                "outcome_unknown_count": int(
-                    (~validation_weighted["ipcw_outcome_known"]).sum()
-                ),
-                "observed_event_count": int(
-                    validation_weighted["ipcw_event_within_horizon"].fillna(False).sum()
-                ),
-                "brier": brier,
-                "expected_calibration_error": float(
-                    calibration["weighted_absolute_gap_contribution"].sum()
-                ),
-                "calibration": dataframe_to_nullable_records(calibration),
-            }
-        )
+        landmark_result: dict[str, object] = {
+            "elapsed_days": elapsed_days,
+            "train_at_risk_count": len(train_cohort.rows),
+            "train_outcome_known_count": reference.global_outcome_known_count,
+            "source_validation_count": validation_cohort.source_sample_count,
+            "excluded_prior_event_count": validation_cohort.excluded_prior_event_count,
+            "excluded_prior_censor_count": validation_cohort.excluded_prior_censor_count,
+            "at_risk_count": len(validation_cohort.rows),
+            "outcome_unknown_count": int(
+                (~validation_weighted["ipcw_outcome_known"]).sum()
+            ),
+            "observed_event_count": int(
+                validation_weighted["ipcw_event_within_horizon"].fillna(False).sum()
+            ),
+            "brier": brier,
+            "expected_calibration_error": float(
+                calibration["weighted_absolute_gap_contribution"].sum()
+            ),
+            "calibration": dataframe_to_nullable_records(calibration),
+        }
+        # 추가 실험에서만 사용자 재표집을 실행해 기존 기본 평가를 그대로 유지합니다.
+        if bootstrap_replicates is not None:
+            bootstrap = bootstrap_ipcw_brier_difference_by_user(
+                validation_weighted,
+                reference_probability=reference.global_event_probability,
+                bootstrap_replicates=bootstrap_replicates,
+                random_seed=bootstrap_random_seed,
+            )
+            landmark_result["at_risk_user_count"] = int(
+                validation_weighted["user_id"].nunique()
+            )
+            landmark_result["user_bootstrap"] = bootstrap.summary
+            landmark_result["bootstrap_trials"] = dataframe_to_nullable_records(
+                bootstrap.trials
+            )
+        results.append(landmark_result)
 
     return {
         "dataset": "uci_online_retail_ii",
