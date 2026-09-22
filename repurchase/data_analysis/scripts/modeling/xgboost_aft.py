@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from pandas.api.types import is_bool_dtype, is_complex_dtype, is_numeric_dtype
+from scipy.special import log_ndtr
 
 from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
 
@@ -575,5 +576,119 @@ def calculate_xgboost_aft_event_probability(
         probability,
         index=predicted_duration_days.index.copy(),
         name="predicted_event_probability",
+        dtype="float64",
+    )
+
+
+def _calculate_aft_log_survival(
+    standardized_time: np.ndarray, *, loss_distribution: str
+) -> np.ndarray:
+    """선택한 AFT 분포의 생존확률을 로그로 계산해 작은 확률도 보존합니다."""
+    if loss_distribution == "normal":
+        return log_ndtr(-standardized_time)
+    if loss_distribution == "logistic":
+        return -np.logaddexp(0.0, standardized_time)
+    if loss_distribution == "extreme":
+        with np.errstate(over="ignore"):
+            return -np.exp(standardized_time)
+    raise XGBoostAFTError(
+        "AFT 손실분포는 normal, logistic, extreme 중 하나여야 합니다."
+    )
+
+
+def calculate_xgboost_aft_conditional_probability(
+    training_result: XGBoostAFTTrainingResult,
+    predicted_duration_days: pd.Series,
+    elapsed_days: pd.Series,
+    *,
+    window_days: int,
+) -> pd.Series:
+    """아직 재구매하지 않은 조건에서 앞으로 window_days 내 사건 확률을 계산합니다.
+
+    확률은 P(t < T <= t+h | T > t) = 1 - S(t+h)/S(t)입니다.
+    이 값은 기존 구매 후 고정 기간 예측과 다르며 별도 운영 캘리브레이션이 필요합니다.
+    """
+    if (
+        isinstance(window_days, bool)
+        or not isinstance(window_days, Integral)
+        or window_days <= 0
+    ):
+        raise XGBoostAFTError("미래 예측 기간은 0보다 큰 정수 일수여야 합니다.")
+    if (
+        predicted_duration_days.empty
+        or not predicted_duration_days.index.is_unique
+        or not predicted_duration_days.index.equals(elapsed_days.index)
+    ):
+        raise XGBoostAFTError("AFT 예측 시간과 경과 시간의 행 인덱스·순서가 다릅니다.")
+    for name, values, allow_zero in (
+        ("기본 시간 척도 예측값", predicted_duration_days, False),
+        ("경과 시간", elapsed_days, True),
+    ):
+        if (
+            is_bool_dtype(values.dtype)
+            or is_complex_dtype(values.dtype)
+            or not is_numeric_dtype(values.dtype)
+            or not np.isfinite(values.to_numpy(dtype="float64", copy=False)).all()
+            or (values.lt(0) if allow_zero else values.le(0)).any()
+        ):
+            raise XGBoostAFTError(f"AFT {name}에 유효하지 않은 값이 있습니다.")
+
+    create_xgboost_aft_parameters(
+        loss_distribution=training_result.loss_distribution,
+        loss_distribution_scale=training_result.loss_distribution_scale,
+    )
+    duration = predicted_duration_days.to_numpy(dtype="float64", copy=False)
+    elapsed = elapsed_days.to_numpy(dtype="float64", copy=False)
+    try:
+        window = float(window_days)
+    except OverflowError as error:
+        raise XGBoostAFTError(
+            "미래 예측 기간을 유한한 일수로 표현할 수 없습니다."
+        ) from error
+    if not np.isfinite(window):
+        raise XGBoostAFTError("미래 예측 기간을 유한한 일수로 표현할 수 없습니다.")
+    future = elapsed + window
+    if not np.isfinite(future).all() or (future <= elapsed).any():
+        raise XGBoostAFTError(
+            "경과 시간에 미래 예측 기간을 더해도 구별 가능한 유한한 시각이어야 합니다."
+        )
+
+    # t=0에서는 log(0)을 계산하지 않고 S(0)=1을 사용합니다.
+    log_survival_now = np.zeros(len(elapsed), dtype="float64")
+    positive_elapsed = elapsed > 0
+    standardized_now = (
+        np.log(elapsed[positive_elapsed]) - np.log(duration[positive_elapsed])
+    ) / training_result.loss_distribution_scale
+    standardized_future = (
+        np.log(future) - np.log(duration)
+    ) / training_result.loss_distribution_scale
+    if (
+        not np.isfinite(standardized_now).all()
+        or not np.isfinite(standardized_future).all()
+    ):
+        raise XGBoostAFTError("표준화된 경과 시간은 유한해야 합니다.")
+    log_survival_now[positive_elapsed] = _calculate_aft_log_survival(
+        standardized_now,
+        loss_distribution=training_result.loss_distribution,
+    )
+    log_survival_future = _calculate_aft_log_survival(
+        standardized_future,
+        loss_distribution=training_result.loss_distribution,
+    )
+    if not np.isfinite(log_survival_now).all() or np.isnan(log_survival_future).any():
+        raise XGBoostAFTError("현재 생존확률을 수치적으로 계산할 수 없습니다.")
+    log_ratio = log_survival_future - log_survival_now
+    if (log_ratio > 0).any():
+        raise XGBoostAFTError("미래 생존확률이 현재 생존확률보다 클 수 없습니다.")
+    probability = -np.expm1(log_ratio)
+    if (
+        not np.isfinite(probability).all()
+        or ((probability < 0) | (probability > 1)).any()
+    ):
+        raise XGBoostAFTError("현재 시점 조건부 확률은 0부터 1 사이여야 합니다.")
+    return pd.Series(
+        probability,
+        index=predicted_duration_days.index.copy(),
+        name="conditional_repurchase_probability",
         dtype="float64",
     )
