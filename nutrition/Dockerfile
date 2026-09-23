@@ -21,7 +21,9 @@ RUN python -m pip install --no-cache-dir --requirement requirements.lock
 
 # scripts/nutrition 안의 실제 로직 모듈, data(시드/기준 데이터, 992KB)만 복사한다.
 # tests/API/docs는 런타임에 쓰이지 않아 이미지에 넣지 않는다.
-COPY --chown=nutrition:nutrition scripts ./scripts
+# scripts는 실행 중 쓸 일이 없어 root 소유로 남겨(프로세스가 침해돼도 코드 변조를
+# 못 하게) 두고, data만 nutrition 소유로 줘서 위 sqlite 파일 생성이 가능하게 한다.
+COPY --chown=root:root scripts ./scripts
 COPY --chown=nutrition:nutrition data ./data
 
 USER nutrition

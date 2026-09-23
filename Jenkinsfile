@@ -166,11 +166,12 @@ spec:
                         container('kaniko') {
                             sh """
                                 /kaniko/executor \\
-                                  --context=`pwd` \\
-                                  --dockerfile=${svc.dockerfile} \\
+                                  --context=`pwd`/${svc.path} \\
+                                  --dockerfile=`pwd`/${svc.dockerfile} \\
                                   --destination=${imageRef} \\
                                   --no-push \\
-                                  --tarPath=${tarFile}
+                                  --tarPath=${tarFile} \\
+                                  --cleanup
                             """
                         }
 
