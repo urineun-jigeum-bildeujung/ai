@@ -81,6 +81,38 @@ def test_same_group_lines_are_not_merged_without_scope_decision() -> None:
     }
 
 
+@pytest.mark.parametrize("status", ["PREPARING", "SHIPPING", "DELIVERED", "CONFIRMED"])
+def test_fulfilled_order_preserves_paid_purchase(status: str) -> None:
+    """배송 상태가 바뀌어도 결제 시각·유효 수량·구매 행은 변하지 않습니다."""
+    orders = _orders()
+    expected = build_valid_order_items(orders, _items())
+    orders.loc[0, "order_status"] = status
+
+    pd.testing.assert_frame_equal(build_valid_order_items(orders, _items()), expected)
+
+
+@pytest.mark.parametrize("status", ["PREPARING", "SHIPPING", "DELIVERED", "CONFIRMED"])
+def test_fulfilled_order_requires_paid_timestamp(status: str) -> None:
+    """배송·확정 상태라도 결제 시각이 없으면 원천 오류로 거절합니다."""
+    orders = _orders()
+    orders.loc[0, "order_status"] = status
+    orders.loc[0, "paid_at"] = None
+
+    with pytest.raises(OperationalOrderError, match="시간대"):
+        build_valid_order_items(orders, _items())
+
+
+@pytest.mark.parametrize("status", ["PENDING", "CANCELLED", "REFUNDED"])
+def test_non_purchase_order_is_excluded(status: str) -> None:
+    """대상 상태 확장이 미결제·취소·전액환불 주문까지 포함하지 않습니다."""
+    orders = _orders()
+    orders.loc[0, "order_status"] = status
+
+    result = build_valid_order_items(orders, _items())
+
+    assert result["order_item_id"].tolist() == ["i3"]
+
+
 @pytest.mark.parametrize(
     ("table", "column", "value", "message"),
     [
