@@ -15,16 +15,19 @@ on:
 permissions:
   contents: read
 
-# 같은 브랜치에 새 변경이 들어오면 이전 실행을 취소해 실행 시간을 절약합니다.
+# PR은 같은 번호의 이전 검사를 취소하고, push는 커밋별로 독립 실행합니다.
+# 중간 push가 대기열에서 교체되지 않게 하며 stable의 최신성은 revision 선후 관계로 보장합니다.
 concurrency:
-  group: repurchase-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: repurchase-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   repurchase-quality:
     name: repurchase-quality
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      container_changed: ${{ steps.changes.outputs.container_changed }}
 
     defaults:
       run:
@@ -92,6 +95,7 @@ jobs:
             repurchase/data_analysis/Dockerfile \
             repurchase/data_analysis/.dockerignore \
             repurchase/data_analysis/requirements-runtime.txt \
+            repurchase/data_analysis/image-release.txt \
             repurchase/data_analysis/scripts/; then
             container_changed="false"
           else
@@ -140,6 +144,7 @@ jobs:
         working-directory: .
         run: >-
           docker build
+          --platform linux/amd64
           --tag "gollajugaenyang-repurchase-batch:${GITHUB_SHA}"
           repurchase/data_analysis
 
@@ -170,3 +175,216 @@ jobs:
         if: steps.changes.outputs.run != 'true'
         working-directory: .
         run: echo "재구매 관련 변경이 없어 Python 설치와 품질 검사를 생략합니다."
+
+  publish-repurchase-image:
+    name: publish-repurchase-image
+    needs: repurchase-quality
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.repurchase-quality.outputs.container_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Registry 쓰기 권한은 main 이미지 등록 Job에만 부여합니다.
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 저장소 코드 가져오기
+        # actions/checkout v7.0.1을 정확한 커밋으로 고정합니다.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          # 현재 stable 이미지의 커밋과 후보 커밋의 선후 관계를 검사합니다.
+          fetch-depth: 0
+
+      - name: 이미지 이름과 불변 태그 생성
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          image_name="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ai-repurchase-batch"
+          sha_tag="sha-${GITHUB_SHA}"
+
+          echo "name=${image_name}" >> "${GITHUB_OUTPUT}"
+          echo "sha_tag=${sha_tag}" >> "${GITHUB_OUTPUT}"
+          echo "sha_ref=${image_name}:${sha_tag}" >> "${GITHUB_OUTPUT}"
+          echo "stable_ref=${image_name}:stable" >> "${GITHUB_OUTPUT}"
+
+      - name: 배포 후보 이미지 빌드
+        working-directory: .
+        env:
+          SHA_IMAGE_REF: ${{ steps.image.outputs.sha_ref }}
+        run: >-
+          docker build
+          --platform linux/amd64
+          --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          --label "org.opencontainers.image.revision=${GITHUB_SHA}"
+          --tag "${SHA_IMAGE_REF}"
+          repurchase/data_analysis
+
+      - name: 배포 후보 계약 smoke test
+        working-directory: .
+        env:
+          SHA_IMAGE_REF: ${{ steps.image.outputs.sha_ref }}
+        run: >-
+          docker run --rm
+          --volume "${GITHUB_WORKSPACE}/repurchase/data_analysis/tests/fixtures/cloud_contract:/input:ro"
+          "${SHA_IMAGE_REF}"
+          contract-check
+          --source-contract /input/source_orders.json
+          --publication-contract /input/prediction_publications.json
+
+      - name: GHCR 로그인
+        # docker/login-action v3.6.0을 정확한 커밋으로 고정합니다.
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: 불변 이미지와 stable 태그 등록
+        id: publish
+        shell: bash
+        env:
+          SHA_IMAGE_REF: ${{ steps.image.outputs.sha_ref }}
+          STABLE_IMAGE_REF: ${{ steps.image.outputs.stable_ref }}
+        run: |
+          set -euo pipefail
+
+          digest_pattern='^sha256:[0-9a-f]{64}$'
+
+          # Registry가 푸시 직후 manifest를 늦게 노출할 수 있어 읽기 조회만 재시도합니다.
+          inspect_digest() {
+            local image_ref="$1"
+            local digest=""
+
+            for attempt in 1 2 3 4 5; do
+              if digest="$(
+                docker buildx imagetools inspect "${image_ref}" \
+                  --format '{{.Manifest.Digest}}' 2>/dev/null
+              )" && [[ "${digest}" =~ ${digest_pattern} ]]; then
+                printf '%s\n' "${digest}"
+                return 0
+              fi
+
+              if [[ "${attempt}" -lt 5 ]]; then
+                sleep 2
+              fi
+            done
+
+            echo "Registry digest를 올바른 형식으로 확인하지 못했습니다: ${image_ref}" >&2
+            return 1
+          }
+
+          # 기존 태그가 없을 때 오류를 출력하지 않고 한 번만 조회합니다.
+          try_inspect_digest() {
+            local image_ref="$1"
+            local digest=""
+
+            if digest="$(
+              docker buildx imagetools inspect "${image_ref}" \
+                --format '{{.Manifest.Digest}}' 2>/dev/null
+            )" && [[ "${digest}" =~ ${digest_pattern} ]]; then
+              printf '%s\n' "${digest}"
+              return 0
+            fi
+
+            return 1
+          }
+
+          # 원격 이미지가 어떤 Git 커밋에서 생성됐는지 OCI 라벨로 확인합니다.
+          read_revision_label() {
+            local image_ref="$1"
+
+            docker pull --platform linux/amd64 "${image_ref}" >/dev/null
+            docker image inspect \
+              --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' \
+              "${image_ref}"
+          }
+
+          # 로컬 이미지 재직렬화 없이 Registry의 검증된 manifest를 stable로 복사합니다.
+          publish_stable_manifest() {
+            docker buildx imagetools create \
+              --prefer-index=false \
+              --tag "${STABLE_IMAGE_REF}" \
+              "${SHA_IMAGE_REF%:*}@${sha_digest}"
+          }
+
+          sha_action="published"
+          if sha_digest="$(try_inspect_digest "${SHA_IMAGE_REF}")"; then
+            sha_revision="$(read_revision_label "${SHA_IMAGE_REF}")"
+            if [[ "${sha_revision}" != "${GITHUB_SHA}" ]]; then
+              echo "기존 불변 태그의 revision 라벨이 현재 커밋과 다릅니다." >&2
+              exit 1
+            fi
+            sha_action="reused"
+          else
+            docker push "${SHA_IMAGE_REF}"
+            sha_digest="$(inspect_digest "${SHA_IMAGE_REF}")"
+          fi
+
+          stable_action="published"
+          if stable_digest="$(try_inspect_digest "${STABLE_IMAGE_REF}")"; then
+            stable_revision="$(read_revision_label "${STABLE_IMAGE_REF}")"
+            if [[ ! "${stable_revision}" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "현재 stable 이미지의 revision 라벨이 올바르지 않습니다." >&2
+              exit 1
+            fi
+            if ! git cat-file -e "${stable_revision}^{commit}" 2>/dev/null; then
+              echo "현재 stable 이미지의 커밋을 저장소 이력에서 찾을 수 없습니다." >&2
+              exit 1
+            fi
+
+            if [[ "${stable_revision}" == "${GITHUB_SHA}" ]]; then
+              if [[ "${stable_digest}" != "${sha_digest}" ]]; then
+                echo "같은 커밋의 불변 태그와 stable 태그 digest가 다릅니다." >&2
+                exit 1
+              fi
+              stable_action="reused"
+            elif git merge-base --is-ancestor "${stable_revision}" "${GITHUB_SHA}"; then
+              publish_stable_manifest
+              stable_digest="$(inspect_digest "${STABLE_IMAGE_REF}")"
+              stable_action="updated"
+            elif git merge-base --is-ancestor "${GITHUB_SHA}" "${stable_revision}"; then
+              stable_action="skipped_older_candidate"
+            else
+              echo "후보 커밋과 현재 stable 커밋의 선후 관계를 결정할 수 없습니다." >&2
+              exit 1
+            fi
+          else
+            publish_stable_manifest
+            stable_digest="$(inspect_digest "${STABLE_IMAGE_REF}")"
+          fi
+
+          if [[ "${stable_action}" != "skipped_older_candidate" ]] && \
+            [[ "${sha_digest}" != "${stable_digest}" ]]; then
+            echo "불변 태그와 stable 태그의 digest가 다릅니다." >&2
+            exit 1
+          fi
+
+          echo "digest=${sha_digest}" >> "${GITHUB_OUTPUT}"
+          echo "sha_action=${sha_action}" >> "${GITHUB_OUTPUT}"
+          echo "stable_digest=${stable_digest}" >> "${GITHUB_OUTPUT}"
+          echo "stable_action=${stable_action}" >> "${GITHUB_OUTPUT}"
+
+      - name: 등록 결과 요약
+        env:
+          SHA_IMAGE_REF: ${{ steps.image.outputs.sha_ref }}
+          STABLE_IMAGE_REF: ${{ steps.image.outputs.stable_ref }}
+          IMAGE_DIGEST: ${{ steps.publish.outputs.digest }}
+          SHA_ACTION: ${{ steps.publish.outputs.sha_action }}
+          STABLE_DIGEST: ${{ steps.publish.outputs.stable_digest }}
+          STABLE_ACTION: ${{ steps.publish.outputs.stable_action }}
+        run: |
+          {
+            echo "### 재구매 배치 이미지 등록"
+            echo ""
+            echo "- 불변 태그: \`${SHA_IMAGE_REF}\` (\`${SHA_ACTION}\`)"
+            echo "- 불변 태그 digest: \`${IMAGE_DIGEST}\`"
+            echo "- 이동 태그: \`${STABLE_IMAGE_REF}\` (\`${STABLE_ACTION}\`)"
+            echo "- 이동 태그 digest: \`${STABLE_DIGEST}\`"
+            echo "- 운영 배포는 태그보다 stable이 가리키는 digest 참조를 권장합니다."
+          } >> "${GITHUB_STEP_SUMMARY}"
