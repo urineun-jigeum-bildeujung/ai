@@ -214,10 +214,19 @@ spec:
                     usernameVariable: 'GIT_USER',
                     passwordVariable: 'GIT_TOKEN'
                 )]) {
-                    sh """
+                    // 토큰을 URL에 안 박고 git credential helper로 그 순간에만 넘겨서,
+                    // clone한 저장소의 .git/config에 토큰이 평문으로 남지 않게 한다
+                    // (CodeRabbit 리뷰 반영, 2026-09-23). 작은따옴표(''')로 감싸야
+                    // $GIT_USER/$GIT_TOKEN이 Groovy가 아니라 쉘 실행 시점에 실제
+                    // 환경변수로 치환된다 — 큰따옴표를 쓰면 Groovy가 스크립트 생성
+                    // 시점에 값을 미리 텍스트로 박아버려서 이 대책이 무의미해진다.
+                    // set +x로 명령어 자체가 로그에 찍히는 것도 같이 막는다.
+                    sh '''
+                        set +x
                         rm -rf gitops-value-checkout
-                        git clone https://\${GIT_USER}:\${GIT_TOKEN}@github.com/urineun-jigeum-bildeujung/gitops-value.git gitops-value-checkout
-                    """
+                        git -c credential.helper='!f() { echo "username=$GIT_USER"; echo "password=$GIT_TOKEN"; }; f' \
+                            clone https://github.com/urineun-jigeum-bildeujung/gitops-value.git gitops-value-checkout
+                    '''
                 }
 
                 // yq로 .image.tag만 정확히 갱신 (sed는 YAML 구조를 몰라서 다른 tag: 줄까지
@@ -236,13 +245,24 @@ spec:
                 }
 
                 dir('gitops-value-checkout') {
+                    // 커밋 메시지엔 비밀값이 없어서 그대로 Groovy 보간(""")을 써도 안전하다.
                     sh """
                         git config user.email 'jenkins@petflow.local'
                         git config user.name 'jenkins-ci'
                         git add values/
                         git diff --cached --quiet && echo '변경 없음, commit 생략' || git commit -m 'chore: deploy ${changedServices.join(", ")} @ ${imageTag}'
-                        git push
                     """
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'gitops-value-push',
+                        usernameVariable: 'GIT_USER',
+                        passwordVariable: 'GIT_TOKEN'
+                    )]) {
+                        sh '''
+                            set +x
+                            git -c credential.helper='!f() { echo "username=$GIT_USER"; echo "password=$GIT_TOKEN"; }; f' push
+                        '''
+                    }
                 }
             }
         }
