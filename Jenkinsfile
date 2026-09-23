@@ -1,16 +1,21 @@
-// ai 레포 CI/CD — 2026-09-21 첫 작성 (인프라), 2026-09-23 nutrition 추가.
+// ai 레포 CI/CD — 2026-09-21 첫 작성 (인프라), 2026-09-23 nutrition 추가,
+// 2026-09-23 deployReady 게이트 + repurchase 추가.
 //
-// SERVICES 목록에 있는 서비스만 감지/빌드 대상. recommendation(배치 전용, 실시간
-// API 없음)에 이어 nutrition(FastAPI, 결정론적 룰 엔진 — 학습된 모델 없음)도 추가함.
-// repurchase는 AI팀이 GitHub Actions+GHCR로 자체 CI/CD를 이미 구축해서 여기 대상이
-// 아님. 나중에 서비스가 더 생기면 이 목록에 한 줄만 추가하면 되고, 파이프라인 로직은
-// 안 건드려도 됨(sever Jenkinsfile의 서비스 자동감지 구조를 참고해 단순화).
+// SERVICES 목록에 있는 서비스만 감지/빌드 대상. repurchase는 GHCR 자체 CI/CD를
+// ECR로 전환하기로 AI팀과 합의(#117) — GHCR 게시 자동화는 AI팀이 별도로 끔.
+//
+// deployReady: false인 서비스는 빌드+Trivy 스캔까지만 하고 ECR push/GitOps 갱신은
+// 건너뜀. recommendation은 ECR 레포/gitops-value 값파일이 아직 없어서, repurchase는
+// 컨테이너 내부 명령이 아직 계약 검증용만 연결돼 있어서(AI팀 요청, #117) 둘 다
+// false로 시작. 준비되면 해당 서비스의 값만 true로 바꾸는 PR 한 줄로 끝남.
 def SERVICES = [
-    [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile'],
-    [name: 'nutrition', path: 'nutrition', dockerfile: 'nutrition/Dockerfile'],
+    [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile', deployReady: false],
+    [name: 'nutrition', path: 'nutrition', dockerfile: 'nutrition/Dockerfile', deployReady: true],
+    [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', deployReady: false],
 ]
 
 def changedServices = []
+def deployableServices = []
 def imageTag = ''
 def isRealDeploy = false
 
@@ -182,7 +187,7 @@ spec:
                             """
                         }
 
-                        if (isRealDeploy) {
+                        if (isRealDeploy && svc.deployReady) {
                             if (!env.getProperty('ECR_LOGGED_IN')) {
                                 container('awscli') {
                                     sh "aws ecr get-login-password --region ap-northeast-2 > ecr-token.txt"
@@ -206,9 +211,19 @@ spec:
 
         stage('Update GitOps') {
             when {
-                expression { return isRealDeploy && !changedServices.isEmpty() }
+                expression {
+                    return isRealDeploy && changedServices.any { svcName ->
+                        SERVICES.find { it.name == svcName }?.deployReady
+                    }
+                }
             }
             steps {
+                script {
+                    deployableServices = changedServices.findAll { svcName ->
+                        SERVICES.find { it.name == svcName }.deployReady
+                    }
+                }
+
                 withCredentials([usernamePassword(
                     credentialsId: 'gitops-value-push',
                     usernameVariable: 'GIT_USER',
@@ -237,7 +252,7 @@ spec:
                 '''
 
                 script {
-                    changedServices.each { svcName ->
+                    deployableServices.each { svcName ->
                         sh """
                             /tmp/yq -i '.image.tag = "${imageTag}"' gitops-value-checkout/values/dev/services/${svcName}/values.yaml
                         """
@@ -250,7 +265,7 @@ spec:
                         git config user.email 'jenkins@petflow.local'
                         git config user.name 'jenkins-ci'
                         git add values/
-                        git diff --cached --quiet && echo '변경 없음, commit 생략' || git commit -m 'chore: deploy ${changedServices.join(", ")} @ ${imageTag}'
+                        git diff --cached --quiet && echo '변경 없음, commit 생략' || git commit -m 'chore: deploy ${deployableServices.join(", ")} @ ${imageTag}'
                     """
 
                     withCredentials([usernamePassword(
