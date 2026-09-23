@@ -1,0 +1,70 @@
+# requirements.lock — 골라주개냥 영양 AI Phase 1 (2026-09-04 12:30 KST)
+# 본 파일은 Wave 4 재현 패키지. 동일 환경 재현 시 pip install -r requirements.lock 사용.
+# Python 3.11.x 재현 환경 전용. Python 3.14 호스트에서는 일부 고정 버전의
+# binary wheel이 없으므로 .python-version 또는 별도 3.11 virtualenv를 사용한다.
+# 결정론적 룰 기반 (LLM 호출 0) — AI/ML 라이브러리 의존성 0건.
+
+# 데이터 처리 / 검증
+certifi==2024.7.4
+charset-normalizer==3.3.2
+idna==3.7
+numpy==1.26.4
+pandas==2.2.2
+python-dateutil==2.9.0.post0
+pytz==2024.1
+six==1.16.0
+tzdata==2024.1
+
+# SQL / SQLite
+# sqlite3 is part of the Python standard library; do not list it as a pip package.
+
+# HTTP (OPFF API cache 검증용, 실제 호출은 OPFF cache v1.json 사용)
+requests==2.32.3
+urllib3==2.2.2
+
+# API runtime (used by scripts/api_nutrition.py)
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.8.2
+# FastAPI TestClient dependency (used by persisted-product adapter tests)
+httpx==0.27.0
+
+# 테스트
+pytest==8.2.2
+pytest-cov==5.0.0
+coverage==7.5.3
+packaging==24.1
+pluggy==1.5.0
+iniconfig==2.0.0
+
+# 로깅 (Windows only; macOS/Linux에서는 no-op)
+colorama==0.4.6
+
+# 보안 (선택: security_key_rotation_receipt.txt 검증 시)
+pycryptodome==3.20.0
+
+# 개발 도구 (CI에서만 사용)
+black==24.4.2
+ruff==0.5.1
+
+# ----------------------------------------------------------------------------
+# 의존성 0건 (deterministic rule 100% 정책)
+# - LLM 호출 라이브러리 (openai, anthropic, google-generativeai 등) — 0건
+# - ML/DL 라이브러리 (torch, transformers, scikit-learn) — 0건
+# - Vector DB (faiss, chromadb, qdrant-client) — 0건
+# - Flask 등 별도 웹 프레임워크 — 0건 (FastAPI/Uvicorn은 API runtime으로 위에 명시)
+# - RAG (langchain, llama-index) — 0건
+# 분석 엔진은 결정론적 룰 기반 (LLM 호출 0). 영양 분석 + 추천 매칭 v1 모두 룰 기반.
+# ----------------------------------------------------------------------------
+
+# hash 검증용 (선택)
+# hashlib (built-in)
+
+# JSON (built-in)
+# json (built-in)
+
+# CSV (built-in)
+# csv (built-in)
+
+# Logging (built-in)
+# logging (built-in)
