@@ -15,10 +15,10 @@ on:
 permissions:
   contents: read
 
-# PR의 이전 검사는 취소하되 이미지 등록 중인 push는 강제로 중단하지 않습니다.
-# stable의 최신성은 아래 Registry revision 선후 관계 검사로 보장합니다.
+# PR은 같은 번호의 이전 검사를 취소하고, push는 커밋별로 독립 실행합니다.
+# 중간 push가 대기열에서 교체되지 않게 하며 stable의 최신성은 revision 선후 관계로 보장합니다.
 concurrency:
-  group: repurchase-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: repurchase-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -305,6 +305,14 @@ jobs:
               "${image_ref}"
           }
 
+          # 로컬 이미지 재직렬화 없이 Registry의 검증된 manifest를 stable로 복사합니다.
+          publish_stable_manifest() {
+            docker buildx imagetools create \
+              --prefer-index=false \
+              --tag "${STABLE_IMAGE_REF}" \
+              "${SHA_IMAGE_REF%:*}@${sha_digest}"
+          }
+
           sha_action="published"
           if sha_digest="$(try_inspect_digest "${SHA_IMAGE_REF}")"; then
             sha_revision="$(read_revision_label "${SHA_IMAGE_REF}")"
@@ -337,8 +345,7 @@ jobs:
               fi
               stable_action="reused"
             elif git merge-base --is-ancestor "${stable_revision}" "${GITHUB_SHA}"; then
-              docker tag "${SHA_IMAGE_REF}" "${STABLE_IMAGE_REF}"
-              docker push "${STABLE_IMAGE_REF}"
+              publish_stable_manifest
               stable_digest="$(inspect_digest "${STABLE_IMAGE_REF}")"
               stable_action="updated"
             elif git merge-base --is-ancestor "${GITHUB_SHA}" "${stable_revision}"; then
@@ -348,8 +355,7 @@ jobs:
               exit 1
             fi
           else
-            docker tag "${SHA_IMAGE_REF}" "${STABLE_IMAGE_REF}"
-            docker push "${STABLE_IMAGE_REF}"
+            publish_stable_manifest
             stable_digest="$(inspect_digest "${STABLE_IMAGE_REF}")"
           fi
 
