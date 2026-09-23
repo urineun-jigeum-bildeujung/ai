@@ -35,7 +35,11 @@ ITEM_COLUMNS = (
     "cancelled_quantity",
     "returned_quantity",
 )
-VALID_ORDER_STATUSES = frozenset({"PAID", "PARTIAL_REFUND"})
+# 배송·구매확정으로 상태가 진행돼도 이미 결제된 구매라는 사실은 유지됩니다.
+# 상태만으로 채택하지 않고 아래에서 결제 시각과 상품별 잔여 수량도 검사합니다.
+VALID_ORDER_STATUSES = frozenset(
+    {"PAID", "PREPARING", "SHIPPING", "DELIVERED", "CONFIRMED", "PARTIAL_REFUND"}
+)
 ALL_ORDER_STATUSES = VALID_ORDER_STATUSES | {
     "PENDING",
     "CANCELLED",
@@ -95,7 +99,7 @@ def _paid_at_utc(value: object) -> pd.Timestamp:
 def build_valid_order_items(
     orders: pd.DataFrame, order_items: pd.DataFrame
 ) -> pd.DataFrame:
-    """결제·부분환불 주문에서 실제 수량이 남은 상품 행을 보존합니다.
+    """결제 후 배송·구매확정·부분환불 주문의 수량이 남은 상품 행을 보존합니다.
 
     비반복 상품도 사용자 전체 주문 이력 계산에 필요하므로 여기서는 제외하지 않습니다.
     반환값은 주문 상품 행이며, 곧바로 SKU/상품군 재구매 사건은 아닙니다.
