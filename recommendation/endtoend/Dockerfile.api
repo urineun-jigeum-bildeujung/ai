@@ -23,6 +23,7 @@ COPY . .
 ENV USE_DUMMY_DATA=false
 ENV PYTHONUNBUFFERED=1
 
+# 2026-09-28: petflow/recommendation ECR 레포 terraform apply 완료 후 재트리거.
 EXPOSE 8000
 
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
