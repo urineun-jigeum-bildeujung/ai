@@ -5,11 +5,11 @@
 // ECR로 전환하기로 AI팀과 합의(#117) — GHCR 게시 자동화는 AI팀이 별도로 끔.
 //
 // deployReady: false인 서비스는 빌드+Trivy 스캔까지만 하고 ECR push/GitOps 갱신은
-// 건너뜀. recommendation은 ECR 레포/gitops-value 값파일이 아직 없어서, repurchase는
-// 컨테이너 내부 명령이 아직 계약 검증용만 연결돼 있어서(AI팀 요청, #117) 둘 다
-// false로 시작. 준비되면 해당 서비스의 값만 true로 바꾸는 PR 한 줄로 끝남.
+// 건너뜀. repurchase는 컨테이너 내부 명령이 아직 계약 검증용만 연결돼 있어서
+// (AI팀 요청, #117) false로 유지. recommendation은 2026-09-28 ECR 레포/네임스페이스/
+// gitops-value 값파일이 모두 준비되어 true로 전환(서빙 API, Dockerfile.api 기준).
 def SERVICES = [
-    [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile', deployReady: false],
+    [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile.api', deployReady: true],
     [name: 'nutrition', path: 'nutrition', dockerfile: 'nutrition/Dockerfile', deployReady: true],
     [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', deployReady: false],
 ]
