@@ -6,6 +6,9 @@
 # requirements.txt에 다 들어있어 이미지가 크지만, 우선은 동일한 requirements.txt를
 # 재사용해 학습 코드와 추론 코드가 항상 같은 의존성 버전을 쓰도록 맞췄다.
 # (이후 배포 이미지를 가볍게 만들고 싶으면 requirements-api.txt로 분리 예정)
+#
+# 2026-09-28: recommendation CI/CD 첫 실배포 트리거 (Jenkinsfile만 바뀐 PR은
+# changedServices 경로 diff에서 감지되지 않아 별도로 이 경로에 커밋 필요).
 
 FROM python:3.11-slim
 
