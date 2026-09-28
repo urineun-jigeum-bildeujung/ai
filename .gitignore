@@ -19,6 +19,10 @@ env/
 .env.*
 !.env.example
 
+# Kubernetes 비밀정보
+k8s/secret.yaml
+!k8s/secret.yaml.example
+
 # 원본·중간·가공 데이터
 **/data/raw/*
 **/data/interim/*

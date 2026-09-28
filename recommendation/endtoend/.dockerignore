@@ -5,9 +5,13 @@ __pycache__/
 *.md
 .DS_Store
 
-# 학습된 모델 가중치는 이미지에 포함하지 않음 (용량 큼, 볼륨 마운트로 관리)
-models/
+# 학습된 모델 가중치는 기본적으로 이미지에 포함하지 않지만,
+# 지금은 S3/MLflow 서버가 없어서 DeepFM 체크포인트(models/deepfm/)만 예외적으로 이미지에 포함한다.
+models/*
+!models/deepfm/
+!models/deepfm/**
 *.pt
+!models/deepfm/*.pt
 *.bin
 *.safetensors
 
