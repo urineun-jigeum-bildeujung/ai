@@ -192,7 +192,8 @@ def find_substitute_products(
             "product_id": product["product_id"],
             "product_name": product["product_name"],
             "recommend_type": "RECOMMEND",
-            "score": score,
+            "score": score,  # 내부 계산/정렬용 원본 스코어 (0~1)
+            "score_100": round(max(0.0, min(1.0, score)) * 100),  # 프론트엔드 응답용 (0~100 정수)
             "rank": rank,
             "reason_keywords": reason_keywords,
             "reason_text": reason_text,

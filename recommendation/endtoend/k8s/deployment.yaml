@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommend-api
+  namespace: default   # 실제 네임스페이스로 교체 (팀에 확인 필요)
+  labels:
+    app: recommend-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: recommend-api
+  template:
+    metadata:
+      labels:
+        app: recommend-api
+    spec:
+      containers:
+        - name: recommend-api
+          image: <ECR_REPO_URI>:latest   # 예: 123456789.dkr.ecr.us-east-2.amazonaws.com/recommend-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: USE_DUMMY_DATA
+              value: "true"   # 실제 배포 시 false로 변경 필요
+          envFrom:
+            - secretRef:
+                name: recommend-api-secret   # DATABASE_URL을 담은 Secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
