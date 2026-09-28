@@ -5,14 +5,29 @@
 """
 
 from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+
+def dataframe_to_nullable_records(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """DataFrame 결측값을 표준 JSON의 null로 변환할 수 있는 레코드로 만듭니다."""
+    # 실수형 열은 None을 다시 NaN으로 바꾸므로 먼저 object형으로 변환합니다.
+    nullable_frame = frame.astype(object).where(frame.notna(), None)
+    return nullable_frame.to_dict(orient="records")
 
 
 def write_text_atomically(path: Path, content: str) -> None:
     """문자열 전체를 임시 파일에 쓴 뒤 최종 보고서 경로로 교체합니다."""
+    write_bytes_atomically(path, content.encode("utf-8"))
+
+
+def write_bytes_atomically(path: Path, content: bytes) -> None:
+    """압축 결과 등 바이트도 임시 파일에서 완성한 뒤 원자적으로 교체합니다."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix(f"{path.suffix}.part")
     try:
-        temporary_path.write_text(content, encoding="utf-8")
+        temporary_path.write_bytes(content)
         temporary_path.replace(path)
     finally:
         temporary_path.unlink(missing_ok=True)

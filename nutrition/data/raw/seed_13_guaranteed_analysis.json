@@ -1,0 +1,495 @@
+{
+  "_comment": "시드 13: guaranteed_analysis (사료별 영양소 1:N). 108 placeholder × 4 영양소. 단위·basis 포함.",
+  "_source": "OPFF nutriments",
+  "_checked_at": "2026-08-18",
+  "version": "1.0",
+  "all_count": 60,
+  "by_nutrient": {
+    "CRUDE_PROTEIN": 22,
+    "CRUDE_FAT": 22,
+    "CRUDE_FIBER": 10,
+    "MOISTURE": 6
+  },
+  "items": [
+    {
+      "product_id": "3182550702423",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550702423",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550702423",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550702423",
+      "nutrient_code": "MOISTURE",
+      "value": 5.5,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "9003579000366",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.092,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "9003579000366",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.25,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "9003579311660",
+      "nutrient_code": "MOISTURE",
+      "value": 79.0,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550831383",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.27,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550831383",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.16,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550768481",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.34,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550768481",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.09,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0030111493255",
+      "nutrient_code": "MOISTURE",
+      "value": 10.5,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550708180",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.32,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550708180",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550708180",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.08,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "9003579311301",
+      "nutrient_code": "MOISTURE",
+      "value": 81.0,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550702379",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.1,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "3182550702379",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.388,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742047393",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 3.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742047393",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 1.51,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742840802",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.25,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742840802",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742223209",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 3.21,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742223209",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 1.98,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742121109",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.216,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742121109",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.147,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742121109",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.019,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742935706",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 3.14,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742935706",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 1.01,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0052742935706",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.14,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992180126",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.38,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992180126",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992180126",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.05,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992186128",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 3.8,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992186128",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 1.5,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280543",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 4.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280543",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 2.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992281182",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.01,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992281182",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.44,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992281182",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992281182",
+      "nutrient_code": "MOISTURE",
+      "value": 10.0,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280178",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.4,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280178",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280178",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.03,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0064992280178",
+      "nutrient_code": "MOISTURE",
+      "value": 10.0,
+      "unit": "PERCENT",
+      "basis": "AS_FED",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0074198613939",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.45454545454545,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0074198613939",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.90909090909091,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0074198613939",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 2.7272727272727,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0074198612215",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "0074198612215",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276020208",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 4.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276020208",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 2.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276020208",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.2,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276033376",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.1,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276033376",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.03,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276025197",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 0.33,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276025197",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.215,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276025197",
+      "nutrient_code": "CRUDE_FIBER",
+      "value": 0.017,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276021021",
+      "nutrient_code": "CRUDE_PROTEIN",
+      "value": 1.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    },
+    {
+      "product_id": "8010276021021",
+      "nutrient_code": "CRUDE_FAT",
+      "value": 0.0,
+      "unit": "PERCENT",
+      "basis": "DRY_MATTER",
+      "source": "OPFF"
+    }
+  ]
+}

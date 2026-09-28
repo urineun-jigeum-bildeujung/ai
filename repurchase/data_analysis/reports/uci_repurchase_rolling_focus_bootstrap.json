@@ -1,0 +1,109 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "experiment_version": "repurchase_rolling_focus_bootstrap_v1",
+  "evaluation_split": "historical_rolling_validation",
+  "test_accessed": false,
+  "focus_segments": [
+    {
+      "count_column": "product_train_sample_count",
+      "count_bucket": "128+"
+    },
+    {
+      "count_column": "history_interval_count",
+      "count_bucket": "8-15"
+    }
+  ],
+  "results": [
+    {
+      "fold_id": "fold_1",
+      "count_column": "product_train_sample_count",
+      "count_bucket": "128+",
+      "sample_count": 73950,
+      "outcome_known_count": 66124,
+      "known_user_count": 2665,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": -0.0024914183986301935,
+      "bootstrap_lower_95_brier_difference": -0.008249294518939925,
+      "bootstrap_upper_95_brier_difference": 0.0017872586525702833,
+      "bootstrap_lightgbm_improvement_rate": 0.197
+    },
+    {
+      "fold_id": "fold_1",
+      "count_column": "history_interval_count",
+      "count_bucket": "8-15",
+      "sample_count": 3194,
+      "outcome_known_count": 2658,
+      "known_user_count": 149,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": -0.029043024838794507,
+      "bootstrap_lower_95_brier_difference": -0.05303906889462585,
+      "bootstrap_upper_95_brier_difference": -0.008890168547778854,
+      "bootstrap_lightgbm_improvement_rate": 0.0
+    },
+    {
+      "fold_id": "fold_2",
+      "count_column": "product_train_sample_count",
+      "count_bucket": "128+",
+      "sample_count": 56666,
+      "outcome_known_count": 43038,
+      "known_user_count": 1714,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": 0.0037546112929789377,
+      "bootstrap_lower_95_brier_difference": 0.0010292941186669808,
+      "bootstrap_upper_95_brier_difference": 0.007173144092340299,
+      "bootstrap_lightgbm_improvement_rate": 1.0
+    },
+    {
+      "fold_id": "fold_2",
+      "count_column": "history_interval_count",
+      "count_bucket": "8-15",
+      "sample_count": 3062,
+      "outcome_known_count": 2421,
+      "known_user_count": 201,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": 0.03226751149789392,
+      "bootstrap_lower_95_brier_difference": 0.017377996044132257,
+      "bootstrap_upper_95_brier_difference": 0.04977009136561151,
+      "bootstrap_lightgbm_improvement_rate": 1.0
+    },
+    {
+      "fold_id": "fold_3",
+      "count_column": "product_train_sample_count",
+      "count_bucket": "128+",
+      "sample_count": 60909,
+      "outcome_known_count": 46397,
+      "known_user_count": 1884,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": -0.0018547764035956316,
+      "bootstrap_lower_95_brier_difference": -0.0053502282429846995,
+      "bootstrap_upper_95_brier_difference": 0.0007830608706243021,
+      "bootstrap_lightgbm_improvement_rate": 0.116
+    },
+    {
+      "fold_id": "fold_3",
+      "count_column": "history_interval_count",
+      "count_bucket": "8-15",
+      "sample_count": 4408,
+      "outcome_known_count": 3405,
+      "known_user_count": 262,
+      "bootstrap_replicates": 1000,
+      "bootstrap_random_seed": 42,
+      "status": "evaluated",
+      "point_brier_difference_aft_minus_lightgbm": -0.003761437858869121,
+      "bootstrap_lower_95_brier_difference": -0.01670542943764351,
+      "bootstrap_upper_95_brier_difference": 0.006472837395977171,
+      "bootstrap_lightgbm_improvement_rate": 0.298
+    }
+  ],
+  "scope": "각 구간 안에서 사용자를 복원추출하고 같은 사용자의 구매 행을 함께 유지해 구간 내부 AFT-LightGBM IPCW Brier 차이를 비교합니다. 이는 fold 전체 Brier 기여량의 신뢰구간이나 선정된 구간의 사전 검정이 아닙니다. 구간은 앞선 Validation에서 사후 선택했고 여러 fold가 사용자와 Train 이력을 공유하므로 결과를 독립 반복으로 보지 않습니다. 원래 Test는 사용하지 않았습니다."
+}

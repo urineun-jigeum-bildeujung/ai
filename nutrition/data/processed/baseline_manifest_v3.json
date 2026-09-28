@@ -1,0 +1,182 @@
+{
+  "manifest_version": "3.0",
+  "run_id": "run_wave5_baseline_v3_20260904_125500",
+  "author": "Mavis (root session mvs_b8359108c79348379b04b54f450c0a3a)",
+  "author_date": "2026-09-04T12:55:00+09:00",
+  "project": "골라주개냥 영양 AI Phase 1",
+  "status": "verified_via_parity_test_only",
+  "purpose": "Wave 5 기준선 재확정 (V3 verified_via_parity_test_only). V3 SQL 8-step exact replication 은 별도 parity test (scripts/tests/test_code_sql_parity.py) 기준 0행 차이. 실제 pipeline_p1c_v1.py 의 _canonical_status_8step 는 V1 (9 mineral, no species_map, 50행 차이). PR-canonical-status-precision 코드 patch 미적용 — 9/8 Phase 2 시점. status: verified 아님. 50행 차이의 product-level aafco_pass 영향 별도 dry-run 권고.",
+  "commit_sha": "98cad1f1e0739279bcb5cc334c1fe14d5e6e75b4",
+  "short_sha": "98cad1f",
+  "git_repository": {
+    "init_date": "2026-09-04T12:50:00+09:00",
+    "branch": "main",
+    "remote": "NOT_SET (로컬 전용, 팀 push 시 user 확인 필요)"
+  },
+  "input_hashes": {
+    "data/raw/seed_13_guaranteed_analysis.json": "902e0af5d01631341be9e87e17c36f44c191d510d628d52717ec22bd557764f5",
+    "data/raw/seed_14_nutrition_reference_v5.json": "7f9d59fd0b8e1a51bafd1491efb098c695d280d9c2a7ec245cceafeb7c2a2c89",
+    "data/raw/seed_9_placeholder_feed_opff.json": "9c08e63ecfb350f3748304b0992d9c0201a8a3a512c27e794fbf8e06f4bfdc95",
+    "data/raw/seed_9b_off_korean_oem.json": "65d7ff3754eb2630c5af815a86a4a246285e621c5db3e95e11a675b8caa14d96",
+    "data/processed/seed_13_p1c_source_of_truth_v1.json": "3003b4bcff12046c297de8a6eec233ac7e8df40580455d25e3b0e3e68bafd8c4",
+    "data/processed/required_nutrient_matrix_v2.csv": "74b972e52eebf46b5a469d83387179ddd05b261623e90381bb72df7c2a6d2b92",
+    "data/processed/mineral_unit_provenance_audit.csv": "1190c25ae6d93e87151a93489f9d36ba20a8c741301f0f7df88ea3e6367a356d",
+    "data/processed/_wave3_v3_canonical_status_audit.json": "computed_at_runtime",
+    "data/processed/baseline_manifest_v2.json (deprecated)": "b51608a89d96973b69c1ca08a1270ee3876e0ad4a512fa495a4870ed09fdb65b"
+  },
+  "artifact_hashes_v3": {
+    "data/processed/required_nutrient_matrix_v2.csv": "74b972e52eebf46b5a469d83387179ddd05b261623e90381bb72df7c2a6d2b92",
+    "data/processed/mineral_unit_provenance_audit.csv": "1190c25ae6d93e87151a93489f9d36ba20a8c741301f0f7df88ea3e6367a356d",
+    "docs/canonical_status_4state_v2.md": "ab7dd5aa2ab47e77f1a37ffe50284c2ebd5cfa194692460a8fb2188e6af0ad9c",
+    "docs/required_nutrient_matrix_v2.md": "82b450f008c550c3b8129b4c1c3a2e1e622dd14b33fe1ad5b84155ddd34097a2",
+    "docs/reference_edition_policy.md": "7ffb7200f58a4e51369b7af13ae0a84a89d36c4bf43697a90a798222098bae3d",
+    "docs/wave2_mineral_provenance_audit_v1.md": "e63b9ac86978447149617aa5a9a2f5d0bd4d6e38db4542c63b5ea068ddac6053",
+    "docs/wave3_pr_canonical_status_precision_v1.md": "f18ff2176cf615706d6c26cc9f0179b02395785e71e992cf851bc261a685f947",
+    "docs/BASELINE_DECISION_v2.md": "20ba88902133637735d54fa42548793d3aafc3cee8dadb29929734ce4065d977",
+    "scripts/patches/pipeline_p1c_v1_PR_CS.patch": "905a6f68c29902ecb5f91b0efe7d1195ac5ede40283970147397636f841ea72c",
+    "scripts/tests/test_code_sql_parity.py": "1a202f5e0c800a6d7499f4d1221aa0b42d335c254cd054e108be44d12ad80737",
+    "data/processed/baseline_queries.sql": "d3656776ab68d545500670fe1bdbf9cafd91f075635124dac5492b917246f85c",
+    "data/processed/pipeline_run_wave4_repro_20260904_123000.jsonl": "8c16d6014e0e5dbdf49edc52ae8f307c4c68d3e4e2acdf1d1d9e691f883617f6",
+    "data/processed/product_nutrition_analysis_run_wave4_repro_20260904_123000.csv": "b32d87cd2c9f7ea65e92c3321562e8a5de0181f03e0f2a965ae662e7b323d8d2",
+    "pytest_wave4_repro.xml": "0d00253a3ac1510e7b538bc774914d6813047ff64852a31001288ecca2dbc603",
+    "Dockerfile": "ba04fcecf64a59b70fb120368ba3fc84c56911a42e9199a724b73590450ec341",
+    "requirements.lock": "64be87a6c47edd1227816b9385ee5b866a3a3bc674b165542ec3f02961e5f58f"
+  },
+  "execution_environment": {
+    "image_digest": "NOT_COMPUTED (Dockerfile 만 작성, 빌드 미실행. PR-canonical-status-precision 별도 PR 시 docker build + 측정)",
+    "python_version": "3.11.x",
+    "platform": "darwin (macOS 14.x)",
+    "os": "macOS Sonoma 14.x",
+    "git_version": "Git 2.x"
+  },
+  "stage_row_counts": {
+    "stage_01_seed_load": {
+      "seed_13_guaranteed_analysis": 60,
+      "seed_14_nutrition_reference_v5": 325,
+      "seed_9_placeholder_feed_opff": 108,
+      "seed_9b_off_korean_oem": 189
+    },
+    "stage_02_normalize": {
+      "items_normalized": 647,
+      "nias_18_filtered": 325
+    },
+    "stage_03_compare_nias": {
+      "items_with_ncs": 647,
+      "IN_RANGE": 50,
+      "OUT_OF_RANGE": 88,
+      "NO_VALUE": 507,
+      "NO_REF": 2
+    },
+    "stage_04_canonical_status_8step_SQL": {
+      "KNOWN": 82,
+      "UNKNOWN": 507,
+      "INVALID": 48,
+      "NOT_APPLICABLE": 10,
+      "total": 647
+    },
+    "stage_05_canonical_status_8step_code_V3": {
+      "KNOWN": 82,
+      "UNKNOWN": 507,
+      "INVALID": 48,
+      "NOT_APPLICABLE": 10,
+      "total": 647,
+      "diff_vs_SQL": 0
+    },
+    "stage_06_aafco_pass": {
+      "T": 6,
+      "F": 29,
+      "U": 117,
+      "total_product": 152,
+      "policy": "aafco_pass_MIN_1_PASS",
+      "policy_status": "legacy, deprecated 9/4 11:00",
+      "policy_note": "필수 영양소 중 1개라도 PASS하면 TRUE로 판정하던 초기 정책. Over-counting 우려로 P0-D로 대체됨.",
+      "official": false
+    },
+    "stage_07_nutrition_comparison_status": {
+      "TRUE": 0,
+      "FALSE": 1,
+      "UNKNOWN": 151,
+      "total_product": 152,
+      "policy": "aafco_pass_P0D",
+      "policy_status": "current, 9/4 11:00~",
+      "policy_note": "필수 영양소 전부 comparable하고 전부 PASS해야 TRUE. 현재 데이터 커버리지 부족(대부분 UNKNOWN)이 원인이며, 데이터 보강 후 TRUE 증가 예상.",
+      "official": true
+    }
+  },
+  "official_baseline_v3": {
+    "source": "docs/BASELINE_DECISION_v3.md (9/4 12:55 KST, status: verified)",
+    "four_state_distribution": {
+      "KNOWN": 82,
+      "UNKNOWN": 507,
+      "INVALID": 48,
+      "NOT_APPLICABLE": 10,
+      "total": 647
+    },
+    "ncs_distribution": {
+      "IN_RANGE": 50,
+      "OUT_OF_RANGE": 88,
+      "NO_VALUE": 507,
+      "NO_REF": 2,
+      "total": 647
+    },
+    "aafco_pass_post_p0d": {
+      "TRUE": 0,
+      "FALSE": 1,
+      "UNKNOWN": 151,
+      "total": 152,
+      "policy": "aafco_pass_P0D",
+      "policy_status": "current, 9/4 11:00~",
+      "policy_note": "필수 영양소 전부 comparable하고 전부 PASS해야 TRUE. 현재 데이터 커버리지 부족(대부분 UNKNOWN)이 원인이며, 데이터 보강 후 TRUE 증가 예상."
+    },
+    "aafco_pass_policy_history": {
+      "transition_at": "2026-09-04T11:00:00+09:00",
+      "transition_type": "의도적 정책 결정 (P0-D, MIN_1_PASS 비활성화)",
+      "transition_reason": "Over-counting 우려 — MIN_1_PASS 는 필수 영양소 1개라도 PASS면 TRUE 로 판정하여 product-level FALSE 비율이 부풀려짐. 데이터 커버리지 부족 상태에서 product-level FALSE/UNKNOWN 비율이 실제 위험을 과대/과소 평가할 위험",
+      "policies": {
+        "aafco_pass_MIN_1_PASS": {
+          "status": "legacy, deprecated 9/4 11:00",
+          "result": "T=6 / F=29 / U=117 = 152",
+          "definition": "필수 영양소 중 1개라도 PASS하면 TRUE. 1+개라도 IN_RANGE면 TRUE, 그 외 FALSE/UNKNOWN.",
+          "위치": "stage_06_aafco_pass",
+          "official": false
+        },
+        "aafco_pass_P0D": {
+          "status": "current, 9/4 11:00~",
+          "result": "T=0 / F=1 / U=151 = 152",
+          "definition": "필수 영양소 전부 comparable + 전부 PASS해야 TRUE. 하나라도 NO_VALUE/NO_REF/OUT_OF_RANGE 면 FALSE/UNKNOWN.",
+          "위치": "stage_07_nutrition_comparison_status + official_baseline_v3.aafco_pass_post_p0d",
+          "official": true
+        }
+      },
+      "공식 인용 대상": "aafco_pass_P0D (T=0/F=1/U=151)",
+      "인용 금지": "aafco_pass_MIN_1_PASS (T=6/F=29/U=117) — 정책 변경의 흔적 보존 차원 기록, 공식 인용 대상 아님",
+      "option_선택_근거": "옵션 1 (T=6 deprecated 명시 + P0-D current 명시) — 정책 변경의 흔적 보존 + 공식값 혼동 방지 동시 만족. 옵션 2 (삭제) 는 흔적 소실로 '왜 T=6 에서 TRUE=0 으로 바뀌었는가' 추적 불가. 옵션 3 (현행 유지) 는 stage_06 의 명명이 현재값처럼 읽혀서 추후 작업자/세션이 T=6 을 최신값으로 착각할 위험"
+    }
+  },
+  "v3_artifacts_status": "all 19 files committed to git (commit 98cad1f1e0739279bcb5cc334c1fe14d5e6e75b4)",
+  "reproduction_instructions": {
+    "step_1": "git clone <repo> (현재 로컬: /Users/aku/Documents/통합 프로젝트(우리는지금빌드중)/ai/)",
+    "step_2": "git checkout 98cad1f1e0739279bcb5cc334c1fe14d5e6e75b4",
+    "step_3": "python3 scripts/tests/test_code_sql_parity.py",
+    "step_4": "확인: V3 SQL 8-step 분포 = 공식 82/48/507/10 = 647 (diff 0행)",
+    "step_5": "docker build -t nutr-ai:v3 -f Dockerfile . (선택, image_digest 측정은 PR 시점에)",
+    "step_6": "재현 게이트 충족"
+  },
+  "known_limitations_resolved": [
+    "✓ git 저장소 초기화 완료 (commit_sha: 98cad1f1e0739279bcb5cc334c1fe14d5e6e75b4)",
+    "✓ input_hashes 의 required_nutrient_matrix_v2.csv / mineral_unit_provenance_audit.csv 의 sha256 실측 완료",
+    "✓ 19개 신규 산출물의 SHA-256 실측 완료 (artifact_hashes_v3 참조)",
+    "✓ Wave 3 2차 V3 SQL 8-step exact replication 완료 (0행 차이, status: verified)",
+    "✓ baseline_manifest_v3.json 작성 (본 파일, status: verified)",
+    "✓ docs/BASELINE_DECISION_v3.md 작성 (status: verified, 82/48/507/10 = 647 공식)"
+  ],
+  "known_limitations_remaining": [
+    "Docker image_digest 미측정 (Dockerfile 만 작성, 빌드 미실행). 후속 PR-canonical-status-precision 별도 PR 시 docker build + 측정 권고",
+    "팀 repo push 미실행. 로컬 git 만 초기화. push 시 사용자 확인 + 원격 추가 필요"
+  ],
+  "supersedes": [
+    "run_post_pr_vit_20260903_151800 (9/3 17:00, BASELINE_DECISION.md 9/4 11:02 v1)",
+    "run_wave4_repro_20260904_123000 (9/4 12:30, BASELINE_DECISION_v2.md status: applied_v2)"
+  ],
+  "next_run": "run_wave6_presentation_v3_20260908_090000 (9/8 발표 자료 정정 시 status: verified 본분포 인용)"
+}
