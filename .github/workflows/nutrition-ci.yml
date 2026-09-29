@@ -1,0 +1,77 @@
+name: Nutrition CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths:
+      - "nutrition/**"
+      - ".github/workflows/nutrition-ci.yml"
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "nutrition/**"
+      - ".github/workflows/nutrition-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nutrition-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nutrition-runtime:
+    name: nutrition-runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: nutrition
+
+    steps:
+      - name: 저장소 코드 가져오기
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Python 3.11 설정 및 pip 캐시 복원
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.11.15"
+          cache: pip
+          cache-dependency-path: nutrition/requirements.lock
+
+      - name: 의존성 설치
+        run: python -m pip install -r requirements.lock
+
+      - name: Python compile check
+        run: python -m py_compile scripts/*.py scripts/nutrition/*.py
+
+      - name: Nutrition regression tests
+        run: python -m pytest tests -q
+
+      - name: 변경 diff whitespace 확인
+        working-directory: .
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            git diff --check "${PR_BASE_SHA}" "${PR_HEAD_SHA}"
+          elif [[ -n "${PUSH_BASE_SHA}" && ! "${PUSH_BASE_SHA}" =~ ^0+$ ]]; then
+            git diff --check "${PUSH_BASE_SHA}" "${CURRENT_SHA}"
+          else
+            git diff --check "${CURRENT_SHA}^" "${CURRENT_SHA}"
+          fi

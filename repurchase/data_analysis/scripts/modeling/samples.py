@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Final
 
+import numpy as np
 import pandas as pd
 
 
@@ -29,6 +30,19 @@ SAMPLE_REQUIRED_COLUMNS: Final[tuple[str, ...]] = (
 )
 
 SPLIT_NAMES: Final[tuple[str, ...]] = ("train", "validation", "test")
+# 정렬이나 필터링 후에도 하나의 사용자·주문·상품 표본을 다시 찾는 식별 열입니다.
+SAMPLE_ID_COLUMNS: Final[tuple[str, ...]] = (
+    "user_id",
+    "order_id",
+    "product_id",
+)
+
+
+def _median_absolute_deviation(values: np.ndarray) -> float:
+    """여러 구매 간격이 중앙값에서 보통 얼마나 벗어나는지 계산합니다."""
+    # expanding 배열의 앞부분에는 shift로 만든 NaN이 있으므로 계산에서 제외합니다.
+    median = float(np.nanmedian(values))
+    return float(np.nanmedian(np.abs(values - median)))
 
 
 @dataclass(frozen=True)
@@ -64,9 +78,72 @@ def _validate_labels(labels: pd.DataFrame) -> pd.DataFrame:
         raise RepurchaseSampleBuildError("예측 기준 시각에 결측값이 있습니다.")
     if rows["duration_days"].lt(0).any():
         raise RepurchaseSampleBuildError("음수 재구매 기간은 사용할 수 없습니다.")
-    if rows.duplicated(subset=["user_id", "order_id", "product_id"]).any():
+    if rows.duplicated(subset=list(SAMPLE_ID_COLUMNS)).any():
         raise RepurchaseSampleBuildError("중복된 사용자·주문·상품 라벨이 있습니다.")
     return rows
+
+
+def _add_user_prior_order_count(rows: pd.DataFrame) -> pd.DataFrame:
+    """각 행에 예측 기준 시각보다 앞선 사용자의 고유 주문 수를 추가합니다."""
+    # 같은 주문의 여러 상품 행을 한 건으로 묶고 가장 이른 기록을 대표 시각으로 씁니다.
+    unique_orders = rows.groupby(
+        ["user_id", "order_id"],
+        observed=True,
+        sort=False,
+        as_index=False,
+    ).agg(order_anchor_at=("anchor_at", "min"))
+    orders_by_anchor = (
+        unique_orders.groupby(
+            ["user_id", "order_anchor_at"],
+            observed=True,
+            sort=True,
+        )
+        .size()
+        .rename("orders_at_anchor")
+        .reset_index()
+        .sort_values(
+            ["user_id", "order_anchor_at"],
+            kind="stable",
+            ignore_index=True,
+        )
+    )
+
+    # 누적 주문에서 현재 시각의 주문을 빼 엄격하게 이전인 주문만 남깁니다.
+    cumulative_order_count = orders_by_anchor.groupby(
+        "user_id",
+        observed=True,
+        sort=False,
+    )["orders_at_anchor"].cumsum()
+    orders_by_anchor["user_prior_order_count"] = (
+        cumulative_order_count - orders_by_anchor["orders_at_anchor"]
+    )
+
+    order_counts = unique_orders.merge(
+        orders_by_anchor.loc[
+            :,
+            ["user_id", "order_anchor_at", "user_prior_order_count"],
+        ],
+        on=["user_id", "order_anchor_at"],
+        how="left",
+        sort=False,
+        validate="many_to_one",
+    )
+    result = rows.merge(
+        order_counts.loc[
+            :,
+            ["user_id", "order_id", "user_prior_order_count"],
+        ],
+        on=["user_id", "order_id"],
+        how="left",
+        sort=False,
+        validate="many_to_one",
+    )
+    if result["user_prior_order_count"].isna().any():
+        raise RepurchaseSampleBuildError(
+            "일부 학습 표본에 사용자의 과거 주문 수를 연결하지 못했습니다."
+        )
+    result["user_prior_order_count"] = result["user_prior_order_count"].astype("int64")
+    return result
 
 
 def build_historical_interval_features(labels: pd.DataFrame) -> pd.DataFrame:
@@ -81,15 +158,37 @@ def build_historical_interval_features(labels: pd.DataFrame) -> pd.DataFrame:
         kind="stable",
         ignore_index=True,
     )
+    rows = _add_user_prior_order_count(rows)
     pair_keys = [rows["user_id"], rows["product_id"]]
 
     # 관측된 현재 정답을 한 행 뒤부터 사용할 수 있도록 먼저 한 칸 이동합니다.
     known_duration = rows["duration_days"].where(rows["event_observed"])
-    rows["history_median_days"] = known_duration.groupby(
+    historical_duration = known_duration.groupby(
         pair_keys,
         observed=True,
         sort=False,
-    ).transform(lambda values: values.shift(1).expanding(min_periods=1).median())
+    ).shift(1)
+    historical_sequence = historical_duration.groupby(
+        pair_keys,
+        observed=True,
+        sort=False,
+    )
+    rows["history_median_days"] = historical_sequence.transform(
+        lambda values: values.expanding(min_periods=1).median()
+    )
+
+    # 간격이 두 개 이상일 때만 중앙값 절대편차로 불규칙성을 계산합니다.
+    rows["history_mad_days"] = historical_sequence.transform(
+        lambda values: values.expanding(min_periods=2).apply(
+            _median_absolute_deviation,
+            raw=True,
+        )
+    )
+    # 같은 MAD라도 대표 주기가 다른 상품을 비교할 수 있도록 비율도 남깁니다.
+    positive_history_median = rows["history_median_days"].where(
+        rows["history_median_days"].gt(0)
+    )
+    rows["history_relative_mad"] = rows["history_mad_days"].div(positive_history_median)
 
     # 현재 행을 제외한 과거 관측 간격의 개수를 함께 남겨 fallback 근거로 씁니다.
     observed_count = rows["event_observed"].astype("int64")

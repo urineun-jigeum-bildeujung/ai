@@ -51,11 +51,50 @@ python3.11 -m venv .venv
 .venv/bin/python -m scripts.validate_uci_events
 .venv/bin/python -m scripts.validate_uci_preprocessing_e2e
 .venv/bin/python -m scripts.run_uci_baseline_e2e
+.venv/bin/python -m scripts.run_uci_lightgbm_feature_comparison
+.venv/bin/python -m scripts.run_uci_conditional_validation
+.venv/bin/python -m scripts.run_uci_conditional_bootstrap
+.venv/bin/python -m scripts.run_uci_lightgbm_bc_bootstrap
+.venv/bin/python -m scripts.visualize_uci_lightgbm_calibration
 .venv/bin/python -m scripts.visualize_uci_events
 .venv/bin/python -m pytest
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 ```
+
+`run_uci_lightgbm_feature_comparison`은 동일 Train·Validation 표본에서 횟수만 사용하는
+A, 구매 간격 중앙값을 추가한 B, 불규칙성까지 추가한 C를 비교합니다. 결측 행은
+보존하며 Test 예측·평가는 실행하지 않습니다. 피처 목록·모델 설정·실행 환경과
+Brier·Calibration 결과는 `reports/uci_lightgbm_feature_comparison.json` 및
+동명의 Markdown에 저장합니다. 단계별 차이는 앞선 피처가 주어진 조건에서의
+효과이며, 개별 피처의 독립적인 인과 효과를 뜻하지 않습니다.
+
+`run_uci_lightgbm_bc_bootstrap`은 B와 C를 각각 한 번 학습·예측한 뒤 같은
+Validation 사용자를 1,000회 복원추출합니다. `Brier(B) - Brier(C)`의 점추정,
+95% 구간과 양수 비율을 저장하며 Test 표본은 사용하지 않습니다. 이 구간은 고정된
+모델 예측과 IPCW 가중치 아래의 평가 표본 불확실성만 나타냅니다.
+
+## 현재 시점 재구매 확률 (AFT 후보)
+
+`build_current_features_from_valid_purchases()`는 취소·반품을 반영해 확정한
+`user_id`, `order_id`, `product_id`, `paid_at` 구매 사건 전체에서 현재 피처를 만듭니다.
+`predict_current_repurchase_probability()`는 저장된 XGBoost AFT 후보를 읽은 뒤
+마지막 구매 후 경과 시간 `t`에 아직 같은 상품을 재구매하지 않았다는 조건에서
+앞으로 `h`일 이내 재구매 확률 `1 - S(t+h)/S(t)`를 계산합니다. 모델 아티팩트 ID와
+기준 시각을 결과에 남기며, 피처는 학습 코드와 같은 함수를 재사용합니다.
+
+LightGBM 후보의 구매 후 고정 30일 확률을 현재 시점 조건부 확률로 재해석하지
+않습니다. 이 함수는 LightGBM 아티팩트를 명시적으로 거절합니다. AFT 후보 역시
+현재 시점 조건부 확률에 대한 별도의 시간별 Calibration·운영 검증을 마치기 전에는
+실제 구매 알림이나 API 응답으로 사용하지 않습니다. 원본 주문 상태 정규화,
+상품군·반려동물 단위 정의와 운영 모델 승인은 후속 작업입니다.
+
+`run_uci_conditional_bootstrap`은 구매 후 0·7·14·30일 Validation 위험집단에서
+고정 AFT 후보와 각 시점의 Train 전체확률 기준선 간 IPCW Brier 차이를 사용자
+단위로 1,000회 복원추출합니다. 같은 사용자의 구매 행을 함께 뽑되 모델과 IPCW
+가중치는 고정하므로, 구간은 평가 표본의 변동만 나타냅니다. 요약·반복별 원자료는
+각각 `reports/uci_aft_conditional_bootstrap.json`과
+`reports/uci_aft_conditional_bootstrap_trials.json.gz`에 저장합니다.
 
 ## 자동 검증과 전체 데이터 검증의 구분
 
@@ -74,6 +113,18 @@ python -m pytest
 ```
 
 `pytest`에는 작은 고정 표본으로 전처리 전체 연결을 검사하는 E2E 테스트가 포함됩니다. 이 검사는 외부 네트워크와 로컬 원본 파일에 의존하지 않으므로 모든 PR에서 재현할 수 있습니다.
+
+테스트가 실행되면 성공·실패 내역과 소요시간을 JUnit XML로 생성하고,
+`repurchase-tests-<실행 ID>-<재실행 번호>` 아티팩트로 14일간 보관합니다.
+GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 다운로드할 수 있습니다.
+테스트가 실패해도 결과 파일을 업로드하며 CI 실패 상태는 그대로 유지합니다.
+이전 단계 실패나 비관련 변경으로 테스트를 실행하지 않았거나 실행이 취소된 경우에는
+업로드하지 않습니다. 테스트가 실행됐는데 결과 파일이 없으면 업로드 단계도 실패로 표시합니다.
+
+업로드 대상은 러너 임시 디렉터리의 `repurchase-test-results/junit.xml` 하나입니다.
+원본 데이터·모델·보고서 디렉터리는 포함하지 않고 표준 출력 로그도 XML에 첨부하지 않습니다.
+다만 실패 메시지에는 테스트 값이 포함될 수 있으므로 테스트 입력에는 실제 개인정보나
+비밀정보를 사용하지 않습니다. 이 파일은 코드 검증 기록이며 실제 데이터의 모델 성능 보고서가 아닙니다.
 
 실제 UCI 전체 ZIP을 사용하는 아래 검증은 대용량 외부 데이터에 의존하므로 PR CI에서는 실행하지 않습니다. 데이터 다운로드·품질 분류·사건 집계·라벨 로직을 변경했을 때 수동으로 실행하고 결과 보고서를 함께 검토합니다.
 
@@ -104,6 +155,7 @@ python -m pytest
 - `reports/uci_preprocessing_e2e_validation.md`: E2E 건수·라벨 분포·불변조건 검토 요약
 - `reports/uci_baseline_e2e_evaluation.json`: 시간 분할·베이스라인 학습·평가·현재 예측 전체 결과
 - `reports/uci_baseline_e2e_evaluation.md`: 전역·계층형 중앙값 성능과 fallback 사용 비율 검토 요약
+- `reports/uci_baseline_e2e_product_concentration_trials.json`: Validation 최악 5%와 비교한 동일 크기 무작위 표본 1,000회의 상품 집중도 원자료
 
 ## 파일 관리
 
@@ -112,3 +164,98 @@ python -m pytest
 - 전처리 결과를 저장할 경우 `data/processed/`에 두고 원본에서 재생성합니다.
 - 출처·버전·라이선스·SHA-256 검증 결과는 `reports/data_source_manifest.json`에 기록합니다.
 - 표·그래프·요약 결과는 `reports/`에 저장합니다.
+
+## 재구매 배치 Runtime
+
+재구매 배치는 API 서버처럼 계속 실행되지 않습니다. 입력과 모델을 읽어 한 번의
+작업을 수행한 뒤 종료되는 Job입니다. Docker 이미지는 Python 코드와 실행
+라이브러리만 포함하며 모델 아티팩트·입력 데이터·출력 결과·Secret은 실행 시
+외부에서 주입합니다.
+
+현재 서비스 상품군 모델과 클라우드 DB는 아직 확정되지 않았으므로 실제 추론이나
+적재를 가장하지 않습니다. `contract-check` 명령으로 고정된 원천 데이터와 결과
+발행 계약을 끝까지 검사하는 기준선만 제공합니다.
+
+### 로컬 계약 점검
+
+`repurchase/data_analysis`에서 다음 명령을 실행합니다.
+
+```bash
+.venv/bin/python -m scripts.run_repurchase_batch contract-check \
+  --source-contract tests/fixtures/cloud_contract/source_orders.json \
+  --publication-contract tests/fixtures/cloud_contract/prediction_publications.json
+```
+
+성공하면 입력 파일의 SHA-256과 단계별 처리 건수가 JSON 한 줄로 출력되고 종료
+코드 `0`을 반환합니다. 계약 위반은 `2`, 예상하지 못한 시스템 장애는 `1`입니다.
+
+### Docker 이미지와 smoke test
+
+저장소 루트에서 재구매 디렉터리를 빌드 컨텍스트로 사용합니다.
+
+```bash
+docker build \
+  --tag gollajugaenyang-repurchase-batch:local \
+  repurchase/data_analysis
+```
+
+고정 예제는 이미지에 복사하지 않고 읽기 전용으로 마운트합니다.
+
+```bash
+docker run --rm \
+  --volume "$PWD/repurchase/data_analysis/tests/fixtures/cloud_contract:/input:ro" \
+  gollajugaenyang-repurchase-batch:local \
+  contract-check \
+  --source-contract /input/source_orders.json \
+  --publication-contract /input/prediction_publications.json
+```
+
+### 이미지에 포함하지 않는 항목
+
+- 원본 데이터와 분석 리포트
+- 테스트 코드와 로컬 가상환경
+- 모델 아티팩트와 예측 결과
+- DB 주소·계정·비밀번호·API 키
+
+실제 모델 추론 단계에서는 검증된 아티팩트를 읽기 전용 볼륨 또는 객체 저장소로
+주입합니다. 클라우드 연결 정보는 Secret 관리 기능으로 전달하고 로그에 값을
+출력하지 않습니다. 실제 DB 어댑터·스케줄러·결과 적재는 데이터 계약 확정 후
+별도 작업에서 연결합니다.
+
+운영·CI의 Linux AMD64 환경은 GPU 의존성을 포함하지 않는 `xgboost-cpu`를
+사용합니다. XGBoost 3.2에서 CPU 전용 wheel을 제공하지 않는 ARM64·macOS는 같은
+버전의 일반 `xgboost`를 사용합니다. 따라서 Apple Silicon의 로컬 이미지는 운영용
+AMD64 이미지보다 클 수 있으며, 실제 배포 이미지 크기는 CI의 AMD64 빌드 결과를
+기준으로 판단합니다. Python 기반 이미지는 태그가 가리키는 내용이 바뀌지 않도록
+멀티 아키텍처 manifest digest까지 고정합니다.
+
+### GHCR 이미지 등록
+
+`main`에 Dockerfile·런타임 의존성·실행 스크립트 변경이 병합되면
+GitHub Actions가 Linux AMD64 이미지를 다시 빌드하고 계약 smoke test를 수행합니다.
+검증을 통과한 이미지만 아래 GitHub Container Registry 경로에 등록합니다.
+
+```text
+ghcr.io/urineun-jigeum-bildeujung/ai-repurchase-batch
+```
+
+한 번 발행한 커밋 버전을 다시 찾을 수 있도록 `sha-<Git commit SHA>` 태그를
+불변 버전으로 사용합니다. `stable`은 최신 검증본을 확인하기 위한 이동 태그이며,
+PR 검증과 수동 워크플로 실행에서는 Registry에 이미지를 등록하지 않습니다.
+Runtime 소스 변경 없이 의도적으로 이미지를 다시 발행해야 할 때는
+`image-release.txt`의 정수만 올립니다. CI 파일을 수정한 것만으로는 새 Runtime
+이미지를 만들지 않습니다.
+
+클라우드 배포 시에는 `stable`을 직접 참조하기보다 Actions 실행 요약에 기록된
+digest를 사용합니다. digest를 고정하면 이후 `stable`이 새 이미지로 이동해도
+실행 중인 배포가 의도치 않게 바뀌지 않고 같은 이미지를 재현하거나 롤백할 수
+있습니다. 이미지 등록과 실제 클라우드 배포는 분리하며, 배포 자동화는 실행 환경과
+승인 정책이 확정된 뒤 별도 워크플로로 구성합니다.
+
+같은 커밋의 워크플로를 다시 실행해도 기존 `sha-<commit>` 태그는 덮어쓰지 않고
+revision 라벨을 확인한 뒤 재사용합니다. 현재 `stable` 이미지의 커밋이 실행 후보보다
+최신이면 태그 갱신을 건너뛰어 과거 워크플로 재실행이 최신 이미지를 되돌리지 못하게
+합니다. main push는 커밋별 독립 실행해 중간 커밋의 Runtime 변경 감지가 대기열에서
+사라지지 않도록 합니다. `stable`은 로컬 이미지를 다시 push하지 않고 Registry의
+검증된 SHA manifest를 digest로 복사하며, 등록 후 두 태그의 digest가 같은지 다시
+검사합니다.

@@ -1,0 +1,3845 @@
+{
+  "_comment": "시드 9: Open Pet Food Facts 글로벌 사료 50~116개 placeholder (Royal Canin/Hill's/Orijen/Acana/Wellness/ToTW/Farmina/Merrick). MVP 사료 카테고리. 5종 카테고리(food/treat/pad/litter/supplement) 중 food/treat 위주. 한국 판매 글로벌 사료. 종=DOG/CAT/BOTH 자동 분류.",
+  "_source": "https://world.openpetfoodfacts.org/ (영문/프랑스어, 2026-08-18 1차 추출)",
+  "_checked_at": "2026-08-18",
+  "_phase1_anchor": "골라주개냥 Phase 1 — placeholder 사료 + 매칭 v1 룰 기반 보강",
+  "version": "1.0 (OPFF 글로벌 + 한국 판매 매핑)",
+  "all_count": 108,
+  "by_brand": {
+    "royal+canin": 0,
+    "hills": 0,
+    "orijen": 0,
+    "acana": 0,
+    "wellness": 0,
+    "taste+of+the+wild": 0,
+    "farmina": 0,
+    "merrick": 0,
+    "unknown": 34,
+    "Royal Canin": 18,
+    "Hill's": 11,
+    "Orijen": 13,
+    "Acana": 6,
+    "Wellness": 12,
+    "Taste of the Wild": 6,
+    "Farmina": 7,
+    "Merrick": 1
+  },
+  "by_category": {
+    "food": 108,
+    "treat": 0,
+    "pad": 0,
+    "litter": 0,
+    "supplement": 0
+  },
+  "items": [
+    {
+      "product_id": "3182550702423",
+      "name": "kitten 12mois",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/070/2423/front_fr.43.400.jpg",
+      "ingredients": [
+        "Protéines do volaille déshydratées",
+        "nz",
+        "isolat de prctéres végétales'",
+        "graisses animales",
+        "mais",
+        "gluten de mais",
+        "hydrolysat de animalcs",
+        "fibres v6g6talcst pulpe do bottorave",
+        "levures et de huile de poisson",
+        "sels minéraux",
+        "huile do sqa",
+        "et graires (05 0%)",
+        "fructod19Œsaccharidos (0",
+        "38 %)",
+        "hydrdysat de bvure dipsaccharides)",
+        "extrait do rose d'inde (source Méine)",
+        "ADD(TIFS (au kg) : AddrtJÉ nutrrtmnels: Vitamine A: UI",
+        "Vitamim 03: 300 UI",
+        "E. El (Fer) : 40 mg",
+        "E2 (Iode) : 4 mg"
+      ],
+      "ingredients_text_raw": "Protéines do volaille déshydratées, nz, isolat de prctéres végétales', graisses animales, mais, gluten de mais, hydrolysat de animalcs, fibres v6g6talcst pulpe do bottorave, levures et de huile de poisson, sels minéraux, huile do sqa, et graires (05 0%), fructod19Œsaccharidos (0,38 %), hydrdysat de bvure dipsaccharides), extrait do rose d'inde (source Méine), ADD(TIFS (au kg) : AddrtJÉ nutrrtmnels: Vitamine A: UI, Vitamim 03: 300 UI, E. El (Fer) : 40 mg, E2 (Iode) : 4 mg, E4 (CuiTe) : 12 E5 (Mav",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.0,
+        "crude_fat_pct": 0.0,
+        "crude_fiber_pct": 0.0,
+        "moisture_pct": 5.5
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:Pet-food",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579000366",
+      "name": "RC cat food urinary care",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/900/0366/front_en.20.400.jpg",
+      "ingredients": [
+        "Viandes et sous-produits animaux",
+        "céréales",
+        "sous-produits d'origine végétale",
+        "substances minérales",
+        "sucres. ADDITIFS (au kg): Additifs nutritionnels : Vitamine D3: 330 UI",
+        "E1 (Fer): 3 mg",
+        "E2 (lode): 0",
+        "2 mg",
+        "E4 (Cuivre): 2 mg",
+        "E5 (Manganèse): 1",
+        "9 mg",
+        "E6 (Zinc): 9 mg."
+      ],
+      "ingredients_text_raw": "Viandes et sous-produits animaux, céréales, sous-produits d'origine végétale, substances minérales, sucres. ADDITIFS (au kg): Additifs nutritionnels : Vitamine D3: 330 UI, E1 (Fer): 3 mg, E2 (lode): 0,2 mg, E4 (Cuivre): 2 mg, E5 (Manganèse): 1,9 mg, E6 (Zinc): 9 mg.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.092,
+        "crude_fat_pct": 0.25,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:non-food-products",
+        "en:open-pet-food-facts",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:united-kingdom"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550793612",
+      "name": "Puppy X-Small",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1.5 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/079/3612/front_id.35.400.jpg",
+      "ingredients": [
+        "saepulloh"
+      ],
+      "ingredients_text_raw": "saepulloh",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food"
+      ],
+      "countries_tags": [
+        "en:indonesia"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579311660",
+      "name": "Mother & Babycat",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "195g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/931/1660/front_en.30.400.jpg",
+      "ingredients": [
+        "Meat and animal by-products",
+        "Cereals",
+        "Vegetable protein extracts",
+        "Vegetable by-products",
+        "Milk and milk by-products",
+        "Oils and fats",
+        "Minerals",
+        "Yeast",
+        "Sugar"
+      ],
+      "ingredients_text_raw": "Meat and animal by-products, Cereals, Vegetable protein extracts, Vegetable by-products, Milk and milk by-products, Oils and fats, Minerals, Yeast, Sugar",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": 79.0
+      },
+      "allergens_declared": "milk",
+      "allergens_tags": [
+        "en:milk"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:wet-pet-food",
+        "en:adult-cat-food",
+        "en:wet-cat-food"
+      ],
+      "countries_tags": [
+        "en:sweden",
+        "en:Allemagne"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://vetapotek.se/produkt/royal-canin-mother-babycat-12x195g-9003579311660/",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550831383",
+      "name": "adult mini 8+",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/083/1383/front_fr.42.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.27,
+        "crude_fat_pct": 0.16,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550768481",
+      "name": "Royal Canin - Croquettes Veterinary Diet Satiety",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "3,5kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/076/8481/front_en.12.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.34,
+        "crude_fat_pct": 0.09,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550771290",
+      "name": "Gastro intestinal moderate calorie Féline",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/077/1290/front_fr.16.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550771252",
+      "name": "Crocchette per gatti - gastrointestinal",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/077/1252/front_it.15.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579003923",
+      "name": "Royal canin sterilised",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "85 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/900/3923/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "fr:Mousse"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550716918",
+      "name": "Croquettes chien",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "8kg",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:non-food-products",
+        "en:open-pet-food-facts",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:belgium"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579309445",
+      "name": "Gastrointestinal",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "400 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/930/9445/front_fr.14.400.jpg",
+      "ingredients": [
+        "no hay información"
+      ],
+      "ingredients_text_raw": "no hay información",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:wet-pet-food",
+        "en:wet-dog-food"
+      ],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0030111493255",
+      "name": "Puppy Food",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1.14 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/003/011/149/3255/front_en.5.400.jpg",
+      "ingredients": [
+        "Chicken by-product meal",
+        "brewers rice",
+        "chicken fat",
+        "wheat gluten",
+        "corn",
+        "dried plain beet pulp",
+        "natural flavors",
+        "corn gluten meal",
+        "monocalcium phosphate",
+        "pea fiber",
+        "vegetable oil",
+        "sodium aluminosilicate",
+        "calcium carbonate",
+        "potassium chloride",
+        "fish oil",
+        "taurine",
+        "fructooligosaccharides",
+        "sodium tripolyphosphate",
+        "rice flour",
+        "hydrolyzed yeast"
+      ],
+      "ingredients_text_raw": "Chicken by-product meal, brewers rice, chicken fat, wheat gluten, corn, dried plain beet pulp, natural flavors, corn gluten meal, monocalcium phosphate, pea fiber, vegetable oil, sodium aluminosilicate, calcium carbonate, potassium chloride, fish oil, taurine, fructooligosaccharides, sodium tripolyphosphate, rice flour, hydrolyzed yeast, salt, choline chloride, marine microalgae oil, DL-methionine, vitamins[DL-alpha tocopherol acetate (source of vitamin E), L-ascorbyl-2-polyphosphate (source of ",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": 10.5
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:non-food-products",
+        "en:open-pet-food-facts",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:canada",
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550708180",
+      "name": "Puppy Medium",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "4 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/070/8180/front_fr.24.400.jpg",
+      "ingredients": [
+        "protéine de volaille déshydratée",
+        "mais",
+        "graisses animales",
+        "pulpe de betterave",
+        "isolat de protéines vegetales",
+        "gluten de mais",
+        "protéines de porc deshydratees",
+        "riz",
+        "farine de blé",
+        "hydrolysat de protéines animales",
+        "blé",
+        "farine de mais",
+        "sels minéraux",
+        "huile de poisson",
+        "huile de soja",
+        "levures et composants de levures",
+        "fructo-oligo-saccharides (0",
+        "34%)",
+        "hydrolysat de levure (source de manno-oligo-saccharides)",
+        "extraits de levure (source de bêta-glucans)"
+      ],
+      "ingredients_text_raw": "protéine de volaille déshydratée, mais, graisses animales, pulpe de betterave, isolat de protéines vegetales, gluten de mais, protéines de porc deshydratees, riz, farine de blé, hydrolysat de protéines animales, blé, farine de mais, sels minéraux, huile de poisson, huile de soja, levures et composants de levures, fructo-oligo-saccharides (0,34%), hydrolysat de levure (source de manno-oligo-saccharides), extraits de levure (source de bêta-glucans), extraits de rose d'inde (source de lutéine).",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.32,
+        "crude_fat_pct": 0.2,
+        "crude_fiber_pct": 0.08,
+        "moisture_pct": null
+      },
+      "allergens_declared": "poisson, gluten, soja",
+      "allergens_tags": [
+        "en:fish",
+        "en:gluten",
+        "en:soybeans"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:Pet-food",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.royalcanin.fr/aliment/medium-puppy/",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550728102",
+      "name": "chihuahua adult",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "1,5 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/072/8102/front_fr.19.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550751988",
+      "name": "RoyalCanin care Digestive",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "400g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/075/1988/front_id.7.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:indonesia"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579308943",
+      "name": "RC kittrn wet instinctive gravy 85gr",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/930/8943/front_id.20.400.jpg",
+      "ingredients": [
+        "COMPOSITION: \n- viandes et sous-produits animaux\n- extrait de protéines végétales\n- lait et produits de laiterie\n- céréales\n- sous-produits d'origine végétale\n- substances minérales\n- huiles et graisses\n- levures\n\nADDITIFS NUTRIONNELS (au kg):\n- Vitamine D3: 160 UI\n- Fer (3b103): 7 mg\n- lode (3b202): 0",
+        "33 mg\n- Cuivre (3b405",
+        "3b406): 2",
+        "6 mg\n- Manganèse (3b502",
+        "3b503",
+        "3b504): 2",
+        "2 mg\n- Zinc (3b603",
+        "3b605",
+        "3b606): 22 mg\n\nCONSTITUANTS ANALYTIQUES:\n- Protéine: 11",
+        "4 %\n- Teneur en matières grasses: 4",
+        "0%\n- Cendres brutes: 1",
+        "8 %\n- Cellulose brute: 0",
+        "6%\n- Humidité: 79",
+        "0%\n- Vitamine E : 110 mg/kg\n- Vitamine C: 45 mg/kg\n- Acide gras oméga-3 (DHA): 0",
+        "045 %"
+      ],
+      "ingredients_text_raw": "COMPOSITION: \n- viandes et sous-produits animaux\n- extrait de protéines végétales\n- lait et produits de laiterie\n- céréales\n- sous-produits d'origine végétale\n- substances minérales\n- huiles et graisses\n- levures\n\nADDITIFS NUTRIONNELS (au kg):\n- Vitamine D3: 160 UI\n- Fer (3b103): 7 mg\n- lode (3b202): 0,33 mg\n- Cuivre (3b405, 3b406): 2,6 mg\n- Manganèse (3b502, 3b503, 3b504): 2,2 mg\n- Zinc (3b603, 3b605, 3b606): 22 mg\n\nCONSTITUANTS ANALYTIQUES:\n- Protéine: 11,4 %\n- Teneur en matières grasses: 4,0%",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:indonesia"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "9003579311301",
+      "name": "Royal Canin Sterilised Gravy",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/900/357/931/1301/front_en.22.400.jpg",
+      "ingredients": [
+        "Meat and animal by-products",
+        "Grains",
+        "Vegetable by-products",
+        "Minerals",
+        "Yeast"
+      ],
+      "ingredients_text_raw": "Meat and animal by-products, Grains, Vegetable by-products, Minerals, Yeast",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": 81.0
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:adult-cat-food",
+        "en:castrated-cat-food"
+      ],
+      "countries_tags": [
+        "en:indonesia",
+        "en:sweden"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.royalcanin.com/se/cats/products/retail-products/sterilised-gravy-4095",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3182550702379",
+      "name": "Croquettes chaton",
+      "brand": "Royal Canin",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "400g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/318/255/070/2379/front_fr.39.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.1,
+        "crude_fat_pct": 0.388,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742567006",
+      "name": "Hills Urgent Care lata",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "156.0 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/256/7006/front_en.16.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:incorrect-product-type",
+        "en:non-food-products",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742035963",
+      "name": "Sterilised Cat young adult 6 months - 6 years with duck",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "3KG",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/203/5963/front_en.15.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:norway"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742047393",
+      "name": "Food Sensitivities z/d",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "3kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/204/7393/front_fr.17.400.jpg",
+      "ingredients": [
+        "Céréales",
+        "extraits de protéines végétales",
+        "viandes et sous-produits animaux",
+        "huiles et graisses (huile de poisson 1%)",
+        "substances minérales",
+        "sous-produits d'origine végétale",
+        "fruits",
+        "graines. Source de protéines : Concentré de protéines de riz",
+        "hydrolysat de foie de poulet (15",
+        "1%). Sources de glucides : Riz de brasserie.\nCONSTITUANTS ANALYTIQUES : Protéines 32",
+        "0%",
+        "Teneur en matière grasse 15",
+        "1%",
+        "Cellulose brute 2",
+        "0%",
+        "Cendres brutes 5",
+        "9%",
+        "Acides gras essentiels 5",
+        "5%",
+        "Calcium 0"
+      ],
+      "ingredients_text_raw": "Céréales, extraits de protéines végétales, viandes et sous-produits animaux, huiles et graisses (huile de poisson 1%), substances minérales, sous-produits d'origine végétale, fruits, graines. Source de protéines : Concentré de protéines de riz, hydrolysat de foie de poulet (15,1%). Sources de glucides : Riz de brasserie.\nCONSTITUANTS ANALYTIQUES : Protéines 32,0%, Teneur en matière grasse 15,1%, Cellulose brute 2,0%, Cendres brutes 5,9%, Acides gras essentiels 5,5%, Calcium 0,74%, Phosphore 0,62",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 3.2,
+        "crude_fat_pct": 1.51,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "poisson",
+      "allergens_tags": [
+        "en:fish"
+      ],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "http://hills.pet/dlg3xp8h",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742024127",
+      "name": "Senior 11  Food With Chicken",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "3kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/202/4127/front_en.7.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:germany",
+        "en:united-kingdom"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742024271",
+      "name": "Sterilised cat",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "10kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/202/4271/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "fr:croquettes"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "4311596625079",
+      "name": "Sunny Hills (Huhn)",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/431/159/662/5079/front_de.3.400.jpg",
+      "ingredients": [
+        "41% Hühnerfleisch",
+        "29% Geflügelprotein (getrocknet)",
+        "19% Süßkartoffeln (getrocknet)",
+        "Kartoffelmehl",
+        "1",
+        "5% Proteinhydrolysat",
+        "Erbsen (getrocknet)",
+        "1% Hühnerleber",
+        "Lachsöl",
+        "Geflügelfett",
+        "0",
+        "2 % getrocknete Kräuter (Brennessel",
+        "Schafgarbe",
+        "Fenchel",
+        "Kümmel",
+        "Brombeere",
+        "Mistelkraut",
+        "Kamille",
+        "Enzianwurzel",
+        "Tausendhülsenkraut)"
+      ],
+      "ingredients_text_raw": "41% Hühnerfleisch,\n29% Geflügelprotein (getrocknet),\n19% Süßkartoffeln (getrocknet),\nKartoffelmehl, 1,5% Proteinhydrolysat, Erbsen (getrocknet), 1% Hühnerleber, Lachsöl, Geflügelfett, 0,2 % getrocknete Kräuter (Brennessel, Schafgarbe, Fenchel, Kümmel, Brombeere,  Mistelkraut, Kamille, Enzianwurzel, Tausendhülsenkraut), Hefen (als Quelle von 0,07 % Mannanoligosacchariaden, 0,07 % Beta-Glucanen), Preiselbeeren (getrocknet), Blaubeeren (getrocknet), Holunderbeeren (getrocknet), Sonnenblumenöl, Dist",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food"
+      ],
+      "countries_tags": [
+        "en:germany"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742210605",
+      "name": "science Plan",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "85gr",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/221/0605/front_it.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742005355",
+      "name": "HILLS SCIENCE DIET - ADULT 7+ SMALL BITES",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/200/5355/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:incorrect-product-type",
+        "en:non-food-products",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742054902",
+      "name": "Puppy",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/205/4902/front_es.9.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "es:Pienso"
+      ],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742282602",
+      "name": "mature adult 7+ small & mini up to 10kg",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1,5kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/228/2602/front_en.4.400.jpg",
+      "ingredients": [
+        "Protéines déshydratées de poulet et de dinde",
+        "froment",
+        "riz de brasserie",
+        "riz complet",
+        "mais",
+        "graisses animales",
+        "hydrolysat de protéines animales",
+        "orge",
+        "avoine",
+        "pulpe de betterave séchée",
+        "huile végétale",
+        "graines de lin",
+        "substances minérales",
+        "marc de tomate déshydraté",
+        "pulpe d'agrumes deshydratée",
+        "poudre d'épinard. Constituants Analytiques: Tableau 1. Additifs par kg (Additifs Nutritionnels) : Tableau"
+      ],
+      "ingredients_text_raw": "Protéines déshydratées de poulet et de dinde, froment, riz de brasserie, riz complet, mais, graisses animales, hydrolysat de protéines animales , orge, avoine, pulpe de betterave séchée, huile végétale, graines de lin, substances minérales, marc de tomate déshydraté, pulpe d'agrumes deshydratée, poudre d'épinard. Constituants Analytiques: Tableau 1. Additifs par kg (Additifs Nutritionnels) : Tableau",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:non-food-products",
+        "en:open-pet-food-facts",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.hillspet.fr/dog-food/sp-canine-science-plan-mature-adult-7-plus-small-and-miniature-dry",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742057569",
+      "name": "HILLS SCIENCE DIET- ADULT 7+ SMALL BITES",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6,8 Kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/205/7569/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742429403",
+      "name": "science plan",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "5 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/242/9403/front_iw.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:israel"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742840802",
+      "name": "Hills Canine I / D Conserve Pack",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/284/0802/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.25,
+        "crude_fat_pct": 0.2,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742223209",
+      "name": "Hill's SciCroquettes Pour Chat Sénior 11+",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/222/3209/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 3.21,
+        "crude_fat_pct": 1.98,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742121109",
+      "name": "Hill's Canine Adult Advanced Fitness Large Breed Au Poulet",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [
+        "COMPOSITION: Maïs",
+        "froment",
+        "protéines déshydratées de poulet et de dinde",
+        "graisses animales",
+        "farine de soja",
+        "hydrolysat de protéines animales",
+        "farine de gluten de maïs",
+        "huile végétale",
+        "pulpe de betterave séchée",
+        "substances minérales",
+        "graines de lin",
+        "hydrolysat de cartilage (source de sulfate de chondroïtine)",
+        "hydrolysat de coquille de crustacé (source de glucosamine). CONSTITUANTS ANALYTIQUES.' Protéines 21",
+        "6%",
+        "Teneur en matières grasses 14",
+        "7%",
+        "Fibres brutes 1",
+        "9%",
+        "Cendres brutes 4",
+        "9%"
+      ],
+      "ingredients_text_raw": "COMPOSITION: Maïs, froment, protéines déshydratées de poulet et de dinde, graisses animales, farine de soja, hydrolysat de protéines animales , farine de gluten de maïs, huile végétale, pulpe de betterave séchée, substances minérales, graines de lin, hydrolysat de cartilage (source de sulfate de chondroïtine), hydrolysat de coquille de crustacé (source de glucosamine). CONSTITUANTS ANALYTIQUES.' Protéines 21,6%, Teneur en matières grasses 14,7%, Fibres brutes 1,9%, Cendres brutes 4,9%, Calcium 0",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.216,
+        "crude_fat_pct": 0.147,
+        "crude_fiber_pct": 0.019,
+        "moisture_pct": null
+      },
+      "allergens_declared": "gluten, soja",
+      "allergens_tags": [
+        "en:gluten",
+        "en:soybeans"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742935706",
+      "name": "Sterilised cat Young adult 6 months - 6 years - Poulet",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "8 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/293/5706/front_fr.9.400.jpg",
+      "ingredients": [
+        "Maïs",
+        "protéines déshydratées de poulet et de dinde",
+        "farine de gluten de maïs",
+        "graisses animales",
+        "substances minérales",
+        "huile de poisson",
+        "hydrolysat de protéines animales."
+      ],
+      "ingredients_text_raw": "Maïs, protéines déshydratées de poulet et de dinde, farine de gluten de maïs, graisses animales, substances minérales, huile de poisson, hydrolysat de protéines animales.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 3.14,
+        "crude_fat_pct": 1.01,
+        "crude_fiber_pct": 0.14,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0052742896502",
+      "name": "Vet Essentials Young Adult",
+      "brand": "Hill's",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6500 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/005/274/289/6502/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992180201",
+      "name": "Orijen Chiots",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/0201/front_fr.16.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992184124",
+      "name": "Regional Red",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "11,4kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/4124/front_fr.27.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992180126",
+      "name": "Orijen Puppy Hondenvoer",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "11.4",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/0126/front_fr.15.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.38,
+        "crude_fat_pct": 0.2,
+        "crude_fiber_pct": 0.05,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992186128",
+      "name": "Orijen Senior",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/6128/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 3.8,
+        "crude_fat_pct": 1.5,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992184209",
+      "name": "Orijen Regional Red",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/4209/front_pl.5.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:poland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992090685",
+      "name": "Regional Red",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6800 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/209/0685/front_en.5.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:germany"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992130565",
+      "name": "Wild boar treat",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "57 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/213/0565/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:israel"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992107253",
+      "name": "orijen",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "25 lbs g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/210/7253/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992280543",
+      "name": "Orijen Cat & Kitten",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "5,4kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/228/0543/front_fr.6.400.jpg",
+      "ingredients": [
+        "Viande de poulet fraîche (18%)",
+        "viande de dinde fraîche (7%)",
+        "oeufs entiers frais (5%)",
+        "foie de poulet frais (5%)",
+        "plie entière fraîche (4%)",
+        "hareng entier frais (4%)",
+        "foie de dinde frais (4%)",
+        "coeur de poulet frais (4%)",
+        "coeur de dinde frais (4%)",
+        "cou de poulet frais (4%)",
+        "poulet déshydraté (4%)",
+        "dinde (déshydraté",
+        "4%)",
+        "maquereau entier (déshydraté",
+        "4%)",
+        "sardines entières (déshydratées",
+        "4%)",
+        "hareng entier (déshydraté",
+        "4%)",
+        "gras de poulet (3%)"
+      ],
+      "ingredients_text_raw": "Viande de poulet fraîche (18%), viande de dinde fraîche (7%), oeufs entiers frais (5%), foie de poulet frais (5%), plie entière fraîche (4%), hareng entier frais (4%), foie de dinde frais (4%), coeur de poulet frais (4%), coeur de dinde frais (4%), cou de poulet frais (4%), poulet déshydraté (4%), dinde (déshydraté, 4%), maquereau entier (déshydraté, 4%), sardines entières (déshydratées, 4%), hareng entier (déshydraté, 4%), gras de poulet (3%), lentilles rouges, pois verts, lentilles vertes, poi",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 4.0,
+        "crude_fat_pct": 2.0,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.orijen.ca/foods/cat-food/dry-cat-food/cat-kitten/",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "01184716",
+      "name": "Regional Red",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "5.4 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/000/000/118/4716/front_en.17.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:bulgaria"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992720179",
+      "name": "orijen guardian 8",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1.8 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/272/0179/front_en.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food"
+      ],
+      "countries_tags": [
+        "en:canada"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.orijenpetfoods.com/en-CA/cats/cat-food/guardian-8-formula/ds-ori-guardian-8.html?gad=1&gclid=Cj0KCQjwxYOiBhC9ARIsANiEIfbFVwS5uYWuvhPzyN06Fok1AT_j2jBkubuFniYFSG5NhOvhEv5JIiYaAtuJEALw_wcB&gclsrc=aw.ds",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992281342",
+      "name": "Six fish Trockenfutter",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "340g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/228/1342/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:canada",
+        "en:germany"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992106133",
+      "name": "Orijen",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/210/6133/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992281182",
+      "name": "Six Fish",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1,8kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/228/1182/front_fr.13.400.jpg",
+      "ingredients": [
+        "Sardines entières crues (28%)",
+        "merlu entier cru (7%)",
+        "maquereau entier cru (6%)",
+        "limande entière crue (5%)",
+        "sébaste entier cru (5%)",
+        "sole entière crue (5%)",
+        "maquereau déshydraté (5%)",
+        "hareng déshydraté (5%)",
+        "merlan bleu déshydraté (5%)",
+        "huile de goberge (5%)",
+        "corégone déshydraté (5%)",
+        "sardines déshydratées (4%)",
+        "huile de tournesol",
+        "lentilles rouges entières",
+        "lentilles vertes entières",
+        "pois entiers",
+        "fibres de lentilles",
+        "pois chiches entiers",
+        "haricots pinto entiers",
+        "amidon de pois"
+      ],
+      "ingredients_text_raw": "Sardines entières crues (28%), merlu entier cru (7%), maquereau entier cru (6%), limande entière crue (5%), sébaste entier cru (5%), sole entière crue (5%), maquereau déshydraté (5%), hareng déshydraté (5%), merlan bleu déshydraté (5%), huile de goberge (5%), corégone déshydraté (5%), sardines déshydratées (4%), huile de tournesol, lentilles rouges entières, lentilles vertes entières, pois entiers, fibres de lentilles, pois chiches entiers, haricots pinto entiers, amidon de pois, varech séché, c",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.01,
+        "crude_fat_pct": 0.44,
+        "crude_fiber_pct": 0.0,
+        "moisture_pct": 10.0
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "fr:RICHES EN PROTÉINES"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://emea.orijenpetfoods.com/fr-FR/cats/cat-food/eu-ori-ns-ori-sixfish-cat.html",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992280345",
+      "name": "Cat And Kitten",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-kingdom"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992280178",
+      "name": "Original Cat",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "17kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/228/0178/front_en.22.400.jpg",
+      "ingredients": [
+        "Fresh chicken (20%)",
+        "raw turkey (10%). raw whole herring (9%)",
+        "fresh chicken giblets (liver",
+        "heart) (6%)",
+        "raw whole hake (5%)",
+        "raw turkey liver (5%)",
+        "fresh eggs (5%)",
+        "dehydrated chicken (4%)",
+        "dehydrated turkey (4%)",
+        "dehydrated mackerel (4%)",
+        "dehydrated sardine (4%)",
+        "dehydrated herring (4%). chicken fat (4%)",
+        "whole red lentils",
+        "whole peas",
+        "whole green lentils",
+        "whole chickpeas. lentil fibre",
+        "whole pinto beans",
+        "pea starch",
+        "whole navy beans",
+        "pollock oil (1%)"
+      ],
+      "ingredients_text_raw": "Fresh chicken (20%), raw turkey (10%). raw whole herring (9%), fresh chicken giblets (liver, heart) (6%), raw whole hake (5%), raw turkey liver (5%), fresh eggs (5%), dehydrated chicken (4%), dehydrated turkey (4%), dehydrated mackerel (4%), dehydrated sardine (4%), dehydrated herring (4%). chicken fat (4%), whole red lentils, whole peas, whole green lentils, whole chickpeas. lentil fibre, whole pinto beans, pea starch, whole navy beans, pollock oil (1%), dried kelp, fresh whole pumpkin, fresh w",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.4,
+        "crude_fat_pct": 0.2,
+        "crude_fiber_pct": 0.03,
+        "moisture_pct": 10.0
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:Pet-food"
+      ],
+      "countries_tags": [
+        "en:norway"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992186708",
+      "name": "Fit& trim",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/6708/front_fr.13.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992718862",
+      "name": "ORJEN Kitten",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "1,8kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/271/8862/front_pl.22.400.jpg",
+      "ingredients": [
+        "Poulet frais (31%)",
+        "dinde crue (8%)",
+        "saumon cru (6%)",
+        "hareng entier cru (5%)",
+        "abats de poulet frais (foie",
+        "cœur) (4",
+        "5%)",
+        "foie de dinde cru (4%)",
+        "maquereau entier cru (4%)",
+        "œufs frais (4%)",
+        "poulet déshydraté (4%)",
+        "dinde déshydratée (4%)",
+        "hareng déshydraté (4%)",
+        "foie de poulet déshydraté (4%)",
+        "œufs déshydratés (4%)",
+        "lentilles rouges entières",
+        "pois entiers",
+        "huile de goberge (3%)",
+        "pois chiches entiers",
+        "lentilles vertes entières"
+      ],
+      "ingredients_text_raw": "Poulet frais (31%), dinde crue (8%), saumon cru (6%), hareng entier cru (5%), abats de poulet frais (foie, cœur) (4,5%), foie de dinde cru (4%), maquereau entier cru (4%), œufs frais (4%), poulet déshydraté (4%), dinde déshydratée (4%), hareng déshydraté (4%), foie de poulet déshydraté (4%), œufs déshydratés (4%), lentilles rouges entières, pois entiers, huile de goberge (3%), pois chiches entiers, lentilles vertes entières, haricots pinto entiers, haricots entiers, amidon de pois, miscanthus mo",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "jaja",
+      "allergens_tags": [
+        "en:eggs",
+        "pl:œufs frais"
+      ],
+      "categories_raw": [
+        "en:cat-food",
+        "en:dog-and-cat-food"
+      ],
+      "countries_tags": [
+        "en:poland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992182601",
+      "name": "Croquettes original",
+      "brand": "Orijen",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/218/2601/front_fr.13.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992541118",
+      "name": "Pacifica",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "11,4kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/254/1118/front_es.24.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992560218",
+      "name": "Acana",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/256/0218/front_en.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-kingdom"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992523206",
+      "name": "acana adulte small",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/252/3206/front_fr.19.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "fr:croquettes"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992613105",
+      "name": "Indoor entree",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "10 lb, 4.5kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/261/3105/front_en.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992714482",
+      "name": "Pienso seco gato adulto esterilizado",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "340 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/271/4482/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:non-food-products"
+      ],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992714642",
+      "name": "Acana chat pacifica",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:belgium",
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992714697",
+      "name": "Acana grassland 340g",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:belgium",
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992714628",
+      "name": "Acana pacifica 340G",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:belgium",
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992714710",
+      "name": "Grasslands",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/271/4710/front_en.9.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992500115",
+      "name": "Puppy & Junior Heritage Formula",
+      "brand": "Acana",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "11,4kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/250/0115/front_en.24.400.jpg",
+      "ingredients": [
+        "fresh chicken meat 16%",
+        "chicken meal 13%",
+        "turkey meal 13%",
+        "red lentils",
+        "whole green peas",
+        "fresh chicken giblets (liver",
+        "heart",
+        "kidney) 6%"
+      ],
+      "ingredients_text_raw": "fresh chicken meat 16%, chicken meal 13%, turkey meal 13%, red lentils, whole green peas, fresh chicken giblets (liver, heart, kidney) 6%",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food"
+      ],
+      "countries_tags": [
+        "en:ireland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "acana.com",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992500603",
+      "name": "acana puppy",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/250/0603/front_pl.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:poland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0064992510688",
+      "name": "acana senior",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/006/499/251/0688/front_pl.15.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:poland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344107170",
+      "name": "Wellness Core Sterilised Au Saumon",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/410/7170/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344108122",
+      "name": "Adult Ocean Small Breed",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "5kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/410/8122/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:non-food-products",
+        "en:open-pet-food-facts",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:united-kingdom"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "3010734089322",
+      "name": "Chicken & Herring Dinner",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "156 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/301/073/408/9322/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8016434900573",
+      "name": "Kittles",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "56.7 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/643/490/0573/front_en.8.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344107156",
+      "name": "Core Ocean",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "1,75 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/410/7156/front_en.4.400.jpg",
+      "ingredients": [
+        "saumon 26% (saumon frais 16%",
+        "saumon déshydraté 10%)",
+        "petits pois 15%",
+        "protéine de pomme de terre",
+        "thon déshydraté 11%",
+        "hareng déshydraté 10%",
+        "huile de colza",
+        "pomme de terre déshydratées",
+        "graines de lin 3%",
+        "pulpe de bertterave 3%",
+        "arôme déshydraté",
+        "huile de saumon 2%",
+        "lignocellulose",
+        "racine de chicorée déshydratée (source de fructo-oligosaccharides et d'inuline) 0",
+        "5%",
+        "canneberges 0",
+        "01%",
+        "varech déshydraté",
+        "yucca schidigera"
+      ],
+      "ingredients_text_raw": "saumon 26% (saumon frais 16%, saumon déshydraté 10%), petits pois 15%, protéine de pomme de terre, thon déshydraté 11%, hareng déshydraté 10%, huile de colza, pomme de terre déshydratées, graines de lin 3%, pulpe de bertterave 3%, arôme déshydraté, huile de saumon 2%, lignocellulose, racine de chicorée déshydratée (source de fructo-oligosaccharides et d'inuline) 0,5%, canneberges 0,01%, varech déshydraté, yucca schidigera",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "fish",
+      "allergens_tags": [
+        "en:fish"
+      ],
+      "categories_raw": [
+        "fr:adult",
+        "fr:chat"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344088875",
+      "name": "Wellness Natural Food for Dogs",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/408/8875/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344893110",
+      "name": "Wellness",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/489/3110/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344108320",
+      "name": "CORE",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "4 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/410/8320/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0815436018860",
+      "name": "whimzees Dental treats",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "14",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/081/543/601/8860/front_en.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dental"
+      ],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344107279",
+      "name": "Core",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/410/7279/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:netherlands"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344118473",
+      "name": "Purely Paté Chicken",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/411/8473/front_en.3.400.jpg",
+      "ingredients": [
+        "Chicken 54%",
+        "Chicken Broth",
+        "Minerals",
+        "Vegetable Oil. NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg",
+        "Vitamin A 20200 IU",
+        "Vitamin D3 596 IU",
+        "Zinc (Zinc chelate of amino acids",
+        "hydrate) 120 mg",
+        "Iron (Ferrous chelate of amino acids",
+        "hydrate) 45 mg",
+        "Copper (Cupric chelate of amino acids",
+        "hydrate) 26 mg",
+        "Manganese (Manganese chelate of amino acids",
+        "hydrate) 16 mg",
+        "lodine (Potassium Iodide) 0",
+        "2 mg."
+      ],
+      "ingredients_text_raw": "Chicken 54%, Chicken Broth, Minerals, Vegetable Oil. NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg, Vitamin A 20200 IU, Vitamin D3 596 IU, Zinc (Zinc chelate of amino acids, hydrate) 120 mg, Iron (Ferrous chelate of amino acids, hydrate) 45 mg, Copper (Cupric chelate of amino acids, hydrate) 26 mg, Manganese (Manganese chelate of amino acids, hydrate) 16 mg, lodine (Potassium Iodide) 0,2 mg.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "chicken",
+      "allergens_tags": [
+        "en:chicken"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:wet-pet-food",
+        "en:adult-cat-food",
+        "en:wet-cat-food",
+        "en:Cat food pate",
+        "en:Grain free cat food"
+      ],
+      "countries_tags": [
+        "en:belgium"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "www.wellnesscore.eu",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344118480",
+      "name": "Purely Paté Chicken with Turkey",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/411/8480/front_en.3.400.jpg",
+      "ingredients": [
+        "Chicken 50%",
+        "Chicken Broth",
+        "Turkey 4",
+        "0%",
+        "Minerals",
+        "Vegetable Oil",
+        "NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg",
+        "Vitamin A 20200 IU",
+        "Vitamin D3 596 IU",
+        "Zinc (Zinc chelate of amino acids",
+        "hydrate) 120 mg",
+        "Iron (Ferrous chelate of amino acids",
+        "hydrate) 45 mg",
+        "Copper (Cupric chelate of amino acids",
+        "hydrate) 26 mg",
+        "Manganese (Manganese chelate of amino acids",
+        "hydrate) 16 mg",
+        "lodine (Potassium lodide) 0",
+        "2 mg."
+      ],
+      "ingredients_text_raw": "Chicken 50%, Chicken Broth, Turkey 4,0%, Minerals, Vegetable Oil, NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg, Vitamin A 20200 IU, Vitamin D3 596 IU, Zinc (Zinc chelate of amino acids, hydrate) 120 mg, Iron (Ferrous chelate of amino acids, hydrate) 45 mg, Copper (Cupric chelate of amino acids, hydrate) 26 mg, Manganese (Manganese chelate of amino acids, hydrate) 16 mg, lodine (Potassium lodide) 0,2 mg.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "chicken",
+      "allergens_tags": [
+        "en:chicken"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:wet-pet-food",
+        "en:wet-cat-food",
+        "en:Cat food grain free",
+        "en:Cat food paté"
+      ],
+      "countries_tags": [
+        "en:belgium"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344118459",
+      "name": "Kitten Purely Paté Chicken with Tuna",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "85g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/411/8459/front_en.3.400.jpg",
+      "ingredients": [
+        "Chicken 42%",
+        "Chicken Broth",
+        "Tuna 8",
+        "0%",
+        "Duck",
+        "Sunflower Oil",
+        "Minerals",
+        "Algal Oil. NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg",
+        "Vitamin A 20200 IU",
+        "Vitamin D3 596 IU",
+        "Zinc (Zinc chelate of amino acids",
+        "hydrate) 120 mg",
+        "Iron (Ferrous chelate of amino acids",
+        "hydrate) 70 mg",
+        "Copper (Cupric chelate of amino acids",
+        "hydrate) 30 mg",
+        "Manganese (Manganese chelate of amino acids",
+        "hydrate) 20 mg",
+        "lodine (Potassium lodide) 0",
+        "2 mg."
+      ],
+      "ingredients_text_raw": "Chicken 42%, Chicken Broth, Tuna 8,0%, Duck, Sunflower Oil, Minerals, Algal Oil. NUTRITIONAL ADDITIVES (per kg): Taurine 2000 mg, Vitamin A 20200 IU, Vitamin D3 596 IU, Zinc (Zinc chelate of amino acids, hydrate) 120 mg, Iron (Ferrous chelate of amino acids, hydrate) 70 mg, Copper (Cupric chelate of amino acids, hydrate) 30 mg, Manganese (Manganese chelate of amino acids, hydrate) 20 mg, lodine (Potassium lodide) 0,2 mg.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "chicken, fish",
+      "allergens_tags": [
+        "en:chicken",
+        "en:fish"
+      ],
+      "categories_raw": [
+        "en:Kitten food",
+        "en:Kitten food grain free",
+        "en:Kitten wet food"
+      ],
+      "countries_tags": [
+        "en:belgium"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0076344116356",
+      "name": "Signature Selects Flaked Skipjack Tuna with Shrimp Entrée in Broth",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "79g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/634/411/6356/front_en.7.400.jpg",
+      "ingredients": [
+        "Tuna Broth",
+        "Tuna 27%",
+        "Mackerel 13%",
+        "Shrimp 4%",
+        "Tapioca Starch",
+        "Sunflower Oil",
+        "Minerals. NUTRITIONAL ADDITIVES (per kg): Taurine 1520 mg",
+        "Vitamin A 15400 IU",
+        "Vitamin D3 454 IU",
+        "Vitamin E 69 mg",
+        "Zinc (Zinc chelate of amino acids",
+        "hydrate) 115 mg",
+        "Iron (Ferrous chelate of amino acids",
+        "hydrate) 79 mg",
+        "Manganese (Manganese chelate of amino acids",
+        "hydrate) 28 mg",
+        "Copper (Cupric chelate of amino acids",
+        "hydrate) 18 mg",
+        "lodine (Potassium lodide) 0",
+        "3 mg."
+      ],
+      "ingredients_text_raw": "Tuna Broth, Tuna 27%, Mackerel 13%, Shrimp 4%, Tapioca Starch, Sunflower Oil, Minerals. NUTRITIONAL ADDITIVES (per kg): Taurine 1520 mg, Vitamin A 15400 IU, Vitamin D3 454 IU, Vitamin E 69 mg, Zinc (Zinc chelate of amino acids, hydrate) 115 mg, Iron (Ferrous chelate of amino acids, hydrate) 79 mg, Manganese (Manganese chelate of amino acids, hydrate) 28 mg, Copper (Cupric chelate of amino acids, hydrate) 18 mg, lodine (Potassium lodide) 0,3 mg.",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "crustaceans, fish",
+      "allergens_tags": [
+        "en:crustaceans",
+        "en:fish"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:wet-pet-food",
+        "en:adult-cat-food",
+        "en:wet-cat-food",
+        "en:Cat food grain free"
+      ],
+      "countries_tags": [
+        "en:belgium"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0810037580396",
+      "name": "Whimzees",
+      "brand": "Wellness",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/081/003/758/0396/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:cat-food",
+        "en:cat-biscuits"
+      ],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198613939",
+      "name": "Taste of the wild",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "28 lbs",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/3939/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.45454545454545,
+        "crude_fat_pct": 0.90909090909091,
+        "crude_fiber_pct": 2.7272727272727,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612215",
+      "name": "Taste of the wild volaille sauvage",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "13 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2215/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.0,
+        "crude_fat_pct": 0.0,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612659",
+      "name": "taste of the wild",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2659/front_en.4.400.jpg",
+      "ingredients": [
+        "NET WT L(27 g) Ingredients Venison",
+        "lamb meal",
+        "gno beans",
+        "peas",
+        "lentils. pea protein",
+        "pea four",
+        "ege product",
+        "canola oil",
+        "fava beans",
+        "tomato pomace",
+        "natural flavor",
+        "ocean fish meal",
+        "salmon oil (a source of DHA)",
+        "salt",
+        "choline chloride",
+        "dried chicory root",
+        "tomatoes",
+        "blueberies",
+        "raspberries",
+        "yucca schidigera extract"
+      ],
+      "ingredients_text_raw": "NET WT L(27 g) Ingredients Venison, lamb meal, gno beans, peas, lentils. pea protein, pea four, ege product, canola oil, fava beans, tomato pomace, natural flavor, ocean fish meal, salmon oil (a source of DHA), salt, choline chloride, dried chicory root, tomatoes, blueberies, raspberries, yucca schidigera extract, de Lactobacillus plantarum fermentation product, dried Bacillus subtilis fermentation product, dried Lactobacillus acidophilus fermentation product, dried Enterococcus faecium fermenta",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:Pine forest"
+      ],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612369",
+      "name": "Taste of the wild sierra mountain canine",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "13kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2369/front_fr.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612291",
+      "name": "High prairie canine",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "13kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2291/front_fr.6.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198611379",
+      "name": "Southwest Canyon Canine Recipe",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "5 pound",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/1379/front_en.5.400.jpg",
+      "ingredients": [
+        "Beef",
+        "peas",
+        "garbanzo beans",
+        "lamb meal",
+        "canola oil",
+        "egg product",
+        "wild boar",
+        "ocean fish meal",
+        "pea flour",
+        "dried yeast",
+        "tomato pomice",
+        "flaxseed",
+        "natural flavor",
+        "salmon oil (a natural source of DHA)",
+        "salt",
+        "choline chloride",
+        "taurine",
+        "dried chicory root",
+        "tomatoes",
+        "blueberries"
+      ],
+      "ingredients_text_raw": "Beef, peas, garbanzo beans, lamb meal, canola oil, egg product, wild boar, ocean fish meal, pea flour, dried yeast, tomato pomice, flaxseed, natural flavor, salmon oil (a natural source of DHA), salt, choline chloride, taurine, dried chicory root, tomatoes, blueberries, raspberries, yucca schidigera extract, dried Lactobacillus  plantarum fermentation product, dried Bacillus subtillus fermentation product, dried Lactobacillus acidophilus fermentation product, dried Enterococcus faecium fermentat",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:canada",
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.tasteofthewildpetfood.com",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612468",
+      "name": "Pacific Stream Puppy",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "6 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2468/front_sv.7.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198613908",
+      "name": "taste of the wild",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198614240",
+      "name": "TASTE OF THE WILD",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/4240/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198614271",
+      "name": "Taste of the wild",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/4271/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198612277",
+      "name": "Taste of the Wild High Prairie Canine Avec De La Venaison Et Du",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "2 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/2277/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0074198614592",
+      "name": "Ancient Mountain Canine Recipe with Roasted Lamb",
+      "brand": "Taste of the Wild",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "28-lb bag",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/007/419/861/4592/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food"
+      ],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276020208",
+      "name": "Grain Free Agneau & Myrtille Adulte à Partir De",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "1,5kg",
+      "image_url": null,
+      "ingredients": [
+        "@Agneau",
+        "mfiille. Nourrture complète pour15(hats (0.2%)",
+        "glucosamine",
+        "sulfate de chondroitine",
+        "extrait de dans le calendula (source de lutéine).Additifsparkg-Ajoutsnutritifs: L-camitine 300mg. Ajouts organoleptiques: extraction de adultes Composition: agneau frais désossé (28%)",
+        "viande d'agneau Vitamine A 180001.11",
+        "Vitamine D3 1200Ul",
+        "Vitamine E 600mg",
+        "Véra 1000mg",
+        "extraction de thé vert 100mg",
+        "extrait de déshydraté (26%)",
+        "pommes de terre",
+        "graisse animale",
+        "Œufs Vitamine C 300mg",
+        "Niacine 150mg",
+        "acide pantothénique romarin. Antioxydants: extraits riches en tocophérols d'origine d entiers déshydratés",
+        "hareng frais",
+        "hareng déshydraté",
+        "huile de 50mg",
+        "Vitamine B2 20mg"
+      ],
+      "ingredients_text_raw": "@Agneau, mfiille. Nourrture complète pour15(hats (0.2%), glucosamine, sulfate de chondroitine, extrait de dans le calendula (source de lutéine).Additifsparkg-Ajoutsnutritifs: L-camitine 300mg. Ajouts organoleptiques: extraction de adultes Composition: agneau frais désossé (28%), viande d'agneau Vitamine A 180001.11; Vitamine D3 1200Ul; Vitamine E 600mg; Véra 1000mg; extraction de thé vert 100mg; extrait de déshydraté (26%), pommes de terre, graisse animale, Œufs Vitamine C 300mg; Niacine 150mg; ",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 4.2,
+        "crude_fat_pct": 2.0,
+        "crude_fiber_pct": 0.2,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276033376",
+      "name": "N&D pumpkin dog food",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/3376/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.1,
+        "crude_fat_pct": 0.03,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food"
+      ],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276025197",
+      "name": "Caricamento in corso…",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "400 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/602/5197/front_it.44.400.jpg",
+      "ingredients": [
+        "Proteine di pollo disidratate",
+        "riso",
+        "grasso di pollo",
+        "glutine di granturco",
+        "semi di lino",
+        "farro",
+        "proteina di pesce idrolizzata",
+        "proteina di pesce disidratata",
+        "polpa di barbabietola essiccata",
+        "olio di pesce",
+        "uova essiccate",
+        "fibra di piselli",
+        "bucce e semi di psillio",
+        "lievito di birra essiccato",
+        "cloruro di potassio",
+        "inulina (0.6%)",
+        "fruttoligosaccaridi (0.6%)",
+        "estratto di lievito (fonte di manno-oligo-saccaridi) (0.6%)",
+        "cloruro di sodio",
+        "fosfato monosodico"
+      ],
+      "ingredients_text_raw": "Proteine di pollo disidratate, riso, grasso di pollo, glutine di granturco, semi di lino, farro, proteina di pesce idrolizzata, proteina di pesce disidratata, polpa di barbabietola essiccata, olio di pesce, uova essiccate, fibra di piselli, bucce e semi di psillio, lievito di birra essiccato, cloruro di potassio, inulina (0.6%), fruttoligosaccaridi (0.6%), estratto di lievito (fonte di manno-oligo-saccaridi) (0.6%), cloruro di sodio, fosfato monosodico, solfato di calcio diidrato. Fonte di sosta",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 0.33,
+        "crude_fat_pct": 0.215,
+        "crude_fiber_pct": 0.017,
+        "moisture_pct": null
+      },
+      "allergens_declared": "glutine",
+      "allergens_tags": [
+        "en:gluten"
+      ],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:Pet-food",
+        "en:open-pet-food-facts"
+      ],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "https://www.farmina.com/it/eshop-prodotto.php?p=79&a=det",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276030467",
+      "name": "Neutered farmina",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/0467/front_it.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276033253",
+      "name": "Farmina N &D Dog Pumpkin Chicken & Pomegrante Mini 2.5KG",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "2,5 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/3253/front_fr.8.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food"
+      ],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276021021",
+      "name": "Cat food",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "300g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/602/1021/front_fr.13.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": 1.0,
+        "crude_fat_pct": 0.0,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:canada"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276021922",
+      "name": "Farmina N&D Puppy",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/602/1922/front_en.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276036698",
+      "name": "N&D OCÉAN",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "300g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/6698/front_fr.17.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:switzerland"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276040169",
+      "name": "Farmina Pet foods N&D quinoa",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/604/0169/front_it.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276040121",
+      "name": "N&D pumpkin",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "300 g",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/604/0121/front_it.4.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276032690",
+      "name": "Farmina N&D Prime Neutered gatti adulti",
+      "brand": "Farmina",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "5 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/2690/front_it.13.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dry-pet-food",
+        "en:cat-food",
+        "en:dry-cat-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:italy"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276032751",
+      "name": "Farmina",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/2751/front_es.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:spain"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "8010276033239",
+      "name": "Farmina N &D Pumpkin Grain Free Lamb & Blueberry Puppy Mini",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/801/027/603/3239/front_fr.3.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:france"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "00639088",
+      "name": "Back Country Raw Infused",
+      "brand": "Merrick",
+      "category": "food",
+      "target_species": [
+        "DOG",
+        "CAT"
+      ],
+      "quantity": "5.4 kg",
+      "image_url": "https://images.openpetfoodfacts.org/images/products/000/000/063/9088/front_en.7.400.jpg",
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [
+        "en:dog-and-cat-food",
+        "en:dog-food",
+        "en:dry-pet-food",
+        "en:dry-dog-food",
+        "en:pet-food"
+      ],
+      "countries_tags": [
+        "en:canada"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    },
+    {
+      "product_id": "0022808385103",
+      "name": "Merrick Purrfect Bistro",
+      "brand": "unknown",
+      "category": "food",
+      "target_species": [
+        "BOTH"
+      ],
+      "quantity": "",
+      "image_url": null,
+      "ingredients": [],
+      "ingredients_text_raw": "",
+      "guaranteed_analysis": {
+        "crude_protein_pct": null,
+        "crude_fat_pct": null,
+        "crude_fiber_pct": null,
+        "moisture_pct": null
+      },
+      "allergens_declared": "",
+      "allergens_tags": [],
+      "categories_raw": [],
+      "countries_tags": [
+        "en:united-states"
+      ],
+      "source": "openpetfoodfacts",
+      "source_url": "",
+      "fetched_at": "2026-08-18T12:48"
+    }
+  ]
+}

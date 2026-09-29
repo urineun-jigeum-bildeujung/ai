@@ -7,8 +7,12 @@ import pytest
 
 from scripts.modeling.baseline import (
     MedianBaselineError,
+    attach_hierarchical_prior_features,
+    blend_personal_and_prior_medians,
+    calculate_personal_history_weight,
     fit_hierarchical_median_baseline,
     predict_hierarchical_median_baseline,
+    predict_shrunk_hierarchical_median_baseline,
 )
 from scripts.modeling.evaluation import calculate_regression_metrics
 
@@ -27,6 +31,97 @@ def make_training_samples() -> pd.DataFrame:
     )
 
 
+@pytest.mark.parametrize(
+    ("history_interval_count", "expected_weight"),
+    [
+        (0, 0.0),
+        (1, 0.2),
+        (4, 0.5),
+        (20, 5 / 6),
+    ],
+)
+def test_personal_history_weight_grows_with_history(
+    history_interval_count: int,
+    expected_weight: float,
+) -> None:
+    """같은 수축 강도에서 이력이 쌓일수록 개인값 가중치가 커집니다."""
+    result = calculate_personal_history_weight(
+        history_interval_count,
+        shrinkage_strength=4.0,
+    )
+
+    assert result == pytest.approx(expected_weight)
+
+
+@pytest.mark.parametrize("invalid_count", [-1, 1.5, True])
+def test_personal_history_weight_rejects_invalid_count(
+    invalid_count: object,
+) -> None:
+    """음수·소수·논리값을 과거 간격 개수로 허용하지 않습니다."""
+    with pytest.raises(MedianBaselineError, match="과거 간격 개수"):
+        calculate_personal_history_weight(invalid_count, shrinkage_strength=4.0)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "invalid_strength",
+    [0.0, -1.0, float("inf"), float("nan"), True, "four"],
+)
+def test_personal_history_weight_rejects_invalid_strength(
+    invalid_strength: object,
+) -> None:
+    """0·음수·비유한값·논리값·문자열 수축 강도를 거부합니다."""
+    with pytest.raises(MedianBaselineError, match="수축 강도"):
+        calculate_personal_history_weight(1, invalid_strength)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("history_interval_count", "expected_prediction"),
+    [
+        (0, 30.0),
+        (1, 48.0),
+        (4, 75.0),
+        (20, 105.0),
+    ],
+)
+def test_blend_moves_from_prior_toward_personal_history(
+    history_interval_count: int,
+    expected_prediction: float,
+) -> None:
+    """이력이 쌓이면 예측값이 사전 중앙값에서 개인 중앙값으로 이동합니다."""
+    result = blend_personal_and_prior_medians(
+        personal_median_days=120.0,
+        prior_median_days=30.0,
+        history_interval_count=history_interval_count,
+        shrinkage_strength=4.0,
+    )
+
+    assert result == pytest.approx(expected_prediction)
+
+
+@pytest.mark.parametrize(
+    ("field_name", "personal_median", "prior_median"),
+    [
+        ("개인 중앙값", -1.0, 30.0),
+        ("개인 중앙값", float("nan"), 30.0),
+        ("사전 중앙값", 120.0, float("inf")),
+        ("사전 중앙값", 120.0, True),
+    ],
+)
+def test_blend_rejects_invalid_duration(
+    field_name: str,
+    personal_median: object,
+    prior_median: object,
+) -> None:
+    """음수·비유한값·논리값 기간이 혼합 예측에 들어가지 못하게 합니다."""
+    with pytest.raises(MedianBaselineError, match=field_name):
+        blend_personal_and_prior_medians(
+            personal_median_days=personal_median,  # type: ignore[arg-type]
+            prior_median_days=prior_median,  # type: ignore[arg-type]
+            history_interval_count=1,
+            shrinkage_strength=4.0,
+        )
+
+
 def test_fit_uses_only_outcomes_known_by_training_cutoff() -> None:
     """학습 종료 뒤 확정된 극단값은 전체·상품 중앙값에 들어가지 않습니다."""
     model = fit_hierarchical_median_baseline(
@@ -38,6 +133,50 @@ def test_fit_uses_only_outcomes_known_by_training_cutoff() -> None:
     assert model.global_median_days == 20.0
     assert model.product_median_days == {"p1": 15.0, "p2": 40.0}
     assert model.product_observation_counts == {"p1": 2, "p2": 1}
+
+
+def test_attach_prior_features_uses_product_then_global_without_mutating_input() -> (
+    None
+):
+    """상품 prior와 전체 fallback을 붙이되 입력 데이터는 변경하지 않습니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+    samples = pd.DataFrame(
+        {
+            "product_id": ["p1", "new"],
+            "memo": ["상품 이력 있음", "처음 보는 상품"],
+        }
+    )
+    original = samples.copy(deep=True)
+
+    result = attach_hierarchical_prior_features(model, samples)
+
+    assert result["prior_duration_days"].tolist() == [15.0, 20.0]
+    assert result["prior_source"].tolist() == [
+        "product_history",
+        "global_history",
+    ]
+    assert result["prior_observation_count"].tolist() == [2, 3]
+    pd.testing.assert_frame_equal(samples, original)
+
+
+def test_attach_prior_features_requires_only_product_id() -> None:
+    """개인 이력 피처 없이도 prior 선택이 가능해야 합니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+
+    result = attach_hierarchical_prior_features(
+        model,
+        pd.DataFrame({"product_id": ["p2"]}),
+    )
+
+    assert result.loc[0, "prior_duration_days"] == 40.0
+    assert result.loc[0, "prior_source"] == "product_history"
+    assert result.loc[0, "prior_observation_count"] == 1
 
 
 def test_prediction_uses_user_product_then_product_then_global_fallback() -> None:
@@ -63,6 +202,104 @@ def test_prediction_uses_user_product_then_product_then_global_fallback() -> Non
         "global_history",
     ]
     assert predictions["prediction_observation_count"].tolist() == [2, 1, 3]
+
+
+def test_shrunk_prediction_blends_personal_history_with_available_prior() -> None:
+    """개인 이력은 상품 prior와 혼합하고 이력이 없으면 fallback을 유지합니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+    prediction_rows = pd.DataFrame(
+        {
+            "product_id": ["p1", "p2", "new"],
+            "history_median_days": [120.0, None, None],
+            "history_interval_count": [1, 0, 0],
+        }
+    )
+
+    predictions = predict_shrunk_hierarchical_median_baseline(
+        model,
+        prediction_rows,
+        shrinkage_strength=4.0,
+    )
+
+    # p1의 prior 15일과 개인 중앙값 120일을 80:20으로 혼합해 36일을 예측합니다.
+    assert predictions["predicted_duration_days"].tolist() == [36.0, 40.0, 20.0]
+    assert predictions["personal_history_weight"].tolist() == [0.2, 0.0, 0.0]
+    assert predictions["prior_duration_days"].tolist() == [15.0, 40.0, 20.0]
+    assert predictions["prior_source"].tolist() == [
+        "product_history",
+        "product_history",
+        "global_history",
+    ]
+    assert predictions["prior_observation_count"].tolist() == [2, 1, 3]
+    assert predictions["prediction_source"].tolist() == [
+        "shrunk_user_product_history",
+        "product_history",
+        "global_history",
+    ]
+    assert predictions["prediction_observation_count"].tolist() == [1, 1, 3]
+    assert predictions["shrinkage_strength"].tolist() == [4.0, 4.0, 4.0]
+
+    # 벡터 계산 결과가 앞서 검증한 단일 행 계산 함수와 같은지 확인합니다.
+    expected = blend_personal_and_prior_medians(
+        personal_median_days=120.0,
+        prior_median_days=15.0,
+        history_interval_count=1,
+        shrinkage_strength=4.0,
+    )
+    assert predictions.loc[0, "predicted_duration_days"] == pytest.approx(expected)
+
+
+def test_shrunk_prediction_rejects_inconsistent_personal_history() -> None:
+    """이력 개수와 개인 중앙값 중 하나만 존재하는 모순된 피처를 거부합니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+    prediction_rows = pd.DataFrame(
+        {
+            "product_id": ["p1"],
+            "history_median_days": [None],
+            "history_interval_count": [1],
+        }
+    )
+
+    with pytest.raises(MedianBaselineError, match="존재 여부"):
+        predict_shrunk_hierarchical_median_baseline(
+            model,
+            prediction_rows,
+            shrinkage_strength=4.0,
+        )
+
+
+def test_shrunk_prediction_supports_all_cold_start_batch() -> None:
+    """개인 이력이 전혀 없는 배치도 상품·전체 prior로 예측합니다."""
+    model = fit_hierarchical_median_baseline(
+        make_training_samples(),
+        trained_until=pd.Timestamp("2026-01-31"),
+    )
+    prediction_rows = pd.DataFrame(
+        {
+            "product_id": ["p2", "new"],
+            "history_median_days": [None, None],
+            "history_interval_count": [0, 0],
+        }
+    )
+
+    predictions = predict_shrunk_hierarchical_median_baseline(
+        model,
+        prediction_rows,
+        shrinkage_strength=4.0,
+    )
+
+    assert predictions["predicted_duration_days"].tolist() == [40.0, 20.0]
+    assert predictions["personal_history_weight"].tolist() == [0.0, 0.0]
+    assert predictions["prior_source"].tolist() == [
+        "product_history",
+        "global_history",
+    ]
 
 
 def test_metrics_calculate_absolute_error_and_hit_rates() -> None:

@@ -1,0 +1,101 @@
+{
+  "_comment": "시드 11: 알레르기 ↔ 사료 성분 키워드 매핑 (MVP 안전 필터 핵심). 11종 알레르기에 대해 한국어/영어 키워드 5~10개씩 매칭. 매칭 시 해당 사료는 자동 제외. severity=critical(즉각 위험), severe(반응 명확), moderate(소화 부담).",
+  "_source": {
+    "primary": "AAFCO 반려동물 사료 원료 정의 (2024) + 한국 농진청 반려동물 사료 영양표준 (2024-10) + 임상 수기 (수의사 자문)",
+    "extracted_at": "2026-08-14",
+    "checked_at": "2026-08-14",
+    "phase1_anchor": "골라주개 Phase 1 — 알레르기 자동 제외 + 안전 카드 (P0 안전원칙)"
+  },
+  "version": "1.0",
+  "match_rule": {
+    "type": "keyword_substring",
+    "case_insensitive": true,
+    "normalization": "NFKC + lowercase + strip whitespace",
+    "match_threshold": 1
+  },
+  "all_count": 11,
+  "items": [
+    {
+      "allergen_code": "chicken",
+      "allergen_name_ko": "닭고기",
+      "severity": "critical",
+      "ingredient_codes": ["CHKN-MEAT", "CHKN-BYPRODUCT-MEAL", "CHKN-FAT", "CHKN-LIVER", "CHKN-HEART", "CHKN-BROTH"],
+      "matched_keywords": ["닭고기", "닭", "치킨", "닭가슴살", "닭안심", "닭다리", "닭날개", "닭발", "닭껍질", "닭간", "chicken", "poultry"]
+    },
+    {
+      "allergen_code": "beef",
+      "allergen_name_ko": "소고기",
+      "severity": "critical",
+      "ingredient_codes": ["BEEF-MEAT", "BEEF-MEAL", "BEEF-FAT", "BEEF-LIVER", "BEEF-HEART", "BEEF-BROTH"],
+      "matched_keywords": ["소고기", "쇠고기", "비프", "소", "우육", "소간", "소심장", "소혀", "사태", "양지", "beef"]
+    },
+    {
+      "allergen_code": "dairy",
+      "allergen_name_ko": "유제품",
+      "severity": "critical",
+      "ingredient_codes": ["WHEY", "WPC", "CASEIN", "LACTOSE", "MILK-FAT", "CHEESE"],
+      "matched_keywords": ["우유", "분유", "치즈", "요거트", "유청", "유청단백질", "카제인", "유크림", "연유", "유당", "whey", "casein", "milk", "dairy", "lactose"]
+    },
+    {
+      "allergen_code": "egg",
+      "allergen_name_ko": "계란",
+      "severity": "critical",
+      "ingredient_codes": ["EGG-WHOLE", "EGG-WHITE", "EGG-YOLK", "EGG-DRIED"],
+      "matched_keywords": ["계란", "달걀", "난백", "난황", "전란", "에그", "egg", "whole egg", "dried egg", "albumin"]
+    },
+    {
+      "allergen_code": "lamb",
+      "allergen_name_ko": "양고기",
+      "severity": "critical",
+      "ingredient_codes": ["LAMB-MEAT", "LAMB-MEAL", "LAMB-FAT", "LAMB-LIVER"],
+      "matched_keywords": ["양고기", "램", "양", "양육", "양간", "머튼", "lamb", "mutton"]
+    },
+    {
+      "allergen_code": "pork",
+      "allergen_name_ko": "돼지고기",
+      "severity": "critical",
+      "ingredient_codes": ["PORK-MEAT", "PORK-MEAL", "PORK-FAT", "PORK-LIVER"],
+      "matched_keywords": ["돼지고기", "돈육", "포크", "돼지", "돼지간", "베이컨", "햄", "돈창", "pork"]
+    },
+    {
+      "allergen_code": "fish",
+      "allergen_name_ko": "생선",
+      "severity": "critical",
+      "ingredient_codes": ["SALMON", "TUNA", "MACKEREL", "HERRING", "SARDINE", "WHITEFISH", "FISH-MEAL", "FISH-OIL"],
+      "matched_keywords": ["연어", "참치", "고등어", "청어", "정어리", "삼치", "생선", "어류", "생선분", "연어유", "salmon", "tuna", "fish", "whitefish", "mackerel"]
+    },
+    {
+      "allergen_code": "wheat",
+      "allergen_name_ko": "밀 / 글루텐",
+      "severity": "critical",
+      "ingredient_codes": ["WHEAT", "WHEAT-GLUTEN", "WHEAT-FLOUR", "WHEAT-BRAN"],
+      "matched_keywords": ["밀", "글루텐", "소맥", "강력분", "박력분", "통밀", "밀기울", "wheat", "gluten", "whole wheat", "wheat flour"]
+    },
+    {
+      "allergen_code": "soy",
+      "allergen_name_ko": "대두",
+      "severity": "critical",
+      "ingredient_codes": ["SOYBEAN-MEAL", "SOY-PROTEIN", "SOY-OIL", "TOFU"],
+      "matched_keywords": ["대두", "콩", "두부", "된장", "청국장", "콩비지", "대두단백", "soybean", "soy", "soy protein"]
+    },
+    {
+      "allergen_code": "corn",
+      "allergen_name_ko": "옥수수",
+      "severity": "severe",
+      "ingredient_codes": ["CORN", "CORN-GLUTEN-MEAL", "CORN-STARCH", "MAIZE"],
+      "matched_keywords": ["옥수수", "콘", "옥전분", "옥수수글루텐", "전분", "corn", "maize", "corn gluten"]
+    },
+    {
+      "allergen_code": "potato",
+      "allergen_name_ko": "감자 / 고구마",
+      "severity": "moderate",
+      "ingredient_codes": ["POTATO", "POTATO-STARCH", "SWEET-POTATO", "TAPIOCA"],
+      "matched_keywords": ["감자", "고구마", "감자전분", "타피오카", "potato", "sweet potato", "tapioca", "yam"]
+    }
+  ],
+  "usage": {
+    "match_api": "POST /api/match/filter { pet_id, product_ingredient_text }",
+    "rule": "pet.allergies 와 items[].allergen_code 매칭 → ingredient_text에 items[].matched_keywords 중 1개 이상 substring → 제외 + 이유 카드 표시",
+    "fallback": "수기 매칭 결과가 0이면 AAFCO 표준명 cross-reference로 1차 보정"
+  }
+}

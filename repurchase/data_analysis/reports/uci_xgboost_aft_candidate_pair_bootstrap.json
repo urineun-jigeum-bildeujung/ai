@@ -1,0 +1,44 @@
+{
+  "dataset": "uci_online_retail_ii",
+  "experiment_version": "xgboost_aft_candidate_pair_bootstrap_v1",
+  "evaluation_split": "validation",
+  "status": "complete",
+  "reference": {
+    "loss_distribution": "normal",
+    "loss_distribution_scale": 1.0,
+    "num_boost_round": 20,
+    "feature_columns": [
+      "history_interval_count",
+      "history_median_days",
+      "history_relative_mad",
+      "user_prior_order_count"
+    ]
+  },
+  "candidate": {
+    "loss_distribution": "logistic",
+    "loss_distribution_scale": 2.0,
+    "num_boost_round": 20,
+    "feature_columns": [
+      "history_interval_count",
+      "history_median_days",
+      "history_relative_mad",
+      "user_prior_order_count"
+    ]
+  },
+  "improvement_direction": "reference_brier_minus_candidate_brier",
+  "summary": {
+    "bootstrap_replicates": 1000,
+    "random_seed": 42,
+    "user_count": 1926,
+    "outcome_known_count": 73531,
+    "point_candidate_brier_score": 0.0879906716576188,
+    "point_reference_brier_score": 0.08093410956525457,
+    "point_brier_improvement": -0.00705656209236423,
+    "bootstrap_mean_brier_improvement": -0.007074045905242319,
+    "bootstrap_lower_95_brier_improvement": -0.009647395403991075,
+    "bootstrap_upper_95_brier_improvement": -0.004931226591405921,
+    "bootstrap_positive_improvement_rate": 0.0
+  },
+  "decision": "normal 기준의 Brier 우위가 사용자 재표본에서도 일관됐습니다.",
+  "scope": "고정된 두 모델의 동일 Validation 행·정답·IPCW 가중치에서 사용자를 함께 복원추출했습니다. Test는 사용하지 않았습니다. 이 구간은 사용자 구성의 불확실성만 반영하며 모델 재학습과 같은 Validation 후보 선택의 낙관성은 포함하지 않습니다."
+}

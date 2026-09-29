@@ -1,0 +1,136 @@
+{
+  "batches": [
+    {
+      "publication_id": "pub-old",
+      "idempotency_key": "cut-2026-03-01__aft-v1",
+      "as_of_timestamp": "2026-03-01T00:00:00Z",
+      "created_at": "2026-03-01T01:00:00Z",
+      "publication_status": "PUBLISHED",
+      "expected_result_count": 2,
+      "artifact_id": "aft-v1",
+      "feature_generation_version": 1
+    },
+    {
+      "publication_id": "pub-new",
+      "idempotency_key": "cut-2026-03-10__aft-v1",
+      "as_of_timestamp": "2026-03-10T00:00:00Z",
+      "created_at": "2026-03-10T01:00:00Z",
+      "publication_status": "PUBLISHED",
+      "expected_result_count": 2,
+      "artifact_id": "aft-v1",
+      "feature_generation_version": 1
+    },
+    {
+      "publication_id": "pub-newer-failed",
+      "idempotency_key": "cut-2026-03-20__aft-v1",
+      "as_of_timestamp": "2026-03-20T00:00:00Z",
+      "created_at": "2026-03-20T01:00:00Z",
+      "publication_status": "FAILED",
+      "expected_result_count": 2,
+      "artifact_id": "aft-v1",
+      "feature_generation_version": 1
+    },
+    {
+      "publication_id": "pub-older-late",
+      "idempotency_key": "cut-2026-02-01__aft-v1-late",
+      "as_of_timestamp": "2026-02-01T00:00:00Z",
+      "created_at": "2026-03-21T01:00:00Z",
+      "publication_status": "PUBLISHED",
+      "expected_result_count": 2,
+      "artifact_id": "aft-v1",
+      "feature_generation_version": 1
+    },
+    {
+      "publication_id": "pub-staging",
+      "idempotency_key": "cut-2026-03-22__aft-v1",
+      "as_of_timestamp": "2026-03-22T00:00:00Z",
+      "created_at": "2026-03-22T01:00:00Z",
+      "publication_status": "STAGING",
+      "expected_result_count": 2,
+      "artifact_id": "aft-v1",
+      "feature_generation_version": 1
+    }
+  ],
+  "results": [
+    {
+      "publication_id": "pub-old",
+      "user_id": "user-1",
+      "pet_id": "pet-1",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.4
+    },
+    {
+      "publication_id": "pub-old",
+      "user_id": "user-2",
+      "pet_id": null,
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "pad-group",
+      "window_days": 30,
+      "prediction_status": "INSUFFICIENT_DATA",
+      "conditional_repurchase_probability": null
+    },
+    {
+      "publication_id": "pub-new",
+      "user_id": "user-1",
+      "pet_id": "pet-1",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.7
+    },
+    {
+      "publication_id": "pub-new",
+      "user_id": "user-2",
+      "pet_id": null,
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "pad-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.3
+    },
+    {
+      "publication_id": "pub-newer-failed",
+      "user_id": "user-1",
+      "pet_id": "pet-1",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.9
+    },
+    {
+      "publication_id": "pub-older-late",
+      "user_id": "user-1",
+      "pet_id": "pet-1",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.1
+    },
+    {
+      "publication_id": "pub-older-late",
+      "user_id": "user-2",
+      "pet_id": null,
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "pad-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.1
+    },
+    {
+      "publication_id": "pub-staging",
+      "user_id": "user-1",
+      "pet_id": "pet-1",
+      "target_scope": "PRODUCT_GROUP",
+      "target_id": "food-group",
+      "window_days": 30,
+      "prediction_status": "READY",
+      "conditional_repurchase_probability": 0.95
+    }
+  ]
+}
