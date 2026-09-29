@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 # PR은 같은 번호의 이전 검사를 취소하고, push는 커밋별로 독립 실행합니다.
-# 중간 push가 대기열에서 교체되지 않게 하며 stable의 최신성은 revision 선후 관계로 보장합니다.
+# 품질 검사는 독립 실행하고 이미지 게시 Job은 별도 공통 그룹에서 직렬화합니다.
 concurrency:
   group: repurchase-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -178,6 +178,12 @@ jobs:
 
   publish-repurchase-image:
     name: publish-repurchase-image
+    # stable 조회부터 게시·검증까지 잠가 오래된 실행의 덮어쓰기를 막습니다.
+    # 기본 단일 대기 슬롯은 이전 후보를 취소하므로 다중 대기를 명시합니다.
+    concurrency:
+      group: repurchase-ghcr-publish-main
+      cancel-in-progress: false
+      queue: max
     needs: repurchase-quality
     if: >-
       github.event_name == 'push' &&
