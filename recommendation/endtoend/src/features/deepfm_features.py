@@ -246,7 +246,7 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
         },
         "multi_hot": {
             "target_species": [1 if s in product["target_species"] else 0 for s in SPECIES_VOCAB],
-            "allergen_flags": [1 if a in product.get("allergen_flags", []) else 0 for a in ALLERGEN_VOCAB],
+            "allergen_flags": [1 if a in (product.get("allergen_flags") or []) else 0 for a in ALLERGEN_VOCAB],
         },
         "dense": {
             "price_norm": _normalize(product["price"], 0, 100000),
