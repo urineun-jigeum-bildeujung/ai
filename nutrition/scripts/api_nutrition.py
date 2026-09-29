@@ -31,6 +31,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
+from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
+from observability import Metrics, ObservabilityMiddleware, check_dependencies, observe_domain_result  # noqa: E402
 
 from match_v1 import load_seed  # type: ignore  # noqa: E402
 from match_v1_1_category import match_by_category  # type: ignore  # noqa: E402
@@ -39,6 +41,7 @@ from allergen_service import evaluate_safety  # type: ignore  # noqa: E402
 from allergen_repository import get_refs  # type: ignore  # noqa: E402
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION  # type: ignore  # noqa: E402
 from product_input_adapter import load_product_input  # type: ignore  # noqa: E402
+from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety  # noqa: E402
 from nutrition_readiness import (  # type: ignore  # noqa: E402
     evaluate_nutrition_coverage,
     evaluate_nutrition_readiness,
@@ -64,6 +67,8 @@ app = FastAPI(
 )
 
 SEED_FEED_CODES = load_seed("seed_feed_codes.json")
+app.state.nutrition_metrics = Metrics()
+app.add_middleware(ObservabilityMiddleware, metrics=app.state.nutrition_metrics)
 
 
 def _allergy_gate(pet: PetIn, product: ProductIn) -> dict[str, Any]:
@@ -173,10 +178,11 @@ def _enforce_p0d_result_contract(result: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def _analyze_product(req: AnalyzeRequest) -> dict[str, Any]:
+def _analyze_product(req: AnalyzeRequest, *, source_safety: dict[str, Any] | None = None) -> dict[str, Any]:
     """Single API path: food uses P0-D; legacy matching is limited to non-food categories."""
     product = req.product
-    safety = _allergy_gate(req.pet, product)
+    # 조회된 service ID로 로컬 catalog를 재조회하지 않는다. evidence ID는 adapter 소유다.
+    safety = _allergy_gate(req.pet, product) if source_safety is None else source_safety
 
     if product.category == "food":
         result = _enforce_p0d_result_contract(_run_p0d(req.pet, product))
@@ -279,6 +285,24 @@ class PersistedProductAnalyzeRequest(BaseModel):
     product_id: str = Field(..., min_length=1)
 
 
+class ServiceIdAnalyzeRequest(BaseModel):
+    """서비스 준비용 계약. 인증 주체는 요청 본문에서 받지 않는다."""
+    model_config = {"extra": "forbid"}
+    pet_id: int = Field(..., gt=0, strict=True)
+    product_id: int = Field(..., gt=0, strict=True)
+
+
+def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str, Any]:
+    """ownership 확인을 마친 source에만 사용할 내부 경계. HTTP 인증을 대신하지 않는다."""
+    pet = adapt_pet(pet_source)
+    loaded = adapt_product(product_source)
+    product = loaded["product"]
+    req = AnalyzeRequest(pet=PetIn(**pet), product=ProductIn(**product))
+    result = _analyze_product(req, source_safety=evaluate_service_safety(pet, product))
+    result["input_provenance"] = loaded["provenance"]
+    return result
+
+
 class NutritionItemIn(BaseModel):
     """라벨 기반 보증성분 1건. value=0은 placeholder로 처리되어 판정에 쓰지 않는다."""
 
@@ -333,6 +357,20 @@ def safety_check_consumer_card(card: str | None) -> dict:
 
 # ===== Endpoints =====
 
+@app.get("/ready")
+def ready() -> JSONResponse:
+    dependencies = check_dependencies(PROJECT_ROOT)
+    available = all(v["status"] == "UP" for v in dependencies.values() if v["required"])
+    return JSONResponse({"status": "ready" if available else "not_ready",
+                         "runtime_mode": "local_artifact", "dependencies": dependencies},
+                        status_code=200 if available else 503)
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> PlainTextResponse:
+    return PlainTextResponse(app.state.nutrition_metrics.render(),
+                             media_type="text/plain; version=0.0.4")
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {
@@ -369,7 +407,7 @@ def analyze(req: AnalyzeRequest) -> dict[str, Any]:
          nutrient_score, nutrients_checked, aafco_pass, lifestage_match,
          warnings, consumer_card, details, ingredient_normalized[]}
     """
-    return _analyze_product(req)
+    return observe_domain_result(_analyze_product(req))
 
 
 @app.post("/api/nutrition/analyze/by-product-id")
@@ -388,7 +426,7 @@ def analyze_by_product_id(req: PersistedProductAnalyzeRequest) -> dict[str, Any]
     except ValidationError as exc:
         # Raw artifact/schema failures are not server failures and must not
         # receive invented unit, basis, category, or nutrient values.
-        return {
+        return observe_domain_result({
             "product_id": req.product_id,
             "analysis_engine": None,
             "p0_d_applied": False,
@@ -400,10 +438,16 @@ def analyze_by_product_id(req: PersistedProductAnalyzeRequest) -> dict[str, Any]
             "source_validation_status": "INVALID_SOURCE_DATA",
             "source_validation_errors": [item["type"] for item in exc.errors()],
             "input_provenance": loaded["provenance"],
-        }
+        })
     result = _analyze_product(AnalyzeRequest(pet=req.pet, product=product))
     result["input_provenance"] = loaded["provenance"]
-    return result
+    return observe_domain_result(result)
+
+
+@app.post("/api/nutrition/analyze/by-service-id")
+def analyze_by_service_id(req: ServiceIdAnalyzeRequest) -> dict[str, Any]:
+    """실제 source·Gateway 신뢰 경계 연결 전에는 seed나 헤더만으로 성공시키지 않는다."""
+    raise HTTPException(status_code=503, detail="SERVICE_SOURCE_NOT_CONFIGURED")
 
 
 @app.post("/api/nutrition/safety")
@@ -411,7 +455,7 @@ def safety(req: SafetyRequest) -> dict[str, Any]:
     """안전 7원칙 P0 자동 검증 (Phase 1 stub)"""
     card = req.consumer_card
     if not card:
-        result = _analyze_product(AnalyzeRequest(pet=req.pet, product=req.product))
+        result = observe_domain_result(_analyze_product(AnalyzeRequest(pet=req.pet, product=req.product)))
         card = result.get("consumer_card")
 
     check = safety_check_consumer_card(card)
@@ -426,7 +470,7 @@ def safety(req: SafetyRequest) -> dict[str, Any]:
 @app.post("/api/nutrition/report")
 def report(req: AnalyzeRequest) -> dict[str, Any]:
     """리포트 생성 (FR-AI-1-06 + 안전 검증 결합)"""
-    result = _analyze_product(req)
+    result = observe_domain_result(_analyze_product(req))
     card = result.get("consumer_card", "")
 
     safety = safety_check_consumer_card(card)
