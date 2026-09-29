@@ -84,7 +84,7 @@ def _item_from_recommendation(rec_item: dict, product: dict) -> dict:
         "score": rec_item.get("score_100", score_to_100(rec_item.get("score", 0.0))),
         "reason_text": rec_item.get("reason_text"),
         "allergy_status": rec_item.get("allergy_status", "SAFE"),
-        "matched_allergen": rec_item.get("matched_allergen", []), 
+        "matched_allergen": rec_item.get("matched_allergen", []),
         "product_name": product.get("product_name") if product else rec_item.get("product_name"),
         "thumbnail_url": product.get("thumbnail_url") if product else None,
         "category": product.get("category_code") if product else None,
