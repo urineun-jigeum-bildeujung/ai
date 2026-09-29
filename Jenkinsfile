@@ -20,8 +20,15 @@ def imageTag = ''
 def isRealDeploy = false
 
 pipeline {
+    // disableConcurrentBuilds()는 같은 브랜치(같은 job) 재실행만 막고, 서로 다른
+    // 브랜치의 빌드가 동시에 도는 건 못 막는다. web-ci에서 실제로 서로 다른 브랜치의
+    // 빌드 2개가 동시에 돌면서 2vCPU 빌드 노드 CPU가 포화돼 kubelet이 NotReady로
+    // 전환된 장애가 있었다(web#545). ai-ci의 node 컨테이너도 동일하게 limits.cpu: 2를
+    // 쓰고 있어 같은 위험이 있다(#132). ci-build는 web-ci/sever-ci와 공용으로 쓰는
+    // lock 이름이라 레포가 달라도 직렬화된다.
     options {
         disableConcurrentBuilds()
+        lock(resource: 'ci-build')
     }
 
     // Jenkins가 K8s 파드로 떠서 도커 데몬이 없음 — kaniko가 daemon 없이 이미지를 빌드함.
