@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-pet_profile 조회 데이터 접근 계층.
+member_db.pet 조회 데이터 접근 계층.
 
-reviews_repository.py와 동일한 패턴: USE_DUMMY_DATA 환경변수로
-더미 데이터 / 실제 DB를 전환한다. 호출부(pipeline.py, api/main.py)는
-어디서 데이터를 가져오는지 신경 쓸 필요 없이 동일한 함수 시그니처로 사용.
+order_embedding_repository.py / product_repository.py / reviews_repository.py와
+동일한 패턴: db.py의 get_connection(env_var_name)을 공용으로 사용하고,
+USE_DUMMY_DATA 환경변수로 더미 데이터 / 실제 DB를 전환한다.
 """
 
 import os
@@ -12,19 +12,12 @@ import sys
 
 USE_DUMMY_DATA = os.environ.get("USE_DUMMY_DATA", "true").lower() != "false"
 
+MEMBER_DB_ENV = "MEMBER_DATABASE_URL"
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "data", "dummy"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))  # src.data_access import용
 
-
-def _get_db_connection():
-    import psycopg2
-
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError(
-            "DATABASE_URL 환경변수가 설정되지 않았습니다. "
-            "실제 DB를 사용하려면 USE_DUMMY_DATA=false와 함께 DATABASE_URL을 설정해야 합니다."
-        )
-    return psycopg2.connect(database_url)
+from src.data_access.db import get_connection
 
 
 def _row_to_pet(row) -> dict:
@@ -45,23 +38,41 @@ def _row_to_pet(row) -> dict:
     }
 
 
+_PET_COLUMNS = """
+    pet_id, user_id, species, breed, birth_date, sex, neutered,
+    weight, bcs, allergy_codes, concerns
+"""
+
+
 def _fetch_pet_from_db(pet_id: str) -> dict:
-    conn = _get_db_connection()
+    conn = get_connection(MEMBER_DB_ENV)
     try:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT pet_id, user_id, species, breed, birth_date, sex, neutered,
-                       weight, bcs, allergy_codes, concerns
-                FROM pet_profile
-                WHERE pet_id = %s
-                """,
+                f"SELECT {_PET_COLUMNS} FROM pet WHERE pet_id = %s",
                 (pet_id,),
             )
             row = cur.fetchone()
             if row is None:
                 return None
             return _row_to_pet(row)
+    finally:
+        conn.close()
+
+
+def _fetch_pets_from_db(pet_ids: list) -> dict:
+    if not pet_ids:
+        return {}
+    conn = get_connection(MEMBER_DB_ENV)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT {_PET_COLUMNS} FROM pet WHERE pet_id = ANY(%s)",
+                (list(pet_ids),),
+            )
+            rows = cur.fetchall()
+            pets = [_row_to_pet(row) for row in rows]
+            return {p["pet_id"]: p for p in pets}
     finally:
         conn.close()
 
@@ -79,6 +90,20 @@ def get_pet_by_id(pet_id: str) -> dict:
                 return pet
         return None
     return _fetch_pet_from_db(pet_id)
+
+
+def get_pets_by_ids(pet_ids: list) -> dict:
+    """
+    {pet_id: pet_dict} 형태로 반환. reviews_repository.py가 여러 리뷰 작성자의
+    pet을 한 번에 가져올 때 사용 (N+1 쿼리 방지).
+    """
+    if not pet_ids:
+        return {}
+    if USE_DUMMY_DATA:
+        from dummy_data import PET_PROFILES
+        matched = [p for p in PET_PROFILES if p["pet_id"] in pet_ids]
+        return {p["pet_id"]: p for p in matched}
+    return _fetch_pets_from_db(pet_ids)
 
 
 def list_all_pets() -> list:
