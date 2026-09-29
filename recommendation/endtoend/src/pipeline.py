@@ -78,6 +78,12 @@ ASPECT_KO_NAMES = {
     "allergic_reaction": "알러지 반응",
 }
 
+# 알레르기 충돌/성분 미분석 상품 처리 정책 (기획팀 확정, 2026-09-29)
+# - 완전 제외 대신 점수 페널티로 후순위 배치
+# - PENALIZED(알레르기 충돌 확정): 70% 감점
+# - PENDING(성분 미분석, 판단 보류): 30% 감점 (마일드하게 후순위)
+ALLERGY_PENALTY_MULTIPLIER = 0.3
+PENDING_PENALTY_MULTIPLIER = 0.7
 
 def score_to_100(score_0_1: float) -> int:
     """
@@ -87,15 +93,20 @@ def score_to_100(score_0_1: float) -> int:
     return round(max(0.0, min(1.0, score_0_1)) * 100)
 
 
-def build_reviews_with_ratings():
+def build_reviews_with_ratings(reviews: list = None):
     """
     reviews -> {reviewer_pet, ratings} 형태로 변환, 상품별로 묶어서 반환.
-    ratings의 각 값은 -1~1로 변환된 aspect score이며, 사용자가 평가하지 않은 항목은 None
-    (rating_converter.convert_rating_to_score는 None을 0.0/중립으로 바꾸므로,
-     "평가 안 함"과 "중립 평가"를 구분하기 위해 원본이 None이면 여기서도 None으로 유지한다).
+    ratings의 각 값은 -1~1로 변환된 aspect score이며, 사용자가 평가하지 않은 항목은 None.
+
+    reviews를 명시적으로 넘기면 그 리스트를 쓰고(API 서버가 요청 body로 받은 리뷰),
+    넘기지 않으면 기존처럼 load_reviews_with_reviewer_pet()(더미/DB)을 사용한다
+    (로컬 run_pipeline() 스크립트 실행용 하위호환).
     """
+    if reviews is None:
+        reviews = load_reviews_with_reviewer_pet()
+
     grouped = defaultdict(list)
-    for review in load_reviews_with_reviewer_pet():
+    for review in reviews:
         ratings = {}
         for field_name, aspect_code in ASPECT_FIELD_TO_CODE.items():
             raw_rating = review.get(field_name)  # 1~3 또는 None (평가 안 함)
@@ -133,40 +144,53 @@ def build_reason_from_weighted_scores(weighted_result: dict, top_n: int = 5) -> 
     return reason_keywords, reason_text
 
 
-def recommend_for_pet(pet: dict, products: list, reviews_by_product: dict, encoder, model) -> list:
+def recommend_for_pet(
+    pet: dict, products: list, reviews_by_product: dict, encoder, model,
+    purchase_history_embeddings: list = None,
+) -> list:
     """
     pet_id 하나에 대해 전체 상품 후보군을 순회하며
     recommendation_items 스키마 형태의 결과 리스트를 반환한다.
+
+    [2026-09-29 변경] 알레르기 충돌 상품은 더 이상 후보에서 완전히 제외(EXCLUDE)되지 않는다.
+    대신 점수에 페널티를 곱해 순위만 뒤로 미루는 방식으로 변경 (기획팀 확정).
+    - allergen_flags가 None(미분석)인 상품: allergy_status="PENDING", 30% 감점
+    - allergen_flags와 pet.allergy_codes가 겹치는 상품: allergy_status="PENALIZED", 70% 감점
+    - 그 외: allergy_status="SAFE", 감점 없음
+    장바구니 팝업 역추천(/recommend/exclusions)은 폐기되었고, 이 로직으로 통합됨.
     """
     results = []
 
     for product in products:
-        # 1) 종(species) 불일치 -> 후보 자체에서 제외
+        # 1) 종(species) 불일치 -> 후보 자체에서 제외 (이것만 유일한 하드 필터로 유지)
         if pet["species"] not in product["target_species"]:
             continue
 
-        # 2) 알러지 매칭 -> 역추천(EXCLUDE)
-        allergy_result = check_allergy_conflict(pet["allergy_codes"], product["allergen_flags"])
-        if allergy_result["has_conflict"]:
-            matched = allergy_result["matched_allergen"]
-            results.append({
-                "product_id": product["product_id"],
-                "product_name": product["product_name"],
-                "recommend_type": "EXCLUDE",
-                "score": 0.0,
-                "reason_keywords": [f"알러지 성분 포함: {', '.join(matched)}"],
-                "reason_text": f"{', '.join(matched)} 성분이 포함되어 있어 등록하신 알러지 정보와 맞지 않아 제외되었습니다.",
-                "matched_allergen": matched,
-            })
-            continue
+        # 2) 알레르기 판정: SAFE / PENALIZED / PENDING (완전 제외 없음)
+        allergen_flags = product.get("allergen_flags")
+        if allergen_flags is None:
+            allergy_status = "PENDING"
+            matched_allergen = []
+        else:
+            allergy_result = check_allergy_conflict(pet["allergy_codes"], allergen_flags)
+            if allergy_result["has_conflict"]:
+                allergy_status = "PENALIZED"
+                matched_allergen = allergy_result["matched_allergen"]
+            else:
+                allergy_status = "SAFE"
+                matched_allergen = []
 
         # 3) 리뷰 작성자 프로필 유사도 가중 aspect score 계산
         product_reviews = reviews_by_product.get(product["product_id"], [])
         weighted_result = compute_weighted_aspect_scores(pet, product_reviews)
         summary = {"weighted_aspect_scores_by_code": weighted_result["weighted_aspect_scores"]}
 
-        # 3.5) 구매 이력 기반 유사도 계산 (콜드스타트면 자동으로 0.0)
-        if USE_DUMMY_DATA:
+        # 3.5) 구매 이력 기반 유사도 계산
+        candidate_embedding = product.get("embedding")
+        if purchase_history_embeddings and candidate_embedding is not None:
+            from purchase_history_similarity import compute_purchase_history_similarity
+            purchase_sim = compute_purchase_history_similarity(candidate_embedding, purchase_history_embeddings)
+        elif USE_DUMMY_DATA and purchase_history_embeddings is None:
             purchase_sim = build_purchase_history_feature(
                 user_id=pet["user_id"],
                 candidate_product_id=product["product_id"],
@@ -175,25 +199,7 @@ def recommend_for_pet(pet: dict, products: list, reviews_by_product: dict, encod
                 product_embeddings=DUMMY_PRODUCT_EMBEDDINGS,
             )
         else:
-            from src.data_access.order_embedding_repository import (
-                get_purchased_product_ids_for_user,
-                get_product_embeddings,
-            )
-
-            purchased_ids = get_purchased_product_ids_for_user(pet["user_id"])
-            candidate_embedding_map = get_product_embeddings(
-                list(set(purchased_ids + [product["product_id"]]))
-            )
-            candidate_embedding = candidate_embedding_map.get(product["product_id"])
-            purchased_embeddings = [
-                candidate_embedding_map[pid] for pid in purchased_ids if pid in candidate_embedding_map
-            ]
-            if candidate_embedding is None or not purchased_embeddings:
-                purchase_sim = 0.0
-            else:
-                from purchase_history_similarity import compute_purchase_history_similarity
-
-                purchase_sim = compute_purchase_history_similarity(candidate_embedding, purchased_embeddings)
+            purchase_sim = 0.0
 
         # 4) DeepFM 스코어링
         features = build_interaction_features(pet, product, summary, purchase_history_similarity=purchase_sim)
@@ -202,41 +208,47 @@ def recommend_for_pet(pet: dict, products: list, reviews_by_product: dict, encod
 
         import torch
         with torch.no_grad():
-            score = model(batch).item()
+            raw_score = model(batch).item()
 
-        # 5) 추천 사유 생성 (3번에서 계산한 weighted_result 재사용)
+        # 4.5) 알레르기 판정에 따른 점수 페널티 적용
+        if allergy_status == "PENALIZED":
+            score = raw_score * ALLERGY_PENALTY_MULTIPLIER
+        elif allergy_status == "PENDING":
+            score = raw_score * PENDING_PENALTY_MULTIPLIER
+        else:
+            score = raw_score
+
+        # 5) 추천 사유 생성
         reason_keywords, reason_text = build_reason_from_weighted_scores(weighted_result)
+        if allergy_status == "PENALIZED":
+            reason_keywords = [f"알러지 성분 포함: {', '.join(matched_allergen)}"] + reason_keywords
+            reason_text = f"{', '.join(matched_allergen)} 성분이 포함되어 있어 등록하신 알러지 정보와 맞지 않을 수 있어요. " + reason_text
+        elif allergy_status == "PENDING":
+            reason_text = "성분 정보 확인 중인 상품이에요. " + reason_text
 
         results.append({
             "product_id": product["product_id"],
             "product_name": product["product_name"],
             "recommend_type": "RECOMMEND",
-            "score": round(score, 4),  # 내부 계산/정렬용 원본 스코어 (0~1)
-            "score_100": score_to_100(score),  # 프론트엔드 응답용 확정 스펙 (0~100 정수)
+            "score": round(score, 4),
+            "score_100": score_to_100(score),
             "reason_keywords": reason_keywords,
             "reason_text": reason_text,
-            "matched_allergen": [],
+            "allergy_status": allergy_status,
+            "matched_allergen": matched_allergen,
             "reviewer_similarity_meta": {
                 "used_review_count": weighted_result["used_review_count"],
                 "total_similarity_weight": weighted_result["total_weight"],
             },
-            "purchase_history_similarity": purchase_sim,  # 참고용 -- 0.0이면 구매 이력 없음(콜드스타트)
+            "purchase_history_similarity": purchase_sim,
         })
 
-    # 6) 점수 기준 정렬 + rank 부여 (RECOMMEND만 랭킹)
-    recommend_items = sorted(
-        [r for r in results if r["recommend_type"] == "RECOMMEND"],
-        key=lambda x: x["score"],
-        reverse=True,
-    )
-    exclude_items = [r for r in results if r["recommend_type"] == "EXCLUDE"]
-
+    # 6) 점수 기준 정렬 + rank 부여 (페널티 반영된 score 기준이라 자동으로 후순위 배치됨)
+    recommend_items = sorted(results, key=lambda x: x["score"], reverse=True)
     for idx, item in enumerate(recommend_items, start=1):
         item["rank"] = idx
-    for item in exclude_items:
-        item["rank"] = None
 
-    return recommend_items + exclude_items
+    return recommend_items
 
 
 def run_pipeline():
