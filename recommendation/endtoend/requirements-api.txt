@@ -1,0 +1,10 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch
+pandas
+numpy
+
+fastapi
+uvicorn[standard]
+psycopg2-binary
+python-dotenv

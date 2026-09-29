@@ -3,11 +3,11 @@
 FR-AI-2-02 대체상품 추천.
 
 상품 상세페이지에서 성분·용도가 유사한 상품을 추천하는 기능.
-기준 상품 하나를 입력받아, 같은 카테고리 내에서 임베딩+원료 유사도로 후보를 추리고
+기준 상품 하나를 입력받아, 같은 category_code + subcategory_code 내에서 임베딩+원료 유사도로 후보를 추리고
 안전 필터(알레르기·연령) 적용 후, 리뷰 매칭 캐스케이드로 최종 재정렬한다.
 
 파이프라인:
-① 기준 상품과 동일 category_code 내에서 코사인 유사도 상위 N=50 후보 추출
+① 기준 상품과 동일 category_code + subcategory_code 내에서 코사인 유사도 상위 N=50 후보 추출
 ② 유사도 스코어 = 0.7*cosine_similarity + 0.3*jaccard(ingredients)
 ③ 안전 필터(알레르기·연령) 적용해 후보 제외
 ④ 리뷰 매칭 캐스케이드로 산출한 aspect score로 최종 재정렬
@@ -63,13 +63,13 @@ def _check_age_conflict(pet_age_group: str, product_target_age_group) -> bool:
     return pet_age_group != product_target_age_group
 
 
-def build_review_summary_by_product(pet: dict, product_ids: list) -> dict:
+def build_review_summary_by_product(pet: dict, product_ids: list, reviews: list = None) -> dict:
     """
     find_substitute_products()의 review_summary_by_product 파라미터를 채우는 헬퍼.
 
-    pipeline.py의 build_reviews_with_ratings() + compute_weighted_aspect_scores()와
-    동일한 방식으로, 대체상품 후보 목록에 대해 "이 pet과 유사한 프로필의 리뷰어들"
-    기준 aspect score를 미리 계산해둔다.
+    reviews를 명시적으로 넘기면(API 서버가 요청 body로 받은 리뷰) 그 리스트를 쓰고,
+    넘기지 않으면 기존처럼 load_reviews_with_reviewer_pet()(더미/DB)을 사용한다
+    (하위호환용).
 
     pet이 None이면(비로그인 등 안전 필터 생략 상황과 동일 조건) 빈 딕셔너리를 반환하며,
     이 경우 find_substitute_products()는 리뷰 보정 없이 순수 유사도 스코어로만 정렬한다.
@@ -78,11 +78,14 @@ def build_review_summary_by_product(pet: dict, product_ids: list) -> dict:
         return {}
 
     from rating_converter import ASPECT_FIELD_TO_CODE, convert_rating_to_score
-    from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
     from collections import defaultdict
 
+    if reviews is None:
+        from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
+        reviews = load_reviews_with_reviewer_pet()
+
     reviews_by_product = defaultdict(list)
-    for review in load_reviews_with_reviewer_pet():
+    for review in reviews:
         if review["product_id"] not in product_ids:
             continue
         ratings = {}
@@ -114,7 +117,7 @@ def find_substitute_products(
 ) -> list:
     """
     base_product: 기준 상품 (상품 상세페이지에서 보고 있는 상품)
-    candidate_products: 같은 category_code 후보군 전체 (아직 필터링 전)
+    candidate_products: 같은 category_code + subcategory_code 후보군 전체 (아직 필터링 전)
     product_embeddings: {product_id: embedding_vector}
     pet: 안전 필터에 사용할 반려동물 프로필 (없으면 알레르기/연령 필터 생략 -- 비로그인 등)
     pet_age_group: 미리 계산된 pet의 age_group (GROWTH/ADULT/SENIOR)
@@ -128,10 +131,11 @@ def find_substitute_products(
     if base_embedding is None:
         return []  # 기준 상품 임베딩이 없으면 추천 자체가 불가능
 
-    # ① 동일 category_code 내에서 후보 추출 (자기 자신 제외)
+    # ① 동일 category_code + subcategory_code 내에서 후보 추출 (자기 자신 제외)
     same_category = [
         p for p in candidate_products
         if p["category_code"] == base_product["category_code"]
+        and p["subcategory_code"] == base_product["subcategory_code"]
         and p["product_id"] != base_product["product_id"]
     ]
 
@@ -192,7 +196,8 @@ def find_substitute_products(
             "product_id": product["product_id"],
             "product_name": product["product_name"],
             "recommend_type": "RECOMMEND",
-            "score": score,
+            "score": score,  # 내부 계산/정렬용 원본 스코어 (0~1)
+            "score_100": round(max(0.0, min(1.0, score)) * 100),  # 프론트엔드 응답용 (0~100 정수)
             "rank": rank,
             "reason_keywords": reason_keywords,
             "reason_text": reason_text,
