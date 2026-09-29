@@ -124,7 +124,7 @@ def _product_stage(value: str | None) -> str | None:
     return None
 
 
-def evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
+def _evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
     """Shared fail-closed safety result for API, direct matchers, and batch callers."""
     category = product.get("category", "food")
     # Allergy profiles belong to the pet.  Product-provided values are
@@ -190,3 +190,53 @@ def evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, A
     return {"safety_status": "NO_CONFLICT_DETECTED", "allergy_check_status": "NO_CONFLICT_DETECTED", "evidence_trace": evidence_trace, "excluded": False,
             "exclude_reasons": [], "warnings": [], "product_allergen_refs": refs, "unmapped_ingredients": [],
             "life_stage_status": "MATCHED" if category == "food" else "NOT_APPLICABLE"}
+
+
+def evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
+    """기존 판정·분기 순서를 유지하고 설명 필드만 추가한다."""
+    result = _evaluate_safety(pet, product)
+    status = result["safety_status"]
+    reason_codes, conflicts = [], []
+    messages = {
+        "ALLERGY_CONFLICT": "등록한 알레르기 성분과 충돌하는 원료가 확인되었습니다.",
+        "SPECIES_MISMATCH": "등록한 반려동물의 종과 상품 대상 종이 일치하지 않습니다.",
+        "LIFE_STAGE_MISMATCH": "등록한 반려동물의 생애주기와 상품 대상 조건이 일치하지 않습니다.",
+        "ALLERGY_PROFILE_UNKNOWN": "등록된 알레르기 정보를 충분히 확인할 수 없어 안전 여부를 판단할 수 없습니다.",
+        "NO_CONFLICT_DETECTED": "등록된 알레르기 정보와 확인 가능한 원재료 근거 기준으로 확인된 충돌이 없습니다.",
+        "NOT_APPLICABLE": "현재 등록 정보 기준 별도 알레르기 충돌 판정 대상이 아닙니다.",
+    }
+    for code in ("PRODUCT_SPECIES_UNKNOWN", "PET_LIFE_STAGE_UNSUPPORTED", "PRODUCT_LIFE_STAGE_UNKNOWN"):
+        messages[code] = "상품 대상 조건 정보가 부족하여 안전 여부를 확인할 수 없습니다."
+    for code in ("INGREDIENT_LIST_MISSING", "UNMAPPED_INGREDIENT", "STALE_EVIDENCE", "LINEAGE_INTEGRITY_ERROR"):
+        messages[code] = "원재료 정보가 부족하여 안전 여부를 확인할 수 없습니다."
+    if result["allergy_check_status"] == "CONFLICT":
+        reason_codes = ["ALLERGY_CONFLICT"]
+        conflicts = [r for r in result["product_allergen_refs"] if r["allergen_code"] in result["exclude_reasons"]]
+    elif status in {"SAFETY_BLOCKED", "SAFETY_DATA_INSUFFICIENT"}:
+        reason = result["exclude_reasons"][0]
+        if reason == "SAFETY_DATA_INSUFFICIENT":
+            trace = result.get("evidence_trace")
+            reason = (
+                "ALLERGY_PROFILE_UNKNOWN" if trace is None else
+                trace if trace in {"STALE_EVIDENCE", "LINEAGE_INTEGRITY_ERROR"} else
+                "UNMAPPED_INGREDIENT" if result["product_allergen_refs"] else "INGREDIENT_LIST_MISSING"
+            )
+        reason_codes = [reason]
+    fields = {
+        "allergen_code": ("allergen_code",), "matched_ingredient": ("matched_text",),
+        "raw_ingredient": ("raw_text", "raw_ingredient_text"),
+        "normalized_ingredient": ("normalized_text",),
+        "evidence_source": ("source", "ingredient_source"),
+        "source_version": ("source_version",), "dictionary_version": ("dictionary_version",),
+    }
+    projected = []
+    for ref in conflicts:
+        row = {}
+        for field, candidates in fields.items():
+            for candidate in candidates:
+                if ref.get(candidate) not in (None, ""):
+                    row[field] = ref[candidate]
+                    break
+        projected.append(row)
+    return {**result, "safety_reason_codes": reason_codes, "conflicting_allergens": projected,
+            "safety_message": messages[reason_codes[0] if reason_codes else status]}

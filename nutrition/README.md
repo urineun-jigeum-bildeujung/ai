@@ -17,6 +17,8 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 - 동일 Input + Rule Version + Reference Version은 동일 결과를 반환해야 한다.
 - 이전 `FE → BE → AI` 전제의 `/internal/v1/nutrition/*` 문서는 historical target contract이며 현재 서비스 통합 경로가 아니다.
 
+위 구조는 목표이며 DB 접근/쓰기 승인이 아니다. 현재는 로컬 dump 분석·Adapter·테스트만 수행하고 실제 인프라 DB의 DDL 및 데이터 쓰기는 금지한다. 결과 저장소 schema와 ownership은 미확정이다.
+
 상세 결정과 DB/입력 경계는 [service_integration_architecture.md](docs/service_integration_architecture.md), [service_db_contract.md](docs/service_db_contract.md), [canonical_input_contract.md](docs/canonical_input_contract.md)를 확인한다.
 
 ## 현재 구현 Runtime
@@ -24,13 +26,19 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 현재 FastAPI 구현은 `scripts/api_nutrition.py`에 있으며, AWS Service DB 연결이나 AI result persistence는 아직 구현하지 않았다.
 
 - `GET /health`
+- `GET /ready` — 로컬 필수 artifact 점검. AWS source readiness를 의미하지 않음
+- `GET /metrics` — HTTP와 도메인 상태를 별도로 집계하는 프로세스별 counter
 - `POST /api/nutrition/analyze` — request에 `pet`, `product`, `nutrition_items`를 직접 전달
 - `POST /api/nutrition/analyze/by-product-id` — 로컬 선택 artifact에서 `product_id`를 조회하는 demonstrator
 - `POST /api/nutrition/safety`
 - `POST /api/nutrition/report`
 - `POST /api/nutrition/compare` — **Future / Not Implemented**, 현재 HTTP 501. 비교 기능은 현재 Runtime scope 밖이며 구현 완료 API가 아니다.
 
-FE의 최종 최소 identifier 요청은 논리적으로 `{ "pet_id": "...", "product_id": "..." }`이지만, 실제 AWS schema·Repository·E2E가 없는 현재에는 runtime endpoint로 구현하지 않았다.
+`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`만 받는 준비용 경로다. 실제 source/auth 연결 전에는 503 `SERVICE_SOURCE_NOT_CONFIGURED`로 실패하며 로컬 seed를 대신 사용하지 않는다.
+
+2026-09-28 로컬 통합 준비 변경과 담당자별 요청은 [P0~P3 보고서](docs/service_integration_preparation_p0_p3.md)를 따른다. Safety 응답에 `safety_reason_codes`, `conflicting_allergens`, `safety_message`를 추가했으며 기존 판정과 상태축은 유지한다.
+
+2026-09-29 배포 전 검증: 전체 208 tests PASS (기존 warning 1개). Service `target_age_group`은 AAFCO label evidence로 사용하지 않는다. [외부 서비스 입력 계약](docs/service_source_input_contract.md)과 [P2 실제 데이터 검증 체크리스트](docs/p2_production_validation_checklist.md)를 참고한다. 서비스 상품 dump는 0행이므로 운영 SKU coverage는 NOT MEASURABLE이다.
 
 ## 코드와 데이터 범위
 
