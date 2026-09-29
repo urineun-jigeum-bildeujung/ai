@@ -55,3 +55,6 @@ recommendation/endtoend/data/amazon/*.json
 recommendation/endtoend/data/amazon/*.csv
 recommendation/endtoend/models/
 recommendation/endtoend/.cache/
+
+recommendation/endtoend/embedding_test.py
+recommendation/endtoend/product_embeddings.json
