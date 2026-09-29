@@ -1,0 +1,12 @@
+{
+  "new_component_rows": 2814,
+  "new_evidence_rows": 2856,
+  "catalog_evidence_rows": 2852,
+  "orphan_evidence": 0,
+  "missing_components": 0,
+  "duplicate_components": 0,
+  "duplicate_evidence": 4,
+  "migration_started_at": "2026-09-15T08:46:16.895604+00:00",
+  "migration_completed_at": "2026-09-15T08:46:16.929141+00:00",
+  "status": "OK"
+}
