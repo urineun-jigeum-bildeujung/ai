@@ -63,13 +63,13 @@ def _check_age_conflict(pet_age_group: str, product_target_age_group) -> bool:
     return pet_age_group != product_target_age_group
 
 
-def build_review_summary_by_product(pet: dict, product_ids: list) -> dict:
+def build_review_summary_by_product(pet: dict, product_ids: list, reviews: list = None) -> dict:
     """
     find_substitute_products()의 review_summary_by_product 파라미터를 채우는 헬퍼.
 
-    pipeline.py의 build_reviews_with_ratings() + compute_weighted_aspect_scores()와
-    동일한 방식으로, 대체상품 후보 목록에 대해 "이 pet과 유사한 프로필의 리뷰어들"
-    기준 aspect score를 미리 계산해둔다.
+    reviews를 명시적으로 넘기면(API 서버가 요청 body로 받은 리뷰) 그 리스트를 쓰고,
+    넘기지 않으면 기존처럼 load_reviews_with_reviewer_pet()(더미/DB)을 사용한다
+    (하위호환용).
 
     pet이 None이면(비로그인 등 안전 필터 생략 상황과 동일 조건) 빈 딕셔너리를 반환하며,
     이 경우 find_substitute_products()는 리뷰 보정 없이 순수 유사도 스코어로만 정렬한다.
@@ -78,11 +78,14 @@ def build_review_summary_by_product(pet: dict, product_ids: list) -> dict:
         return {}
 
     from rating_converter import ASPECT_FIELD_TO_CODE, convert_rating_to_score
-    from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
     from collections import defaultdict
 
+    if reviews is None:
+        from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
+        reviews = load_reviews_with_reviewer_pet()
+
     reviews_by_product = defaultdict(list)
-    for review in load_reviews_with_reviewer_pet():
+    for review in reviews:
         if review["product_id"] not in product_ids:
             continue
         ratings = {}
