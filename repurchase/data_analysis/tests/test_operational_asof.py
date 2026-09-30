@@ -7,11 +7,15 @@ import pytest
 
 from scripts.modeling.operational_asof import build_valid_order_items_as_of
 from scripts.modeling.operational_orders import OperationalOrderError
+from scripts.modeling.operational_purchase_inputs import (
+    prepare_operational_purchase_inputs_as_of,
+)
 
 
 def _sources() -> tuple[pd.DataFrame, ...]:
     orders = pd.DataFrame({
         "order_id": ["o1"], "user_id": ["u1"],
+        "ordered_at": ["2026-01-01T00:00:00Z"],
         "paid_at": ["2026-01-01T00:00:00Z"],
         "order_status": ["CANCELLED"], "purchase_type": ["ONE_TIME"],
     })
@@ -85,7 +89,9 @@ def test_naive_cutoff_is_rejected() -> None:
 
 def test_unpaid_pending_order_without_history_is_ignored() -> None:
     orders, items, histories, claims, claim_items = _sources()
-    orders.loc[len(orders)] = ["o2", "u2", None, "PENDING", "ONE_TIME"]
+    orders.loc[len(orders)] = [
+        "o2", "u2", "2026-01-02T00:00:00Z", None, "PENDING", "ONE_TIME"
+    ]
     result = build_valid_order_items_as_of(
         orders, items, histories, claims, claim_items,
         as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
@@ -116,3 +122,21 @@ def test_no_claims_preserves_paid_item() -> None:
         as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
     )
     assert result["net_quantity"].tolist() == [2]
+
+
+def test_as_of_inputs_feed_user_and_pet_events() -> None:
+    orders, items, histories, claims, claim_items = _sources()
+    pets = pd.DataFrame({"pet_id": ["pet1"], "birth_date": ["2025-12-01"]})
+    before = prepare_operational_purchase_inputs_as_of(
+        orders, items, pets, histories, claims, claim_items,
+        as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
+    )
+    after = prepare_operational_purchase_inputs_as_of(
+        orders, items, pets, histories, claims, claim_items,
+        as_of_timestamp=pd.Timestamp("2026-01-10T00:00:00Z"),
+    )
+    assert len(before.all_purchase_events) == 1
+    assert len(before.pet_purchase_events) == 1
+    assert before.pet_purchase_events["net_unit_count"].tolist() == [2]
+    assert after.all_purchase_events.empty
+    assert after.pet_purchase_events.empty

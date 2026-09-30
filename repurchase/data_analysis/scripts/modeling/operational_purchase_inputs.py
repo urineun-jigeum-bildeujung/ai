@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from .operational_asof import build_valid_order_items_as_of
 from .operational_orders import build_valid_order_items
 from .pet_history import select_pet_history_items
 from .purchase_events import build_product_group_purchase_events_from_valid_items
@@ -31,6 +32,39 @@ def prepare_operational_purchase_inputs(
     pet_purchase_events만 이용하면 반려동물 미지정·생일 불일치 구매가 빠집니다.
     """
     valid_items = build_valid_order_items(orders, order_items)
+    return prepare_operational_purchase_inputs_from_valid_items(
+        valid_items, orders, pets
+    )
+
+
+def prepare_operational_purchase_inputs_as_of(
+    orders: pd.DataFrame,
+    order_items: pd.DataFrame,
+    pets: pd.DataFrame,
+    status_histories: pd.DataFrame,
+    claims: pd.DataFrame,
+    claim_items: pd.DataFrame,
+    *,
+    as_of_timestamp: pd.Timestamp,
+) -> OperationalPurchaseInputs:
+    """기준 시점의 상태·클레임을 복원한 뒤 같은 피처 입력 규칙을 적용합니다."""
+    valid_items = build_valid_order_items_as_of(
+        orders,
+        order_items,
+        status_histories,
+        claims,
+        claim_items,
+        as_of_timestamp=as_of_timestamp,
+    )
+    return prepare_operational_purchase_inputs_from_valid_items(
+        valid_items, orders, pets
+    )
+
+
+def prepare_operational_purchase_inputs_from_valid_items(
+    valid_items: pd.DataFrame, orders: pd.DataFrame, pets: pd.DataFrame
+) -> OperationalPurchaseInputs:
+    """검증된 구매 상품을 전체/반려동물 사건에 동일하게 변환합니다."""
     pet_items = select_pet_history_items(valid_items, orders, pets)
     specified_pet_count = int(valid_items["pet_id"].notna().sum())
     return OperationalPurchaseInputs(
