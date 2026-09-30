@@ -17,6 +17,8 @@
 from __future__ import annotations
 
 import re
+import hmac
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -28,7 +30,7 @@ NUTRITION_DIR = PROJECT_ROOT / "scripts" / "nutrition"
 sys.path.insert(0, str(NUTRITION_DIR))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
@@ -41,7 +43,8 @@ from allergen_service import evaluate_safety  # type: ignore  # noqa: E402
 from allergen_repository import get_refs  # type: ignore  # noqa: E402
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION  # type: ignore  # noqa: E402
 from product_input_adapter import load_product_input  # type: ignore  # noqa: E402
-from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety  # noqa: E402
+from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety, ServiceInputError  # noqa: E402
+import service_repository  # noqa: E402
 from nutrition_readiness import (  # type: ignore  # noqa: E402
     evaluate_nutrition_coverage,
     evaluate_nutrition_readiness,
@@ -360,9 +363,17 @@ def safety_check_consumer_card(card: str | None) -> dict:
 @app.get("/ready")
 def ready() -> JSONResponse:
     dependencies = check_dependencies(PROJECT_ROOT)
+    mode = "service" if service_repository.service_mode() else "local_artifact"
+    if mode == "service":
+        dependencies["member_db"] = service_repository.probe("MEMBER_DATABASE_URL")
+        dependencies["product_db"] = service_repository.probe("PRODUCT_DATABASE_URL")
+        dependencies["service_auth"] = {"required": True, "status": "UP" if os.getenv("INTERNAL_GATEWAY_SECRET") else "DOWN"}
+        dependencies["service_source"] = {"required": True, "status": "UP" if service_repository.configured() else "DOWN"}
+    if os.getenv("NUTRITION_RUNTIME_MODE", "local") not in {"local", "service"}:
+        dependencies["runtime_config"] = {"required": True, "status": "DOWN"}
     available = all(v["status"] == "UP" for v in dependencies.values() if v["required"])
     return JSONResponse({"status": "ready" if available else "not_ready",
-                         "runtime_mode": "local_artifact", "dependencies": dependencies},
+                         "runtime_mode": mode, "dependencies": dependencies},
                         status_code=200 if available else 503)
 
 
@@ -445,9 +456,30 @@ def analyze_by_product_id(req: PersistedProductAnalyzeRequest) -> dict[str, Any]
 
 
 @app.post("/api/nutrition/analyze/by-service-id")
-def analyze_by_service_id(req: ServiceIdAnalyzeRequest) -> dict[str, Any]:
-    """실제 source·Gateway 신뢰 경계 연결 전에는 seed나 헤더만으로 성공시키지 않는다."""
-    raise HTTPException(status_code=503, detail="SERVICE_SOURCE_NOT_CONFIGURED")
+def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dict[str, Any]:
+    """Gateway 인증과 SQL ownership을 모두 통과한 실제 source만 분석한다."""
+    if not service_repository.configured():
+        raise HTTPException(status_code=503, detail="SERVICE_SOURCE_NOT_CONFIGURED")
+    expected = os.getenv("INTERNAL_GATEWAY_SECRET")
+    if not expected:
+        raise HTTPException(status_code=503, detail="SERVICE_AUTH_NOT_CONFIGURED")
+    secrets = request.headers.getlist("X-Internal-Secret")
+    members = request.headers.getlist("X-Member-Id")
+    if len(secrets) != 1 or not hmac.compare_digest(secrets[0].encode(), expected.encode()):
+        raise HTTPException(status_code=401, detail="SERVICE_UNAUTHORIZED")
+    if (len(members) != 1 or not members[0].isascii() or not members[0].isdecimal()
+            or len(members[0]) > 19 or not 0 < int(members[0]) <= 9223372036854775807):
+        raise HTTPException(status_code=401, detail="SERVICE_UNAUTHORIZED")
+    try:
+        pet = service_repository.get_pet(req.pet_id, int(members[0]))
+        product = service_repository.get_product(req.product_id)
+        return observe_domain_result(analyze_service_records(pet, product))
+    except service_repository.ServiceNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from None
+    except service_repository.ServiceUnavailable:
+        raise HTTPException(status_code=503, detail="SERVICE_DB_UNAVAILABLE") from None
+    except (ServiceInputError, ValidationError):
+        raise HTTPException(status_code=422, detail="SERVICE_SOURCE_INVALID") from None
 
 
 @app.post("/api/nutrition/safety")
