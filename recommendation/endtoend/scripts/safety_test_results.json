@@ -1,0 +1,257 @@
+{
+  "injection": [
+    {
+      "case": "sql_injection",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "script_tag",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "very_long",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "null_byte",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "unicode_rtl_override",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "empty_string",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "emoji_spam",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "format_string",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "path_traversal",
+      "field": "product_name/ingredients",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "sql_injection",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': \"'; DROP TABLE products; --\", 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+    },
+    {
+      "case": "script_tag",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '<script>alert(1)</script>', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "very_long",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "case": "null_byte",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'abc\\x00def', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "unicode_rtl_override",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '\\u202eevil', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "empty_string",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,"
+    },
+    {
+      "case": "emoji_spam",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶🐶"
+    },
+    {
+      "case": "format_string",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '%s%s%s%s%s', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "path_traversal",
+      "field": "category_code",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': '../../../etc/passwd', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    }
+  ],
+  "missing_field_crash": [
+    {
+      "case": "pet.bcs = None",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'species': 'DOG', 'breed': '말티즈', 'sex': 'FEMALE', 'age_group': 'ADULT', 'breed_size': 'SMALL', 'bcs': 3.0}, 'dense': {'age_months_norm': 0.3, 'weight_norm': 0.064, 'neutered': 1.0, 'bcs_norm': 0.5, 'age_group_ordinal': 0.5}, 'multi_hot': {'allergy_codes': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+    },
+    {
+      "case": "product.price = None",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'category_code': 'FOOD', 'subcategory_code': 'DRY_FOOD', 'target_breed_size': 'SMALL', 'target_age_group': 'ADULT'}, 'multi_hot': {'target_species': [1, 1], 'allergen_flags': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+    },
+    {
+      "case": "pet 딕셔너리에 'bcs' 키 자체가 없음",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'species': 'DOG', 'breed': '말티즈', 'sex': 'FEMALE', 'age_group': 'ADULT', 'breed_size': 'SMALL', 'bcs': 3.0}, 'dense': {'age_months_norm': 0.3, 'weight_norm': 0.064, 'neutered': 1.0, 'bcs_norm': 0.5, 'age_group_ordinal': 0.5}, 'multi_hot': {'allergy_codes': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+    }
+  ],
+  "allergy_edge_cases": [
+    {
+      "case": "정상 겹침",
+      "pet_allergy_codes": [
+        "CHICKEN",
+        "BEEF"
+      ],
+      "product_allergen_flags": [
+        "CHICKEN"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': True, 'matched_allergen': ['CHICKEN']}"
+    },
+    {
+      "case": "겹침 없음",
+      "pet_allergy_codes": [
+        "CHICKEN"
+      ],
+      "product_allergen_flags": [
+        "BEEF"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': False, 'matched_allergen': []}"
+    },
+    {
+      "case": "빈 리스트 - 반려동물 알레르기 없음",
+      "pet_allergy_codes": [],
+      "product_allergen_flags": [
+        "CHICKEN"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': False, 'matched_allergen': []}"
+    },
+    {
+      "case": "빈 리스트 - 상품 알레르기 정보 없음",
+      "pet_allergy_codes": [
+        "CHICKEN"
+      ],
+      "product_allergen_flags": [],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': False, 'matched_allergen': []}"
+    },
+    {
+      "case": "둘 다 빈 리스트",
+      "pet_allergy_codes": [],
+      "product_allergen_flags": [],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': False, 'matched_allergen': []}"
+    },
+    {
+      "case": "대소문자 불일치",
+      "pet_allergy_codes": [
+        "chicken"
+      ],
+      "product_allergen_flags": [
+        "CHICKEN"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': True, 'matched_allergen': ['CHICKEN']}"
+    },
+    {
+      "case": "중복 코드",
+      "pet_allergy_codes": [
+        "CHICKEN",
+        "CHICKEN"
+      ],
+      "product_allergen_flags": [
+        "CHICKEN"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': True, 'matched_allergen': ['CHICKEN']}"
+    },
+    {
+      "case": "None 값 포함",
+      "pet_allergy_codes": [
+        "CHICKEN",
+        null
+      ],
+      "product_allergen_flags": [
+        "CHICKEN"
+      ],
+      "ok": true,
+      "error": null,
+      "result_repr": "{'has_conflict': True, 'matched_allergen': ['CHICKEN']}"
+    }
+  ],
+  "group_feature_check": [
+    {
+      "case": "species=DOG",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'species': 'DOG', 'breed': '말티즈', 'sex': 'FEMALE', 'age_group': 'ADULT', 'breed_size': 'SMALL', 'bcs': 3}, 'dense': {'age_months_norm': 0.3, 'weight_norm': 0.064, 'neutered': 1.0, 'bcs_norm': 0.5, 'age_group_ordinal': 0.5}, 'multi_hot': {'allergy_codes': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,"
+    },
+    {
+      "case": "species=CAT",
+      "ok": true,
+      "error": null,
+      "result_repr": "{'sparse': {'species': 'CAT', 'breed': '말티즈', 'sex': 'FEMALE', 'age_group': 'ADULT', 'breed_size': 'SMALL', 'bcs': 3}, 'dense': {'age_months_norm': 0.3, 'weight_norm': 0.064, 'neutered': 1.0, 'bcs_norm': 0.5, 'age_group_ordinal': 0.5}, 'multi_hot': {'allergy_codes': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,"
+    }
+  ]
+}

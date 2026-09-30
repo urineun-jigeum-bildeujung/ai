@@ -5,6 +5,11 @@ member_db.pet 조회 데이터 접근 계층.
 order_embedding_repository.py / product_repository.py / reviews_repository.py와
 동일한 패턴: db.py의 get_connection(env_var_name)을 공용으로 사용하고,
 USE_DUMMY_DATA 환경변수로 더미 데이터 / 실제 DB를 전환한다.
+
+실제 스키마 주의: pet 테이블의 PK/FK는 pet_id가 아니라 id, user 참조는 user_id가 아니라
+member_id, breed는 문자열 컬럼이 아니라 breed_id(FK -> breed_master), neutered는
+is_neutered. allergy_codes/concerns는 pet 테이블 컬럼이 아니라 각각 pet_allergy,
+pet_concern(+concern_master) 별도 테이블이라 조인 + array_agg로 묶어서 가져온다.
 """
 
 import os
@@ -31,16 +36,37 @@ def _row_to_pet(row) -> dict:
         "birth_date": birth_date.isoformat() if hasattr(birth_date, "isoformat") else birth_date,
         "sex": sex,
         "neutered": bool(neutered),
-        "weight": float(weight),
+        "weight": float(weight) if weight is not None else None,
         "bcs": bcs,
-        "allergy_codes": allergy_codes or [],
-        "concerns": concerns or [],
+        "allergy_codes": list(allergy_codes) if allergy_codes else [],
+        "concerns": list(concerns) if concerns else [],
     }
 
 
-_PET_COLUMNS = """
-    pet_id, user_id, species, breed, birth_date, sex, neutered,
-    weight, bcs, allergy_codes, concerns
+_PET_QUERY = """
+    SELECT
+        p.id,
+        p.member_id,
+        p.species,
+        b.breed_name,
+        p.birth_date,
+        p.sex,
+        p.is_neutered,
+        p.weight,
+        p.bcs,
+        COALESCE(
+            array_agg(DISTINCT pa.allergy_code) FILTER (WHERE pa.allergy_code IS NOT NULL),
+            '{}'
+        ) AS allergy_codes,
+        COALESCE(
+            array_agg(DISTINCT cm.concern_code) FILTER (WHERE cm.concern_code IS NOT NULL),
+            '{}'
+        ) AS concerns
+    FROM pet p
+    LEFT JOIN breed_master b ON b.id = p.breed_id
+    LEFT JOIN pet_allergy pa ON pa.pet_id = p.id
+    LEFT JOIN pet_concern pc ON pc.pet_id = p.id
+    LEFT JOIN concern_master cm ON cm.id = pc.concern_id
 """
 
 
@@ -49,7 +75,7 @@ def _fetch_pet_from_db(pet_id: str) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT {_PET_COLUMNS} FROM pet WHERE pet_id = %s",
+                _PET_QUERY + " WHERE p.id = %s GROUP BY p.id, b.breed_name",
                 (pet_id,),
             )
             row = cur.fetchone()
@@ -67,7 +93,7 @@ def _fetch_pets_from_db(pet_ids: list) -> dict:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                f"SELECT {_PET_COLUMNS} FROM pet WHERE pet_id = ANY(%s)",
+                _PET_QUERY + " WHERE p.id = ANY(%s) GROUP BY p.id, b.breed_name",
                 (list(pet_ids),),
             )
             rows = cur.fetchall()
