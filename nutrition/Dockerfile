@@ -8,12 +8,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# allergen_repository.py가 data/processed/allergen_evidence_catalog_p2.db를
-# sqlite3.connect()로 여는데, 이 파일은 레포에 없어서 최초 연결 시 sqlite3가
-# 빈 파일로 새로 만든다 — 그 디렉토리에 쓰기 권한이 있어야 하므로, 데이터를
-# COPY하는 시점부터 non-root 사용자 소유로 만든다(나중에 chown하는 것보다
-# 레이어 수가 줄어듦). 그래서 requirements.lock/pip install보다 먼저 사용자를
-# 만든다.
+# runtime allergen evidence 조회는 SQLite mode=ro를 사용한다.
+# 파일이 없거나 손상된 경우 빈 DB를 생성하지 않고 fail-close한다.
+# data 디렉터리는 기존 artifact 접근 호환성을 위해 non-root 사용자 소유로 유지한다.
 RUN useradd --create-home --uid 10001 --shell /usr/sbin/nologin nutrition
 
 COPY requirements.lock ./requirements.lock
@@ -22,7 +19,7 @@ RUN python -m pip install --no-cache-dir --requirement requirements.lock
 # scripts/nutrition 안의 실제 로직 모듈, data(시드/기준 데이터, 992KB)만 복사한다.
 # tests/API/docs는 런타임에 쓰이지 않아 이미지에 넣지 않는다.
 # scripts는 실행 중 쓸 일이 없어 root 소유로 남겨(프로세스가 침해돼도 코드 변조를
-# 못 하게) 두고, data만 nutrition 소유로 줘서 위 sqlite 파일 생성이 가능하게 한다.
+# 못 하게) 두고, data만 nutrition 소유로 줘서 read-only artifact 접근 권한을 유지한다.
 COPY --chown=root:root scripts ./scripts
 COPY --chown=nutrition:nutrition data ./data
 

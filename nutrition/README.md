@@ -4,20 +4,20 @@
 
 ## 현재 서비스 통합 구조
 
-2026-09-21 결정 기준의 목표 경로는 다음과 같다.
+2026-09-30 v1.0 기준의 서비스 통합 경로는 다음과 같다.
 
 ```text
-FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
-   → Canonical Input Adapter → Nutrition Rule Engine
-   → AI-owned Nutrition Result Table (INSERT / UPDATE) → FE
+FE → API Gateway → Nutrition AI FastAPI
+   → Service DB (member_db / product_db, SELECT only)
+   → Canonical Input Adapter → Nutrition Rule Engine / Safety Gate
+   → synchronous HTTP response → FE
 ```
 
-- 서비스 원본 데이터는 AI가 읽기만 한다.
-- AI는 분석 결과 저장소만 기록한다.
-- 동일 Input + Rule Version + Reference Version은 동일 결과를 반환해야 한다.
-- 이전 `FE → BE → AI` 전제의 `/internal/v1/nutrition/*` 문서는 historical target contract이며 현재 서비스 통합 경로가 아니다.
-
-위 구조는 목표이며 DB 접근/쓰기 승인이 아니다. 현재는 로컬 dump 분석·Adapter·테스트만 수행하고 실제 인프라 DB의 DDL 및 데이터 쓰기는 금지한다. 결과 저장소 schema와 ownership은 미확정이다.
+- 서비스 원본 데이터는 AI가 읽기만 하며 INSERT / UPDATE / DELETE / DDL을 수행하지 않는다.
+- v1.0 완료 조건은 동기식 분석 응답이며 AI-owned Result Table / upsert는 필수 범위가 아니다.
+- 동일 Canonical Input + Rule Version + Reference Version은 동일 결과를 반환해야 한다.
+- 이전 `/internal/v1/nutrition/*` 문서는 historical target contract이며 현재 Runtime SoT가 아니다.
+- PR #141은 Service DB SELECT Repository와 Gateway trust boundary 코드를 구현한다. GitOps secret/network, Gateway route, 실제 dev DB row 및 FE E2E는 별도 검증이 필요하다.
 
 상세 결정과 DB/입력 경계는 [service_integration_architecture.md](docs/service_integration_architecture.md), [service_db_contract.md](docs/service_db_contract.md), [canonical_input_contract.md](docs/canonical_input_contract.md)를 확인한다.
 
@@ -25,10 +25,10 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 
 2026-09-30 Service Repository 구현은 [v1 구현 및 검증](docs/service_repository_v1.md)을 따른다. DB URL과 Gateway 인증 구성이 갖춰진 경우 `by-service-id`가 실제 조회→기존 Engine으로 연결되며, 미설정 환경은 기존 503을 유지한다. 실제 AWS/dev 배포 및 E2E 완료는 아직 아니다. 아래 이전 준비 단계의 미구현 설명은 이 변경 범위에 한해 갱신된다.
 
-현재 FastAPI 구현은 `scripts/api_nutrition.py`에 있다. Service DB SELECT Repository와 인증 경계는 구현했으며 실제 AWS/dev 연결 검증 및 AI result persistence는 미완료다.
+현재 FastAPI 구현은 `scripts/api_nutrition.py`에 있다. Service DB SELECT Repository와 인증 경계는 구현했으며 실제 dev 연결·배포·E2E는 미완료다. AI result persistence는 v1.0 필수 범위가 아니다.
 
 - `GET /health`
-- `GET /ready` — 로컬 필수 artifact 점검. AWS source readiness를 의미하지 않음
+- `GET /ready` — local mode에서는 artifact readiness, service mode에서는 artifact + member_db + product_db + service auth/source readiness를 점검. DB UP만으로 schema/row/E2E 성공을 의미하지 않음
 - `GET /metrics` — HTTP와 도메인 상태를 별도로 집계하는 프로세스별 counter
 - `POST /api/nutrition/analyze` — request에 `pet`, `product`, `nutrition_items`를 직접 전달
 - `POST /api/nutrition/analyze/by-product-id` — 로컬 선택 artifact에서 `product_id`를 조회하는 demonstrator
@@ -40,7 +40,7 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 
 2026-09-28 로컬 통합 준비 변경과 담당자별 요청은 [P0~P3 보고서](docs/service_integration_preparation_p0_p3.md)를 따른다. Safety 응답에 `safety_reason_codes`, `conflicting_allergens`, `safety_message`를 추가했으며 기존 판정과 상태축은 유지한다.
 
-2026-09-29 배포 전 검증: 전체 208 tests PASS (기존 warning 1개). Service `target_age_group`은 AAFCO label evidence로 사용하지 않는다. [외부 서비스 입력 계약](docs/service_source_input_contract.md)과 [P2 실제 데이터 검증 체크리스트](docs/p2_production_validation_checklist.md)를 참고한다. 서비스 상품 dump는 0행이므로 운영 SKU coverage는 NOT MEASURABLE이다.
+2026-09-30 PR #141 기준 로컬 검증: 전체 242 tests PASS, warning 1개, scripts/tests compile 35 PASS, `git diff --check` PASS. Service `target_age_group`은 AAFCO label evidence로 사용하지 않는다. 실제 Service DB row 및 Gateway E2E는 아직 검증하지 않았다. [외부 서비스 입력 계약](docs/service_source_input_contract.md)과 [P2 실제 데이터 검증 체크리스트](docs/p2_production_validation_checklist.md)를 참고한다. 서비스 상품 dump는 0행이므로 운영 SKU coverage는 NOT MEASURABLE이다.
 
 ## 코드와 데이터 범위
 
@@ -85,5 +85,6 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 - `API/nutrition_request.json`, `API/nutrition_response.json`, `API/error_response.json`, `docs/nutrition_ai_api_spec_v3_draft.md`의 `/internal/v1/nutrition/*`는 **SUPERSEDED historical target contract**다.
 - `READY`는 현재 runtime의 최소 입력과 safety gate 충족 상태이며, 영양학적 완전성이나 임상적 적합성을 뜻하지 않는다.
 - `data/processed/baseline_manifest_v3.json`은 2026-09-04 historical reproduction manifest이며, 현재 Git branch/commit metadata가 아니다.
-- Pet/Product SELECT Repository는 구현했다. 실제 AWS/dev schema·연결 검증 및 Gateway/FE E2E는 남아 있고 AI result persistence는 이번 범위 밖이다.
-- Human Gold expansion, Functional Matrix, Scale Regression, Feeding Engine, Recommendation SafetyDecision integration은 별도 범위다.
+- Pet/Product SELECT Repository와 HTTP trust boundary는 PR #141에서 구현했다. 실제 dev schema/row·Secret/NetworkPolicy·Gateway route·FE E2E는 남아 있다.
+- AI result persistence는 v1.0 필수 범위가 아니며 신규 Result Table을 이번 마감에 추가하지 않는다.
+- Human Gold expansion, Feeding Engine, 대규모 데이터 확대는 Future Scope다. Recommendation Safety 처리 방식은 PR #129의 penalty 정책과 기존 hard-filter 기획 충돌을 해소한 뒤 확정한다.

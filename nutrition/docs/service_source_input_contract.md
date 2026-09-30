@@ -1,5 +1,14 @@
 # Nutrition 외부 서비스 최소 입력 계약
 
+> **2026-09-30 v1.0 최신 상태**
+>
+> PR #141에서 Service DB SELECT Repository와 Gateway trust boundary를 구현했다. `member_db` / `product_db`는 SELECT only이며 Pet ownership은 SQL에서 `pet.id + member_id + deleted_at IS NULL`로 강제한다.
+> `POST /api/nutrition/analyze/by-service-id`는 더 이상 항상-503 stub이 아니다. source/auth 미구성 시 fail-close하고, 구성이 있으면 실제 Service DB source를 조회한다.
+> `/ready`는 local mode에서는 artifact readiness, service mode에서는 artifact + member_db + product_db + service auth/source readiness를 본다.
+> AI Result Table / upsert는 v1.0 필수 범위가 아니다. 실제 dev Secret/NetworkPolicy/Gateway route/Service DB row/FE E2E는 아직 미검증이다.
+> 아래의 상충하는 “Repository 미구현”, “항상 503”, “Result Store 필수” 설명은 historical record로 읽는다.
+
+
 ## 범위와 상태
 
 2026-09-29 기준 Nutrition이 요구하는 **조회 완료된 내부 DTO**의 계약이다. 현재 BE 응답 또는 운영 DB column 전체와 동일하다는 뜻이 아니다. 구현 근거는 `scripts/nutrition/service_db_adapter.py`의 `adapt_pet`, `adapt_product`, `evaluate_service_safety`와 `scripts/api_nutrition.py`의 `analyze_service_records`다.
