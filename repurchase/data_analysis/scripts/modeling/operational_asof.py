@@ -10,6 +10,7 @@ import pandas as pd
 
 from .operational_orders import (
     ALL_ORDER_STATUSES,
+    VALID_ORDER_STATUSES,
     OperationalOrderError,
     _require_columns,
     _require_keys,
@@ -123,6 +124,13 @@ def build_valid_order_items_as_of(
     ]
     as_of_orders = orders.loc[orders["order_id"].isin(past_status.index)].copy()
     as_of_orders["order_status"] = as_of_orders["order_id"].map(past_status)
+    paid_at_as_of = as_of_orders.loc[
+        as_of_orders["order_status"].isin(VALID_ORDER_STATUSES), "paid_at"
+    ].map(lambda value: _utc(value, column="paid_at"))
+    if paid_at_as_of.gt(cutoff).any():
+        raise OperationalOrderError(
+            "기준 시각보다 늦은 결제가 이전 상태 이력에 포함됐습니다."
+        )
 
     claim_rows = claims.copy()
     completed = claim_rows["claim_status"].eq("COMPLETED")

@@ -99,7 +99,7 @@ def audit_removed_pet_history_at_anchors(
         on=["user_id", "pet_id", "target_id"],
     )
     matches = matches.loc[
-        matches["anchor_at"].ge(matches["paid_at"])
+        matches["anchor_at"].gt(matches["paid_at"])
         & matches["anchor_at"].lt(matches["completed_at"])
     ]
     existing = current_pet_events.loc[
@@ -180,7 +180,7 @@ def audit_removed_user_orders_at_anchors(
     )
     matches = anchors.merge(missing, on="user_id")
     matches = matches.loc[
-        matches["anchor_at"].ge(matches["paid_at"])
+        matches["anchor_at"].gt(matches["paid_at"])
         & matches["anchor_at"].lt(matches["ended_at"])
     ]
     affected = int(matches["sample_key"].nunique())

@@ -95,3 +95,19 @@ def test_missing_order_termination_is_rejected() -> None:
     histories = pd.DataFrame(columns=["order_id", "to_status", "changed_at"])
     with pytest.raises(OperationalOrderError, match="종료 상태 이력"):
         audit_removed_user_orders_at_anchors(samples, events, orders, histories)
+
+
+def test_same_time_purchase_is_not_prior_history() -> None:
+    sources = list(_sources())
+    sources[0].loc[0, "anchor_at"] = pd.Timestamp("2026-01-01T00:00:00Z")
+    pet_result = audit_removed_pet_history_at_anchors(*sources)
+    assert pet_result["potentially_affected_anchor_count"] == 0
+
+    histories = pd.DataFrame({
+        "order_id": ["o1"], "to_status": ["CANCELLED"],
+        "changed_at": ["2026-01-10T00:00:00Z"],
+    })
+    user_result = audit_removed_user_orders_at_anchors(
+        sources[0], sources[1], sources[2], histories
+    )
+    assert user_result["potentially_affected_anchor_count"] == 0

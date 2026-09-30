@@ -140,3 +140,13 @@ def test_as_of_inputs_feed_user_and_pet_events() -> None:
     assert before.pet_purchase_events["net_unit_count"].tolist() == [2]
     assert after.all_purchase_events.empty
     assert after.pet_purchase_events.empty
+
+
+def test_paid_status_before_actual_payment_is_rejected() -> None:
+    orders, items, histories, claims, claim_items = _sources()
+    orders.loc[0, "paid_at"] = "2026-01-06T00:00:00Z"
+    with pytest.raises(OperationalOrderError, match="늦은 결제"):
+        build_valid_order_items_as_of(
+            orders, items, histories, claims, claim_items,
+            as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
+        )
