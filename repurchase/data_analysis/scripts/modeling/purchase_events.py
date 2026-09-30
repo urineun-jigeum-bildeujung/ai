@@ -35,6 +35,16 @@ def build_product_group_purchase_events(
     비반복 상품도 사용자 전체 주문 이력에 필요하므로 결과에 남깁니다.
     """
     valid_items = build_valid_order_items(orders, order_items)
+    return build_product_group_purchase_events_from_valid_items(valid_items)
+
+
+def build_product_group_purchase_events_from_valid_items(
+    valid_items: pd.DataFrame,
+) -> pd.DataFrame:
+    """이미 검증된 구매 행을 상품군 사건으로 묶습니다.
+
+    전체 구매와 반려동물별 이력이 동일한 병합 규칙을 공유하도록 분리합니다.
+    """
     events: list[dict[str, object]] = []
 
     # 결측 pet_id도 독립 그룹으로 유지해 다른 반려동물의 구매와 섞지 않습니다.
