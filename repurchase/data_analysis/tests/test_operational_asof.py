@@ -8,7 +8,12 @@ import pytest
 from scripts.modeling.operational_asof import build_valid_order_items_as_of
 from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.modeling.operational_purchase_inputs import (
+    prepare_operational_purchase_inputs,
     prepare_operational_purchase_inputs_as_of,
+)
+from scripts.modeling.service_samples import (
+    build_current_service_features,
+    build_service_repurchase_samples,
 )
 
 
@@ -150,3 +155,36 @@ def test_paid_status_before_actual_payment_is_rejected() -> None:
             orders, items, histories, claims, claim_items,
             as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
         )
+
+
+def test_later_cancellation_changes_prior_features_at_earlier_anchor() -> None:
+    orders, items, histories, claims, claim_items = _sources()
+    orders.loc[len(orders)] = [
+        "o2", "u1", "2026-01-05T00:00:00Z", "2026-01-05T00:00:00Z",
+        "PAID", "ONE_TIME",
+    ]
+    items.loc[len(items)] = [
+        "i2", "o2", "p1", "g1", "FOOD", True, "pet1", 1, "PAID", 0, 0,
+    ]
+    histories.loc[len(histories)] = [
+        3, "o2", "PAID", "2026-01-05T00:00:00Z",
+    ]
+    pets = pd.DataFrame({"pet_id": ["pet1"], "birth_date": ["2025-12-01"]})
+    anchor = pd.Timestamp("2026-01-05T00:00:00Z")
+
+    final = prepare_operational_purchase_inputs(orders, items, pets)
+    as_of = prepare_operational_purchase_inputs_as_of(
+        orders, items, pets, histories, claims, claim_items,
+        as_of_timestamp=anchor,
+    )
+    final_row = build_service_repurchase_samples(
+        final, observation_end_at=pd.Timestamp("2026-01-11T00:00:00Z")
+    ).set_index("order_id").loc["o2"]
+    as_of_row = build_current_service_features(
+        as_of, as_of_timestamp=anchor
+    ).set_index("order_id").loc["o2"]
+
+    assert final_row["history_interval_count"] == 0
+    assert final_row["user_prior_order_count"] == 0
+    assert as_of_row["history_interval_count"] == 1
+    assert as_of_row["user_prior_order_count"] == 1
