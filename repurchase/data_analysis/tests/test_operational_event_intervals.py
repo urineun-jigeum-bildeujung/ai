@@ -6,7 +6,9 @@ import pandas as pd
 import pytest
 
 from scripts.modeling.operational_event_intervals import (
+    OperationalEventIntervals,
     build_operational_event_intervals,
+    select_operational_events_as_of,
 )
 from scripts.modeling.operational_orders import OperationalOrderError
 
@@ -267,3 +269,131 @@ def test_mixed_replenishable_flags_in_one_target_are_rejected() -> None:
 
     with pytest.raises(OperationalOrderError, match="반복 소비 여부"):
         build_operational_event_intervals(intervals, orders, items, pets)
+
+
+def test_as_of_selection_uses_half_open_boundaries_without_mutation() -> None:
+    start = pd.Timestamp("2026-01-01T00:00:00Z")
+    stop = pd.Timestamp("2026-01-05T00:00:00Z")
+    user_orders = pd.DataFrame(
+        {
+            "user_id": ["u1"],
+            "order_id": ["o1"],
+            "valid_from": [start],
+            "valid_until": [stop],
+        }
+    )
+    pet_targets = pd.DataFrame(
+        {
+            "user_id": ["u1"],
+            "pet_id": ["p1"],
+            "product_group_id_snapshot": ["g1"],
+            "order_id": ["o1"],
+            "valid_from": [start],
+            "valid_until": [stop],
+        }
+    )
+    intervals = OperationalEventIntervals(user_orders, pet_targets)
+    original_user = user_orders.copy(deep=True)
+
+    at_start = select_operational_events_as_of(intervals, as_of_timestamp=start)
+    at_stop = select_operational_events_as_of(intervals, as_of_timestamp=stop)
+
+    assert len(at_start.user_orders) == len(at_start.pet_targets) == 1
+    assert at_stop.user_orders.empty and at_stop.pet_targets.empty
+    pd.testing.assert_frame_equal(user_orders, original_user)
+
+
+def test_as_of_selection_rejects_duplicate_active_events() -> None:
+    start = pd.Timestamp("2026-01-01T00:00:00Z")
+    duplicated = pd.DataFrame(
+        {
+            "user_id": ["u1", "u1"],
+            "order_id": ["o1", "o1"],
+            "valid_from": [start, start],
+            "valid_until": [pd.NaT, pd.NaT],
+        }
+    )
+    empty_targets = pd.DataFrame(
+        columns=[
+            "user_id",
+            "pet_id",
+            "product_group_id_snapshot",
+            "order_id",
+            "valid_from",
+            "valid_until",
+        ]
+    )
+
+    with pytest.raises(OperationalOrderError, match="중복 사건"):
+        select_operational_events_as_of(
+            OperationalEventIntervals(duplicated, empty_targets),
+            as_of_timestamp=start,
+        )
+
+
+@pytest.mark.parametrize(
+    "end",
+    [
+        "2026-01-01T00:00:00Z",
+        "2025-12-31T00:00:00Z",
+    ],
+)
+def test_as_of_selection_rejects_nonpositive_interval(end: str) -> None:
+    start = pd.Timestamp("2026-01-01T00:00:00Z")
+    user_orders = pd.DataFrame(
+        {
+            "user_id": ["u1"],
+            "order_id": ["o1"],
+            "valid_from": [start],
+            "valid_until": [pd.Timestamp(end)],
+        }
+    )
+    empty_targets = pd.DataFrame(
+        columns=[
+            "user_id",
+            "pet_id",
+            "product_group_id_snapshot",
+            "order_id",
+            "valid_from",
+            "valid_until",
+        ]
+    )
+
+    with pytest.raises(OperationalOrderError, match="종료 시각"):
+        select_operational_events_as_of(
+            OperationalEventIntervals(user_orders, empty_targets),
+            as_of_timestamp=start,
+        )
+
+
+def test_as_of_selection_keeps_open_interval_and_rejects_naive_cutoff() -> None:
+    start = pd.Timestamp("2026-01-01T00:00:00Z")
+    user_orders = pd.DataFrame(
+        {
+            "user_id": ["u1"],
+            "order_id": ["o1"],
+            "valid_from": [start],
+            "valid_until": [pd.NaT],
+        }
+    )
+    empty_targets = pd.DataFrame(
+        columns=[
+            "user_id",
+            "pet_id",
+            "product_group_id_snapshot",
+            "order_id",
+            "valid_from",
+            "valid_until",
+        ]
+    )
+    intervals = OperationalEventIntervals(user_orders, empty_targets)
+
+    selected = select_operational_events_as_of(
+        intervals, as_of_timestamp=pd.Timestamp("2027-01-01T00:00:00Z")
+    )
+    assert len(selected.user_orders) == 1
+    assert selected.pet_targets.empty
+    with pytest.raises(OperationalOrderError, match="시간대"):
+        select_operational_events_as_of(
+            intervals, as_of_timestamp=pd.Timestamp("2026-01-02")
+        )

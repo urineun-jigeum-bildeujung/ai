@@ -234,3 +234,48 @@ def build_operational_event_intervals(
     )
     pet_targets = _aggregate(pet_items, keys=target_keys, columns=pet_columns)
     return OperationalEventIntervals(user_orders=user_orders, pet_targets=pet_targets)
+
+
+def select_operational_events_as_of(
+    intervals: OperationalEventIntervals, *, as_of_timestamp: pd.Timestamp
+) -> OperationalEventIntervals:
+    """반열린 구간에서 한 시각에 유효한 주문·반려동물 사건만 고릅니다.
+
+    반환 행 수는 해당 시각의 사건 수입니다. 원본 구간 표는 수정하지 않습니다.
+    """
+    as_of = _utc(as_of_timestamp, column="as_of_timestamp")
+    selected: list[pd.DataFrame] = []
+    for name, frame, keys in (
+        ("user_orders", intervals.user_orders, ("user_id", "order_id")),
+        (
+            "pet_targets",
+            intervals.pet_targets,
+            ("user_id", "pet_id", "product_group_id_snapshot", "order_id"),
+        ),
+    ):
+        _require_columns(frame, (*keys, "valid_from", "valid_until"), name)
+        _require_keys(frame, keys, name)
+        starts = pd.to_datetime(
+            frame["valid_from"].map(
+                lambda value, name=name: _utc(value, column=f"{name}.valid_from")
+            ),
+            utc=True,
+        )
+        ends = pd.to_datetime(
+            frame["valid_until"].map(
+                lambda value, name=name: (
+                    pd.NaT
+                    if pd.isna(value)
+                    else _utc(value, column=f"{name}.valid_until")
+                )
+            ),
+            utc=True,
+        )
+        if (ends.notna() & ends.le(starts)).any():
+            raise OperationalOrderError(f"{name}의 종료 시각이 시작보다 늦지 않습니다.")
+        active = starts.le(as_of) & (ends.isna() | ends.gt(as_of))
+        rows = frame.loc[active].copy()
+        if rows.duplicated(subset=list(keys)).any():
+            raise OperationalOrderError(f"{name}에 기준 시각의 중복 사건이 있습니다.")
+        selected.append(rows.reset_index(drop=True))
+    return OperationalEventIntervals(user_orders=selected[0], pet_targets=selected[1])
