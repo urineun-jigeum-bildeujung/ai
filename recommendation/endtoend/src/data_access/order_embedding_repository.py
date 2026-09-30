@@ -41,8 +41,8 @@ def _fetch_purchased_product_ids_from_db(user_id: str) -> list:
                 """
                 SELECT oi.product_id
                 FROM order_items oi
-                JOIN orders o ON o.order_id = oi.order_id
-                WHERE o.user_id = %s
+                JOIN orders o ON o.id = oi.order_id
+                WHERE o.member_id = %s
                   AND o.order_status = ANY(%s)
                   AND (oi.quantity - oi.cancelled_quantity - oi.returned_quantity) >= 1
                 """,

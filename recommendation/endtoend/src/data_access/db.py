@@ -13,7 +13,8 @@ DB별로 별도 환경변수(MEMBER_DATABASE_URL 등)를 쓴다.
 """
 
 import os
-
+from dotenv import load_dotenv
+load_dotenv()
 
 def get_connection(env_var_name: str):
     import psycopg2
