@@ -23,7 +23,9 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 
 ## 현재 구현 Runtime
 
-현재 FastAPI 구현은 `scripts/api_nutrition.py`에 있으며, AWS Service DB 연결이나 AI result persistence는 아직 구현하지 않았다.
+2026-09-30 Service Repository 구현은 [v1 구현 및 검증](docs/service_repository_v1.md)을 따른다. DB URL과 Gateway 인증 구성이 갖춰진 경우 `by-service-id`가 실제 조회→기존 Engine으로 연결되며, 미설정 환경은 기존 503을 유지한다. 실제 AWS/dev 배포 및 E2E 완료는 아직 아니다. 아래 이전 준비 단계의 미구현 설명은 이 변경 범위에 한해 갱신된다.
+
+현재 FastAPI 구현은 `scripts/api_nutrition.py`에 있다. Service DB SELECT Repository와 인증 경계는 구현했으며 실제 AWS/dev 연결 검증 및 AI result persistence는 미완료다.
 
 - `GET /health`
 - `GET /ready` — 로컬 필수 artifact 점검. AWS source readiness를 의미하지 않음
@@ -34,7 +36,7 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 - `POST /api/nutrition/report`
 - `POST /api/nutrition/compare` — **Future / Not Implemented**, 현재 HTTP 501. 비교 기능은 현재 Runtime scope 밖이며 구현 완료 API가 아니다.
 
-`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`만 받는 준비용 경로다. 실제 source/auth 연결 전에는 503 `SERVICE_SOURCE_NOT_CONFIGURED`로 실패하며 로컬 seed를 대신 사용하지 않는다.
+`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`만 받는다. DB URL 미설정은 503 `SERVICE_SOURCE_NOT_CONFIGURED`, 내부 secret 미설정은 503 `SERVICE_AUTH_NOT_CONFIGURED`다. 구성이 있으면 Gateway 인증·SQL ownership 검증 후 실제 source를 조회하며 로컬 seed로 대체하지 않는다.
 
 2026-09-28 로컬 통합 준비 변경과 담당자별 요청은 [P0~P3 보고서](docs/service_integration_preparation_p0_p3.md)를 따른다. Safety 응답에 `safety_reason_codes`, `conflicting_allergens`, `safety_message`를 추가했으며 기존 판정과 상태축은 유지한다.
 
@@ -66,7 +68,7 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 
 - **Local Runtime HTTP E2E — VERIFIED**: `tests/test_runtime_e2e.py`가 FastAPI `TestClient`로 health, request-scoped 분석, safety fail-close, persisted local product 조회, unknown ID 404, non-food, determinism, runtime artifact 존재를 검증한다.
 - **Persisted Local Product E2E — VERIFIED**: 위 테스트의 `by-product-id` 경로는 repository에 포함된 로컬 artifact를 `product_input_adapter`로 읽어 Rule Engine까지 전달한다. 해당 fixture의 domain 결과가 `READY`라는 뜻은 아니다.
-- **AWS Service DB E2E — NOT IMPLEMENTED**: AWS Service DB 조회, AI Result Store, FE → AI → AWS DB → Result Store → FE 흐름은 아직 구현·검증되지 않았다.
+- **AWS Service DB E2E — NOT VERIFIED**: source 조회 구현은 connection mock으로 검증했다. 실제 Gateway/DB/FE E2E는 미검증이며 AI Result Store는 이번 v1.0 범위 밖이다.
 
 ## 실행과 검증
 
@@ -83,5 +85,5 @@ FE → Nutrition AI FastAPI → AWS Service DB (SELECT only)
 - `API/nutrition_request.json`, `API/nutrition_response.json`, `API/error_response.json`, `docs/nutrition_ai_api_spec_v3_draft.md`의 `/internal/v1/nutrition/*`는 **SUPERSEDED historical target contract**다.
 - `READY`는 현재 runtime의 최소 입력과 safety gate 충족 상태이며, 영양학적 완전성이나 임상적 적합성을 뜻하지 않는다.
 - `data/processed/baseline_manifest_v3.json`은 2026-09-04 historical reproduction manifest이며, 현재 Git branch/commit metadata가 아니다.
-- AWS Service DB schema, Pet/Product Repository, AI result persistence, 실제 AWS E2E는 후속 `feat/nutrition-service-db-integration` 범위다.
+- Pet/Product SELECT Repository는 구현했다. 실제 AWS/dev schema·연결 검증 및 Gateway/FE E2E는 남아 있고 AI result persistence는 이번 범위 밖이다.
 - Human Gold expansion, Functional Matrix, Scale Regression, Feeding Engine, Recommendation SafetyDecision integration은 별도 범위다.
