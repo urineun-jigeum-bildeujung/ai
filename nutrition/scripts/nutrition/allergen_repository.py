@@ -28,10 +28,12 @@ def identity(row):
     """Stable semantic ID; deliberately excludes run timestamps such as created_at."""
     return hashlib.sha256("|".join(_value(row, field) for field in EVIDENCE_IDENTITY_FIELDS).encode()).hexdigest()
 
-def connect(path=DB):
-    connection = sqlite3.connect(path)
+def connect(path=DB, *, readonly=False):
+    connection = (sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True)
+                  if readonly else sqlite3.connect(path))
     connection.row_factory = sqlite3.Row
-    connection.executescript(SCHEMA)
+    if not readonly:
+        connection.executescript(SCHEMA)
     return connection
 
 def _ref_values(row):
@@ -107,7 +109,7 @@ def get_refs(product_id, dictionary_version, pipeline_version, path=DB):
     """Return precomputed evidence only when parent lineage and serialization are valid."""
     connection = None
     try:
-        connection = connect(path)
+        connection = connect(path, readonly=True)
         rows = [dict(row) for row in connection.execute("select r.*, c.processing_status as parent_processing_status from product_allergen_refs r left join product_ingredient_components c on r.component_occurrence_id=c.component_occurrence_id where r.product_id=?", (product_id,))]
     except sqlite3.Error:
         return [], "LINEAGE_INTEGRITY_ERROR"

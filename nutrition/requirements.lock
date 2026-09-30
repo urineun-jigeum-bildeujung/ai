@@ -16,6 +16,7 @@ six==1.16.0
 tzdata==2024.1
 
 # SQL / SQLite
+psycopg2-binary==2.9.9
 # sqlite3 is part of the Python standard library; do not list it as a pip package.
 
 # HTTP (OPFF API cache 검증용, 실제 호출은 OPFF cache v1.json 사용)
