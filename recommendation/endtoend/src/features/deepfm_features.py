@@ -94,10 +94,19 @@ def build_pet_features(pet: dict) -> dict:
     sparse: 인덱스/카테고리 값 그대로 반환 (실제 모델단에서 임베딩 레이어가 처리)
     dense: 0~1 정규화된 수치 (bcs_norm, age_group_ordinal 포함 -- 순서 정보 명시)
     multi_hot: 알러지처럼 여러 값 가능한 필드 -> 0/1 벡터
+
+    [버그 수정 이력]
+    bcs가 Optional 필드임에도 안전 기본값 없이 직접 산술 연산(bcs_norm 계산)에 쓰여
+    값이 없으면(None) TypeError로 요청 자체가 실패하는 문제가 있었다
+    (2026-09-30 안전성 검증 테스트에서 발견). 값이 없으면 중간값(3)으로 안전 처리하도록 수정.
     """
     age_months = _calc_age_months(pet["birth_date"])
     age_group = _calc_age_group(pet["birth_date"])
     breed_size = _calc_breed_size(pet["weight"])
+
+    bcs = pet.get("bcs")
+    if bcs is None:
+        bcs = (BCS_MIN + BCS_MAX) / 2  # 값 없으면 중간값(3)으로 안전 처리 -- 에러 대신 중립값
 
     allergy_multi_hot = [1 if code in pet.get("allergy_codes", []) else 0 for code in ALLERGEN_VOCAB]
     concern_multi_hot = [1 if code in pet.get("concerns", []) else 0 for code in CONCERN_VOCAB]
@@ -109,14 +118,14 @@ def build_pet_features(pet: dict) -> dict:
             "sex": pet.get("sex"),
             "age_group": age_group,      # 카테고리 표현은 그대로 유지
             "breed_size": breed_size,
-            "bcs": pet["bcs"],            # 카테고리 표현은 그대로 유지 (1~5, ordinal sparse)
+            "bcs": bcs,                   # 카테고리 표현은 그대로 유지 (1~5, ordinal sparse)
         },
         "dense": {
             "age_months_norm": _normalize(age_months, 0, 180),  # 0~15세 가정
             "weight_norm": _normalize(pet["weight"], 0, 50),    # 0~50kg 가정
             "neutered": 1.0 if pet.get("neutered") else 0.0,
             # --- 순서 정보를 명시적으로 담은 신규 dense feature ---
-            "bcs_norm": _normalize(pet["bcs"], BCS_MIN, BCS_MAX),
+            "bcs_norm": _normalize(bcs, BCS_MIN, BCS_MAX),
             "age_group_ordinal": _ordinal_normalize(age_group, AGE_GROUP_VOCAB),
         },
         "multi_hot": {
@@ -234,8 +243,16 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
     target_age_group은 sparse(카테고리)로도 유지하되, 반려동물의 실제 생애주기와
     비교한 "적합도" 자체는 pet 정보가 함께 있어야 계산 가능하므로
     build_interaction_features()에서 age_fit_score로 별도 추가한다.
+
+    [버그 수정 이력]
+    price가 Optional 필드임에도 안전 기본값 없이 직접 산술 연산(price_norm 계산)에 쓰여
+    값이 없으면(None) TypeError로 요청 자체가 실패하는 문제가 있었다
+    (2026-09-30 안전성 검증 테스트에서 발견). 값이 없으면 중립값(0.5)으로 안전 처리하도록 수정.
     """
     aspect_dense = build_product_aspect_features(product_review_summary)
+
+    price = product.get("price")
+    price_norm = _normalize(price, 0, 100000) if price is not None else 0.5  # 가격 정보 없으면 중립값
 
     return {
         "sparse": {
@@ -249,7 +266,7 @@ def build_product_features(product: dict, product_review_summary: dict) -> dict:
             "allergen_flags": [1 if a in (product.get("allergen_flags") or []) else 0 for a in ALLERGEN_VOCAB],
         },
         "dense": {
-            "price_norm": _normalize(product["price"], 0, 100000),
+            "price_norm": price_norm,
             **aspect_dense,
         },
     }
