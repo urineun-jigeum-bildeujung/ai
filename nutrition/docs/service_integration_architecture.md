@@ -1,5 +1,14 @@
 # Nutrition 서비스 통합 아키텍처
 
+> **2026-09-30 v1.0 최신 상태**
+>
+> PR #141에서 Service DB SELECT Repository와 Gateway trust boundary를 구현했다. `member_db` / `product_db`는 SELECT only이며 Pet ownership은 SQL에서 `pet.id + member_id + deleted_at IS NULL`로 강제한다.
+> `POST /api/nutrition/analyze/by-service-id`는 더 이상 항상-503 stub이 아니다. source/auth 미구성 시 fail-close하고, 구성이 있으면 실제 Service DB source를 조회한다.
+> `/ready`는 local mode에서는 artifact readiness, service mode에서는 artifact + member_db + product_db + service auth/source readiness를 본다.
+> AI Result Table / upsert는 v1.0 필수 범위가 아니다. 실제 dev Secret/NetworkPolicy/Gateway route/Service DB row/FE E2E는 아직 미검증이다.
+> 아래의 상충하는 “Repository 미구현”, “항상 503”, “Result Store 필수” 설명은 historical record로 읽는다.
+
+
 2026-09-28 구현 상태: Service source의 순수 Canonical Adapter와 미연결 시 503으로 실패하는 identifier route를 준비했다. 실제 Repository/auth/result persistence/AWS E2E는 아직 없다. 아래는 목표 아키텍처와 기존 결정 기록이며 최신 구현·차단 상태는 [P0~P3 보고서](service_integration_preparation_p0_p3.md)를 따른다.
 
 ## 2026-09-21 Architecture Decision

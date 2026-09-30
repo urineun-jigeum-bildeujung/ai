@@ -1,5 +1,12 @@
 # P2 실제 서비스 데이터 검증 체크리스트
 
+> **2026-09-30 PR #141 갱신**
+>
+> Service DB Repository/auth/readiness 코드는 구현되었고 로컬 회귀는 **242 passed, 1 warning / compile 35 PASS / diff check PASS**다.
+> 이 수치는 actual Service DB validation이 아니다. 실제 product row/SKU coverage/Gateway HTTP E2E는 여전히 미실시이며 아래 운영 체크박스는 실제 dev 검증 전까지 체크하지 않는다.
+> operational Gold evidence는 0건이며 exact GTIN MATCHED 자체를 authoritative Gold 또는 운영 검증 완료로 표현하지 않는다.
+
+
 ## 적용 조건
 
 현재는 로컬 dump 및 내부 evidence 검증만 수행했다. 아래는 **향후 실제 Service Product 표본을 전달받은 뒤** 사용할 절차이며 운영 검증 완료 기록이 아니다. 실제 DB 접근 및 쓰기 승인이 아니다. 계수는 승인된 로컬 export로 먼저 계산하고 실제 인프라 작업은 별도 승인을 받는다.
@@ -59,7 +66,7 @@ Service SKU → Nutrition GTIN coverage: NOT MEASURABLE
 - [ ] intersection 없음 + 근거 부족 → SAFETY_DATA_INSUFFICIENT / excluded=true.
 - [ ] Safety blocker 없는 Nutrition-only 부족 → INSUFFICIENT_DATA / excluded=false.
 - [ ] 실제 source/auth 미구성 상태 → by-service-id 503 / SERVICE_SOURCE_NOT_CONFIGURED, local fallback 없음.
-- [ ] source/auth/result store 미연결이면 Actual Service DB validation / Actual E2E를 YES로 기록하지 않는다.
+- [ ] source/auth 또는 실제 dev 연결이 미완료이면 Actual Service DB validation / Actual E2E를 YES로 기록하지 않는다. Result Store는 v1.0 필수 범위가 아니다.
 
 ## 로컬 재현 및 실행 기록
 
