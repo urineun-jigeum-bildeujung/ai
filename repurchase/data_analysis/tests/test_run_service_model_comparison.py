@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
 from pandas.api.types import is_bool_dtype
 
 from scripts import run_service_model_comparison as runner
+from scripts.modeling.service_model_comparison import AFTRoundSelection
 from scripts.run_service_model_comparison import (
     _file_sha256,
     _read_sources,
@@ -166,6 +168,179 @@ def test_cli_rejects_invalid_time_cuts_before_reading_csv(
         runner.main()
 
     assert exc.value.code == 2
+
+
+@pytest.mark.parametrize(
+    ("candidates", "inner_ratio"),
+    [((5,), 0.8), ((0, 20), 0.8), ((5, 5), 0.8), ((5, 20), 1.0)],
+)
+def test_library_rejects_invalid_aft_selection_before_reading_csv(
+    candidates: tuple[int, ...], inner_ratio: float
+) -> None:
+    with pytest.raises(ValueError, match="AFT"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            aft_round_candidates=candidates,
+            inner_train_ratio=inner_ratio,
+        )
+
+
+def test_cli_rejects_invalid_aft_selection_before_reading_csv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arguments = ["run_service_model_comparison"]
+    for name in ("orders", "order-items", "pets", "histories", "claims", "claim-items"):
+        arguments.extend((f"--{name}", "/not-a-real-source.csv"))
+    arguments.extend(
+        (
+            "--observation-end-at",
+            "2026-09-29T15:44:00+09:00",
+            "--aft-round-candidates",
+            "5",
+            "5",
+        )
+    )
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    with pytest.raises(SystemExit) as exc:
+        runner.main()
+
+    assert exc.value.code == 2
+
+
+def test_inner_aft_selection_precedes_outer_validation_label_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """외부 Validation 라벨을 만들기 전에 내부 시점의 표본을 다시 생성합니다."""
+    first = pd.Timestamp("2024-01-01T00:00:00Z")
+    end = pd.Timestamp("2026-01-01T00:00:00Z")
+    sources = {
+        name: pd.DataFrame()
+        for name in (
+            "orders",
+            "order_items",
+            "pets",
+            "histories",
+            "claims",
+            "claim_items",
+        )
+    }
+    monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    for name in (
+        "build_order_status_intervals",
+        "build_order_item_quantity_intervals",
+        "build_valid_purchase_item_intervals",
+    ):
+        monkeypatch.setattr(runner, name, lambda *args: None)
+    monkeypatch.setattr(
+        runner,
+        "build_operational_event_intervals",
+        lambda *args: SimpleNamespace(
+            pet_targets=pd.DataFrame({"valid_from": [first]})
+        ),
+    )
+    cuts: list[tuple[pd.Timestamp, pd.Timestamp]] = []
+
+    def capture_split(*args: object, **kwargs: pd.Timestamp) -> object:
+        cuts.append((kwargs["train_end_at"], kwargs["validation_end_at"]))
+        return object()
+
+    class SelectionReached(Exception):
+        pass
+
+    def stop_at_selection(*args: object, **kwargs: object) -> None:
+        raise SelectionReached
+
+    monkeypatch.setattr(runner, "build_service_train_validation_split", capture_split)
+    monkeypatch.setattr(runner, "select_service_aft_boost_rounds", stop_at_selection)
+
+    with pytest.raises(SelectionReached):
+        runner.run_comparison(
+            {},
+            observation_end_at=end,
+            train_fraction=0.4,
+            validation_fraction=0.55,
+            aft_round_candidates=(5, 20),
+            inner_train_ratio=0.8,
+        )
+
+    outer_train_end = first + (end - first) * 0.4
+    assert cuts == [(first + (outer_train_end - first) * 0.8, outer_train_end)]
+
+
+def test_selected_rounds_reach_outer_training_and_fixed_path_stays_20(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """내부 선택값이 바깥 재학습에 전달되고 미선택 경로는 20회를 유지합니다."""
+    first = pd.Timestamp("2024-01-01T00:00:00Z")
+    end = pd.Timestamp("2026-01-01T00:00:00Z")
+    sources = {
+        name: pd.DataFrame()
+        for name in (
+            "orders",
+            "order_items",
+            "pets",
+            "histories",
+            "claims",
+            "claim_items",
+        )
+    }
+    monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    # 모델 실행 경로만 검증하므로 CI 설치 패키지의 메타데이터에 의존하지 않습니다.
+    monkeypatch.setattr(runner, "version", lambda package: "test-version")
+    for name in (
+        "build_order_status_intervals",
+        "build_order_item_quantity_intervals",
+        "build_valid_purchase_item_intervals",
+    ):
+        monkeypatch.setattr(runner, name, lambda *args: None)
+    monkeypatch.setattr(
+        runner,
+        "build_operational_event_intervals",
+        lambda *args: SimpleNamespace(
+            pet_targets=pd.DataFrame({"valid_from": [first]})
+        ),
+    )
+    validation = pd.DataFrame(
+        {"user_id": ["u1"], "target_id": ["g1"], "history_interval_count": [0]}
+    )
+    monkeypatch.setattr(
+        runner,
+        "build_service_train_validation_split",
+        lambda *args, **kwargs: SimpleNamespace(
+            train=pd.DataFrame({"user_id": ["u1"]}), validation=validation
+        ),
+    )
+    monkeypatch.setattr(
+        runner,
+        "select_service_aft_boost_rounds",
+        lambda *args, **kwargs: AFTRoundSelection(
+            selected_rounds=7,
+            candidates=pd.DataFrame([{"num_boost_round": 7, "ipcw_brier_score": 0.1}]),
+        ),
+    )
+    trained_rounds: list[int] = []
+
+    def record_outer_training(*args: object, **kwargs: object) -> SimpleNamespace:
+        trained_rounds.append(kwargs["aft_boost_rounds"])
+        return SimpleNamespace(
+            summary=pd.DataFrame([{"ipcw_c_index": 0.6}]),
+            calibration=pd.DataFrame(),
+            brier_attribution=pd.DataFrame(),
+            paired_bootstrap=SimpleNamespace(summary={}, trials=pd.DataFrame()),
+        )
+
+    monkeypatch.setattr(runner, "compare_service_aft_lightgbm", record_outer_training)
+
+    selected = runner.run_comparison(
+        {}, observation_end_at=end, aft_round_candidates=(5, 7)
+    )
+    fixed = runner.run_comparison({}, observation_end_at=end)
+
+    assert trained_rounds == [7, 20]
+    assert selected["aft_round_selection"]["selected_rounds"] == 7
+    assert "aft_round_selection" not in fixed
 
 
 def test_validation_population_counts_each_history_bucket_once() -> None:
