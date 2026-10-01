@@ -14,6 +14,7 @@ from scripts.run_service_model_comparison import (
     _file_sha256,
     _read_sources,
     _require_finite_c_index,
+    _summarize_validation_population,
 )
 
 
@@ -165,3 +166,37 @@ def test_cli_rejects_invalid_time_cuts_before_reading_csv(
         runner.main()
 
     assert exc.value.code == 2
+
+
+def test_validation_population_counts_each_history_bucket_once() -> None:
+    """구매 간격 0·1·2회 이상 표본 수가 전체 Validation과 일치합니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["u1", "u1", "u2", "u3"],
+            "target_id": ["p1", "p1", "p2", "p3"],
+            "history_interval_count": [0, 1, 2, 4],
+        }
+    )
+
+    assert _summarize_validation_population(rows) == {
+        "user_count": 3,
+        "product_group_count": 3,
+        "history_interval_count_0": 1,
+        "history_interval_count_1": 1,
+        "history_interval_count_2_or_more": 2,
+    }
+
+
+@pytest.mark.parametrize("invalid", [None, -1, 1.5, float("inf")])
+def test_validation_population_rejects_invalid_history_count(invalid: object) -> None:
+    """이력량 결측·음수·소수·무한대가 분포에서 조용히 빠지지 않습니다."""
+    rows = pd.DataFrame(
+        {
+            "user_id": ["u1"],
+            "target_id": ["p1"],
+            "history_interval_count": [invalid],
+        }
+    )
+
+    with pytest.raises(ValueError, match="과거 구매 간격 수"):
+        _summarize_validation_population(rows)

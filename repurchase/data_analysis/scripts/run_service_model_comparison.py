@@ -75,6 +75,31 @@ def _require_finite_c_index(summary: pd.DataFrame) -> None:
         raise ValueError("IPCW C-index가 유한하지 않아 비교 결과를 저장할 수 없습니다.")
 
 
+def _summarize_validation_population(rows: pd.DataFrame) -> dict[str, int]:
+    """모델 지표와 별도로 Validation 모집단의 규모·과거 이력량을 기록합니다."""
+    required = {"user_id", "target_id", "history_interval_count"}
+    missing = required - set(rows.columns)
+    if missing:
+        raise ValueError(f"Validation 모집단 키가 누락됐습니다: {sorted(missing)}")
+    if rows[["user_id", "target_id"]].isna().any().any():
+        raise ValueError("Validation 모집단 키에 결측값이 있습니다.")
+    intervals = rows["history_interval_count"]
+    values = pd.to_numeric(intervals, errors="coerce").to_numpy(dtype="float64")
+    if (
+        not np.isfinite(values).all()
+        or (values < 0).any()
+        or not np.equal(values, np.floor(values)).all()
+    ):
+        raise ValueError("Validation 과거 구매 간격 수는 0 이상의 정수여야 합니다.")
+    return {
+        "user_count": int(rows["user_id"].nunique()),
+        "product_group_count": int(rows["target_id"].nunique()),
+        "history_interval_count_0": int(intervals.eq(0).sum()),
+        "history_interval_count_1": int(intervals.eq(1).sum()),
+        "history_interval_count_2_or_more": int(intervals.ge(2).sum()),
+    }
+
+
 def run_comparison(
     paths: dict[str, Path],
     *,
@@ -134,7 +159,9 @@ def run_comparison(
         "train_end_at": train_end.isoformat(),
         "validation_end_at": validation_end.isoformat(),
         "test_evaluated": False,
+        "validation_population": _summarize_validation_population(split.validation),
         "summary": comparison.summary.to_dict(orient="records"),
+        "calibration": comparison.calibration.to_dict(orient="records"),
         "paired_bootstrap_summary": comparison.paired_bootstrap.summary,
         "paired_bootstrap_trials": comparison.paired_bootstrap.trials.to_dict(
             orient="records"
