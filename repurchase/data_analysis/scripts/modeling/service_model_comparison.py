@@ -42,6 +42,95 @@ class ServiceModelComparison:
     brier_attribution: pd.DataFrame
 
 
+@dataclass(frozen=True)
+class AFTRoundSelection:
+    """Train 내부 시간 구간에서만 선택한 AFT 반복 횟수와 후보 지표입니다."""
+
+    selected_rounds: int
+    candidates: pd.DataFrame
+
+
+def select_service_aft_boost_rounds(
+    inner_split: ServiceTemporalSplit,
+    *,
+    candidate_rounds: tuple[int, ...],
+    horizon_days: int = 30,
+) -> AFTRoundSelection:
+    """내부 Train으로 학습하고 내부 Validation IPCW Brier만으로 선택합니다.
+
+    두 표본의 생존 라벨은 각자의 종료 컷에서 생성돼 있어야 합니다. 동일 점수면
+    더 작은 반복 횟수를 선택하며, 바깥 Validation은 이 함수에 전달하지 않습니다.
+    """
+    if (
+        len(candidate_rounds) < 2
+        or any(type(value) is not int or value < 1 for value in candidate_rounds)
+        or len(set(candidate_rounds)) != len(candidate_rounds)
+    ):
+        raise OperationalOrderError(
+            "AFT 반복 횟수 후보는 서로 다른 양의 정수 2개 이상이어야 합니다."
+        )
+    if inner_split.train.empty or inner_split.validation.empty:
+        raise OperationalOrderError(
+            "AFT 내부 Train·Validation은 비어 있을 수 없습니다."
+        )
+    train_end = pd.Timestamp(inner_split.train["split_end_at"].iloc[0])
+    validation_end = pd.Timestamp(inner_split.validation["split_end_at"].iloc[0])
+    if (
+        train_end.tzinfo is None
+        or validation_end.tzinfo is None
+        or train_end >= validation_end
+        or not inner_split.train["split_end_at"].eq(train_end).all()
+        or not inner_split.validation["split_end_at"].eq(validation_end).all()
+        or inner_split.train["anchor_at"].gt(train_end).any()
+        or not inner_split.validation["anchor_at"].gt(train_end).all()
+        or inner_split.validation["anchor_at"].gt(validation_end).any()
+    ):
+        raise OperationalOrderError(
+            "AFT 내부 시간 분할의 종료 컷·앵커가 유효하지 않습니다."
+        )
+
+    train = _canonical_service_train_order(inner_split.train)
+    aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
+    weighted_validation = add_split_ipcw_weights(
+        inner_split.validation, horizon_days=horizon_days
+    )
+    results: list[dict[str, int | float]] = []
+    for rounds in sorted(candidate_rounds):
+        model = train_xgboost_aft_model(aft_train, num_boost_round=rounds)
+        prediction_input = build_xgboost_aft_prediction_data(
+            inner_split.validation, feature_columns=model.feature_columns
+        )
+        duration = predict_xgboost_aft_duration(model, prediction_input)
+        probability = calculate_xgboost_aft_event_probability(
+            model, duration, horizon_days=horizon_days
+        )
+        if not probability.index.equals(weighted_validation.index):
+            raise OperationalOrderError(
+                "AFT 내부 예측 행 순서가 Validation과 다릅니다."
+            )
+        evaluation = weighted_validation.copy()
+        evaluation["predicted_event_probability"] = probability
+        brier = evaluate_ipcw_brier_score(evaluation, reference_probability=0.5)
+        score = float(brier["ipcw_brier_score"])
+        if not np.isfinite(score):
+            raise OperationalOrderError("AFT 내부 Brier가 유한하지 않습니다.")
+        results.append(
+            {
+                "num_boost_round": rounds,
+                "ipcw_brier_score": score,
+                "validation_sample_count": int(brier["validation_sample_count"]),
+                "outcome_known_count": int(brier["outcome_known_count"]),
+            }
+        )
+    candidates = pd.DataFrame(results)
+    selected = min(
+        results, key=lambda row: (row["ipcw_brier_score"], row["num_boost_round"])
+    )
+    return AFTRoundSelection(
+        selected_rounds=int(selected["num_boost_round"]), candidates=candidates
+    )
+
+
 def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
     """같은 정답 확인 행의 Brier 차이를 이력량·상품군별로 분해합니다.
 
