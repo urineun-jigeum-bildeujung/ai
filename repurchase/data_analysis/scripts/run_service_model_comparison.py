@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 from importlib.metadata import version
 from pathlib import Path
@@ -79,6 +80,8 @@ def run_comparison(
     *,
     observation_end_at: pd.Timestamp,
     bootstrap_replicates: int = 1_000,
+    train_fraction: float = 0.70,
+    validation_fraction: float = 0.85,
 ) -> dict[str, object]:
     """원천 해시, 시간 컷과 평가 수치를 한 실행 결과로 묶습니다."""
     end = pd.Timestamp(observation_end_at)
@@ -86,6 +89,12 @@ def run_comparison(
         raise ValueError("관측 종료 시각은 timezone-aware 시각이어야 합니다.")
     if bootstrap_replicates < 1:
         raise ValueError("Bootstrap 반복 횟수는 1 이상이어야 합니다.")
+    if not (
+        math.isfinite(train_fraction)
+        and math.isfinite(validation_fraction)
+        and 0 < train_fraction < validation_fraction < 1
+    ):
+        raise ValueError("시간 컷 비율은 0 < Train < Validation < 1이어야 합니다.")
     sources = _read_sources(paths)
     orders = sources["orders"]
     items = sources["order_items"]
@@ -101,8 +110,8 @@ def run_comparison(
             "관측 종료 시각은 최초 유효 구매보다 늦은 timezone-aware 시각이어야 합니다."
         )
     span = end - first
-    train_end = first + span * 0.70
-    validation_end = first + span * 0.85
+    train_end = first + span * train_fraction
+    validation_end = first + span * validation_fraction
     split = build_service_train_validation_split(
         events, orders, train_end_at=train_end, validation_end_at=validation_end
     )
@@ -120,6 +129,8 @@ def run_comparison(
         },
         "feature_generation_version": TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
         "observation_end_at_assumption": end.isoformat(),
+        "train_fraction": train_fraction,
+        "validation_fraction": validation_fraction,
         "train_end_at": train_end.isoformat(),
         "validation_end_at": validation_end.isoformat(),
         "test_evaluated": False,
@@ -138,12 +149,20 @@ def main() -> None:
         parser.add_argument(f"--{name.replace('_', '-')}", required=True, type=Path)
     parser.add_argument("--observation-end-at", required=True, type=pd.Timestamp)
     parser.add_argument("--bootstrap-replicates", type=int, default=1_000)
+    parser.add_argument("--train-fraction", type=float, default=0.70)
+    parser.add_argument("--validation-fraction", type=float, default=0.85)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.observation_end_at.tzinfo is None:
         parser.error("--observation-end-at은 timezone-aware 시각이어야 합니다.")
     if args.bootstrap_replicates < 1:
         parser.error("--bootstrap-replicates는 1 이상이어야 합니다.")
+    if not (
+        math.isfinite(args.train_fraction)
+        and math.isfinite(args.validation_fraction)
+        and 0 < args.train_fraction < args.validation_fraction < 1
+    ):
+        parser.error("시간 컷 비율은 0 < Train < Validation < 1이어야 합니다.")
     paths = {
         name: getattr(args, name)
         for name in (
@@ -159,6 +178,8 @@ def main() -> None:
         paths,
         observation_end_at=args.observation_end_at,
         bootstrap_replicates=args.bootstrap_replicates,
+        train_fraction=args.train_fraction,
+        validation_fraction=args.validation_fraction,
     )
     rendered = json.dumps(
         result, ensure_ascii=False, indent=2, default=str, allow_nan=False
