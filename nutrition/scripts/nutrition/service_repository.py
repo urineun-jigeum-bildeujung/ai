@@ -129,4 +129,3 @@ def list_active_products():
                 if product_id in products:
                     products[product_id][field].append(value)
         return [products[product_id] for product_id in ids]
-
