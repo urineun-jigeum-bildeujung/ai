@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from .evaluation import (
@@ -38,6 +39,111 @@ class ServiceModelComparison:
     summary: pd.DataFrame
     calibration: pd.DataFrame
     paired_bootstrap: IPCWUserBootstrapResult
+    brier_attribution: pd.DataFrame
+
+
+def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
+    """같은 정답 확인 행의 Brier 차이를 이력량·상품군별로 분해합니다.
+
+    각 기여도의 분모는 Validation 정답 확인 행의 **전체 IPCW 가중치**입니다.
+    따라서 같은 축의 구간 기여도를 합하면 전체 AFT−LightGBM Brier와
+    일치합니다. 구간 자체의 평균 오차 차이와 혼동하지 않도록 둘 다 기록합니다.
+    """
+    required = {
+        "user_id",
+        "target_id",
+        "history_interval_count",
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    }
+    missing = required - set(rows.columns)
+    if missing:
+        raise OperationalOrderError(f"Brier 기여도 필수 컬럼 누락: {sorted(missing)}")
+    if rows[["user_id", "target_id"]].isna().any().any():
+        raise OperationalOrderError(
+            "Brier 기여도 사용자·상품군 키에 결측값이 있습니다."
+        )
+    count_values = pd.to_numeric(
+        rows["history_interval_count"], errors="coerce"
+    ).to_numpy(dtype="float64", na_value=np.nan)
+    if (
+        not np.isfinite(count_values).all()
+        or (count_values < 0).any()
+        or not np.equal(count_values, np.floor(count_values)).all()
+    ):
+        raise OperationalOrderError("과거 구매 간격 수는 0 이상의 정수여야 합니다.")
+
+    # 기존 평가 계약으로 두 확률·가중치·정답을 먼저 검증합니다.
+    for column in (
+        "reference_predicted_event_probability",
+        "candidate_predicted_event_probability",
+    ):
+        evaluation = rows.copy()
+        evaluation["predicted_event_probability"] = evaluation[column]
+        evaluate_ipcw_brier_score(evaluation, reference_probability=0.5)
+
+    known = rows.loc[rows["ipcw_outcome_known"]].copy()
+    actual = known["ipcw_event_within_horizon"].astype("float64")
+    weights = known["ipcw_weight"].astype("float64")
+    known["aft_weighted_error"] = (
+        known["reference_predicted_event_probability"].sub(actual).pow(2).mul(weights)
+    )
+    known["lightgbm_weighted_error"] = (
+        known["candidate_predicted_event_probability"].sub(actual).pow(2).mul(weights)
+    )
+    known["history_bucket"] = pd.cut(
+        known["history_interval_count"],
+        bins=[-0.5, 0.5, 1.5, float("inf")],
+        labels=["0", "1", "2+"],
+    )
+    known["product_group"] = known["target_id"].astype("string")
+    total_weight = float(weights.sum())
+    results: list[pd.DataFrame] = []
+    for segment_kind, column in (
+        ("history_interval_count", "history_bucket"),
+        ("product_group", "product_group"),
+    ):
+        grouped = (
+            known.groupby(column, observed=True, sort=True)
+            .agg(
+                outcome_known_count=(column, "size"),
+                user_count=("user_id", "nunique"),
+                ipcw_weight_sum=("ipcw_weight", "sum"),
+                aft_weighted_error_sum=("aft_weighted_error", "sum"),
+                lightgbm_weighted_error_sum=("lightgbm_weighted_error", "sum"),
+            )
+            .reset_index()
+            .rename(columns={column: "segment_value"})
+        )
+        grouped["segment_value"] = grouped["segment_value"].astype("string")
+        grouped.insert(0, "segment_kind", segment_kind)
+        grouped["ipcw_weight_share"] = grouped["ipcw_weight_sum"].div(total_weight)
+        error_difference = grouped["aft_weighted_error_sum"].sub(
+            grouped["lightgbm_weighted_error_sum"]
+        )
+        grouped["within_segment_brier_improvement"] = error_difference.div(
+            grouped["ipcw_weight_sum"]
+        )
+        grouped["global_brier_contribution"] = error_difference.div(total_weight)
+        results.append(grouped)
+
+    attribution = pd.concat(results, ignore_index=True)
+    global_improvement = float(
+        (known["aft_weighted_error"] - known["lightgbm_weighted_error"]).sum()
+        / total_weight
+    )
+    for segment_kind in ("history_interval_count", "product_group"):
+        contribution = float(
+            attribution.loc[
+                attribution["segment_kind"].eq(segment_kind),
+                "global_brier_contribution",
+            ].sum()
+        )
+        if not np.isclose(contribution, global_improvement, rtol=1e-10, atol=1e-12):
+            raise OperationalOrderError(
+                "구간별 Brier 기여도 합계가 전체 차이와 다릅니다."
+            )
+    return attribution
 
 
 def _canonical_service_train_order(rows: pd.DataFrame) -> pd.DataFrame:
@@ -202,8 +308,19 @@ def compare_service_aft_lightgbm(
         bootstrap_replicates=bootstrap_replicates,
         random_seed=bootstrap_random_seed,
     )
+    brier_attribution = summarize_service_brier_attribution(paired_rows)
+    point_improvement = paired_bootstrap.summary["point_brier_improvement"]
+    attribution_improvement = brier_attribution.loc[
+        brier_attribution["segment_kind"].eq("history_interval_count"),
+        "global_brier_contribution",
+    ].sum()
+    if not np.isclose(
+        attribution_improvement, point_improvement, rtol=1e-10, atol=1e-12
+    ):
+        raise OperationalOrderError("Brier 기여도와 사용자 쌍 비교 결과가 다릅니다.")
     return ServiceModelComparison(
         summary=pd.DataFrame(results),
         calibration=pd.concat(calibrations, ignore_index=True),
         paired_bootstrap=paired_bootstrap,
+        brier_attribution=brier_attribution,
     )
