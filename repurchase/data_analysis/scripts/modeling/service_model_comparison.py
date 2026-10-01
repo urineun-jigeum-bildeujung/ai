@@ -24,6 +24,7 @@ from .operational_aft_input import build_service_aft_training_rows
 from .operational_orders import OperationalOrderError
 from .operational_temporal_split import ServiceTemporalSplit
 from .xgboost_aft import (
+    XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
     calculate_xgboost_aft_event_probability,
@@ -50,6 +51,69 @@ class AFTRoundSelection:
     candidates: pd.DataFrame
 
 
+@dataclass(frozen=True)
+class AFTScaleSelection:
+    """Train 내부 시간 구간에서만 선택한 normal AFT scale과 후보 지표입니다."""
+
+    selected_scale: float
+    candidates: pd.DataFrame
+
+
+def select_service_aft_scale(
+    inner_split: ServiceTemporalSplit,
+    *,
+    candidate_scales: tuple[float, ...],
+    horizon_days: int = 30,
+) -> AFTScaleSelection:
+    """반복 20회를 고정하고 normal AFT의 scale만 내부 Brier로 선택합니다."""
+    if (
+        len(candidate_scales) < 2
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or value <= 0
+            for value in candidate_scales
+        )
+        or len(set(candidate_scales)) != len(candidate_scales)
+    ):
+        raise OperationalOrderError(
+            "AFT scale 후보는 서로 다른 양의 유한한 숫자 2개 이상이어야 합니다."
+        )
+    _validate_aft_inner_split(inner_split)
+    train = _canonical_service_train_order(inner_split.train)
+    aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
+    weighted_validation = add_split_ipcw_weights(
+        inner_split.validation, horizon_days=horizon_days
+    )
+    results: list[dict[str, int | float]] = []
+    for scale in sorted(float(value) for value in candidate_scales):
+        brier = _score_aft_inner_candidate(
+            aft_train,
+            inner_split.validation,
+            weighted_validation,
+            rounds=20,
+            scale=scale,
+            horizon_days=horizon_days,
+        )
+        results.append(
+            {
+                "loss_distribution_scale": scale,
+                "ipcw_brier_score": float(brier["ipcw_brier_score"]),
+                "validation_sample_count": int(brier["validation_sample_count"]),
+                "outcome_known_count": int(brier["outcome_known_count"]),
+            }
+        )
+    selected = min(
+        results,
+        key=lambda row: (row["ipcw_brier_score"], row["loss_distribution_scale"]),
+    )
+    return AFTScaleSelection(
+        selected_scale=float(selected["loss_distribution_scale"]),
+        candidates=pd.DataFrame(results),
+    )
+
+
 def select_service_aft_boost_rounds(
     inner_split: ServiceTemporalSplit,
     *,
@@ -69,6 +133,73 @@ def select_service_aft_boost_rounds(
         raise OperationalOrderError(
             "AFT 반복 횟수 후보는 서로 다른 양의 정수 2개 이상이어야 합니다."
         )
+    _validate_aft_inner_split(inner_split)
+
+    train = _canonical_service_train_order(inner_split.train)
+    aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
+    weighted_validation = add_split_ipcw_weights(
+        inner_split.validation, horizon_days=horizon_days
+    )
+    results: list[dict[str, int | float]] = []
+    for rounds in sorted(candidate_rounds):
+        brier = _score_aft_inner_candidate(
+            aft_train,
+            inner_split.validation,
+            weighted_validation,
+            rounds=rounds,
+            scale=1.0,
+            horizon_days=horizon_days,
+        )
+        results.append(
+            {
+                "num_boost_round": rounds,
+                "ipcw_brier_score": float(brier["ipcw_brier_score"]),
+                "validation_sample_count": int(brier["validation_sample_count"]),
+                "outcome_known_count": int(brier["outcome_known_count"]),
+            }
+        )
+    candidates = pd.DataFrame(results)
+    selected = min(
+        results, key=lambda row: (row["ipcw_brier_score"], row["num_boost_round"])
+    )
+    return AFTRoundSelection(
+        selected_rounds=int(selected["num_boost_round"]), candidates=candidates
+    )
+
+
+def _score_aft_inner_candidate(
+    aft_train: XGBoostAFTTrainingData,
+    validation: pd.DataFrame,
+    weighted_validation: pd.DataFrame,
+    *,
+    rounds: int,
+    scale: float,
+    horizon_days: int,
+) -> dict[str, int | float]:
+    """같은 내부 평가행·IPCW 가중치로 한 설정의 Brier를 계산합니다."""
+    # scale은 학습 손실과 예측 CDF 모두에 쓰이므로 후보마다 재학습합니다.
+    model = train_xgboost_aft_model(
+        aft_train, loss_distribution_scale=scale, num_boost_round=rounds
+    )
+    prediction_input = build_xgboost_aft_prediction_data(
+        validation, feature_columns=model.feature_columns
+    )
+    duration = predict_xgboost_aft_duration(model, prediction_input)
+    probability = calculate_xgboost_aft_event_probability(
+        model, duration, horizon_days=horizon_days
+    )
+    if not probability.index.equals(weighted_validation.index):
+        raise OperationalOrderError("AFT 내부 예측 행 순서가 Validation과 다릅니다.")
+    evaluation = weighted_validation.copy()
+    evaluation["predicted_event_probability"] = probability
+    brier = evaluate_ipcw_brier_score(evaluation, reference_probability=0.5)
+    if not np.isfinite(float(brier["ipcw_brier_score"])):
+        raise OperationalOrderError("AFT 내부 Brier가 유한하지 않습니다.")
+    return brier
+
+
+def _validate_aft_inner_split(inner_split: ServiceTemporalSplit) -> None:
+    """내부 모델 선택 전에 시간 컷과 앵커가 겹치지 않는지 검사합니다."""
     if inner_split.train.empty or inner_split.validation.empty:
         raise OperationalOrderError(
             "AFT 내부 Train·Validation은 비어 있을 수 없습니다."
@@ -88,47 +219,6 @@ def select_service_aft_boost_rounds(
         raise OperationalOrderError(
             "AFT 내부 시간 분할의 종료 컷·앵커가 유효하지 않습니다."
         )
-
-    train = _canonical_service_train_order(inner_split.train)
-    aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
-    weighted_validation = add_split_ipcw_weights(
-        inner_split.validation, horizon_days=horizon_days
-    )
-    results: list[dict[str, int | float]] = []
-    for rounds in sorted(candidate_rounds):
-        model = train_xgboost_aft_model(aft_train, num_boost_round=rounds)
-        prediction_input = build_xgboost_aft_prediction_data(
-            inner_split.validation, feature_columns=model.feature_columns
-        )
-        duration = predict_xgboost_aft_duration(model, prediction_input)
-        probability = calculate_xgboost_aft_event_probability(
-            model, duration, horizon_days=horizon_days
-        )
-        if not probability.index.equals(weighted_validation.index):
-            raise OperationalOrderError(
-                "AFT 내부 예측 행 순서가 Validation과 다릅니다."
-            )
-        evaluation = weighted_validation.copy()
-        evaluation["predicted_event_probability"] = probability
-        brier = evaluate_ipcw_brier_score(evaluation, reference_probability=0.5)
-        score = float(brier["ipcw_brier_score"])
-        if not np.isfinite(score):
-            raise OperationalOrderError("AFT 내부 Brier가 유한하지 않습니다.")
-        results.append(
-            {
-                "num_boost_round": rounds,
-                "ipcw_brier_score": score,
-                "validation_sample_count": int(brier["validation_sample_count"]),
-                "outcome_known_count": int(brier["outcome_known_count"]),
-            }
-        )
-    candidates = pd.DataFrame(results)
-    selected = min(
-        results, key=lambda row: (row["ipcw_brier_score"], row["num_boost_round"])
-    )
-    return AFTRoundSelection(
-        selected_rounds=int(selected["num_boost_round"]), candidates=candidates
-    )
 
 
 def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
@@ -313,6 +403,7 @@ def compare_service_aft_lightgbm(
     *,
     horizon_days: int = 30,
     aft_boost_rounds: int = 20,
+    aft_loss_distribution_scale: float = 1.0,
     calibration_bin_count: int = 10,
     bootstrap_replicates: int = 1_000,
     bootstrap_random_seed: int = 42,
@@ -344,7 +435,11 @@ def compare_service_aft_lightgbm(
     )
 
     aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
-    aft_model = train_xgboost_aft_model(aft_train, num_boost_round=aft_boost_rounds)
+    aft_model = train_xgboost_aft_model(
+        aft_train,
+        loss_distribution_scale=aft_loss_distribution_scale,
+        num_boost_round=aft_boost_rounds,
+    )
     aft_prediction_input = build_xgboost_aft_prediction_data(
         split.validation, feature_columns=aft_model.feature_columns
     )
