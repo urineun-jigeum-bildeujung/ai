@@ -15,6 +15,7 @@ from allergen_repository import get_refs
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION
 from gtin_validation import is_valid_gtin
 from product_input_adapter import RAW, _canonical_gtin_from_product_id, load_product_input
+from mock_integration_fixture import build_mock_fixture
 
 
 class ServiceInputError(ValueError):
@@ -130,7 +131,9 @@ def adapt_product(source, *, index=None):
     species = {("DOG",): "dog", ("CAT",): "cat", ("CAT", "DOG"): "both"}.get(tuple(species_codes))
     ingredient_codes = _codes(source.get("ingredient_codes"))
     flags = _codes(source.get("allergen_flags"))
-    bridge = bridge_sku(source.get("sku"), local_identity_index() if index is None else index)
+    mock_fixture = build_mock_fixture(source)
+    bridge = (mock_fixture["identifier"] if mock_fixture is not None
+              else bridge_sku(source.get("sku"), local_identity_index() if index is None else index))
     product = {
         "id": product_id, "name": source.get("product_name") or product_id,
         "category": category, "target_species": species,
@@ -146,8 +149,22 @@ def adapt_product(source, *, index=None):
     }
     provenance = {"identity_bridge": bridge, "nutrition_source": None,
                   "operating_identity_verified": False,
+                  "integration_identity_verified": False,
                   "service_target_age_group": source.get("target_age_group"),
                   "aafco_life_stage_evidence_status": "UNKNOWN"}
+    if mock_fixture is not None:
+        # Integration fixtures are a separate evidence namespace.  They never
+        # enter ``load_product_input`` and never masquerade as GTIN evidence.
+        product["nutrition_items"] = mock_fixture["nutrition_items"]
+        product["aafco_life_stage"] = mock_fixture["aafco_life_stage"]
+        provenance["nutrition_source"] = mock_fixture["nutrition_source"]
+        provenance["integration_identity_verified"] = True
+        provenance["fixture_status"] = mock_fixture["fixture_status"]
+        provenance["fixture_profile"] = mock_fixture["fixture_profile"]
+        provenance["aafco_life_stage_evidence_status"] = (
+            "MOCK_INTEGRATION_FIXTURE" if mock_fixture["aafco_life_stage"] else "UNKNOWN"
+        )
+        return {"product": product, "provenance": provenance}
     if bridge["status"] == "MATCHED":
         evidence_id = bridge["matches"][0]["product_id"]
         loaded = load_product_input(evidence_id)  # 기존 Gold gate도 이 경로에서 재검증한다.

@@ -1,0 +1,100 @@
+{
+  "fixture_version": "mock_nutrition_fixture_v1",
+  "source_type": "MOCK_INTEGRATION_FIXTURE",
+  "generation_rule_version": "deterministic_profile_assignment_v1",
+  "scope": "BE Service DB integration products only; not manufacturer evidence and not a real-product crosswalk",
+  "profiles": {
+    "DOG_ADULT_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 26.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 14.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.10, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 0.90, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "DOG_GROWTH_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 30.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 18.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.30, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.00, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "DOG_ADULT_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 35.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 18.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.20, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 0.95, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "DOG_GROWTH_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 38.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 20.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.40, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.05, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "CAT_ADULT_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 32.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 16.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.20, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.00, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.20, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "CAT_GROWTH_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 35.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 18.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.30, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.10, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.25, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "CAT_ADULT_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 40.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 20.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.20, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.00, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.25, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "CAT_GROWTH_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 42.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 22.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.40, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.10, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.30, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "BOTH_ADULT_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 32.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 16.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.20, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.00, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.20, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "BOTH_GROWTH_DRY": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 35.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 18.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 10.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.30, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.10, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.25, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "BOTH_ADULT_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 40.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 20.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.20, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.00, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.25, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ],
+    "BOTH_GROWTH_WET": [
+      {"nutrient_code": "CRUDE_PROTEIN", "value": 42.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "CRUDE_FAT", "value": 22.0, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "MOISTURE", "value": 78.0, "unit": "PERCENT", "basis": "AS_FED"},
+      {"nutrient_code": "CALCIUM", "value": 1.40, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "PHOSPHORUS", "value": 1.10, "unit": "PERCENT", "basis": "DRY_MATTER"},
+      {"nutrient_code": "TAURINE", "value": 0.30, "unit": "PERCENT", "basis": "DRY_MATTER"}
+    ]
+  }
+}
