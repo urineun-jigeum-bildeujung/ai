@@ -17,6 +17,20 @@ class ServiceTemporalSplit:
     validation: pd.DataFrame
 
 
+def _attach_evaluation_contract(
+    rows: pd.DataFrame, *, split_name: str, split_end_at: pd.Timestamp
+) -> pd.DataFrame:
+    """기존 생존·IPCW 평가기에 필요한 종료 컷 열을 서비스 라벨에서 만듭니다."""
+    result = rows.copy()
+    result["split"] = split_name
+    result["split_end_at"] = split_end_at
+    result["outcome_available_by_split_end"] = result["event_observed"]
+    result["target_duration_days"] = result["duration_days"].where(
+        result["event_observed"]
+    )
+    return result
+
+
 def build_service_train_validation_split(
     event_intervals: OperationalEventIntervals,
     orders: pd.DataFrame,
@@ -56,4 +70,11 @@ def build_service_train_validation_split(
         or validation["anchor_at"].gt(validation_end).any()
     ):
         raise OperationalOrderError("시간 분할 범위를 벗어난 앵커가 있습니다.")
-    return ServiceTemporalSplit(train=train, validation=validation)
+    return ServiceTemporalSplit(
+        train=_attach_evaluation_contract(
+            train, split_name="train", split_end_at=train_end
+        ),
+        validation=_attach_evaluation_contract(
+            validation, split_name="validation", split_end_at=validation_end
+        ),
+    )
