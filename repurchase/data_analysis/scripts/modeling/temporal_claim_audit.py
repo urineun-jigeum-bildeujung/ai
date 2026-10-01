@@ -34,9 +34,14 @@ def audit_removed_pet_history_at_anchors(
         (
             order_items,
             (
-                "order_item_id", "order_id", "product_group_id_snapshot",
-                "pet_id", "is_replenishable_snapshot", "quantity",
-                "cancelled_quantity", "returned_quantity",
+                "order_item_id",
+                "order_id",
+                "product_group_id_snapshot",
+                "pet_id",
+                "is_replenishable_snapshot",
+                "quantity",
+                "cancelled_quantity",
+                "returned_quantity",
             ),
             "order_items",
         ),
@@ -51,10 +56,9 @@ def audit_removed_pet_history_at_anchors(
     removed = order_items.loc[
         order_items["pet_id"].notna()
         & order_items["is_replenishable_snapshot"].eq(True)
-        & (
-            order_items["cancelled_quantity"]
-            + order_items["returned_quantity"]
-        ).eq(order_items["quantity"])
+        & (order_items["cancelled_quantity"] + order_items["returned_quantity"]).eq(
+            order_items["quantity"]
+        )
     ]
     candidates = claim_items.merge(
         finished[["claim_id", "completed_at"]], on="claim_id", how="inner"
@@ -68,7 +72,9 @@ def audit_removed_pet_history_at_anchors(
         }
     candidates = candidates.merge(
         orders[["order_id", "user_id", "paid_at"]],
-        on="order_id", how="left", validate="many_to_one"
+        on="order_id",
+        how="left",
+        validate="many_to_one",
     ).rename(
         columns={
             "order_id": "claimed_order_id",
@@ -82,9 +88,7 @@ def audit_removed_pet_history_at_anchors(
     if candidates["completed_at"].le(candidates["paid_at"]).any():
         raise OperationalOrderError("클레임 완료가 결제 시각보다 빠릅니다.")
 
-    anchors = samples.loc[
-        :, ["user_id", "pet_id", "target_id", "anchor_at"]
-    ].copy()
+    anchors = samples.loc[:, ["user_id", "pet_id", "target_id", "anchor_at"]].copy()
     anchors["sample_key"] = anchors.index
     anchors["anchor_at"] = anchors["anchor_at"].map(
         lambda value: _utc(value, column="anchor_at")
@@ -92,8 +96,12 @@ def audit_removed_pet_history_at_anchors(
     matches = anchors.merge(
         candidates[
             [
-                "user_id", "pet_id", "target_id", "claimed_order_id",
-                "paid_at", "completed_at",
+                "user_id",
+                "pet_id",
+                "target_id",
+                "claimed_order_id",
+                "paid_at",
+                "completed_at",
             ]
         ],
         on=["user_id", "pet_id", "target_id"],
@@ -102,19 +110,24 @@ def audit_removed_pet_history_at_anchors(
         matches["anchor_at"].gt(matches["paid_at"])
         & matches["anchor_at"].lt(matches["completed_at"])
     ]
-    existing = current_pet_events.loc[
-        :, ["user_id", "pet_id", "target_id", "order_id"]
-    ].rename(columns={"order_id": "claimed_order_id"}).drop_duplicates()
+    existing = (
+        current_pet_events.loc[:, ["user_id", "pet_id", "target_id", "order_id"]]
+        .rename(columns={"order_id": "claimed_order_id"})
+        .drop_duplicates()
+    )
     matches = matches.merge(
         existing.assign(still_exists=True),
         on=["user_id", "pet_id", "target_id", "claimed_order_id"],
-        how="left", validate="many_to_one",
+        how="left",
+        validate="many_to_one",
     )
     affected = int(matches.loc[matches["still_exists"].isna(), "sample_key"].nunique())
     return {
         "sample_count": len(samples),
         "potentially_affected_anchor_count": affected,
-        "potentially_affected_anchor_rate": affected / len(samples) if len(samples) else 0.0,
+        "potentially_affected_anchor_rate": affected / len(samples)
+        if len(samples)
+        else 0.0,
     }
 
 
@@ -187,5 +200,7 @@ def audit_removed_user_orders_at_anchors(
     return {
         "sample_count": len(samples),
         "potentially_affected_anchor_count": affected,
-        "potentially_affected_anchor_rate": affected / len(samples) if len(samples) else 0.0,
+        "potentially_affected_anchor_rate": affected / len(samples)
+        if len(samples)
+        else 0.0,
     }

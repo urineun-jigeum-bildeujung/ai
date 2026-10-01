@@ -48,13 +48,12 @@ def build_service_train_validation_split(
     validation_cut = build_temporal_service_training_samples(
         event_intervals, orders, observation_end_at=validation_end
     )
-    validation = validation_cut.loc[
-        validation_cut["anchor_at"].gt(train_end)
-    ].copy()
+    validation = validation_cut.loc[validation_cut["anchor_at"].gt(train_end)].copy()
     if train.empty or validation.empty:
         raise OperationalOrderError("Train 또는 Validation 예측 표본이 비어 있습니다.")
-    if train["anchor_at"].gt(train_end).any() or validation["anchor_at"].gt(
-        validation_end
-    ).any():
+    if (
+        train["anchor_at"].gt(train_end).any()
+        or validation["anchor_at"].gt(validation_end).any()
+    ):
         raise OperationalOrderError("시간 분할 범위를 벗어난 앵커가 있습니다.")
     return ServiceTemporalSplit(train=train, validation=validation)
