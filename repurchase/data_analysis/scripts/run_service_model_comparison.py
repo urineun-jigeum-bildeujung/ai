@@ -9,6 +9,7 @@ import sys
 from importlib.metadata import version
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from scripts.modeling.operational_event_intervals import (
@@ -31,6 +32,7 @@ from scripts.modeling.service_model_comparison import compare_service_aft_lightg
 
 
 def _file_sha256(path: Path) -> str:
+    """추출 파일을 변경하지 않고 원본 바이트의 SHA-256을 계산합니다."""
     digest = hashlib.sha256()
     with path.open("rb") as source:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
@@ -65,6 +67,13 @@ def _read_sources(paths: dict[str, Path]) -> dict[str, pd.DataFrame]:
     }
 
 
+def _require_finite_c_index(summary: pd.DataFrame) -> None:
+    """계산 불능 C-index를 정상 JSON 결과처럼 저장하지 않습니다."""
+    scores = pd.to_numeric(summary["ipcw_c_index"], errors="coerce")
+    if not np.isfinite(scores.to_numpy(dtype="float64")).all():
+        raise ValueError("IPCW C-index가 유한하지 않아 비교 결과를 저장할 수 없습니다.")
+
+
 def run_comparison(
     paths: dict[str, Path],
     *,
@@ -72,6 +81,11 @@ def run_comparison(
     bootstrap_replicates: int = 1_000,
 ) -> dict[str, object]:
     """원천 해시, 시간 컷과 평가 수치를 한 실행 결과로 묶습니다."""
+    end = pd.Timestamp(observation_end_at)
+    if end.tzinfo is None:
+        raise ValueError("관측 종료 시각은 timezone-aware 시각이어야 합니다.")
+    if bootstrap_replicates < 1:
+        raise ValueError("Bootstrap 반복 횟수는 1 이상이어야 합니다.")
     sources = _read_sources(paths)
     orders = sources["orders"]
     items = sources["order_items"]
@@ -82,8 +96,7 @@ def run_comparison(
     valid = build_valid_purchase_item_intervals(status, quantity)
     events = build_operational_event_intervals(valid, orders, items, sources["pets"])
     first = events.pet_targets["valid_from"].min()
-    end = pd.Timestamp(observation_end_at)
-    if pd.isna(first) or end.tzinfo is None or end <= first:
+    if pd.isna(first) or end <= first:
         raise ValueError(
             "관측 종료 시각은 최초 유효 구매보다 늦은 timezone-aware 시각이어야 합니다."
         )
@@ -96,6 +109,7 @@ def run_comparison(
     comparison = compare_service_aft_lightgbm(
         split, bootstrap_replicates=bootstrap_replicates
     )
+    _require_finite_c_index(comparison.summary)
     return {
         "source_sha256": {name: _file_sha256(path) for name, path in paths.items()},
         "runtime_versions": {
@@ -118,6 +132,7 @@ def run_comparison(
 
 
 def main() -> None:
+    """잘못된 실행 설정을 CSV 조회나 모델 학습 전에 거절합니다."""
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("orders", "order_items", "pets", "histories", "claims", "claim_items"):
         parser.add_argument(f"--{name.replace('_', '-')}", required=True, type=Path)
@@ -125,6 +140,10 @@ def main() -> None:
     parser.add_argument("--bootstrap-replicates", type=int, default=1_000)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.observation_end_at.tzinfo is None:
+        parser.error("--observation-end-at은 timezone-aware 시각이어야 합니다.")
+    if args.bootstrap_replicates < 1:
+        parser.error("--bootstrap-replicates는 1 이상이어야 합니다.")
     paths = {
         name: getattr(args, name)
         for name in (
@@ -141,7 +160,9 @@ def main() -> None:
         observation_end_at=args.observation_end_at,
         bootstrap_replicates=args.bootstrap_replicates,
     )
-    rendered = json.dumps(result, ensure_ascii=False, indent=2, default=str)
+    rendered = json.dumps(
+        result, ensure_ascii=False, indent=2, default=str, allow_nan=False
+    )
     if args.output is None:
         print(rendered)
     else:
@@ -153,6 +174,7 @@ def main() -> None:
                     "paired_bootstrap_summary": result["paired_bootstrap_summary"],
                 },
                 ensure_ascii=False,
+                allow_nan=False,
             )
         )
 
