@@ -287,6 +287,8 @@ def test_selected_rounds_reach_outer_training_and_fixed_path_stays_20(
         )
     }
     monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    # 모델 실행 경로만 검증하므로 CI 설치 패키지의 메타데이터에 의존하지 않습니다.
+    monkeypatch.setattr(runner, "version", lambda package: "test-version")
     for name in (
         "build_order_status_intervals",
         "build_order_item_quantity_intervals",
