@@ -25,4 +25,9 @@ ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
+# models/deepfm/ (feature_encoder.json, model_config.json, deepfm_model.pt)은
+# 학습 산출물이라 이미지에 COPY하지 않는다. 대신 MODEL_S3_BUCKET/MODEL_S3_PREFIX를
+# 런타임 환경변수로 주입하면 컨테이너 기동(첫 모델 로드 시점)에
+# src/api/main.py가 scripts/download_model_from_s3.py를 통해 S3에서 내려받는다.
+# (로컬 개발 등 S3 설정이 없는 경우엔 기존처럼 볼륨 마운트/수동 복사로 models/deepfm/를 채워도 된다.)
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
