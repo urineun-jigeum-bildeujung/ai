@@ -28,3 +28,6 @@ uvicorn[standard]==0.30.6
 # 실제 DB(PostgreSQL) 연동
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
+
+# 모델 아티팩트 S3 다운로드 (기동 시 models/deepfm/ 받아오기)
+boto3==1.34.162
