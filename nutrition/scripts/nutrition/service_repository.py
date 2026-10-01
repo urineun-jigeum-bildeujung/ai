@@ -100,3 +100,32 @@ def probe(env_key):
         return {"required": True, "status": "UP"}
     except ServiceUnavailable:
         return {"required": True, "status": "DOWN"}
+
+def list_active_products():
+    """Read the active Service integration product master without mutating DB."""
+    with _cursor("PRODUCT_DATABASE_URL") as cursor:
+        cursor.execute(
+            "SELECT id, sku, product_name, category_code, subcategory_code, target_age_group "
+            "FROM public.products WHERE is_active = TRUE ORDER BY id"
+        )
+        base_rows = cursor.fetchall()
+        if not base_rows:
+            return []
+        products = {
+            row[0]: dict(zip(
+                ("id", "sku", "product_name", "category_code", "subcategory_code", "target_age_group"),
+                row,
+            ), target_species=[], allergen_flags=[], ingredient_codes=[])
+            for row in base_rows
+        }
+        ids = list(products)
+        for field, query in (
+            ("target_species", "SELECT product_id, species FROM public.product_target_species WHERE product_id = ANY(%s) ORDER BY product_id, species"),
+            ("allergen_flags", "SELECT product_id, allergen_code FROM public.product_allergens WHERE product_id = ANY(%s) ORDER BY product_id, allergen_code"),
+            ("ingredient_codes", "SELECT product_id, ingredient_code FROM public.product_ingredients WHERE product_id = ANY(%s) ORDER BY product_id, sort_order"),
+        ):
+            cursor.execute(query, (ids,))
+            for product_id, value in cursor.fetchall():
+                if product_id in products:
+                    products[product_id][field].append(value)
+        return [products[product_id] for product_id in ids]

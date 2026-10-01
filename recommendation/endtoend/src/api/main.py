@@ -28,6 +28,12 @@ BE/FE와 확정한 사항:
 id 타입 주의 (프론트 연동 시 중요): pet_id/product_id는 실제 DB에서 bigint라
 정수(int)로 주고받는다. (예전 버전은 str이었음.)
 
+[모델 아티팩트] models/deepfm/ (feature_encoder.json, model_config.json, deepfm_model.pt)은
+Git에 올리지 않는다 (.gitignore 대상). 배포 환경에서는 이미지에도 포함하지 않고,
+MODEL_S3_BUCKET/MODEL_S3_PREFIX를 환경변수로 주입하면 첫 모델 로드 시점에
+S3에서 자동으로 내려받는다 (scripts/download_model_from_s3.py). 로컬 개발처럼
+이 두 환경변수가 없으면 기존처럼 로컬 models/deepfm/에 파일이 이미 있다고 가정한다.
+
 실행 (로컬):
     kubectl --context petflow-dev -n database port-forward svc/petflow-db-rw 15432:5432
     USE_DUMMY_DATA=false uvicorn src.api.main:app --reload --port 8000
@@ -73,8 +79,32 @@ CATEGORY_QUERY_TO_CODE = {
 _state = {"encoder": None, "model": None}
 
 
+def _ensure_model_downloaded():
+    """
+    DEEPFM_MODEL_DIR에 모델 파일이 없으면 S3에서 받아온다.
+    Docker 이미지에 모델을 COPY하지 않는 배포(S3 + 기동 시 다운로드 방식)를 전제로 하며,
+    이미지에 모델이 이미 포함되어 있거나 로컬에서 직접 올려둔 경우에는 아무 동작도 하지 않는다.
+    MODEL_S3_BUCKET이 설정되지 않은 환경(로컬 개발 등)에서는 그대로 건너뛴다.
+    """
+    required_files = ["feature_encoder.json", "model_config.json", "deepfm_model.pt"]
+    if all(os.path.exists(os.path.join(DEEPFM_MODEL_DIR, f)) for f in required_files):
+        return
+
+    bucket = os.environ.get("MODEL_S3_BUCKET")
+    prefix = os.environ.get("MODEL_S3_PREFIX")
+    if not bucket or not prefix:
+        # 로컬 개발 등 S3 설정이 없는 환경은 기존 방식(이미지/볼륨에 이미 모델이 있다고 가정)을 그대로 따른다.
+        return
+
+    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "scripts"))
+    from download_model_from_s3 import download_model
+
+    download_model(bucket=bucket, prefix=prefix, dest_dir=DEEPFM_MODEL_DIR)
+
+
 def _get_model():
     if _state["encoder"] is None or _state["model"] is None:
+        _ensure_model_downloaded()
         _state["encoder"], _state["model"] = load_deepfm(DEEPFM_MODEL_DIR)
     return _state["encoder"], _state["model"]
 

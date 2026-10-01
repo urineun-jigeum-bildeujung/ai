@@ -44,6 +44,7 @@ from allergen_repository import get_refs  # type: ignore  # noqa: E402
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION  # type: ignore  # noqa: E402
 from product_input_adapter import load_product_input  # type: ignore  # noqa: E402
 from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety, ServiceInputError  # noqa: E402
+from mock_integration_fixture import probe_fixture  # noqa: E402
 import service_repository  # noqa: E402
 from nutrition_readiness import (  # type: ignore  # noqa: E402
     evaluate_nutrition_coverage,
@@ -299,6 +300,13 @@ def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str,
     """ownership 확인을 마친 source에만 사용할 내부 경계. HTTP 인증을 대신하지 않는다."""
     pet = adapt_pet(pet_source)
     loaded = adapt_product(product_source)
+    source_meta = loaded.get("provenance", {}).get("nutrition_source") or {}
+    if source_meta.get("type") == "MOCK_INTEGRATION_FIXTURE" and pet.get("life_stage") == "UNKNOWN":
+        # Integration fixture only: expose the already-existing AGE_RULE in the
+        # shared Rule Engine.  No life-stage value is invented, and the strict
+        # production evidence path keeps its previous behavior.
+        pet["life_stage"] = None
+        loaded["provenance"]["pet_reference_stage_source"] = "AGE_RULE_ELIGIBLE"
     product = loaded["product"]
     req = AnalyzeRequest(pet=PetIn(**pet), product=ProductIn(**product))
     result = _analyze_product(req, source_safety=evaluate_service_safety(pet, product))
@@ -369,6 +377,7 @@ def ready() -> JSONResponse:
         dependencies["product_db"] = service_repository.probe("PRODUCT_DATABASE_URL")
         dependencies["service_auth"] = {"required": True, "status": "UP" if os.getenv("INTERNAL_GATEWAY_SECRET") else "DOWN"}
         dependencies["service_source"] = {"required": True, "status": "UP" if service_repository.configured() else "DOWN"}
+        dependencies["mock_integration_fixture"] = probe_fixture()
     if os.getenv("NUTRITION_RUNTIME_MODE", "local") not in {"local", "service"}:
         dependencies["runtime_config"] = {"required": True, "status": "DOWN"}
     available = all(v["status"] == "UP" for v in dependencies.values() if v["required"])
@@ -395,6 +404,7 @@ def health() -> dict[str, Any]:
         "endpoints": [
             "POST /api/nutrition/analyze",
             "POST /api/nutrition/analyze/by-product-id",
+            "POST /api/nutrition/analyze/by-service-id",
             "POST /api/nutrition/safety",
             "POST /api/nutrition/report",
         ],
