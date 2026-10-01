@@ -351,7 +351,42 @@ IPCW 비교 가능 쌍 **38,010,214개**는 같았고, LightGBM Brier는 두 경
 | 10구간 ECE | 0.071735 | 0.032840 |
 
 정렬 고정 결과의 `AFT Brier - LightGBM Brier` 점추정은 **+0.002711**이다.
-100회 사용자 쌍 Bootstrap(seed 42)은 실행 경로 확인용으로만 수행했다.
 앞의 1,000회 구간은 **정렬 고정 이전 AFT 예측에 대한 기록**이므로 현재
 결과의 신뢰구간으로 재사용하지 않는다. 현재 설정을 모델 채택 또는 운영 성능으로
 해석하지 않으며, Test도 평가하지 않았다.
+
+### 정렬 고정 후보의 재현 가능한 쌍 Bootstrap (2026-10-01)
+
+`scripts.run_service_model_comparison`에서 같은 여섯 CSV의 SHA-256, 관측 종료
+가정, 70%/85% 시간 컷, 피처 버전과 라이브러리 버전을 함께 기록하도록 했다.
+원천 CSV와 사용자별 반복 결과 JSON은 저장소에 커밋하지 않는다. 학습과 평가
+행은 위와 동일하며, 사용자 **2,765명**의 정답 확인 표본 **13,381건**을
+1,000회 쌍 재표집했다(seed 42). 이번 로컬 실행 환경은 Python **3.11.15**,
+pandas **2.3.3**, XGBoost **3.2.0**, LightGBM **4.7.0**이었다.
+
+실행 위치는 `repurchase/data_analysis`이며, 파일 경로만 자신의 읽기 전용
+추출본으로 바꾼다. `--output`은 원천 해시·설정·요약과 **1,000개 반복값**을
+로컬 JSON에 저장한다.
+
+```bash
+.venv/bin/python -m scripts.run_service_model_comparison \
+  --orders <orders.csv> --order-items <order-items.csv> \
+  --pets <pets.csv> --histories <order-histories.csv> \
+  --claims <claims.csv> --claim-items <claim-items.csv> \
+  --observation-end-at 2026-09-29T15:44:00+09:00 \
+  --bootstrap-replicates 1000 --output <local-result.json>
+```
+
+| `AFT Brier - LightGBM Brier` | 정렬 고정 후 결과 |
+| --- | ---: |
+| 점추정 | +0.002711 |
+| Bootstrap 평균 | +0.002716 |
+| 95% percentile 구간 | +0.001644 ~ +0.003854 |
+| 개선량 양수 반복 | 100.0% |
+
+같은 Validation과 고정 후보에 한정하면 LightGBM의 30일 Brier가 낮은
+방향은 반복 표본에서도 일관됐다. 하지만 AFT 20회는 이미 이 Validation에서
+선택했으므로 이 구간은 **모델 선택 불확실성이나 독립 일반화 성능을 포함하지
+않는다**. AFT의 C-index는 반대로 더 높고 두 후보 모두 평균 예측 확률이
+관측 사건율보다 낮다. 따라서 이 결과만으로 날짜·확률·위험 순위를 제공할
+단일 운영 모델을 확정하지 않는다. Test는 여전히 열지 않았다.
