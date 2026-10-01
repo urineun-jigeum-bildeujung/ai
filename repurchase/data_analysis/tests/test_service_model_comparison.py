@@ -191,6 +191,32 @@ def test_aft_round_selection_tie_prefers_fewer_rounds(
     assert result.selected_rounds == 2
 
 
+def test_aft_round_selection_prefers_lower_brier_over_fewer_rounds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """동점이 아니라면 반복 횟수가 큰 후보라도 낮은 Brier를 선택합니다."""
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+    scores = iter((0.3, 0.2))
+
+    def candidate_brier(*args: object, **kwargs: object) -> dict[str, int | float]:
+        return {
+            "ipcw_brier_score": next(scores),
+            "validation_sample_count": 6,
+            "outcome_known_count": 6,
+        }
+
+    monkeypatch.setattr(
+        service_comparison, "evaluate_ipcw_brier_score", candidate_brier
+    )
+
+    result = select_service_aft_boost_rounds(split, candidate_rounds=(3, 2))
+
+    assert result.selected_rounds == 3
+
+
 @pytest.mark.parametrize("candidates", [(1,), (0, 2), (2, 2), (2, 1.5)])
 def test_aft_round_selection_rejects_invalid_candidates(
     candidates: tuple[object, ...],
