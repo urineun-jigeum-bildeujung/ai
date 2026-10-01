@@ -10,6 +10,12 @@
 - 더미 pet_profile을 리뷰에 가상으로 연결한 테스트 데이터로 로직을 먼저 검증하고
 - reviews.pet_id가 실제로 채워지면 real_review_pet_profiles 딕셔너리 자리에
   실제 DB 조회 결과를 넣기만 하면 되도록 설계했다.
+
+[버그 수정 이력] 2026-10-02
+리뷰 작성자(reviewer)의 반려동물 중 birth_date가 null인 레코드가 실제로 존재하는데,
+_calc_age_months()가 이를 처리하지 못하고 date.fromisoformat(None)에서 TypeError를
+내서 /recommend/home이 500으로 터지는 버그가 있었다. birth_date가 없으면 예외 대신
+None을 반환하도록 수정 (아래 _calc_age_months/_calc_age_group 참고).
 """
 
 from datetime import date
@@ -29,14 +35,27 @@ AGE_GROUP_ORDER = ["GROWTH", "ADULT", "SENIOR"]
 BREED_SIZE_ORDER = ["SMALL", "MEDIUM", "LARGE"]
 
 
-def _calc_age_months(birth_date_str: str) -> int:
+def _calc_age_months(birth_date_str: str):
+    """
+    birth_date_str이 없는 경우(None/빈 문자열) -- 리뷰 작성자의 반려동물 중
+    birth_date가 null인 실제 케이스가 있어, 예외를 내지 않고 None을 반환한다.
+    호출부(_calc_age_group)에서 "나이를 알 수 없음" 상태로 안전하게 처리된다.
+    """
+    if not birth_date_str:
+        return None
     birth = date.fromisoformat(birth_date_str)
     today = date.today()
     return (today.year - birth.year) * 12 + (today.month - birth.month)
 
 
-def _calc_age_group(birth_date_str: str) -> str:
+def _calc_age_group(birth_date_str: str):
     months = _calc_age_months(birth_date_str)
+    if months is None:
+        # None 반환: _ordinal_similarity는 "order에 없는 값"으로 보고 0.0 처리하고,
+        # main.py의 substitute 추천 쪽은 "pet_age_group이 falsy면 연령 필터 생략"하는
+        # 구조라서, truthy한 "UNKNOWN" 문자열을 쓰면 오히려 모든 연령 타겟 상품을
+        # 충돌로 잘못 걸러내게 된다. 그래서 반드시 None(falsy)으로 반환해야 한다.
+        return None
     if months < 12:
         return "GROWTH"
     elif months < 84:
