@@ -68,6 +68,8 @@ def test_split_assigns_exact_cut_anchor_only_to_earlier_period() -> None:
 
     assert set(split.train["order_id"]) == {"o1", "o2"}
     assert set(split.validation["order_id"]) == {"o3"}
+    assert split.train["split"].eq("train").all()
+    assert split.validation["split"].eq("validation").all()
     boundary = split.validation.set_index("order_id").loc["o3"]
     assert bool(boundary["is_right_censored"])
     assert boundary["duration_days"] == 0.0
