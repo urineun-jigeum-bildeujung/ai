@@ -162,6 +162,7 @@ def run_comparison(
         "validation_population": _summarize_validation_population(split.validation),
         "summary": comparison.summary.to_dict(orient="records"),
         "calibration": comparison.calibration.to_dict(orient="records"),
+        "brier_attribution": comparison.brier_attribution.to_dict(orient="records"),
         "paired_bootstrap_summary": comparison.paired_bootstrap.summary,
         "paired_bootstrap_trials": comparison.paired_bootstrap.trials.to_dict(
             orient="records"
