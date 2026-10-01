@@ -59,7 +59,8 @@ def build_order_item_quantity_intervals(
             raise OperationalOrderError(f"{name}의 ID가 중복됐습니다.")
     for column in ("quantity", "cancelled_quantity", "returned_quantity"):
         _require_nonnegative_integer(order_items, column)
-    _require_nonnegative_integer(claim_items, "quantity")
+    if not claim_items.empty:
+        _require_nonnegative_integer(claim_items, "quantity")
     if order_items["quantity"].le(0).any() or claim_items["quantity"].le(0).any():
         raise OperationalOrderError("구매·클레임 상품 수량은 양수여야 합니다.")
     if not order_items["order_id"].isin(orders["order_id"]).all():

@@ -117,3 +117,26 @@ def test_completed_claims_cannot_exceed_original_quantity() -> None:
     items.loc[0, "quantity"] = 4
     with pytest.raises(OperationalOrderError, match="초과합니다"):
         build_order_item_quantity_intervals(orders, items, claims, claim_items)
+
+
+def test_empty_claim_exports_keep_purchase_quantity() -> None:
+    orders, items, claims, claim_items = _sources()
+    items[["cancelled_quantity", "returned_quantity"]] = 0
+    claims = claims.iloc[0:0]
+    claim_items = claim_items.iloc[0:0]
+
+    intervals = build_order_item_quantity_intervals(orders, items, claims, claim_items)
+
+    assert intervals.set_index("order_item_id")["remaining_quantity"].to_dict() == {
+        "i1": 5,
+        "i2": 2,
+    }
+    assert intervals["valid_until"].isna().all()
+
+
+def test_nonempty_claim_quantity_still_requires_integer() -> None:
+    orders, items, claims, claim_items = _sources()
+    claim_items["quantity"] = claim_items["quantity"].astype(str)
+
+    with pytest.raises(OperationalOrderError, match="quantity"):
+        build_order_item_quantity_intervals(orders, items, claims, claim_items)
