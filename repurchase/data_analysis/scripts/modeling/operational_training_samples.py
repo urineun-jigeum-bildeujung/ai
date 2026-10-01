@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 import pandas as pd
 
 from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
@@ -12,6 +14,10 @@ from .operational_feature_recount import (
 )
 from .operational_label_rebuild import rebuild_service_labels_from_event_intervals
 from .operational_orders import OperationalOrderError
+
+# 기존 최종 스냅샷/UCI 피처 버전 1과 다른 시점 복원 의미를 구분합니다.
+# 이 버전의 학습 표본은 버전 1 모델 아티팩트에 연결하면 안 됩니다.
+TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION: Final[int] = 2
 
 
 def _attach_recounted(
@@ -74,4 +80,5 @@ def build_temporal_service_training_samples(
     result.loc[:, list(MINIMAL_MODEL_FEATURE_COLUMNS)] = select_minimal_model_features(
         result
     )
+    result["feature_generation_version"] = TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION
     return result

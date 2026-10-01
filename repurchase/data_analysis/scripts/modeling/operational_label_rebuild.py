@@ -28,24 +28,19 @@ SERVICE_LABEL_COLUMNS = (
 )
 
 
-def rebuild_service_labels_from_event_intervals(
+def prepare_active_service_purchase_inputs(
     event_intervals: OperationalEventIntervals,
     orders: pd.DataFrame,
     *,
-    observation_end_at: pd.Timestamp,
-) -> pd.DataFrame:
-    """종료 시점에 유효한 구매만 정답 사건으로 삼아 라벨만 반환합니다.
-
-    피처의 앵커 시점 복원과 달리, 라벨은 관측 종료까지 확인한 결과입니다.
-    종료 전에 환불된 구매는 소급해 앵커와 다음 사건에서 제외합니다.
-    기존 라벨 생성기의 최종 시점 피처는 학습에 섞이지 않도록 반환하지 않습니다.
-    """
+    as_of_timestamp: pd.Timestamp,
+) -> OperationalPurchaseInputs:
+    """학습 라벨과 운영 피처가 공유하는 기준 시점의 유효 구매 사건입니다."""
     _require_columns(orders, ("order_id", "user_id", "paid_at"), "orders")
     _require_keys(orders, ("order_id", "user_id"), "orders")
     if orders["order_id"].duplicated().any():
         raise OperationalOrderError("orders.order_id가 중복됐습니다.")
     active = select_operational_events_as_of(
-        event_intervals, as_of_timestamp=observation_end_at
+        event_intervals, as_of_timestamp=as_of_timestamp
     )
     paid = orders.loc[:, ["order_id", "user_id", "paid_at"]].copy()
 
@@ -89,12 +84,29 @@ def rebuild_service_labels_from_event_intervals(
             "반려동물 대상 사건에 대응하는 사용자 주문이 없습니다."
         )
     pet_events["is_replenishable_snapshot"] = True
-    prepared = OperationalPurchaseInputs(
+    return OperationalPurchaseInputs(
         valid_items=pd.DataFrame(),
         all_purchase_events=all_events,
         pet_history_items=pd.DataFrame(),
         pet_purchase_events=pet_events,
         excluded_late_birth_item_count=0,
+    )
+
+
+def rebuild_service_labels_from_event_intervals(
+    event_intervals: OperationalEventIntervals,
+    orders: pd.DataFrame,
+    *,
+    observation_end_at: pd.Timestamp,
+) -> pd.DataFrame:
+    """종료 시점에 유효한 구매만 정답 사건으로 삼아 라벨만 반환합니다.
+
+    피처의 앵커 시점 복원과 달리, 라벨은 관측 종료까지 확인한 결과입니다.
+    종료 전에 환불된 구매는 소급해 앵커와 다음 사건에서 제외합니다.
+    기존 라벨 생성기의 최종 시점 피처는 학습에 섞이지 않도록 반환하지 않습니다.
+    """
+    prepared = prepare_active_service_purchase_inputs(
+        event_intervals, orders, as_of_timestamp=observation_end_at
     )
     samples = build_service_repurchase_samples(
         prepared, observation_end_at=observation_end_at

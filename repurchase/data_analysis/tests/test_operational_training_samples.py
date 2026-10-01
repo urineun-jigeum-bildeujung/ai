@@ -5,12 +5,17 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.modeling.operational_current_features import (
+    build_temporal_service_current_features,
+)
 from scripts.modeling.operational_event_intervals import OperationalEventIntervals
 from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.modeling.operational_training_samples import (
+    TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
     _attach_recounted,
     build_temporal_service_training_samples,
 )
+from scripts.modeling.service_samples import SERVICE_FEATURE_GENERATION_VERSION
 
 
 def _events() -> tuple[OperationalEventIntervals, pd.DataFrame]:
@@ -54,6 +59,58 @@ def test_training_samples_keep_refunded_purchase_in_earlier_anchor_history() -> 
     assert late.loc["o3", "history_median_days"] == 30.0
     assert late.loc["o3", "user_prior_order_count"] == 1
     assert late.loc["o1", "next_order_id"] == "o3"
+    assert (
+        late["feature_generation_version"]
+        .eq(TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION)
+        .all()
+    )
+    assert (
+        TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION
+        != SERVICE_FEATURE_GENERATION_VERSION
+    )
+
+
+def test_current_features_share_temporal_training_version_and_cut() -> None:
+    events, orders = _events()
+
+    training_at_purchase = build_temporal_service_training_samples(
+        events, orders, observation_end_at=pd.Timestamp("2026-01-11T00:00:00Z")
+    ).set_index("order_id")
+    serving_at_purchase = build_temporal_service_current_features(
+        events, orders, as_of_timestamp=pd.Timestamp("2026-01-11T00:00:00Z")
+    ).set_index("order_id")
+    before_refund = build_temporal_service_current_features(
+        events, orders, as_of_timestamp=pd.Timestamp("2026-01-15T00:00:00Z")
+    )
+    after_refund = build_temporal_service_current_features(
+        events, orders, as_of_timestamp=pd.Timestamp("2026-02-01T00:00:00Z")
+    )
+
+    assert before_refund.loc[0, "order_id"] == "o2"
+    assert before_refund.loc[0, "history_interval_count"] == 1
+    assert before_refund.loc[0, "history_median_days"] == 10.0
+    assert after_refund.loc[0, "order_id"] == "o3"
+    assert after_refund.loc[0, "history_interval_count"] == 1
+    assert after_refund.loc[0, "history_median_days"] == 30.0
+    for column in (
+        "history_interval_count",
+        "history_median_days",
+        "history_relative_mad",
+        "user_prior_order_count",
+    ):
+        actual = serving_at_purchase.loc["o2", column]
+        expected = training_at_purchase.loc["o2", column]
+        assert (pd.isna(actual) and pd.isna(expected)) or actual == expected
+    assert (
+        before_refund["feature_generation_version"]
+        .eq(TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION)
+        .all()
+    )
+    assert (
+        after_refund["feature_generation_version"]
+        .eq(TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION)
+        .all()
+    )
 
 
 @pytest.mark.parametrize("sample_rows", [[0, 0], [0], [0, 2]])
