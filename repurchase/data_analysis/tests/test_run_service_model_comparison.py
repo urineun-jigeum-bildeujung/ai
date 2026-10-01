@@ -11,7 +11,10 @@ import pytest
 from pandas.api.types import is_bool_dtype
 
 from scripts import run_service_model_comparison as runner
-from scripts.modeling.service_model_comparison import AFTRoundSelection
+from scripts.modeling.service_model_comparison import (
+    AFTRoundSelection,
+    AFTScaleSelection,
+)
 from scripts.run_service_model_comparison import (
     _file_sha256,
     _read_sources,
@@ -209,6 +212,40 @@ def test_cli_rejects_invalid_aft_selection_before_reading_csv(
     assert exc.value.code == 2
 
 
+@pytest.mark.parametrize(
+    "scales",
+    [("1.0",), ("0", "1.0"), ("1.0", "1.0"), ("nan", "1.0")],
+)
+def test_cli_rejects_invalid_aft_scales_before_reading_csv(
+    monkeypatch: pytest.MonkeyPatch, scales: tuple[str, ...]
+) -> None:
+    arguments = ["run_service_model_comparison"]
+    for name in ("orders", "order-items", "pets", "histories", "claims", "claim-items"):
+        arguments.extend((f"--{name}", "/not-a-real-source.csv"))
+    arguments.extend(
+        (
+            "--observation-end-at",
+            "2026-09-29T15:44:00+09:00",
+            "--aft-scale-candidates",
+            *scales,
+        )
+    )
+    monkeypatch.setattr(sys, "argv", arguments)
+    with pytest.raises(SystemExit) as exc:
+        runner.main()
+    assert exc.value.code == 2
+
+
+def test_library_rejects_joint_aft_search_before_reading_csv() -> None:
+    with pytest.raises(ValueError, match="별도 실험"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            aft_round_candidates=(5, 20),
+            aft_scale_candidates=(0.5, 1.0),
+        )
+
+
 def test_inner_aft_selection_precedes_outer_validation_label_generation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -269,7 +306,7 @@ def test_inner_aft_selection_precedes_outer_validation_label_generation(
     assert cuts == [(first + (outer_train_end - first) * 0.8, outer_train_end)]
 
 
-def test_selected_rounds_reach_outer_training_and_fixed_path_stays_20(
+def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchanged(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """내부 선택값이 바깥 재학습에 전달되고 미선택 경로는 20회를 유지합니다."""
@@ -320,10 +357,20 @@ def test_selected_rounds_reach_outer_training_and_fixed_path_stays_20(
             candidates=pd.DataFrame([{"num_boost_round": 7, "ipcw_brier_score": 0.1}]),
         ),
     )
-    trained_rounds: list[int] = []
+    monkeypatch.setattr(
+        runner,
+        "select_service_aft_scale",
+        lambda *args, **kwargs: AFTScaleSelection(
+            selected_scale=2.0,
+            candidates=pd.DataFrame(
+                [{"loss_distribution_scale": 2.0, "ipcw_brier_score": 0.1}]
+            ),
+        ),
+    )
+    training_options: list[dict[str, object]] = []
 
     def record_outer_training(*args: object, **kwargs: object) -> SimpleNamespace:
-        trained_rounds.append(kwargs["aft_boost_rounds"])
+        training_options.append(kwargs)
         return SimpleNamespace(
             summary=pd.DataFrame([{"ipcw_c_index": 0.6}]),
             calibration=pd.DataFrame(),
@@ -337,10 +384,17 @@ def test_selected_rounds_reach_outer_training_and_fixed_path_stays_20(
         {}, observation_end_at=end, aft_round_candidates=(5, 7)
     )
     fixed = runner.run_comparison({}, observation_end_at=end)
+    scale = runner.run_comparison(
+        {}, observation_end_at=end, aft_scale_candidates=(1.0, 2.0)
+    )
 
-    assert trained_rounds == [7, 20]
+    assert [item["aft_boost_rounds"] for item in training_options] == [7, 20, 20]
+    assert "aft_loss_distribution_scale" not in training_options[0]
+    assert "aft_loss_distribution_scale" not in training_options[1]
+    assert training_options[2]["aft_loss_distribution_scale"] == 2.0
     assert selected["aft_round_selection"]["selected_rounds"] == 7
     assert "aft_round_selection" not in fixed
+    assert scale["aft_scale_selection"]["selected_scale"] == 2.0
 
 
 def test_validation_population_counts_each_history_bucket_once() -> None:

@@ -168,6 +168,86 @@ def test_aft_round_selection_uses_inner_validation_only() -> None:
     )
 
 
+def test_aft_scale_selection_retrains_each_candidate_on_same_inner_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """scale 후보마다 실제 학습을 다시 하고 동일한 내부 Validation을 평가합니다."""
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+    actual_train = service_comparison.train_xgboost_aft_model
+    trained_scales: list[float] = []
+
+    def capture_train(*args: object, **kwargs: object) -> object:
+        trained_scales.append(kwargs["loss_distribution_scale"])
+        return actual_train(*args, **kwargs)
+
+    monkeypatch.setattr(service_comparison, "train_xgboost_aft_model", capture_train)
+
+    result = service_comparison.select_service_aft_scale(
+        split, candidate_scales=(2.0, 1.0)
+    )
+
+    assert trained_scales == [1.0, 2.0]
+    assert result.candidates["loss_distribution_scale"].tolist() == [1.0, 2.0]
+    assert result.candidates["validation_sample_count"].nunique() == 1
+    assert result.candidates["outcome_known_count"].nunique() == 1
+    assert result.selected_scale == float(
+        result.candidates.sort_values(["ipcw_brier_score", "loss_distribution_scale"])[
+            "loss_distribution_scale"
+        ].iloc[0]
+    )
+
+
+@pytest.mark.parametrize(
+    ("scores", "expected_scale"),
+    [((0.25, 0.25), 1.0), ((0.30, 0.20), 2.0)],
+)
+def test_aft_scale_selection_ranks_scores_and_breaks_ties(
+    monkeypatch: pytest.MonkeyPatch,
+    scores: tuple[float, float],
+    expected_scale: float,
+) -> None:
+    """낮은 Brier를 우선하고 정확히 동점일 때만 낮은 scale을 택합니다."""
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+    candidate_scores = iter(scores)
+
+    def candidate_brier(*args: object, **kwargs: object) -> dict[str, int | float]:
+        return {
+            "ipcw_brier_score": next(candidate_scores),
+            "validation_sample_count": 6,
+            "outcome_known_count": 6,
+        }
+
+    monkeypatch.setattr(
+        service_comparison, "evaluate_ipcw_brier_score", candidate_brier
+    )
+
+    result = service_comparison.select_service_aft_scale(
+        split, candidate_scales=(2.0, 1.0)
+    )
+
+    assert result.selected_scale == expected_scale
+
+
+@pytest.mark.parametrize(
+    "scales", [(1.0,), (0.0, 1.0), (1.0, 1.0), (1.0, float("nan")), (1.0, float("inf"))]
+)
+def test_aft_scale_selection_rejects_invalid_candidates(
+    scales: tuple[float, ...],
+) -> None:
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+    with pytest.raises(OperationalOrderError, match="scale 후보"):
+        service_comparison.select_service_aft_scale(split, candidate_scales=scales)
+
+
 def test_aft_round_selection_tie_prefers_fewer_rounds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
