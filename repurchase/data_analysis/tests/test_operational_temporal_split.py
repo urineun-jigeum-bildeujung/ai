@@ -5,9 +5,14 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+from scripts.modeling.maturity_analysis import (
+    add_split_ipcw_weights,
+    add_split_survival_observation,
+)
 from scripts.modeling.operational_event_intervals import OperationalEventIntervals
 from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.modeling.operational_temporal_split import (
+    _attach_evaluation_contract,
     build_service_train_validation_split,
 )
 
@@ -54,6 +59,11 @@ def test_split_uses_independent_cut_for_refund_and_censoring() -> None:
     assert validation.loc["o3", "history_median_days"] == 30.0
     assert bool(validation.loc["o3", "is_right_censored"])
     assert validation.loc["o3", "duration_days"] == 1.0
+    for rows in (split.train, split.validation):
+        observed = add_split_survival_observation(rows)
+        assert observed["survival_observed_duration_days"].equals(rows["duration_days"])
+        assert observed["survival_event_observed"].equals(rows["event_observed"])
+        assert rows["split_end_at"].eq(rows["observation_end_at"]).all()
 
 
 def test_split_assigns_exact_cut_anchor_only_to_earlier_period() -> None:
@@ -68,9 +78,38 @@ def test_split_assigns_exact_cut_anchor_only_to_earlier_period() -> None:
 
     assert set(split.train["order_id"]) == {"o1", "o2"}
     assert set(split.validation["order_id"]) == {"o3"}
+    assert split.train["split"].eq("train").all()
+    assert split.validation["split"].eq("validation").all()
     boundary = split.validation.set_index("order_id").loc["o3"]
     assert bool(boundary["is_right_censored"])
     assert boundary["duration_days"] == 0.0
+
+
+def test_service_ipcw_contract_distinguishes_three_outcome_states() -> None:
+    end = pd.Timestamp("2026-02-10T00:00:00Z")
+    rows = pd.DataFrame(
+        {
+            "anchor_at": pd.to_datetime(
+                [
+                    "2026-01-01T00:00:00Z",
+                    "2026-01-06T00:00:00Z",
+                    "2026-01-31T00:00:00Z",
+                ]
+            ),
+            "event_observed": [True, False, False],
+            "duration_days": [5.0, 35.0, 10.0],
+        }
+    )
+    contracted = _attach_evaluation_contract(
+        rows, split_name="validation", split_end_at=end
+    )
+
+    weighted = add_split_ipcw_weights(contracted, horizon_days=30)
+
+    assert weighted["ipcw_outcome_known"].tolist() == [True, True, False]
+    assert weighted["ipcw_event_within_horizon"].tolist()[:2] == [True, False]
+    assert pd.isna(weighted.loc[2, "ipcw_event_within_horizon"])
+    assert weighted.loc[2, "ipcw_weight"] == 0.0
 
 
 @pytest.mark.parametrize(
