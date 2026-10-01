@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pandas as pd
 import pytest
@@ -166,6 +167,105 @@ def test_cli_rejects_invalid_time_cuts_before_reading_csv(
         runner.main()
 
     assert exc.value.code == 2
+
+
+@pytest.mark.parametrize(
+    ("candidates", "inner_ratio"),
+    [((5,), 0.8), ((0, 20), 0.8), ((5, 5), 0.8), ((5, 20), 1.0)],
+)
+def test_library_rejects_invalid_aft_selection_before_reading_csv(
+    candidates: tuple[int, ...], inner_ratio: float
+) -> None:
+    with pytest.raises(ValueError, match="AFT"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            aft_round_candidates=candidates,
+            inner_train_ratio=inner_ratio,
+        )
+
+
+def test_cli_rejects_invalid_aft_selection_before_reading_csv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    arguments = ["run_service_model_comparison"]
+    for name in ("orders", "order-items", "pets", "histories", "claims", "claim-items"):
+        arguments.extend((f"--{name}", "/not-a-real-source.csv"))
+    arguments.extend(
+        (
+            "--observation-end-at",
+            "2026-09-29T15:44:00+09:00",
+            "--aft-round-candidates",
+            "5",
+            "5",
+        )
+    )
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    with pytest.raises(SystemExit) as exc:
+        runner.main()
+
+    assert exc.value.code == 2
+
+
+def test_inner_aft_selection_precedes_outer_validation_label_generation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """외부 Validation 라벨을 만들기 전에 내부 시점의 표본을 다시 생성합니다."""
+    first = pd.Timestamp("2024-01-01T00:00:00Z")
+    end = pd.Timestamp("2026-01-01T00:00:00Z")
+    sources = {
+        name: pd.DataFrame()
+        for name in (
+            "orders",
+            "order_items",
+            "pets",
+            "histories",
+            "claims",
+            "claim_items",
+        )
+    }
+    monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    for name in (
+        "build_order_status_intervals",
+        "build_order_item_quantity_intervals",
+        "build_valid_purchase_item_intervals",
+    ):
+        monkeypatch.setattr(runner, name, lambda *args: None)
+    monkeypatch.setattr(
+        runner,
+        "build_operational_event_intervals",
+        lambda *args: SimpleNamespace(
+            pet_targets=pd.DataFrame({"valid_from": [first]})
+        ),
+    )
+    cuts: list[tuple[pd.Timestamp, pd.Timestamp]] = []
+
+    def capture_split(*args: object, **kwargs: pd.Timestamp) -> object:
+        cuts.append((kwargs["train_end_at"], kwargs["validation_end_at"]))
+        return object()
+
+    class SelectionReached(Exception):
+        pass
+
+    def stop_at_selection(*args: object, **kwargs: object) -> None:
+        raise SelectionReached
+
+    monkeypatch.setattr(runner, "build_service_train_validation_split", capture_split)
+    monkeypatch.setattr(runner, "select_service_aft_boost_rounds", stop_at_selection)
+
+    with pytest.raises(SelectionReached):
+        runner.run_comparison(
+            {},
+            observation_end_at=end,
+            train_fraction=0.4,
+            validation_fraction=0.55,
+            aft_round_candidates=(5, 20),
+            inner_train_ratio=0.8,
+        )
+
+    outer_train_end = first + (end - first) * 0.4
+    assert cuts == [(first + (outer_train_end - first) * 0.8, outer_train_end)]
 
 
 def test_validation_population_counts_each_history_bucket_once() -> None:

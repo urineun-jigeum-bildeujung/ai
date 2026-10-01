@@ -29,7 +29,10 @@ from scripts.modeling.operational_training_samples import (
 from scripts.modeling.operational_validity_intervals import (
     build_valid_purchase_item_intervals,
 )
-from scripts.modeling.service_model_comparison import compare_service_aft_lightgbm
+from scripts.modeling.service_model_comparison import (
+    compare_service_aft_lightgbm,
+    select_service_aft_boost_rounds,
+)
 
 
 def _file_sha256(path: Path) -> str:
@@ -100,6 +103,22 @@ def _summarize_validation_population(rows: pd.DataFrame) -> dict[str, int]:
     }
 
 
+def _validate_aft_round_selection(
+    candidate_rounds: tuple[int, ...] | None, inner_train_ratio: float
+) -> None:
+    """학습 후보·내부 컷 오류를 원천 CSV 접근 전에 거절합니다."""
+    if not math.isfinite(inner_train_ratio) or not 0 < inner_train_ratio < 1:
+        raise ValueError("AFT 내부 Train 비율은 0과 1 사이여야 합니다.")
+    if candidate_rounds is not None and (
+        len(candidate_rounds) < 2
+        or any(type(value) is not int or value < 1 for value in candidate_rounds)
+        or len(set(candidate_rounds)) != len(candidate_rounds)
+    ):
+        raise ValueError(
+            "AFT 반복 횟수 후보는 서로 다른 양의 정수 2개 이상이어야 합니다."
+        )
+
+
 def run_comparison(
     paths: dict[str, Path],
     *,
@@ -107,6 +126,8 @@ def run_comparison(
     bootstrap_replicates: int = 1_000,
     train_fraction: float = 0.70,
     validation_fraction: float = 0.85,
+    aft_round_candidates: tuple[int, ...] | None = None,
+    inner_train_ratio: float = 0.8,
 ) -> dict[str, object]:
     """원천 해시, 시간 컷과 평가 수치를 한 실행 결과로 묶습니다."""
     end = pd.Timestamp(observation_end_at)
@@ -120,6 +141,7 @@ def run_comparison(
         and 0 < train_fraction < validation_fraction < 1
     ):
         raise ValueError("시간 컷 비율은 0 < Train < Validation < 1이어야 합니다.")
+    _validate_aft_round_selection(aft_round_candidates, inner_train_ratio)
     sources = _read_sources(paths)
     orders = sources["orders"]
     items = sources["order_items"]
@@ -137,14 +159,41 @@ def run_comparison(
     span = end - first
     train_end = first + span * train_fraction
     validation_end = first + span * validation_fraction
+    selected_rounds = 20
+    selection_record: dict[str, object] | None = None
+    if aft_round_candidates is not None:
+        # 내부 라벨·검열을 내부 종료 컷으로 다시 만들고, 바깥 Validation은 보지 않습니다.
+        inner_train_end = first + (train_end - first) * inner_train_ratio
+        inner_split = build_service_train_validation_split(
+            events,
+            orders,
+            train_end_at=inner_train_end,
+            validation_end_at=train_end,
+        )
+        selection = select_service_aft_boost_rounds(
+            inner_split, candidate_rounds=aft_round_candidates
+        )
+        selected_rounds = selection.selected_rounds
+        selection_record = {
+            "inner_train_end_at": inner_train_end.isoformat(),
+            "inner_validation_end_at": train_end.isoformat(),
+            "inner_train_ratio": inner_train_ratio,
+            "selection_metric": "ipcw_brier_score",
+            "tie_break": "lowest_num_boost_round",
+            "selected_rounds": selected_rounds,
+            "candidate_scores": selection.candidates.to_dict(orient="records"),
+        }
+    # 후보 선택이 끝난 다음에만 바깥 Validation의 라벨을 생성합니다.
     split = build_service_train_validation_split(
         events, orders, train_end_at=train_end, validation_end_at=validation_end
     )
     comparison = compare_service_aft_lightgbm(
-        split, bootstrap_replicates=bootstrap_replicates
+        split,
+        aft_boost_rounds=selected_rounds,
+        bootstrap_replicates=bootstrap_replicates,
     )
     _require_finite_c_index(comparison.summary)
-    return {
+    result: dict[str, object] = {
         "source_sha256": {name: _file_sha256(path) for name, path in paths.items()},
         "runtime_versions": {
             "python": sys.version.split()[0],
@@ -168,6 +217,9 @@ def run_comparison(
             orient="records"
         ),
     }
+    if selection_record is not None:
+        result["aft_round_selection"] = selection_record
+    return result
 
 
 def main() -> None:
@@ -179,6 +231,8 @@ def main() -> None:
     parser.add_argument("--bootstrap-replicates", type=int, default=1_000)
     parser.add_argument("--train-fraction", type=float, default=0.70)
     parser.add_argument("--validation-fraction", type=float, default=0.85)
+    parser.add_argument("--aft-round-candidates", type=int, nargs="+")
+    parser.add_argument("--inner-train-ratio", type=float, default=0.8)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.observation_end_at.tzinfo is None:
@@ -191,6 +245,15 @@ def main() -> None:
         and 0 < args.train_fraction < args.validation_fraction < 1
     ):
         parser.error("시간 컷 비율은 0 < Train < Validation < 1이어야 합니다.")
+    candidate_rounds = (
+        tuple(args.aft_round_candidates)
+        if args.aft_round_candidates is not None
+        else None
+    )
+    try:
+        _validate_aft_round_selection(candidate_rounds, args.inner_train_ratio)
+    except ValueError as exc:
+        parser.error(str(exc))
     paths = {
         name: getattr(args, name)
         for name in (
@@ -208,6 +271,8 @@ def main() -> None:
         bootstrap_replicates=args.bootstrap_replicates,
         train_fraction=args.train_fraction,
         validation_fraction=args.validation_fraction,
+        aft_round_candidates=candidate_rounds,
+        inner_train_ratio=args.inner_train_ratio,
     )
     rendered = json.dumps(
         result, ensure_ascii=False, indent=2, default=str, allow_nan=False

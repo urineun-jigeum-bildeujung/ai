@@ -5,6 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
+import scripts.modeling.service_model_comparison as service_comparison
 from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.modeling.operational_temporal_split import (
     ServiceTemporalSplit,
@@ -14,6 +15,7 @@ from scripts.modeling.service_model_comparison import (
     _canonical_service_train_order,
     _evaluate_candidate,
     compare_service_aft_lightgbm,
+    select_service_aft_boost_rounds,
     summarize_service_brier_attribution,
 )
 
@@ -145,6 +147,75 @@ def _service_rows(*, split_name: str) -> pd.DataFrame:
     return _attach_evaluation_contract(
         rows, split_name=split_name, split_end_at=split_end
     )
+
+
+def test_aft_round_selection_uses_inner_validation_only() -> None:
+    """후보 모두 같은 내부 정답 확인 행으로 점수를 매깁니다."""
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    result = select_service_aft_boost_rounds(split, candidate_rounds=(3, 2))
+
+    assert result.candidates["num_boost_round"].tolist() == [2, 3]
+    assert result.candidates["validation_sample_count"].nunique() == 1
+    assert result.candidates["outcome_known_count"].nunique() == 1
+    assert result.selected_rounds == int(
+        result.candidates.sort_values(["ipcw_brier_score", "num_boost_round"])[
+            "num_boost_round"
+        ].iloc[0]
+    )
+
+
+def test_aft_round_selection_tie_prefers_fewer_rounds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """동일 점수일 때 실행 순서에 관계없이 단순한 후보를 선택합니다."""
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    def equal_brier(*args: object, **kwargs: object) -> dict[str, int | float]:
+        return {
+            "ipcw_brier_score": 0.25,
+            "validation_sample_count": 6,
+            "outcome_known_count": 6,
+        }
+
+    monkeypatch.setattr(service_comparison, "evaluate_ipcw_brier_score", equal_brier)
+
+    result = select_service_aft_boost_rounds(split, candidate_rounds=(3, 2))
+
+    assert result.selected_rounds == 2
+
+
+@pytest.mark.parametrize("candidates", [(1,), (0, 2), (2, 2), (2, 1.5)])
+def test_aft_round_selection_rejects_invalid_candidates(
+    candidates: tuple[object, ...],
+) -> None:
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    with pytest.raises(OperationalOrderError, match="반복 횟수 후보"):
+        select_service_aft_boost_rounds(split, candidate_rounds=candidates)
+
+
+def test_aft_round_selection_rejects_overlapping_inner_anchors() -> None:
+    """내부 검증 앵커가 내부 학습 컷 이전이면 평가를 시작하지 않습니다."""
+    validation = _service_rows(split_name="validation")
+    validation.loc[validation.index[0], "anchor_at"] = pd.Timestamp(
+        "2026-02-01T00:00:00Z"
+    )
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"), validation=validation
+    )
+
+    with pytest.raises(OperationalOrderError, match="내부 시간 분할"):
+        select_service_aft_boost_rounds(split, candidate_rounds=(2, 3))
 
 
 def test_comparison_trains_both_models_and_preserves_validation_count() -> None:
