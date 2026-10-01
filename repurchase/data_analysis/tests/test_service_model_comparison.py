@@ -11,6 +11,7 @@ from scripts.modeling.operational_temporal_split import (
     _attach_evaluation_contract,
 )
 from scripts.modeling.service_model_comparison import (
+    _canonical_service_train_order,
     _evaluate_candidate,
     compare_service_aft_lightgbm,
 )
@@ -86,6 +87,9 @@ def _service_rows(*, split_name: str) -> pd.DataFrame:
     rows = pd.DataFrame(
         {
             "user_id": [f"u{i // 2}" for i in range(count)],
+            "pet_id": [f"p{i // 2}" for i in range(count)],
+            "target_id": [f"g{i % 2}" for i in range(count)],
+            "order_id": [f"o{i}" for i in range(count)],
             "anchor_at": anchors,
             "duration_days": duration,
             "event_observed": event,
@@ -104,11 +108,12 @@ def _service_rows(*, split_name: str) -> pd.DataFrame:
 
 
 def test_comparison_trains_both_models_and_preserves_validation_count() -> None:
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
     comparison = compare_service_aft_lightgbm(
-        ServiceTemporalSplit(
-            train=_service_rows(split_name="train"),
-            validation=_service_rows(split_name="validation"),
-        ),
+        split,
         aft_boost_rounds=2,
         bootstrap_replicates=20,
     )
@@ -121,3 +126,34 @@ def test_comparison_trains_both_models_and_preserves_validation_count() -> None:
         "xgboost_aft": 6,
         "lightgbm": 6,
     }
+
+    shuffled_train = split.train.sample(frac=1, random_state=7).copy()
+    repeated = compare_service_aft_lightgbm(
+        ServiceTemporalSplit(train=shuffled_train, validation=split.validation),
+        aft_boost_rounds=2,
+        bootstrap_replicates=20,
+    )
+    pd.testing.assert_frame_equal(comparison.summary, repeated.summary)
+
+
+def test_training_order_is_stable_across_integer_and_string_ids() -> None:
+    rows = _service_rows(split_name="train")
+    rows["order_id"] = [11, 2, 3, 4, 5, 6, 7, 8]
+    rows["anchor_at"] = pd.Timestamp("2026-01-01T00:00:00Z")
+    numeric = _canonical_service_train_order(rows)
+    string = rows.sample(frac=1, random_state=7).copy()
+    string["order_id"] = string["order_id"].astype("string")
+    string = _canonical_service_train_order(string)
+
+    assert numeric.index.tolist() == string.index.tolist()
+    assert numeric["order_id"].astype("string").tolist() == string["order_id"].tolist()
+
+
+def test_training_order_rejects_duplicate_event_key() -> None:
+    rows = _service_rows(split_name="train")
+    rows.loc[101, ["anchor_at", "user_id", "pet_id", "target_id", "order_id"]] = (
+        rows.loc[100, ["anchor_at", "user_id", "pet_id", "target_id", "order_id"]]
+    )
+
+    with pytest.raises(OperationalOrderError, match="사건 키"):
+        _canonical_service_train_order(rows)

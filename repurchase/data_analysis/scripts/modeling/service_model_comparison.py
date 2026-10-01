@@ -40,6 +40,27 @@ class ServiceModelComparison:
     paired_bootstrap: IPCWUserBootstrapResult
 
 
+def _canonical_service_train_order(rows: pd.DataFrame) -> pd.DataFrame:
+    """ID의 pandas 자료형과 원천 조회 순서에 무관하게 학습 행을 정렬합니다.
+
+    히스토그램 기반 트리의 동점 처리에는 입력 행 순서가 영향을 줄 수 있으므로
+    시각과 사건 키를 명시한다. ID는 숫자로 계산하지 않고 정확한 문자열로만
+    정렬해 bigint ID의 부동소수점 변환도 피합니다.
+    """
+    key_columns = ("anchor_at", "user_id", "pet_id", "target_id", "order_id")
+    missing = set(key_columns) - set(rows.columns)
+    if missing:
+        raise OperationalOrderError(f"서비스 학습 정렬 키 누락: {sorted(missing)}")
+    if rows.index.has_duplicates or rows.loc[:, list(key_columns)].isna().any().any():
+        raise OperationalOrderError("서비스 학습 정렬 키가 중복되거나 비었습니다.")
+    keys = rows.loc[:, list(key_columns)].copy()
+    for column in key_columns[1:]:
+        keys[column] = keys[column].astype("string")
+    if keys.duplicated(subset=list(key_columns)).any():
+        raise OperationalOrderError("서비스 학습 사건 키가 중복됐습니다.")
+    return rows.loc[keys.sort_values(list(key_columns), kind="stable").index].copy()
+
+
 def _evaluate_candidate(
     rows: pd.DataFrame,
     probability: pd.Series,
@@ -113,7 +134,8 @@ def compare_service_aft_lightgbm(
             "서비스 비교에는 Train·Validation이 모두 필요합니다."
         )
 
-    weighted_train = add_split_ipcw_weights(split.train, horizon_days=horizon_days)
+    train = _canonical_service_train_order(split.train)
+    weighted_train = add_split_ipcw_weights(train, horizon_days=horizon_days)
     weighted_validation = add_split_ipcw_weights(
         split.validation, horizon_days=horizon_days
     )
@@ -126,9 +148,7 @@ def compare_service_aft_lightgbm(
         / known_train["ipcw_weight"].sum()
     )
 
-    aft_train = build_xgboost_aft_training_data(
-        build_service_aft_training_rows(split.train)
-    )
+    aft_train = build_xgboost_aft_training_data(build_service_aft_training_rows(train))
     aft_model = train_xgboost_aft_model(aft_train, num_boost_round=aft_boost_rounds)
     aft_prediction_input = build_xgboost_aft_prediction_data(
         split.validation, feature_columns=aft_model.feature_columns
