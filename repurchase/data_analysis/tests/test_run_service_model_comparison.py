@@ -123,3 +123,45 @@ def test_cli_does_not_write_nonfinite_json(
         runner.main()
 
     assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    ("train_fraction", "validation_fraction"),
+    [(0, 0.7), (0.7, 0.7), (0.8, 0.7), (0.7, 1), (float("nan"), 0.8)],
+)
+def test_library_rejects_invalid_time_cut_fractions_before_reading_csv(
+    train_fraction: float, validation_fraction: float
+) -> None:
+    """시간 컷이 역전되거나 유효 범위를 벗어나면 원천 조회 전에 거절합니다."""
+    with pytest.raises(ValueError, match="시간 컷 비율"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            train_fraction=train_fraction,
+            validation_fraction=validation_fraction,
+        )
+
+
+def test_cli_rejects_invalid_time_cuts_before_reading_csv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """CLI도 잘못된 시간 컷을 파일 접근 전에 종료 코드 2로 거절합니다."""
+    arguments = ["run_service_model_comparison"]
+    for name in ("orders", "order-items", "pets", "histories", "claims", "claim-items"):
+        arguments.extend((f"--{name}", "/not-a-real-source.csv"))
+    arguments.extend(
+        (
+            "--observation-end-at",
+            "2026-09-29T15:44:00+09:00",
+            "--train-fraction",
+            "0.85",
+            "--validation-fraction",
+            "0.70",
+        )
+    )
+    monkeypatch.setattr(sys, "argv", arguments)
+
+    with pytest.raises(SystemExit) as exc:
+        runner.main()
+
+    assert exc.value.code == 2
