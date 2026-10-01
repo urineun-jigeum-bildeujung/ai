@@ -42,10 +42,14 @@ ASPECT_CODES = [
 BCS_MIN, BCS_MAX = 1, 5
 
 
-def _calc_age_group(birth_date_str: str) -> str:
-    birth = date.fromisoformat(birth_date_str)
-    today = date.today()
-    months = (today.year - birth.year) * 12 + (today.month - birth.month)
+def _calc_age_group(birth_date_str: str):
+    months = _calc_age_months(birth_date_str)
+    if months is None:
+        # None 반환: 스파스 인코딩(FeatureEncoder._encode_sparse)은 None을 <UNK> 토큰으로
+        # 안전하게 처리하고, _ordinal_normalize도 "order에 없는 값"으로 보고 중간값(0.5)으로
+        # 처리한다. reviewer_profile_similarity.py와 동일한 이유로 truthy 문자열("UNKNOWN")은
+        # 쓰지 않는다 (호출부에서 falsy 체크로 "나이 모름"을 분기하는 경우가 있음).
+        return None
     if months < 12:
         return "GROWTH"
     elif months < 84:
@@ -54,11 +58,17 @@ def _calc_age_group(birth_date_str: str) -> str:
         return "SENIOR"
 
 
-def _calc_age_months(birth_date_str: str) -> int:
+def _calc_age_months(birth_date_str: str):
+    """
+    birth_date_str이 없는 경우(None/빈 문자열)에는 예외를 내지 않고 None을 반환한다.
+    (reviewer_profile_similarity.py와 동일한 버그가 있었음: 리뷰 작성자/반려동물 중
+    birth_date가 null인 레코드가 실제로 존재해서 date.fromisoformat(None)이 터졌음.)
+    """
+    if not birth_date_str:
+        return None
     birth = date.fromisoformat(birth_date_str)
     today = date.today()
     return (today.year - birth.year) * 12 + (today.month - birth.month)
-
 
 def _calc_breed_size(weight: float) -> str:
     if weight < 10:
@@ -121,7 +131,8 @@ def build_pet_features(pet: dict) -> dict:
             "bcs": bcs,                   # 카테고리 표현은 그대로 유지 (1~5, ordinal sparse)
         },
         "dense": {
-            "age_months_norm": _normalize(age_months, 0, 180),  # 0~15세 가정
+            # age_months가 None(birth_date 없음)이면 0.5(중간값)로 안전 처리 -- _ordinal_normalize와 동일한 정책
+            "age_months_norm": _normalize(age_months, 0, 180) if age_months is not None else 0.5,  # 0~15세 가정
             "weight_norm": _normalize(pet["weight"], 0, 50),    # 0~50kg 가정
             "neutered": 1.0 if pet.get("neutered") else 0.0,
             # --- 순서 정보를 명시적으로 담은 신규 dense feature ---
