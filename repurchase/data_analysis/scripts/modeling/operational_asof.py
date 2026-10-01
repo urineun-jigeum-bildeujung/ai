@@ -19,9 +19,7 @@ from .operational_orders import (
 )
 
 HISTORY_COLUMNS = ("history_id", "order_id", "to_status", "changed_at")
-CLAIM_COLUMNS = (
-    "claim_id", "order_id", "claim_type", "claim_status", "completed_at"
-)
+CLAIM_COLUMNS = ("claim_id", "order_id", "claim_type", "claim_status", "completed_at")
 CLAIM_ITEM_COLUMNS = ("claim_item_id", "claim_id", "order_item_id", "quantity")
 
 
@@ -54,7 +52,13 @@ def build_valid_order_items_as_of(
     _require_columns(orders, ("order_id", "order_status", "paid_at"), "orders")
     _require_columns(
         order_items,
-        ("order_item_id", "order_id", "quantity", "cancelled_quantity", "returned_quantity"),
+        (
+            "order_item_id",
+            "order_id",
+            "quantity",
+            "cancelled_quantity",
+            "returned_quantity",
+        ),
         "order_items",
     )
     for frame, columns, name in (
@@ -69,9 +73,7 @@ def build_valid_order_items_as_of(
 
     if not status_histories["order_id"].isin(orders["order_id"]).all():
         raise OperationalOrderError("상태 이력에 존재하지 않는 주문이 있습니다.")
-    without_history = orders.loc[
-        ~orders["order_id"].isin(status_histories["order_id"])
-    ]
+    without_history = orders.loc[~orders["order_id"].isin(status_histories["order_id"])]
     # 아직 결제되지 않은 PENDING 주문은 구매 이력에 들어가지 않습니다.
     # 결제된 주문에 이력이 없으면 과거 상태를 복원할 수 없으므로 거절합니다.
     if (
@@ -89,9 +91,11 @@ def build_valid_order_items_as_of(
         raise OperationalOrderError("상태 이력에 지원하지 않는 주문 상태가 있습니다.")
     if not claims["claim_type"].isin({"CANCEL", "RETURN"}).all():
         raise OperationalOrderError("지원하지 않는 클레임 유형이 있습니다.")
-    if not claims["claim_status"].isin(
-        {"REQUESTED", "COLLECTING", "INSPECTING", "COMPLETED", "REJECTED"}
-    ).all():
+    if (
+        not claims["claim_status"]
+        .isin({"REQUESTED", "COLLECTING", "INSPECTING", "COMPLETED", "REJECTED"})
+        .all()
+    ):
         raise OperationalOrderError("지원하지 않는 클레임 상태가 있습니다.")
     if not claim_items.empty:
         _require_nonnegative_integer(claim_items, "quantity")
@@ -105,9 +109,7 @@ def build_valid_order_items_as_of(
     histories = histories.sort_values(["changed_at", "history_id"], kind="stable")
     latest = histories.drop_duplicates("order_id", keep="last")
     current_status = latest.set_index("order_id")["to_status"]
-    orders_with_history = orders.loc[
-        orders["order_id"].isin(current_status.index)
-    ]
+    orders_with_history = orders.loc[orders["order_id"].isin(current_status.index)]
     if any(
         current_status.loc[order_id] != status
         for order_id, status in zip(
@@ -144,7 +146,10 @@ def build_valid_order_items_as_of(
     )
     item_orders = order_items.loc[:, ["order_item_id", "order_id"]]
     joined_claims = joined_claims.merge(
-        item_orders, on="order_item_id", how="left", validate="many_to_one",
+        item_orders,
+        on="order_item_id",
+        how="left",
+        validate="many_to_one",
         suffixes=("_claim", "_item"),
     )
     if joined_claims["order_id_claim"].ne(joined_claims["order_id_item"]).any():
@@ -167,13 +172,16 @@ def build_valid_order_items_as_of(
         order_items["returned_quantity"],
         strict=True,
     ):
-        if (
-            final_quantities.get((item_id, "CANCEL"), 0) != int(cancelled)
-            or final_quantities.get((item_id, "RETURN"), 0) != int(returned)
-        ):
-            raise OperationalOrderError("현재 주문상품 수량과 완료 클레임 이력이 다릅니다.")
+        if final_quantities.get((item_id, "CANCEL"), 0) != int(
+            cancelled
+        ) or final_quantities.get((item_id, "RETURN"), 0) != int(returned):
+            raise OperationalOrderError(
+                "현재 주문상품 수량과 완료 클레임 이력이 다릅니다."
+            )
 
-    known_quantities = quantities(all_completed.loc[all_completed["completed_at"].le(cutoff)])
+    known_quantities = quantities(
+        all_completed.loc[all_completed["completed_at"].le(cutoff)]
+    )
     as_of_items = order_items.loc[
         order_items["order_id"].isin(as_of_orders["order_id"])
     ].copy()
@@ -193,9 +201,15 @@ def build_valid_order_items_as_of(
         )
     ]
     as_of_items["item_status"] = [
-        "RETURNED" if remaining == 0 and returned > 0 else
-        "CANCELLED" if remaining == 0 else
-        "PARTIAL_RETURN" if returned > 0 else "PAID"
-        for remaining, returned in zip(net, as_of_items["returned_quantity"], strict=True)
+        "RETURNED"
+        if remaining == 0 and returned > 0
+        else "CANCELLED"
+        if remaining == 0
+        else "PARTIAL_RETURN"
+        if returned > 0
+        else "PAID"
+        for remaining, returned in zip(
+            net, as_of_items["returned_quantity"], strict=True
+        )
     ]
     return build_valid_order_items(as_of_orders, as_of_items)

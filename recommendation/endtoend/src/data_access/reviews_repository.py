@@ -29,21 +29,22 @@ QUESTION_TYPE_TO_FIELD = {
     "ALLERGY": "allergic_reaction_rating",
 }
 
+# review_answer는 DB에 'POSITIVE'/'NEUTRAL'/'NEGATIVE' 문자열로 저장돼 있는데,
+# rating_converter.convert_rating_to_score()는 1(부정)/2(중립)/3(긍정) 숫자를 기대함.
+_ANSWER_TO_RATING = {"NEGATIVE": 1, "NEUTRAL": 2, "POSITIVE": 3}
+
 
 def _fetch_reviews_from_db(product_id: str = None) -> list:
-    """
-    review_db에서 review + review_question(1:N)만 먼저 가져온다 (pet_profile 조인 없음).
-    review_question이 리뷰당 여러 행이므로 review_id 기준으로 묶는다.
-    """
     conn = get_connection(REVIEW_DB_ENV)
     try:
         with conn.cursor() as cur:
             query = """
-                SELECT r.id, r.product_id, r.pet_id, r.star_rate,
+                SELECT r.id, r.product_id, rp.pet_id, r.star_rate,
                        rq.review_question_type, rq.review_answer
                 FROM review r
+                JOIN review_pet rp ON rp.review_id = r.id
                 JOIN review_question rq ON rq.review_id = r.id
-                WHERE r.pet_id IS NOT NULL
+                WHERE rp.pet_id IS NOT NULL
                   AND r.deleted_at IS NULL
                   AND rq.review_question_type != 'FEEDING_CONVENIENCE'
             """
@@ -69,9 +70,10 @@ def _fetch_reviews_from_db(product_id: str = None) -> list:
                         "vitality_weight_rating": None,
                         "allergic_reaction_rating": None,
                     }
-                field_name = QUESTION_TYPE_TO_FIELD.get(question_type)
-                if field_name:
-                    reviews_by_id[review_id][field_name] = answer
+                    
+                    field_name = QUESTION_TYPE_TO_FIELD.get(question_type)
+                    if field_name:
+                        reviews_by_id[review_id][field_name] = _ANSWER_TO_RATING.get(answer)
 
             return list(reviews_by_id.values())
     finally:

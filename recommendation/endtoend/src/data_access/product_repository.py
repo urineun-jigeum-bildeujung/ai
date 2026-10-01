@@ -15,9 +15,17 @@ unit_price, unit_label, rating, review_count, sales_count, status, created_at)�
 
 USE_DUMMY_DATA 환경변수로 더미 데이터 / 실제 DB 전환 (reviews_repository.py와 동일 패턴).
 
-주의: SELECT문의 컬럼명은 DB팀 최종 확인 전까지 가정치다. 컬럼명이 다르면
-      이 파일의 _PRODUCT_COLUMNS / _row_to_product()만 수정하면 되고
-      pipeline.py / api/main.py 등 호출부는 수정할 필요가 없다.
+실제 스키마 주의 (DB팀 ERD 확인 완료):
+- products에는 deleted_at 컬럼이 없다. soft delete는 is_active로 한다.
+- brand_name은 컬럼이 아니라 brand_id로 brands 테이블 조인.
+- ingredients/allergen_flags/target_species는 products 컬럼이 아니라 각각
+  product_ingredients / product_allergens / product_target_species 별도 테이블.
+- unit_price/unit_label은 실제 스키마에 없어서 normalized_quantity_value/unit로 계산한다.
+- rating은 실제 컬럼명이 avg_rating.
+- [알려진 한계] product_allergens에 해당 상품 행이 없으면 무조건 빈 리스트로 나온다.
+  "성분 미분석(PENDING)"과 "성분 없음 확인"을 DB에서 구분할 방법이 없어서,
+  현재는 "조인 결과 없음 = 알러지 성분 없음(SAFE)"으로 단순화해서 처리하기로 결정함
+  (2026-09-30). 추후 백엔드팀이 분석 상태 컬럼을 추가하면 재검토.
 """
 
 import os
@@ -62,33 +70,77 @@ def _apply_dummy_display_fields(product: dict) -> dict:
     return enriched
 
 
-_PRODUCT_COLUMNS = """
-    product_id, product_name, brand_name, category_code, subcategory_code,
-    ingredients, allergen_flags, target_species, target_breed_size, target_age_group,
-    price, original_price, unit_price, unit_label,
-    thumbnail_url, rating, review_count, sales_count, status, created_at
+_PRODUCT_QUERY = """
+    SELECT
+        p.id,
+        p.product_name,
+        br.name,
+        p.category_code,
+        p.subcategory_code,
+        p.price,
+        p.original_price,
+        p.thumbnail_url,
+        p.avg_rating,
+        p.review_count,
+        p.sales_count,
+        p.status,
+        p.created_at,
+        p.normalized_quantity_value,
+        p.normalized_quantity_unit,
+        COALESCE(
+            (SELECT array_agg(pi.ingredient_code ORDER BY pi.sort_order)
+             FROM product_ingredients pi WHERE pi.product_id = p.id),
+            '{}'
+        ) AS ingredients,
+        COALESCE(
+            (SELECT array_agg(pa.allergen_code)
+             FROM product_allergens pa WHERE pa.product_id = p.id),
+            '{}'
+        ) AS allergen_flags,
+        COALESCE(
+            (SELECT array_agg(pts.species)
+             FROM product_target_species pts WHERE pts.product_id = p.id),
+            '{}'
+        ) AS target_species,
+        p.target_breed_size,
+        p.target_age_group
+    FROM products p
+    LEFT JOIN brands br ON br.id = p.brand_id
 """
 
 
 def _row_to_product(row) -> dict:
     (product_id, product_name, brand_name, category_code, subcategory_code,
-     ingredients, allergen_flags, target_species, target_breed_size, target_age_group,
-     price, original_price, unit_price, unit_label,
-     thumbnail_url, rating, review_count, sales_count, status, created_at) = row
+     price, original_price, thumbnail_url, rating, review_count, sales_count,
+     status, created_at, norm_qty_value, norm_qty_unit,
+     ingredients, allergen_flags, target_species,
+     target_breed_size, target_age_group) = row
+
+    norm_qty_value_f = float(norm_qty_value) if norm_qty_value is not None else None
+    unit_price = (
+        float(price) / norm_qty_value_f
+        if price is not None and norm_qty_value_f else None
+    )
+    unit_label = (
+        f"{norm_qty_value_f:g}{norm_qty_unit}"
+        if norm_qty_value_f is not None and norm_qty_unit else None
+    )
+
     return {
         "product_id": product_id,
         "product_name": product_name,
         "brand_name": brand_name,
         "category_code": category_code,
         "subcategory_code": subcategory_code,
-        "ingredients": ingredients or [],
-        "allergen_flags": allergen_flags or [],
-        "target_species": target_species or [],
+        "ingredients": list(ingredients) if ingredients else [],
+        # product_allergens에 행이 없으면 무조건 빈 리스트 (PENDING 구분 없음 - 위 docstring 참고)
+        "allergen_flags": list(allergen_flags) if allergen_flags else [],
+        "target_species": list(target_species) if target_species else [],
         "target_breed_size": target_breed_size,
         "target_age_group": target_age_group,
         "price": float(price) if price is not None else None,
         "original_price": float(original_price) if original_price is not None else None,
-        "unit_price": float(unit_price) if unit_price is not None else None,
+        "unit_price": unit_price,
         "unit_label": unit_label,
         "thumbnail_url": thumbnail_url,
         "rating": float(rating) if rating is not None else None,
@@ -103,13 +155,13 @@ def _fetch_products_from_db(category_code: str = None, product_ids: list = None)
     conn = get_connection(PRODUCT_DB_ENV)
     try:
         with conn.cursor() as cur:
-            query = f"SELECT {_PRODUCT_COLUMNS} FROM products WHERE deleted_at IS NULL"
+            query = _PRODUCT_QUERY + " WHERE p.is_active = true"
             params = []
             if category_code:
-                query += " AND category_code = %s"
+                query += " AND p.category_code = %s"
                 params.append(category_code)
             if product_ids:
-                query += " AND product_id = ANY(%s)"
+                query += " AND p.id = ANY(%s)"
                 params.append(list(product_ids))
             cur.execute(query, tuple(params))
             return [_row_to_product(row) for row in cur.fetchall()]
