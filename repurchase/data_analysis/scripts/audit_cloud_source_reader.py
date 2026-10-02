@@ -30,6 +30,11 @@ from scripts.modeling.operational_purchase_inputs import (
 
 ORDER_DSN_ENV = "REPURCHASE_ORDER_DATABASE_DSN"
 MEMBER_DSN_ENV = "REPURCHASE_MEMBER_DATABASE_DSN"
+# 연결 수립 제한과 별개로, 공용 DB의 장시간 조회·유휴 트랜잭션을 차단합니다.
+_SESSION_OPTIONS = (
+    "-c statement_timeout=300000 "
+    "-c idle_in_transaction_session_timeout=60000"
+)
 
 
 class _ArgumentParser(argparse.ArgumentParser):
@@ -113,6 +118,7 @@ def run_audit(
         order_dsn,
         autocommit=True,
         connect_timeout=10,
+        options=_SESSION_OPTIONS,
         **({"password": order_password} if order_password is not None else {}),
     ) as connection:
         orders = read_order_source(connection)
@@ -123,6 +129,7 @@ def run_audit(
         member_dsn,
         autocommit=True,
         connect_timeout=10,
+        options=_SESSION_OPTIONS,
         **({"password": member_password} if member_password is not None else {}),
     ) as connection:
         pets = read_pet_source(connection)
