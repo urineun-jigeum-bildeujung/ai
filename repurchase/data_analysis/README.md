@@ -176,7 +176,25 @@ GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 �
 `order_db`의 주문·상태·클레임과 `member_db`의 반려동물 생일을 읽는 함수를
 추가했습니다. 각 DB는 독립된 `REPEATABLE READ READ ONLY` 트랜잭션으로 읽고
 추출 시각을 반환합니다. 두 DB가 동일한 시점의 스냅샷이라는 보장은 없으며,
-아직 운영 배치 명령과 연결하거나 실제 DB에서 이 코드를 실행하지 않았습니다.
+`audit_cloud_source_reader` 명령은 명시한 관측 컷의 유효 구매·반려동물 이력
+건수를 검사하고 원천 행이나 접속 정보를 출력하지 않습니다. 실제 DB에서 이
+코드를 실행하거나 운영 배치 추론 명령과 연결한 것은 아직 아닙니다.
+
+로컬 실행 시 먼저 `order_db`와 `member_db`에 접속 가능한 포트포워딩을 준비하고,
+비밀번호를 제외한 연결 문자열을 각각 `REPURCHASE_ORDER_DATABASE_DSN`,
+`REPURCHASE_MEMBER_DATABASE_DSN` 환경변수로 전달합니다. 비밀번호를 터미널
+명령이나 저장소에 적지 않으려면 `--prompt-password`를 사용합니다. `--as-of`는
+시간대가 포함된 확정된 관측 종료 시각이어야 하며, 추출 시각보다 늦으면 거절합니다.
+
+```bash
+.venv/bin/python -m scripts.audit_cloud_source_reader \
+  --as-of '<확정된-ISO-관측-종료-시각>' --prompt-password
+```
+
+이 명령은 DB를 변경하지 않습니다. 성공 시 각 원천 테이블 수, 시점별 유효 구매
+수, 반려동물 생일 불일치로 제외된 행 수와 두 DB의 추출 시각을 JSON으로 출력합니다.
+두 DB의 추출 시각이 다르므로 갱신이 진행 중인 환경에서 완전한 교차 DB 정합성
+증명으로 해석하지 않습니다.
 
 현재 서비스 상품군 모델과 클라우드 DB는 아직 확정되지 않았으므로 실제 추론이나
 적재를 가장하지 않습니다. `contract-check` 명령으로 고정된 원천 데이터와 결과
