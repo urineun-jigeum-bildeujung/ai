@@ -7,8 +7,11 @@ from __future__ import annotations
 
 import json
 import math
+from calendar import monthrange
 from collections import Counter, defaultdict
+from datetime import date, datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from allergen_service import DICTIONARY, V3_PATH, evaluate_safety
 from allergen_repository import get_refs
@@ -16,7 +19,7 @@ from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION
 from gtin_validation import is_valid_gtin
 from product_input_adapter import RAW, _canonical_gtin_from_product_id, load_product_input
 from mock_integration_fixture import build_mock_fixture
-from service_caution_policy import evaluate_cautions, EVIDENCE_SOURCE
+from service_caution_policy import evaluate_cautions, EVIDENCE_SOURCE, CAUTION_POLICY
 
 
 class ServiceInputError(ValueError):
@@ -49,6 +52,29 @@ def _number(value, *, positive):
     return number
 
 
+def _today():
+    return datetime.now(ZoneInfo("Asia/Seoul")).date()
+
+
+def _birth_age(value, today):
+    # PostgreSQL DATE and exact ISO dates only; no timestamps or date guessing.
+    if isinstance(value, str):
+        try:
+            parsed = date.fromisoformat(value)
+        except ValueError:
+            raise ServiceInputError("PET_BIRTH_DATE_INVALID") from None
+        if parsed.isoformat() != value:
+            raise ServiceInputError("PET_BIRTH_DATE_INVALID")
+        value = parsed
+    if type(value) is not date or value > today:
+        raise ServiceInputError("PET_BIRTH_DATE_INVALID")
+    months = (today.year - value.year) * 12 + today.month - value.month
+    if today.day < min(value.day, monthrange(today.year, today.month)[1]):
+        months -= 1
+    stage = "GROWTH_REPRODUCTION" if months < 12 else "ADULT_MAINTENANCE"
+    return months / 12, stage
+
+
 def adapt_pet(source):
     species = {"DOG": "dog", "CAT": "cat"}.get(source.get("species"))
     if species is None:
@@ -63,14 +89,21 @@ def adapt_pet(source):
         for canonical in service_allergen_codes(code):
             if canonical not in allergies:
                 allergies.append(canonical)
+    birth_date = source.get("birth_date")
+    if birth_date is not None:
+        age, stage = _birth_age(birth_date, _today())
+    else:
+        age = _number(source.get("age"), positive=False)
+        stage = source.get("life_stage") or "UNKNOWN"
     return {
         "id": _identifier(source.get("id")), "species": species,
-        "age_years": _number(source.get("age"), positive=False),
+        "age_years": age,
         "weight_kg": _number(source.get("weight"), positive=True),
         "allergies": allergies, "allergy_profile_status": profile,
-        # 생애주기 누락을 age 기반 adult fallback으로 승격시키지 않는다.
-        "life_stage": source.get("life_stage") or "UNKNOWN",
-        "life_stage_detail": source.get("life_stage_detail"),
+        # Missing birth_date keeps the existing explicit-stage/fail-close policy.
+        # Birth date establishes age only, never pregnancy or lactation.
+        "life_stage": stage,
+        "life_stage_detail": None if birth_date is not None else source.get("life_stage_detail"),
         "service_allergy_codes": codes,
     }
 
@@ -80,7 +113,7 @@ def adapt_pet(source):
 # namespaced evidence so the existing profile gate fails closed.
 SERVICE_ALLERGEN_ALIASES = {
     **{code: (code.casefold(),) for code in (
-        "CHICKEN", "BEEF", "PORK", "LAMB", "FISH", "SALMON", "TUNA", "DAIRY",
+        "CHICKEN", "BEEF", "PORK", "LAMB", "FISH", "DAIRY",
         "EGG", "WHEY", "CORN", "RICE", "SOY", "POTATO", "YEAST", "TAPIOCA",
     )},
     "CHEESE": ("치즈",),
@@ -91,9 +124,24 @@ SERVICE_ALLERGEN_ALIASES = {
 }
 
 
+# Specific service enums require a same-specific canonical entry in v3.
+# The dictionary's ingredient alias "salmon" -> "fish" is not such evidence.
+SPECIFIC_FISH_CODES = {
+    "SALMON", "TUNA", "BONITO", "ANCHOVY", "MACKEREL", "HERRING", "SARDINE", "WHITEFISH",
+}
+
+
 def service_allergen_codes(code):
     from allergen_service import _norm
 
+    if code in CAUTION_POLICY:
+        return ["SERVICE_CODE:" + code]
+    if code in SPECIFIC_FISH_CODES:
+        canonical = code.casefold()
+        entry = DICTIONARY["entries"].get(canonical)
+        if entry is not None and entry["allergen_code"] == canonical:
+            return [canonical]
+        return ["SERVICE_CODE:" + code]
     values = SERVICE_ALLERGEN_ALIASES.get(code)
     if values is None:
         return ["SERVICE_CODE:" + code]
@@ -147,9 +195,14 @@ def structured_refs(product_id, codes):
     refs = []
     for code in codes:
         matches = index.get(code, set())
+        if code in CAUTION_POLICY:
+            matches = set()
+        elif code in SPECIFIC_FISH_CODES:
+            specific = service_allergen_codes(code)
+            matches = set(specific) if specific[0] in DICTIONARY["entries"] else set()
         normalized = code
         method = "STRUCTURED_SOURCE"
-        if not matches:
+        if not matches and code not in SPECIFIC_FISH_CODES and code not in CAUTION_POLICY:
             normalized = _norm(code)
             canonical = DICTIONARY["aliases"].get(normalized)
             entry = DICTIONARY["entries"].get(canonical)
@@ -243,7 +296,8 @@ def adapt_product(source, *, index=None):
 def _evaluate_service_allergen_safety(pet, product):
     """기존 gate 실행 후 같은 service namespace의 명시적 충돌만 추가 차단한다."""
     result = evaluate_safety(pet, product)
-    conflicts = sorted(set(pet["service_allergy_codes"]) & set(product["service_allergen_flags"]))
+    allergy_flags = set(product["service_allergen_flags"]) - set(CAUTION_POLICY)
+    conflicts = sorted(set(pet["service_allergy_codes"]) & allergy_flags)
     if not conflicts:
         return result  # 교집합 부재는 안전 근거가 아니다.
     return {**result, "safety_status": "SAFETY_BLOCKED", "allergy_check_status": "CONFLICT",

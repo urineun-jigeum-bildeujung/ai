@@ -36,7 +36,7 @@ FE → API Gateway → Nutrition AI FastAPI
 - `POST /api/nutrition/report`
 - `POST /api/nutrition/compare` — **Future / Not Implemented**, 현재 HTTP 501. 비교 기능은 현재 Runtime scope 밖이며 구현 완료 API가 아니다.
 
-`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`만 받는다. DB URL 미설정은 503 `SERVICE_SOURCE_NOT_CONFIGURED`, 내부 secret 미설정은 503 `SERVICE_AUTH_NOT_CONFIGURED`다. 구성이 있으면 Gateway 인증·SQL ownership 검증 후 실제 source를 조회하며 로컬 seed로 대체하지 않는다.
+`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`와 optional `allergy_profile_status`(UNKNOWN / KNOWN_NONE / KNOWN_LIST)를 받는다. FE 상태와 DB pet_allergy 목록의 모순 및 상태 미전달은 UNKNOWN으로 fail-close한다. birth_date가 있으면 12개월 기준으로 생애주기를 계산하고 임신/수유를 추론하지 않는다. DB URL 미설정은 503 `SERVICE_SOURCE_NOT_CONFIGURED`, 내부 secret 미설정은 503 `SERVICE_AUTH_NOT_CONFIGURED`다. 구성이 있으면 Gateway 인증·SQL ownership 검증 후 실제 source를 조회하며 로컬 seed로 대체하지 않는다.
 
 2026-09-28 로컬 통합 준비 변경과 담당자별 요청은 [P0~P3 보고서](docs/service_integration_preparation_p0_p3.md)를 따른다. Safety 응답에 `safety_reason_codes`, `conflicting_allergens`, `safety_message`를 추가했으며 기존 판정과 상태축은 유지한다.
 

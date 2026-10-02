@@ -22,17 +22,19 @@
 | `pet_id` | `id`, 양의 정수 또는 ASCII 숫자 문자열 → canonical 문자열 ID | 식별자 오류로 거절 |
 | `member_id` / ownership verified context | 인증된 principal의 소유 Pet임을 호출자가 확인한 뒤 내부 함수 호출 | 신뢰 경계 미연결이면 서비스 endpoint 활성화 금지 |
 | `species` | DOG/CAT → dog/cat | 거절, 임의 species 없음 |
-| `age` | 현재 합의된 년 단위 → `age_years`, 유한한 0 이상 값 | 거절, SQL numeric에서 단위 추론 금지 |
+| `birth_date` / `age` | birth_date 우선, KST 현재 날짜의 완료 개월 수 / 12 → age_years. birth_date 없으면 기존 년 단위 age 검증 | 잘못된 날짜/미래 날짜 거절, birth_date 없는 production stage는 UNKNOWN 유지 |
 | `weight` | 현재 합의된 kg → `weight_kg`, 유한한 양수 | 거절 |
 | `allergies` | 서비스 알레르겐 code 배열. 객체 배열이면 호출자가 명시적으로 code 추출 | 목록 없음은 빈 배열일 수 있지만 KNOWN_NONE의 근거가 아님 |
 | `allergy_profile_status` | UNKNOWN / KNOWN_NONE / KNOWN_LIST | 상태 생략, 미지원, 상태-목록 모순 → UNKNOWN |
-| `life_stage`, 필요 시 `life_stage_detail` | 명시적 canonical 단계 전달. 나이/상품명 기반 fallback 없음 | 단계 없음 → UNKNOWN, Safety fail-close |
+| `life_stage`, 필요 시 `life_stage_detail` | birth_date <12개월 GROWTH_REPRODUCTION, >=12개월 ADULT_MAINTENANCE. 생년월일 사용 시 임신/수유 detail을 만들거나 전달하지 않음 | birth_date 없으면 기존 명시 stage/UNKNOWN 정책 유지 |
+
+by-service-id의 FE 상태는 조회된 `pet_allergy` 목록과 교차 검증한다. 미전달/null은 DB 목록 존재 여부와 무관하게 UNKNOWN이며, DB에는 상태를 저장하지 않는다.
 
 `KNOWN_NONE`은 명시 상태 + 빈 목록, `KNOWN_LIST`는 명시 상태 + 비어 있지 않은 목록일 때만 일관적이다. `pet_allergy` 0행 또는 상태 미등록을 알레르기 없음으로 해석하지 않는다. Pet profile이 SoT이며 Product가 이를 덮어쓸 수 없다.
 
-Service `AllergenCode`는 `sever/dev` revision `230e598833f684c6c9f2ce605776e230a5b6f236`와 AI v3 사전의 명시 alias를 기준으로 변환한다. SALMON/TUNA → fish, CHEESE/WHEY → dairy, CRUSTACEAN → shellfish, WHEAT_GLUTEN → wheat, OAT_BARLEY → oat + barley, SWEET_POTATO/TAPIOCA → potato를 사용한다. 지원된 정확한 enum 값만 변환하며 원문 `service_allergy_codes`를 보존한다. v3에 근거 없는 enum은 `SERVICE_CODE:` unresolved로 유지하고 parent group, fuzzy text, 독성 namespace를 알레르겐으로 임의 확장하지 않는다.
+Service `AllergenCode`는 `sever/dev` revision `230e598833f684c6c9f2ce605776e230a5b6f236`와 AI v3 사전의 명시 alias를 기준으로 변환한다. SALMON/TUNA/BONITO/ANCHOVY 및 MACKEREL/HERRING/SARDINE/WHITEFISH는 동명의 v3 specific canonical entry가 있을 때만 매핑하며, 없으면 UNRESOLVED로 보존한다. fish parent alias로 확대하지 않는다. CHEESE/WHEY → dairy, CRUSTACEAN → shellfish, WHEAT_GLUTEN → wheat, OAT_BARLEY → oat + barley, SWEET_POTATO/TAPIOCA → potato를 사용한다. 지원된 정확한 enum 값만 변환하며 원문 `service_allergy_codes`를 보존한다. v3에 근거 없는 enum은 `SERVICE_CODE:` unresolved로 유지하고 parent group, fuzzy text, 독성 namespace를 알레르겐으로 임의 확장하지 않는다.
 
-최신 Pet domain/entity/DTO/migration에도 명시 allergy_profile_status 또는 life-stage 저장 필드가 없다. 따라서 알레르기 0행은 UNKNOWN이며 KNOWN_NONE persistence gap은 남는다. 기존 Mock Nutrition의 age-rule 호환 경로는 Feeding 정책과 분리한다. Feeding은 실제 Service stage와 승인 계수 없음을 명시하고 `MER_COEFFICIENT_UNRESOLVED`, `daily_serving_g=null`로 반환한다. 기존 bcs/is_neutered/birth_date 컬럼을 read-only 추가 조회하되 생애주기를 새로 추정하지 않는다.
+최신 Pet domain/entity/DTO/migration에도 명시 allergy_profile_status 또는 life-stage 저장 필드가 없다. 따라서 알레르기 0행은 UNKNOWN이며 KNOWN_NONE persistence gap은 남는다. 기존 Mock Nutrition의 age-rule 호환 경로는 Feeding 정책과 분리한다. Feeding은 실제 Service stage와 승인 계수 없음을 명시하고 `MER_COEFFICIENT_UNRESOLVED`, `daily_serving_g=null`로 반환한다. 기존 bcs/is_neutered/birth_date 컬럼은 read-only 조회한다. birth_date로 계산한 단계를 Nutrition/Safety/Feeding에 동일하게 전달하지만 MER 계수는 계속 미확정이다.
 
 ## Product 최소 입력
 
@@ -46,7 +48,9 @@ Service `AllergenCode`는 `sever/dev` revision `230e598833f684c6c9f2ce605776e230
 | `allergen_flags` | 서비스 알레르겐 code 배열 | 교집합 없음은 안전 근거 아님 |
 | `ingredient_codes` | dictionary ingredient code exact match 우선 STRUCTURED_SOURCE; 미일치 시 충돌 없는 정확한 v3 alias를 CANONICAL_ALIAS | 미등록/복수 매핑은 UNRESOLVED |
 
-같은 service namespace에서 Pet allergies와 Product flags가 정확히 교차하면 명시적 충돌 근거로 차단할 수 있다. 교집합 부재는 원료 evidence/profile/species/life-stage gate를 우회하지 않는다. `product_allergens`의 생성 주체 및 provenance 보장 정책은 외부 담당자가 확정해야 한다.
+한글 원료 exact alias는 기존 v3 매핑을 유지한다. Toxic/Caution code는 알레르기 매핑 및 allergen flag 교집합에서 제외하며, 독성 평가는 `product_cautions`만 사용한다.
+
+같은 service allergy namespace에서 Pet allergies와 Product flags가 정확히 교차하면 명시적 충돌 근거로 차단할 수 있다. 교집합 부재는 원료 evidence/profile/species/life-stage gate를 우회하지 않는다. `product_allergens`의 생성 주체 및 provenance 보장 정책은 외부 담당자가 확정해야 한다.
 
 ## 별도 Nutrition evidence
 
@@ -66,7 +70,7 @@ AAFCO claim은 별도 authoritative label evidence가 필요하다. 현재 Servi
 
 `analysis_status`만 보고 추천 제외를 결정하지 않는다. 기존 요청 기반/local persisted API의 호환 계약은 유지하며 이 문서는 신규 Service 입력 경계를 구분한다.
 
-`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`만 받는다. 현재 유효 요청은 **503 / SERVICE_SOURCE_NOT_CONFIGURED**다. 신뢰할 수 없는 `X-Member-Id` 또는 local seed/persisted artifact로 운영 source/auth를 대체하지 않는다. 내부 `analyze_service_records` 테스트는 실제 인증·ownership·AWS 검증이 아니다.
+`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`와 optional `allergy_profile_status`(UNKNOWN / KNOWN_NONE / KNOWN_LIST)를 받는다. 현재 유효 요청은 **503 / SERVICE_SOURCE_NOT_CONFIGURED**다. 신뢰할 수 없는 `X-Member-Id` 또는 local seed/persisted artifact로 운영 source/auth를 대체하지 않는다. 내부 `analyze_service_records` 테스트는 실제 인증·ownership·AWS 검증이 아니다.
 
 ## 운영 연결 전 필요한 외부 확정
 
@@ -77,3 +81,7 @@ AAFCO claim은 별도 authoritative label evidence가 필요하다. 현재 Servi
 5. AI 결과 저장 schema, 저장 주체, upsert key, transaction 및 저장 실패 응답 계약.
 
 AI 결과 저장 및 새 schema는 미확정이다. 필요 시 DDL은 `nutrition/docs/` 안에 `PROPOSED` / `NOT_APPLIED`로만 제안한다. 현재 CREATE/ALTER/GRANT/REVOKE/INSERT/UPDATE/DELETE 실행은 모두 금지다.
+
+## 2026-10-02 생년월일 경계
+
+현재 날짜는 Asia/Seoul 기준으로 계산한다. 12개월은 달력 개월 경계이며 2월 29일의 다음 해 경계는 2월 말일이다. PostgreSQL DATE와 정확한 YYYY-MM-DD 문자열만 허용한다. 생년월일이 없으면 production의 stage 누락 fail-close를 유지한다. 별도 Mock fixture의 기존 Nutrition AGE_RULE 호환 경로는 legacy regression을 위해 유지하며 Feeding으로 승격하지 않는다.
