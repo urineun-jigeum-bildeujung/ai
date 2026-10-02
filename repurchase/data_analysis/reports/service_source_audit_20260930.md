@@ -650,3 +650,28 @@ Validation 결과 JSON에 실제 학습 팩토리에서 얻은 XGBoost AFT 파�
 보관했다. 목데이터 Validation 탐색 결과이지 Test·실사용자 성능이 아니다.
 모델 아티팩트 파일 해시, 평가 대상/제외 기준 및 최종 manifest 승인은 아직
 남아 있으므로 이 변경만으로 Test를 열지 않는다.
+
+### 최종 평가 모집단 정책 기록 (#186)
+
+기존 시간 분할과 30일 IPCW·모델별 학습 규칙을
+`evaluation_population_policy`로 결과 JSON에 명시한다. Train 앵커는
+`anchor_at <= train_end_at`, Validation 앵커는
+`train_end_at < anchor_at <= validation_end_at`이며, 후속 Test 정책은
+`validation_end_at < anchor_at <= observation_end_at_assumption`으로
+기록한다. **이 단계에서 Test 앵커를 생성하거나 정답을 읽지는 않는다.**
+
+30일 이내 관측 재구매는 사건, 30일 이상 관측되고 그 전 사건이 없으면
+미발생 정답으로 취급한다. 30일 전에 검열된 행은 평가 모집단에는 남기되
+IPCW 가중치를 0으로 둔다. 두 후보는 같은 평가행을 사용한다. AFT의 0일
+기간 제외는 AFT **학습에만** 적용하고, LightGBM 학습은 30일 정답을
+확인할 수 있는 Train 행만 사용한다. manifest·Validation 결과·현재 정책이
+다르면 사전검증에서 원천 파일 접근 전에 거절한다.
+
+같은 로컬 목데이터의 70/85% Validation을 재실행한 결과, 이전 JSON과
+새 모집단 정책 필드를 제외한 값이 **정확히 일치**했다. 정답 확인
+**13,381행**, AFT Brier **0.120627**, LightGBM Brier **0.122557**,
+사용자 쌍 Bootstrap 95% 구간(AFT−LightGBM)
+**-0.002825~-0.001039**이다. Test는 평가하지 않았고 결과는
+`/private/tmp/repurchase-service-population-validation-70-85.json`에 보관했다.
+이 정책 기록은 향후 Test 구현의 입력 계약일 뿐, Test 실행 허가나
+아티팩트·최종 manifest 승인으로 해석하지 않는다.
