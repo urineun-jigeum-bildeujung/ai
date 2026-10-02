@@ -172,6 +172,12 @@ GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 �
 라이브러리만 포함하며 모델 아티팩트·입력 데이터·출력 결과·Secret은 실행 시
 외부에서 주입합니다.
 
+`scripts.modeling.cloud_source_reader`에는 호출자가 전달한 PostgreSQL 연결로
+`order_db`의 주문·상태·클레임과 `member_db`의 반려동물 생일을 읽는 함수를
+추가했습니다. 각 DB는 독립된 `REPEATABLE READ READ ONLY` 트랜잭션으로 읽고
+추출 시각을 반환합니다. 두 DB가 동일한 시점의 스냅샷이라는 보장은 없으며,
+아직 운영 배치 명령과 연결하거나 실제 DB에서 이 코드를 실행하지 않았습니다.
+
 현재 서비스 상품군 모델과 클라우드 DB는 아직 확정되지 않았으므로 실제 추론이나
 적재를 가장하지 않습니다. `contract-check` 명령으로 고정된 원천 데이터와 결과
 발행 계약을 끝까지 검사하는 기준선만 제공합니다.
