@@ -15,9 +15,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from scripts.modeling.lightgbm_baseline import create_lightgbm_classifier
 from scripts.modeling.operational_training_samples import (
     TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
 )
+from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
 from scripts.run_service_model_comparison import _file_sha256
 
 SOURCE_NAMES = (
@@ -137,6 +139,20 @@ def validate_manifest(
         or selected.get("selected_scale") != FROZEN_AFT["loss_distribution_scale"]
     ):
         raise ValueError("AFT 후보 설정이 고정된 최종 평가 후보와 다릅니다.")
+    frozen_model_configuration = {
+        "xgboost_aft": {
+            "parameters": create_xgboost_aft_parameters(
+                loss_distribution_scale=FROZEN_AFT["loss_distribution_scale"]
+            ),
+            "num_boost_round": FROZEN_AFT["num_boost_round"],
+        },
+        "lightgbm": {"parameters": create_lightgbm_classifier().get_params()},
+    }
+    if (
+        manifest.get("model_configuration") != frozen_model_configuration
+        or comparison.get("model_configuration") != frozen_model_configuration
+    ):
+        raise ValueError("두 모델의 학습 설정이 승인된 후보와 다릅니다.")
     if manifest.get("evaluation") != {
         "horizon_days": 30,
         "primary_metric": "ipcw_brier_score",
