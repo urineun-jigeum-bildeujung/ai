@@ -232,6 +232,9 @@ def _analyze_product(req: AnalyzeRequest, *, source_safety: dict[str, Any] | Non
             else "READY"
         )
 
+    if safety.get("conflicting_toxic_ingredients"):
+        result["consumer_card"] = safety["safety_message"]
+
     result["ingredient_normalized"] = [
         normalize_ingredient(ingredient) for ingredient in product.ingredient_list
     ]
