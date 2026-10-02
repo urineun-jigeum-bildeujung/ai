@@ -34,7 +34,7 @@ FE → API Gateway → Nutrition AI FastAPI
 - `POST /api/nutrition/analyze/by-product-id` — 로컬 선택 artifact에서 `product_id`를 조회하는 demonstrator
 - `POST /api/nutrition/safety`
 - `POST /api/nutrition/report`
-- `POST /api/nutrition/compare` — 내부 Gateway 인증을 사용하는 Service-ID 비교. 양의 정수 `pet_id`, 서로 다른 두 `product_ids`와 optional `allergy_profile_status`를 받으며 `READY/PARTIAL/UNAVAILABLE`을 반환한다. 공개 Gateway route는 별도 handoff다.
+- `POST /api/nutrition/compare` — **Future / Not Implemented**, 현재 HTTP 501. 비교 기능은 현재 Runtime scope 밖이며 구현 완료 API가 아니다.
 
 `POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`와 optional `allergy_profile_status`(UNKNOWN / KNOWN_NONE / KNOWN_LIST)를 받는다. FE 상태와 DB pet_allergy 목록의 모순 및 상태 미전달은 UNKNOWN으로 fail-close한다. birth_date가 있으면 12개월 기준으로 생애주기를 계산하고 임신/수유를 추론하지 않는다. DB URL 미설정은 503 `SERVICE_SOURCE_NOT_CONFIGURED`, 내부 secret 미설정은 503 `SERVICE_AUTH_NOT_CONFIGURED`다. 구성이 있으면 Gateway 인증·SQL ownership 검증 후 실제 source를 조회하며 로컬 seed로 대체하지 않는다.
 
@@ -87,28 +87,4 @@ FE → API Gateway → Nutrition AI FastAPI
 - `data/processed/baseline_manifest_v3.json`은 2026-09-04 historical reproduction manifest이며, 현재 Git branch/commit metadata가 아니다.
 - Pet/Product SELECT Repository와 HTTP trust boundary는 PR #141에서 구현했다. 실제 dev schema/row·Secret/NetworkPolicy·Gateway route·FE E2E는 남아 있다.
 - AI result persistence는 v1.0 필수 범위가 아니며 신규 Result Table을 이번 마감에 추가하지 않는다.
-- Human Gold expansion과 대규모 데이터 확대는 Future Scope다. Feeding은 `healthy_merck_v1` baseline estimate와 strict-identity synthetic energy를 구현했다. Recommendation Safety 처리 방식은 PR #129의 penalty 정책과 기존 hard-filter 기획 충돌을 해소한 뒤 확정한다.
-
-## 최종 계약 v3 구현 검증
-
-Focused regression is split by contract version; see `v3 regression interpretation` below.
-
-### v3 regression interpretation
-
-The v3 validation numbers use separate baselines and must not be collapsed into
-one "unchanged 145" claim:
-
-- historical SOURCE_HEAD focused baseline against the historical implementation: **145 PASS**
-- historical focused tests unaffected by the v3 Feeding contract, executed against v3: **133 PASS**
-- historical Service Feeding contract executed against v3: **6 PASS / 6 intentional FAIL**
-- current v3 focused Toxic/Allergen/Feeding suite: **151 PASS**
-- current v3 full Nutrition suite: **581 PASS**
-- legacy Service Mock projection: **286/286 identical**
-- local loopback HTTP validation: **13 requests / 58 assertions PASS**
-
-The six historical Feeding failures are intentional contract deltas caused by
-the approved `healthy_merck_v1` baseline policy and schema-driven synthetic
-integration energy. They are not described as unchanged historical regression.
-
-These results are local validation evidence. They do **not** claim live Service
-DB verification, deployed Gateway E2E, or remote deployment success.
+- Human Gold expansion, Feeding Engine, 대규모 데이터 확대는 Future Scope다. Recommendation Safety 처리 방식은 PR #129의 penalty 정책과 기존 hard-filter 기획 충돌을 해소한 뒤 확정한다.

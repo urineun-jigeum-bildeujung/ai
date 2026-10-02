@@ -24,8 +24,7 @@ def _round(value):
     return float(Decimal(str(value)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
 
 
-def calculate_feeding(*, weight_kg, energy, coefficient, species, supported_state=True,
-                      allow_energy_requirement=False):
+def calculate_feeding(*, weight_kg, energy, coefficient, species, supported_state=True):
     """Return null amounts on missing/invalid input, including numeric overflow.
 
 Rounding is presentation-only (one decimal, half up); MER and grams use the
@@ -69,8 +68,6 @@ unrounded intermediate values. Evidence metadata is independent of readiness.
         "coefficient_policy_contract_version": coefficient.get("policy_contract_version"),
         "calculation_version": CALCULATION_VERSION,
         "reason_codes": reasons,
-        "data_generation_type": energy.get("data_generation_type"),
-        "production_evidence": energy.get("production_evidence"),
     }
     # RER is an independent resting-energy estimate; it is not a feeding dose.
     if _positive(weight_kg) is not None and species in {"dog", "cat"}:
@@ -82,16 +79,6 @@ unrounded intermediate values. Evidence metadata is independent of readiness.
             result["rer_kcal_per_day"] = rounded_rer
         except (ArithmeticError, ValueError):
             result["reason_codes"].append("CALCULATION_INVALID")
-    if (allow_energy_requirement and result["reason_codes"] == ["ENERGY_DENSITY_MISSING"]
-            and result["rer_kcal_per_day"] is not None):
-        try:
-            mer = _round(rer * _positive(factor))
-            if not math.isfinite(mer) or mer <= 0:
-                raise ValueError("invalid MER")
-            result.update(status="ENERGY_REQUIREMENT_READY", mer_kcal_per_day=mer)
-        except (ArithmeticError, ValueError):
-            result["reason_codes"].append("CALCULATION_INVALID")
-        return result
     if result["reason_codes"]:
         return result
     try:

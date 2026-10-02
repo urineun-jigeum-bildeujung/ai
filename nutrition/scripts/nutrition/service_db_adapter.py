@@ -75,12 +75,6 @@ def _birth_age(value, today):
     return months / 12, stage
 
 
-def _target_enum(value, allowed, reason):
-    if value is not None and (not isinstance(value, str) or value not in allowed):
-        raise ServiceInputError(reason)
-    return value
-
-
 def adapt_pet(source):
     species = {"DOG": "dog", "CAT": "cat"}.get(source.get("species"))
     if species is None:
@@ -111,10 +105,6 @@ def adapt_pet(source):
         "life_stage": stage,
         "life_stage_detail": None if birth_date is not None else source.get("life_stage_detail"),
         "service_allergy_codes": codes,
-        "service_target_breed_size": _target_enum(source.get("target_breed_size"),
-            {"SMALL", "MEDIUM", "LARGE"}, "PET_TARGET_BREED_SIZE_INVALID"),
-        "product_target_stage": "GROWTH" if age < 1 else "ADULT" if age < 7 else "SENIOR",
-        "product_target_stage_policy_version": "pet_product_target_stage_v1",
     }
 
 
@@ -243,16 +233,11 @@ def adapt_product(source, *, index=None):
     bridge = (mock_fixture["identifier"] if mock_fixture is not None
               else bridge_sku(source.get("sku"), local_identity_index() if index is None else index))
     product = {
-        "id": product_id, "service_sku": source.get("sku"), "name": source.get("product_name") or product_id,
+        "id": product_id, "name": source.get("product_name") or product_id,
         "category": category, "target_species": species,
         # 서비스 타깃 연령은 AAFCO label evidence가 아니다.
         "aafco_life_stage": None,
-        "service_target_age_group": _target_enum(source.get("target_age_group"),
-            {"GROWTH", "ADULT", "SENIOR"}, "PRODUCT_TARGET_AGE_GROUP_INVALID"),
-        "service_target_breed_size": _target_enum(source.get("target_breed_size"),
-            {"SMALL", "MEDIUM", "LARGE"}, "PRODUCT_TARGET_BREED_SIZE_INVALID"),
-        "feeding_target": source.get("feeding_target"),
-        "feeding_method": source.get("feeding_method"),
+        "service_target_age_group": source.get("target_age_group"),
         "product_form": source.get("subcategory_code"),
         "ingredient_list": [], "nutrition_items": [],
         "ingredient_source": "SERVICE_INGREDIENT_CODE", "ingredient_source_version": "SERVICE_INPUT",

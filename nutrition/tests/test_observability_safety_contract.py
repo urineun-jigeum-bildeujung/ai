@@ -100,7 +100,7 @@ def test_missing_dependency_down_no_recreate(client, monkeypatch, tmp_path, rela
 @pytest.mark.parametrize("status", ["READY", "SAFETY_BLOCKED", "INSUFFICIENT_DATA", "SERVICE_DEGRADED", "FAILED"])
 def test_http200_and_domain_are_separate(client, monkeypatch, status):
     body = {"analysis_status": status, "pet_id": "private-pet"}
-    monkeypatch.setattr(api, "_analyze_direct", lambda req: body)
+    monkeypatch.setattr(api, "_analyze_product", lambda req: body)
     response = client.post("/api/nutrition/analyze", json=payload())
     assert response.status_code == 200 and response.json() == body
     metrics = client.get("/metrics").text
@@ -109,7 +109,7 @@ def test_http200_and_domain_are_separate(client, monkeypatch, status):
 
 
 def test_safety_and_analysis_counted_separately(client, monkeypatch):
-    monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": "INSUFFICIENT_DATA", "safety_status": "SAFETY_BLOCKED"})
+    monkeypatch.setattr(api, "_analyze_product", lambda req: {"analysis_status": "INSUFFICIENT_DATA", "safety_status": "SAFETY_BLOCKED"})
     client.post("/api/nutrition/analyze", json=payload())
     text = client.get("/metrics").text
     assert 'axis="analysis_status",status="INSUFFICIENT_DATA"' in text
@@ -126,11 +126,11 @@ def test_errors_and_unknown_paths_do_not_leak(client, monkeypatch):
     response = client.get("/health", headers={"X-Request-ID": "request_12345678"})
     assert response.headers["x-request-id"] == "request_12345678"
     assert client.post("/api/nutrition/analyze", json={}).status_code == 422
-    assert client.post("/api/nutrition/compare").status_code == 422
+    assert client.post("/api/nutrition/compare").status_code == 501
     assert client.get("/private-person?token=private-secret").status_code == 404
     def fail(req):
         raise RuntimeError("private-secret")
-    monkeypatch.setattr(api, "_analyze_direct", fail)
+    monkeypatch.setattr(api, "_analyze_product", fail)
     response = client.post("/api/nutrition/analyze", json=payload())
     assert response.status_code == 500 and response.text == "Internal Server Error"
     assert "x-request-id" in response.headers
@@ -140,7 +140,7 @@ def test_errors_and_unknown_paths_do_not_leak(client, monkeypatch):
 
 
 def test_concurrent_requests_no_context_cross_contamination(client, monkeypatch):
-    monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": req.product.name})
+    monkeypatch.setattr(api, "_analyze_product", lambda req: {"analysis_status": req.product.name})
     def request(index):
         body = payload()
         body["product"]["name"] = "READY" if index % 2 else "INSUFFICIENT_DATA"
@@ -163,7 +163,7 @@ def test_catalog_query_does_not_create_missing_database(tmp_path):
 
 
 def test_unknown_domain_value_and_dependency_errors_are_redacted(client, monkeypatch):
-    monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": "private-value"})
+    monkeypatch.setattr(api, "_analyze_product", lambda req: {"analysis_status": "private-value"})
     client.post("/api/nutrition/analyze", json=payload())
     def fail(*args):
         raise OSError("private-credential")
