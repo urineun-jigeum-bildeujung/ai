@@ -10,7 +10,8 @@ import service_db_adapter as adapter
 
 
 @pytest.mark.parametrize("code,expected", [
-    ("CHICKEN", ["chicken"]), ("SALMON", ["fish"]), ("TUNA", ["fish"]),
+    ("CHICKEN", ["chicken"]), ("SALMON", ["SERVICE_CODE:SALMON"]), ("TUNA", ["SERVICE_CODE:TUNA"]),
+    ("BONITO", ["SERVICE_CODE:BONITO"]), ("ANCHOVY", ["SERVICE_CODE:ANCHOVY"]),
     ("CHEESE", ["dairy"]), ("WHEY", ["dairy"]), ("CRUSTACEAN", ["shellfish"]),
     ("WHEAT_GLUTEN", ["wheat"]), ("OAT_BARLEY", ["barley", "oat"]),
     ("SWEET_POTATO", ["potato"]), ("TAPIOCA", ["potato"]),
@@ -46,7 +47,7 @@ def test_mapped_ingredient_still_blocks_declared_allergy(ingredient):
 
 def test_unknown_ingredient_is_not_cleared_after_alias_mapping():
     pet = adapter.adapt_pet({"id": 1, "species": "DOG", "age": 3, "weight": 10,
-        "allergies": ["SALMON"], "allergy_profile_status": "KNOWN_LIST", "life_stage": "adult"})
+        "allergies": ["CHICKEN"], "allergy_profile_status": "KNOWN_LIST", "life_stage": "adult"})
     product = {"id": "2", "category": "food", "target_species": "dog", "aafco_life_stage": "ADULT",
         "ingredient_list": [], "service_allergen_flags": [],
         "product_allergen_refs": adapter.structured_refs("2", ["당근"])}
