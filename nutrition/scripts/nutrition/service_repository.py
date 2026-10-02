@@ -85,6 +85,7 @@ def get_product(product_id):
             ("target_species", "SELECT species FROM public.product_target_species WHERE product_id = %s ORDER BY species"),
             ("allergen_flags", "SELECT allergen_code FROM public.product_allergens WHERE product_id = %s ORDER BY allergen_code"),
             ("ingredient_codes", "SELECT ingredient_code FROM public.product_ingredients WHERE product_id = %s ORDER BY ingredient_code"),
+            ("caution_codes", "SELECT caution_code FROM public.product_cautions WHERE product_id = %s ORDER BY caution_code"),
         ):
             cursor.execute(query, (product_id,))
             result[field] = [item[0] for item in cursor.fetchall()]
@@ -115,7 +116,7 @@ def list_active_products():
             row[0]: dict(zip(
                 ("id", "sku", "product_name", "category_code", "subcategory_code", "target_age_group"),
                 row,
-            ), target_species=[], allergen_flags=[], ingredient_codes=[])
+            ), target_species=[], allergen_flags=[], ingredient_codes=[], caution_codes=[])
             for row in base_rows
         }
         ids = list(products)
@@ -123,6 +124,7 @@ def list_active_products():
             ("target_species", "SELECT product_id, species FROM public.product_target_species WHERE product_id = ANY(%s) ORDER BY product_id, species"),
             ("allergen_flags", "SELECT product_id, allergen_code FROM public.product_allergens WHERE product_id = ANY(%s) ORDER BY product_id, allergen_code"),
             ("ingredient_codes", "SELECT product_id, ingredient_code FROM public.product_ingredients WHERE product_id = ANY(%s) ORDER BY product_id, sort_order"),
+            ("caution_codes", "SELECT product_id, caution_code FROM public.product_cautions WHERE product_id = ANY(%s) ORDER BY product_id, caution_code"),
         ):
             cursor.execute(query, (ids,))
             for product_id, value in cursor.fetchall():

@@ -1,6 +1,6 @@
 """조회 완료된 Service source를 Canonical Input으로 변환한다. SQL/인증/저장은 하지 않는다.
 
-target_species, ingredient_codes, allergen_flags는 관계 테이블을 조회한 호출자가
+target_species, ingredient_codes, allergen_flags, caution_codes는 관계 테이블을 조회한 호출자가
 명시적으로 전달하는 배열이다. 이 집계 인터페이스를 실제 DB column으로 주장하지 않는다.
 """
 from __future__ import annotations
@@ -16,6 +16,7 @@ from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION
 from gtin_validation import is_valid_gtin
 from product_input_adapter import RAW, _canonical_gtin_from_product_id, load_product_input
 from mock_integration_fixture import build_mock_fixture
+from service_caution_policy import evaluate_cautions, EVIDENCE_SOURCE
 
 
 class ServiceInputError(ValueError):
@@ -131,6 +132,7 @@ def adapt_product(source, *, index=None):
     species = {("DOG",): "dog", ("CAT",): "cat", ("CAT", "DOG"): "both"}.get(tuple(species_codes))
     ingredient_codes = _codes(source.get("ingredient_codes"))
     flags = _codes(source.get("allergen_flags"))
+    caution_codes = _codes(source.get("caution_codes"))
     mock_fixture = build_mock_fixture(source)
     bridge = (mock_fixture["identifier"] if mock_fixture is not None
               else bridge_sku(source.get("sku"), local_identity_index() if index is None else index))
@@ -144,6 +146,7 @@ def adapt_product(source, *, index=None):
         "ingredient_list": [], "nutrition_items": [],
         "ingredient_source": "SERVICE_INGREDIENT_CODE", "ingredient_source_version": "SERVICE_INPUT",
         "service_ingredient_codes": ingredient_codes, "service_allergen_flags": flags,
+        "service_caution_codes": caution_codes,
         "product_allergen_refs": structured_refs(product_id, ingredient_codes),
         "_evidence_trace": "STRUCTURED_SOURCE",
     }
@@ -152,6 +155,8 @@ def adapt_product(source, *, index=None):
                   "integration_identity_verified": False,
                   "service_target_age_group": source.get("target_age_group"),
                   "aafco_life_stage_evidence_status": "UNKNOWN"}
+    if caution_codes:
+        provenance["service_cautions"] = {"codes": caution_codes, "evidence_source": EVIDENCE_SOURCE}
     if mock_fixture is not None:
         # Integration fixtures are a separate evidence namespace.  They never
         # enter ``load_product_input`` and never masquerade as GTIN evidence.
@@ -192,7 +197,7 @@ def adapt_product(source, *, index=None):
     return {"product": product, "provenance": provenance}
 
 
-def evaluate_service_safety(pet, product):
+def _evaluate_service_allergen_safety(pet, product):
     """기존 gate 실행 후 같은 service namespace의 명시적 충돌만 추가 차단한다."""
     result = evaluate_safety(pet, product)
     conflicts = sorted(set(pet["service_allergy_codes"]) & set(product["service_allergen_flags"]))
@@ -206,3 +211,22 @@ def evaluate_service_safety(pet, product):
                 for code in conflicts]],
             "warnings": list(dict.fromkeys([*result["warnings"], "서비스에 등록된 알레르겐 코드가 일치합니다."])),
             "safety_message": "등록한 알레르기 코드와 상품의 서비스 알레르겐 코드가 일치하여 제외했습니다."}
+
+
+def evaluate_service_safety(pet, product):
+    """Preserve the existing allergen gate, then independently apply TOXIC."""
+    result = _evaluate_service_allergen_safety(pet, product)
+    codes = product.get("service_caution_codes", [])
+    if not codes:
+        return result
+    evaluations = evaluate_cautions(pet["species"], codes)
+    toxic = [item for item in evaluations if item["policy_status"] == "BLOCKED"]
+    result = {**result, "caution_evaluations": evaluations, "conflicting_toxic_ingredients": toxic}
+    if not toxic:
+        return result
+    message = "해당 반려동물 종에 독성으로 정의된 주의 원료가 등록되어 이 상품을 제외했습니다."
+    return {**result, "safety_status": "SAFETY_BLOCKED", "excluded": True,
+            "safety_reason_codes": list(dict.fromkeys([*result["safety_reason_codes"], "TOXIC_INGREDIENT"])),
+            "exclude_reasons": sorted(set(result["exclude_reasons"]) | {"TOXIC_INGREDIENT"}),
+            "warnings": list(dict.fromkeys([*result["warnings"], message])),
+            "safety_message": message}
