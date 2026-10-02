@@ -33,6 +33,8 @@ missing/corrupt artifact fails closed instead of changing Nutrition/Safety.
         return {"energy_density_kcal_per_kg": form["energy_density_kcal_per_kg"],
                 "energy_source_type": artifact["energy_source_type"],
                 "energy_version": artifact["energy_version"],
-                "energy_basis": artifact["energy_basis"]}
+                "energy_basis": artifact["energy_basis"],
+                "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+                "production_evidence": False}
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return None

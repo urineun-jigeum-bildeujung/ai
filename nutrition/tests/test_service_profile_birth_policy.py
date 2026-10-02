@@ -60,7 +60,7 @@ def test_http_declaration_checked_against_repository_rows(monkeypatch, declared,
         assert result["safety_status"] == "SAFETY_BLOCKED"
     else:
         assert result["safety_status"] == "NOT_APPLICABLE" and not result["excluded"]
-    assert result["feeding"]["daily_serving_g"] is None
+    assert (result["feeding"]["daily_serving_g"] is None) == (profile != "KNOWN_NONE")
 
 
 @pytest.mark.parametrize("value", ["KNOWN", "known_none", "", 0, True, [], {}])
@@ -91,7 +91,7 @@ def test_birth_date_precedes_stale_age_and_stage(monkeypatch, today, birth, stag
     result = api.analyze_service_records(source, product(target_species=[species]))
     assert result["pet_reference_stage"]["stage"] == stage
     assert "PET_LIFE_STAGE_UNRESOLVED" not in result["feeding"]["reason_codes"]
-    assert result["feeding"]["daily_serving_g"] is None
+    assert (result["feeding"]["daily_serving_g"] is None) == (stage == "GROWTH_REPRODUCTION")
     if stage == "GROWTH_REPRODUCTION":
         assert result["excluded"] and "LIFE_STAGE_MISMATCH" in result["safety_reason_codes"]
 

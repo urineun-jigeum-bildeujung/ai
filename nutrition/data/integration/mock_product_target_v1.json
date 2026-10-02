@@ -1,0 +1,998 @@
+{
+  "fixture_version": "mock_product_target_v1",
+  "source_type": "MOCK_INTEGRATION_FIXTURE",
+  "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+  "production_evidence": false,
+  "identity_source": "saved read-only Service product integration snapshot 2026-10-02",
+  "identity_source_sha256": "c73fe78528e98ff47d648d35201c497b83729870a3512d7b6def4ac140c83d3a",
+  "assignment_rule": "Only snapshot rows with missing target_age_group. Synthetic stage cycles by service id modulo 4 (GROWTH, ADULT, SENIOR, ALL_LIFE_STAGES); DOG size alternates SMALL/even, MEDIUM+LARGE/odd. CAT size is not applicable. No product name inference; differing Service evidence is a conflict. This target fixture never supplies AAFCO evidence.",
+  "items": [
+    {
+      "service_product_id": 201,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0001",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 202,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0002",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 203,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0003",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 204,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0004",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 205,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0005",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 206,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0006",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 207,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0007",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 208,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0008",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 209,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0009",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 210,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0010",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 211,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0011",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 212,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0012",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 213,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0013",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 214,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0014",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 215,
+      "service_sku": "MOCK-TREAT-JERKY_TREAT-0015",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 216,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0001",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 217,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0002",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 218,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0003",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 219,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0004",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 220,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0005",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 221,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0006",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 222,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0007",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 223,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0008",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 224,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0009",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 225,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0010",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 226,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0011",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 227,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0012",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 228,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0013",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 229,
+      "service_sku": "MOCK-TREAT-WET_TREAT-0014",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 230,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0001",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 231,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0002",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 232,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0003",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 233,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0004",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 234,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0005",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 235,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0006",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 236,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0007",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 237,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0008",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 238,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0009",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 239,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0010",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 240,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0011",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 241,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0012",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 242,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0013",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 243,
+      "service_sku": "MOCK-TREAT-FREEZE_DRIED_TREAT-0014",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 244,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0001",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 245,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0002",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 246,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0003",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 247,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0004",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 248,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0005",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 249,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0006",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 250,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0007",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 251,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0008",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 252,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0009",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 253,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0010",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 254,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0011",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 255,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0012",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 256,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0013",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 257,
+      "service_sku": "MOCK-TREAT-BISCUIT_TREAT-0014",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 258,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0001",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 259,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0002",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 260,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0003",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 261,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0004",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 262,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0005",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 263,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0006",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 264,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0007",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 265,
+      "service_sku": "MOCK-SUPPLEMENT-POWDER_SUPPLEMENT-0008",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 266,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0001",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 267,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0002",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 268,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0003",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 269,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0004",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 270,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0005",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 271,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0006",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 272,
+      "service_sku": "MOCK-SUPPLEMENT-LIQUID_SUPPLEMENT-0007",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 273,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0001",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 274,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0002",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 275,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0003",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 276,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0004",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 277,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0005",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 278,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0006",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 279,
+      "service_sku": "MOCK-SUPPLEMENT-CHEWABLE_SUPPLEMENT-0007",
+      "raw_target_label": "고양이 전 연령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 280,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0001",
+      "raw_target_label": "소형견 성장기",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 281,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0002",
+      "raw_target_label": "중·대형견 성체",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 282,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0003",
+      "raw_target_label": "소형견 노령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "SMALL"
+      ],
+      "target_stage": "SENIOR"
+    },
+    {
+      "service_product_id": 283,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0004",
+      "raw_target_label": "중·대형견 전 연령",
+      "target_species": [
+        "DOG"
+      ],
+      "target_sizes": [
+        "MEDIUM",
+        "LARGE"
+      ],
+      "target_stage": "ALL_LIFE_STAGES"
+    },
+    {
+      "service_product_id": 284,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0005",
+      "raw_target_label": "고양이 성장기",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "GROWTH"
+    },
+    {
+      "service_product_id": 285,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0006",
+      "raw_target_label": "고양이 성체",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "ADULT"
+    },
+    {
+      "service_product_id": 286,
+      "service_sku": "MOCK-SUPPLEMENT-TABLET_SUPPLEMENT-0007",
+      "raw_target_label": "고양이 노령",
+      "target_species": [
+        "CAT"
+      ],
+      "target_sizes": [],
+      "target_stage": "SENIOR"
+    }
+  ]
+}
