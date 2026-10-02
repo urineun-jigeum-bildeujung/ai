@@ -178,6 +178,45 @@ def test_no_claims_preserves_paid_item() -> None:
     assert result["net_quantity"].tolist() == [2]
 
 
+def test_requested_exchange_does_not_change_purchase_quantity() -> None:
+    orders, items, histories, claims, claim_items = _sources()
+    claims.loc[len(claims)] = ["c2", "o1", "EXCHANGE", "REQUESTED", None]
+    claim_items.loc[len(claim_items)] = ["ci2", "c2", "i1", 1]
+
+    before_cancellation = build_valid_order_items_as_of(
+        orders,
+        items,
+        histories,
+        claims,
+        claim_items,
+        as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
+    )
+
+    assert before_cancellation["net_quantity"].tolist() == [2]
+
+
+def test_completed_exchange_is_rejected_until_mapping_is_defined() -> None:
+    orders, items, histories, claims, claim_items = _sources()
+    claims.loc[len(claims)] = [
+        "c2",
+        "o1",
+        "EXCHANGE",
+        "COMPLETED",
+        "2026-01-10T00:00:00Z",
+    ]
+    claim_items.loc[len(claim_items)] = ["ci2", "c2", "i1", 1]
+
+    with pytest.raises(OperationalOrderError, match="완료된 교환"):
+        build_valid_order_items_as_of(
+            orders,
+            items,
+            histories,
+            claims,
+            claim_items,
+            as_of_timestamp=pd.Timestamp("2026-01-05T00:00:00Z"),
+        )
+
+
 def test_as_of_inputs_feed_user_and_pet_events() -> None:
     orders, items, histories, claims, claim_items = _sources()
     pets = pd.DataFrame({"pet_id": ["pet1"], "birth_date": ["2025-12-01"]})

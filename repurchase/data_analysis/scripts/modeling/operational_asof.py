@@ -89,7 +89,7 @@ def build_valid_order_items_as_of(
         raise OperationalOrderError("클레임 상품에 존재하지 않는 주문상품이 있습니다.")
     if not status_histories["to_status"].isin(ALL_ORDER_STATUSES).all():
         raise OperationalOrderError("상태 이력에 지원하지 않는 주문 상태가 있습니다.")
-    if not claims["claim_type"].isin({"CANCEL", "RETURN"}).all():
+    if not claims["claim_type"].isin({"CANCEL", "RETURN", "EXCHANGE"}).all():
         raise OperationalOrderError("지원하지 않는 클레임 유형이 있습니다.")
     if (
         not claims["claim_status"]
@@ -97,6 +97,12 @@ def build_valid_order_items_as_of(
         .all()
     ):
         raise OperationalOrderError("지원하지 않는 클레임 상태가 있습니다.")
+    # 요청 단계의 교환은 구매 수량을 바꾸지 않습니다. 완료된 교환의 원상품·대체상품
+    # 연결 규칙은 아직 정해지지 않았으므로 취소나 반품으로 추측해 처리하지 않습니다.
+    if (
+        claims["claim_type"].eq("EXCHANGE") & claims["claim_status"].eq("COMPLETED")
+    ).any():
+        raise OperationalOrderError("완료된 교환의 구매 수량 복원 규칙이 없습니다.")
     if not claim_items.empty:
         _require_nonnegative_integer(claim_items, "quantity")
     if claim_items["quantity"].le(0).any():
