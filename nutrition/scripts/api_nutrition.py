@@ -45,6 +45,9 @@ from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION  # ty
 from product_input_adapter import load_product_input  # type: ignore  # noqa: E402
 from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety, ServiceInputError  # noqa: E402
 from mock_integration_fixture import probe_fixture  # noqa: E402
+from feeding import calculate_feeding  # noqa: E402
+from mer_coefficient_policy import resolve_mer_coefficient  # noqa: E402
+from mock_feeding_fixture import mock_energy  # noqa: E402
 import service_repository  # noqa: E402
 from nutrition_readiness import (  # type: ignore  # noqa: E402
     evaluate_nutrition_coverage,
@@ -314,6 +317,17 @@ def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str,
     req = AnalyzeRequest(pet=PetIn(**pet), product=ProductIn(**product))
     result = _analyze_product(req, source_safety=evaluate_service_safety(pet, product))
     result["input_provenance"] = loaded["provenance"]
+    # Feeding policy sees the actual Service stage, never the legacy Mock
+    # Nutrition-only age-rule compatibility adjustment above.
+    coefficient = resolve_mer_coefficient(pet_source)
+    feeding = calculate_feeding(
+        weight_kg=pet["weight_kg"], species=pet["species"],
+        energy=mock_energy(product_source, source_meta), coefficient=coefficient,
+    )
+    if result["excluded"]:
+        feeding.update(status="BLOCKED", daily_serving_g=None, mer_kcal_per_day=None)
+        feeding["reason_codes"].append("FEEDING_SAFETY_EXCLUDED")
+    result["feeding"] = feeding
     return result
 
 
