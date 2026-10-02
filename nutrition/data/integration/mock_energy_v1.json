@@ -1,0 +1,13 @@
+{
+  "energy_basis": "AS_FED",
+  "energy_version": "mock_energy_v1",
+  "energy_source_type": "MOCK_INTEGRATION_FIXTURE",
+  "source_contract": "https://app.notion.com/p/29baa56b8d3483a7be1401b8800df6a5",
+  "source_section": "3-6 product form energy ranges; mock generation policy",
+  "assignment_rule": "Fixed arithmetic midpoint of the project's Mock DRY_FOOD and WET_FOOD ranges; no species/stage adjustment is defined in that contract. Unsupported forms remain missing.",
+  "manufacturer_evidence": false,
+  "forms": {
+    "DRY_FOOD": {"range_kcal_per_kg": [3200, 4500], "energy_density_kcal_per_kg": 3850},
+    "WET_FOOD": {"range_kcal_per_kg": [500, 1000], "energy_density_kcal_per_kg": 750}
+  }
+}
