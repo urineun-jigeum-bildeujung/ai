@@ -19,6 +19,9 @@ from scripts.modeling.lightgbm_baseline import create_lightgbm_classifier
 from scripts.modeling.operational_training_samples import (
     TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
 )
+from scripts.modeling.service_evaluation_population import (
+    service_evaluation_population_policy,
+)
 from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
 from scripts.run_service_model_comparison import _file_sha256
 
@@ -161,6 +164,12 @@ def validate_manifest(
         "bootstrap_random_seed": 42,
     }:
         raise ValueError("최종 평가 지표 계약이 다릅니다.")
+    population_policy = service_evaluation_population_policy()
+    if (
+        manifest.get("evaluation_population_policy") != population_policy
+        or comparison.get("evaluation_population_policy") != population_policy
+    ):
+        raise ValueError("최종 평가 모집단·제외 기준 계약이 다릅니다.")
     summary = comparison.get("summary")
     calibration = comparison.get("calibration")
     bootstrap = comparison.get("paired_bootstrap_summary")

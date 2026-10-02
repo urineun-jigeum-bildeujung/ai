@@ -30,6 +30,9 @@ from scripts.modeling.operational_training_samples import (
 from scripts.modeling.operational_validity_intervals import (
     build_valid_purchase_item_intervals,
 )
+from scripts.modeling.service_evaluation_population import (
+    service_evaluation_population_policy,
+)
 from scripts.modeling.service_model_comparison import (
     compare_service_aft_lightgbm,
     select_service_aft_boost_rounds,
@@ -255,6 +258,7 @@ def run_comparison(
         "train_end_at": train_end.isoformat(),
         "validation_end_at": validation_end.isoformat(),
         "test_evaluated": False,
+        "evaluation_population_policy": service_evaluation_population_policy(),
         # 기본값까지 포함한 실제 학습 팩토리 설정을 남겨 이후 검증자가
         # 코드 지문뿐 아니라 두 후보의 설정 자체를 대조할 수 있게 합니다.
         "model_configuration": {
