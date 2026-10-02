@@ -617,7 +617,7 @@ Test를 열기 전에는 관측 종료 컷, 평가 대상·제외 기준, 학습
 
 ### 최종 평가 입력 사전검증 경로 (#179)
 
-별도 `scripts.validate_service_final_evaluation` 명령은 승인된 manifest,
+별도 `scripts.validate_service_final_evaluation` 명령은 사전검증용 manifest,
 기존 Validation 결과 JSON, 원천 CSV 6개의 경로를 받아 **설정부터 검사**한다.
 manifest에는 `schema_version=1`, 기존 결과와 동일한
 `source_sha256`·`runtime_versions`·`feature_generation_version`·관측/분할 컷,

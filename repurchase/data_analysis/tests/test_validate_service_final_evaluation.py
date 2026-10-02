@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 import sys
-from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -17,7 +16,12 @@ from scripts.run_service_model_comparison import _file_sha256
 
 
 @pytest.fixture
-def frozen_inputs(tmp_path: Path) -> tuple[dict, dict, dict[str, Path]]:
+def frozen_inputs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[dict, dict, dict[str, Path]]:
+    # CI의 경량 테스트 환경에는 학습 패키지의 메타데이터가 없을 수 있습니다.
+    package_versions = {"pandas": "2.3.3", "xgboost": "3.2.0", "lightgbm": "4.7.0"}
+    monkeypatch.setattr(preflight, "version", package_versions.__getitem__)
     sources = {name: tmp_path / f"{name}.csv" for name in preflight.SOURCE_NAMES}
     for name, path in sources.items():
         path.write_text(f"{name}\n", encoding="utf-8")
@@ -32,7 +36,7 @@ def frozen_inputs(tmp_path: Path) -> tuple[dict, dict, dict[str, Path]]:
         "feature_generation_version": TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
         "runtime_versions": {
             "python": sys.version.split()[0],
-            **{name: version(name) for name in ("pandas", "xgboost", "lightgbm")},
+            **package_versions,
         },
         "code_sha256": {path.name: _file_sha256(path) for path in preflight.CODE_PATHS},
         "aft_configuration": preflight.FROZEN_AFT.copy(),
@@ -101,6 +105,7 @@ def test_preflight_rejects_changed_source_file(frozen_inputs: tuple) -> None:
         ("observation_end_at_assumption", "NaT", "유효한 시각"),
         ("observation_end_at_assumption", "not-a-date", "유효한 시각"),
         ("feature_generation_version", 999, "feature_generation_version"),
+        ("runtime_versions", {"python": "0.0.0"}, "runtime_versions"),
         ("aft_configuration", {"loss_distribution": "normal"}, "AFT 후보"),
         ("evaluation", {"horizon_days": 7}, "지표 계약"),
     ],
