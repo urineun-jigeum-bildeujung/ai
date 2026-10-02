@@ -395,6 +395,9 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     assert selected["aft_round_selection"]["selected_rounds"] == 7
     assert "aft_round_selection" not in fixed
     assert scale["aft_scale_selection"]["selected_scale"] == 2.0
+    assert scale["evaluation_population_policy"] == (
+        runner.service_evaluation_population_policy()
+    )
     assert selected["model_configuration"]["xgboost_aft"]["num_boost_round"] == 7
     assert (
         fixed["model_configuration"]["xgboost_aft"]["parameters"][

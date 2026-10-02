@@ -58,6 +58,9 @@ def frozen_inputs(
             "bootstrap_replicates": 1000,
             "bootstrap_random_seed": 42,
         },
+        "evaluation_population_policy": (
+            preflight.service_evaluation_population_policy()
+        ),
     }
     comparison = {
         key: copy.deepcopy(manifest[key])
@@ -74,6 +77,9 @@ def frozen_inputs(
     }
     comparison["test_evaluated"] = False
     comparison["model_configuration"] = copy.deepcopy(manifest["model_configuration"])
+    comparison["evaluation_population_policy"] = copy.deepcopy(
+        manifest["evaluation_population_policy"]
+    )
     comparison["aft_scale_selection"] = {
         "loss_distribution": "normal",
         "fixed_num_boost_round": 20,
@@ -121,6 +127,7 @@ def test_preflight_rejects_changed_source_file(frozen_inputs: tuple) -> None:
         ("aft_configuration", {"loss_distribution": "normal"}, "AFT 후보"),
         ("model_configuration", {}, "학습 설정"),
         ("evaluation", {"horizon_days": 7}, "지표 계약"),
+        ("evaluation_population_policy", {}, "모집단·제외 기준"),
     ],
 )
 def test_preflight_rejects_changed_contract_before_source_access(
@@ -160,4 +167,18 @@ def test_preflight_rejects_changed_validation_model_settings(
 
     monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
     with pytest.raises(ValueError, match="학습 설정"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_changed_validation_population_policy(
+    frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest, comparison, sources = frozen_inputs
+    comparison["evaluation_population_policy"]["unknown_outcome"] = "drop_row"
+
+    def fail_if_source_opened(_: Path) -> str:
+        raise AssertionError("모집단 계약 오류 뒤에는 원천 파일을 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
+    with pytest.raises(ValueError, match="모집단·제외 기준"):
         preflight.validate_manifest(manifest, comparison, sources)
