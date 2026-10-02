@@ -23,6 +23,7 @@ import api_nutrition as api
 
 
 def legacy_projection(result):
+    """Copy an analysis and remove additive fields excluded from archived parity checks."""
     result = deepcopy(result)
     for key in ('feeding', 'product_allergen_refs', 'target_compatibility', 'presentation', 'suitability', 'product_label'):
         result.pop(key, None)
@@ -36,6 +37,10 @@ def legacy_projection(result):
 
 
 def replay(products, baseline):
+    """Verify archived hashes for 286 MOCK products and exact target fixture identities.
+
+    Return fixture counts and parity metadata; raise AssertionError on drift.
+    """
     pet = {'id': 10, 'species': 'DOG', 'age': 2, 'weight': 8, 'allergies': [],
            'allergy_profile_status': 'KNOWN_NONE', 'life_stage': None}
     statuses = Counter()
@@ -58,6 +63,11 @@ def replay(products, baseline):
 
 
 def runtime(products):
+    """Run loopback HTTP contract checks against synthetic Service repository reads.
+
+    Return assertion counts and observed outcomes, restoring repository getters
+    and environment variables and stopping the server when checks finish.
+    """
     import uvicorn
     sock = socket.socket()
     sock.bind(('127.0.0.1', 0))
@@ -68,11 +78,13 @@ def runtime(products):
     requests = 0
 
     def check(condition):
+        """Count one HTTP contract assertion and fail with a fixed message when false."""
         nonlocal checks
         checks += 1
         assert condition, 'HTTP_DOMAIN_ASSERTION_FAILED'
 
     def request(path, body=None, authenticated=True):
+        """Count and send a loopback request, decoding success bodies or HTTP error details."""
         nonlocal requests
         requests += 1
         headers = {'Content-Type': 'application/json'}
@@ -205,6 +217,7 @@ def runtime(products):
 
 
 def main():
+    """Read archived products and baseline hashes, run checks, and write a JSON report."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--baseline', type=Path, required=True)

@@ -14,14 +14,22 @@ ORDER = ['CRUDE_PROTEIN', 'CRUDE_FAT', 'MOISTURE', 'CALCIUM', 'PHOSPHORUS', 'TAU
 
 
 def nutrient_sort_key(code):
+    """Sort priority nutrients first and remaining nutrient codes alphabetically."""
     return (ORDER.index(code) if code in ORDER else len(ORDER), code)
 
 
 def numeric(value):
+    """Return whether value is a finite int or float, excluding booleans."""
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def build_nutrition_presentation(compared_items, nutrition_status):
+    """Build sorted nutrient display rows and comparison counts from engine items.
+
+    Preserve raw values, normalized evidence, reference bounds, and provenance.
+    Suppress invalid normalized values and reference fields for NO_REF rows;
+    resolve selected reference units from the curated artifact when available.
+    """
     rows = []
     # Reference unit metadata comes from the selected curated artifact. The
     # engine's legacy safe_upper_unit is not the selected NIAS unit for every code.

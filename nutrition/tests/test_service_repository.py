@@ -250,12 +250,14 @@ def test_partial_db_configuration_not_ready(monkeypatch, key):
 
 
 def test_added_pet_size_column_uses_actual_source(monkeypatch):
+    """Verify the pet SELECT includes breed size and returns the stored value."""
     _, cur = connection(monkeypatch, (123,'DOG',4,8,3,True,None,'MEDIUM'), [[]])
     assert repo.get_pet(123,42)['target_breed_size'] == 'MEDIUM'
     assert 'birth_date, target_breed_size' in cur.execute.call_args_list[0].args[0]
 
 
 def test_added_product_columns_shared_by_single_and_list(monkeypatch):
+    """Verify single and bulk product reads return identical target and feeding metadata."""
     row = (456,'MOCK-0456','synthetic','FOOD','DRY_FOOD','ADULT','LARGE','성체','급여 표시 원문')
     _, cur = connection(monkeypatch,row,[[],[],[],[]])
     one = repo.get_product(456)

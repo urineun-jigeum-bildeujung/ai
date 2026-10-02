@@ -84,6 +84,7 @@ class RuntimeE2ETests(unittest.TestCase):
         self.assertIn("analysis_status", body)
 
     def test_health_lists_available_and_future_routes_separately(self) -> None:
+        """Verify health metadata advertises registered current routes with no future endpoints."""
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         body = response.json()
@@ -222,6 +223,7 @@ class RuntimeE2ETests(unittest.TestCase):
         self.assertEqual(decisions[1], decisions[2])
 
     def test_supporting_endpoints_and_runtime_artifacts_are_available(self) -> None:
+        """Verify runtime artifacts, safety/report responses, and compare request validation."""
         self.assertTrue(all(path.is_file() for path in RUNTIME_ARTIFACTS))
         request = {"pet": dog_pet(), "product": dog_food(id="e2e-supporting")}
         safety = self.client.post("/api/nutrition/safety", json=request)
@@ -238,6 +240,7 @@ if __name__ == "__main__":
 
 
 def test_direct_call_optional_additions_and_legacy_axes():
+    """Verify optional target metadata adds projections while preserving legacy analysis fields."""
     client = TestClient(app)
     body = {'pet':dog_pet(), 'product':dog_food()}
     old = client.post('/api/nutrition/analyze',json=body)

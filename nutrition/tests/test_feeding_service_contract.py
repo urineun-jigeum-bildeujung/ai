@@ -29,6 +29,7 @@ def product(**changes):
 
 @pytest.mark.parametrize("species", ["DOG", "CAT"])
 def test_healthy_baseline_preserves_ready_nutrition_and_reports_dose(species):
+    """Verify species-specific baseline feeding values and explicit synthetic provenance."""
     result = api.analyze_service_records(pet(species=species), product(target_species=[species]))
     assert result["nutrition_comparison_status"] == "TRUE"
     assert result["aafco_pass"] is True and result["safety_status"] == "NOT_APPLICABLE"
@@ -46,6 +47,7 @@ def test_healthy_baseline_preserves_ready_nutrition_and_reports_dose(species):
 
 
 def test_mock_age_fallback_resolves_baseline_without_reference_stage_promotion():
+    """Verify mock age fallback exposes its provenance and resolves baseline feeding."""
     result = api.analyze_service_records(pet(life_stage=None), product())
     assert result["nutrition_comparison_status"] == "TRUE"
     assert result["input_provenance"]["pet_reference_stage_source"] == "AGE_RULE_ELIGIBLE"
@@ -65,6 +67,7 @@ def test_safety_block_keeps_nutrition_true_and_hides_dose(code):
 
 @pytest.mark.parametrize("product_id,expected", [(1, "FIXTURE_READY"), (11, "FIXTURE_PARTIAL"), (29, "FIXTURE_UNAVAILABLE")])
 def test_fixture_completeness_is_not_changed_by_feeding(product_id, expected):
+    """Verify feeding preserves fixture status and omits doses when energy density is missing."""
     result = api.analyze_service_records(pet(), product(id=product_id, sku=f"MOCK-{product_id:04d}"))
     assert result["input_provenance"]["fixture_status"] == expected
     assert result["feeding"]["status"] == ("ENERGY_REQUIREMENT_READY" if product_id == 29 else "READY")
@@ -76,6 +79,7 @@ def test_fixture_completeness_is_not_changed_by_feeding(product_id, expected):
 
 
 def test_request_numbers_and_planning_ranges_cannot_authorize_coefficient():
+    """Verify the resolved coefficient retains baseline provenance despite supplied factors."""
     result = resolve_mer_coefficient(pet(coefficient=1.6, mer_coefficient=1.6, coefficient_range=[1.4, 1.6]))
     assert result["coefficient"] == 1.6
     assert result["reason_codes"] == []
@@ -103,6 +107,7 @@ def test_same_service_input_is_deterministic_and_not_mutated():
 
 
 def test_authenticated_service_endpoint_adds_feeding_and_forbids_client_coefficient(monkeypatch):
+    """Verify unknown allergy status blocks feeding and client coefficients are rejected."""
     for key in ("MEMBER_DATABASE_URL", "PRODUCT_DATABASE_URL", "INTERNAL_GATEWAY_SECRET"):
         monkeypatch.setenv(key, "synthetic-test-value")
     monkeypatch.setattr(api.service_repository, "get_pet", lambda pid, mid: pet(id=pid))
@@ -120,6 +125,7 @@ def test_authenticated_service_endpoint_adds_feeding_and_forbids_client_coeffici
 @pytest.mark.parametrize('species,form,grams', [('DOG','DRY_FOOD',138.4),('DOG','WET_FOOD',710.4),
                                               ('CAT','DRY_FOOD',103.8),('CAT','WET_FOOD',532.8)])
 def test_v2_supported_food_with_synthetic_energy(species, form, grams):
+    """Verify dry and wet food doses for dogs and cats retain synthetic evidence markers."""
     result = api.analyze_service_records(pet(species=species),product(target_species=[species],subcategory_code=form))
     assert result['feeding']['status'] == 'READY'
     assert result['feeding']['daily_serving_g'] == grams
@@ -129,6 +135,7 @@ def test_v2_supported_food_with_synthetic_energy(species, form, grams):
 
 
 def test_non_mock_no_synthetic_energy_and_metadata_never_parsed():
+    """Verify non-MOCK products get no synthetic energy and label text does not affect doses."""
     result = api.analyze_service_records(pet(),product(sku='not-a-mock',feeding_target='1000g',feeding_method='매일 9999g'))
     assert result['feeding']['energy_source_type'] is None
     assert result['feeding']['energy_density_kcal_per_kg'] is None
@@ -141,6 +148,7 @@ def test_non_mock_no_synthetic_energy_and_metadata_never_parsed():
 
 
 def test_v2_unresolved_adult_neuter_and_valid_partial_energy():
+    """Verify missing neuter data prevents doses while partial nutrient fixtures can supply energy."""
     result = api.analyze_service_records(pet(is_neutered=None),product())
     assert result['feeding']['status'] == 'INSUFFICIENT_DATA'
     assert result['feeding']['mer_kcal_per_day'] is None

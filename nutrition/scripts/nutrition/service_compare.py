@@ -3,6 +3,7 @@ from presentation import numeric, nutrient_sort_key
 
 
 def _unit_family(unit):
+    """Map supported nutrient unit aliases to a common family, or return None."""
     if not isinstance(unit, str):
         return None
     value = unit.upper().replace(' ', '')
@@ -16,6 +17,7 @@ def _unit_family(unit):
 
 
 def _comparable_rows(result):
+    """Index presentation rows by nutrient code, excluding codes with duplicate evidence."""
     grouped = {}
     for row in result.get('presentation', {}).get('rows', []):
         code = row['nutrient_code']
@@ -26,6 +28,12 @@ def _comparable_rows(result):
 
 
 def compare_service_analyses(pet_id, product_ids, analyses):
+    """Compare two analyses in product_ids order for the same pet.
+
+    Compare finite suitability scores and unique nutrient rows with compatible
+    bases and units. Return READY for comparable scores, PARTIAL for nutrient
+    comparisons alone, or UNAVAILABLE when neither comparison is possible.
+    """
     scores = [r.get('suitability', {}).get('match_score') for r in analyses]
     score_comparable = all(numeric(s) for s in scores)
     higher = (product_ids[0] if scores[0] > scores[1] else product_ids[1] if scores[1] > scores[0] else None) if score_comparable else None

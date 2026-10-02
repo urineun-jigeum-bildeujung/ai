@@ -1,6 +1,12 @@
 """Objective required-nutrient ratio, using the existing P0-D matrix result."""
 
 def build_suitability(*, nutrition_comparison, target_compatibility, safety_status, excluded):
+    """Return the required-nutrient pass ratio after safety and target gates.
+
+    Only matched targets with complete, comparable required-nutrient results
+    receive a rounded percentage. Other outcomes retain a null score and
+    explain the blocking, missing, or conflicting evidence in reason codes.
+    """
     comparison = nutrition_comparison or {}
     essential = comparison.get('essential_status') or {}
     required = comparison.get('essential_count', len(essential))

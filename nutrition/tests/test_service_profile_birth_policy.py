@@ -31,6 +31,7 @@ def product(**changes):
     ("KNOWN_LIST", [], "UNKNOWN"), ("KNOWN_LIST", ["CHICKEN"], "KNOWN_LIST"),
 ])
 def test_http_declaration_checked_against_repository_rows(monkeypatch, declared, codes, profile):
+    """Verify declared allergy status is checked against stored rows before safety and feeding."""
     configure(monkeypatch)
     # Run the actual repository SELECT aggregation, including row-count checks.
     connection(monkeypatch, (123, "DOG", 8, 10, 3, True, date(2025, 10, 2)),
@@ -81,6 +82,7 @@ def test_invalid_profile_rejected_before_source_lookup(monkeypatch, value):
 ])
 @pytest.mark.parametrize("species", ["DOG", "CAT"])
 def test_birth_date_precedes_stale_age_and_stage(monkeypatch, today, birth, stage, species):
+    """Verify birth dates override stale age and stage without mutating Service inputs."""
     monkeypatch.setattr(adapter, "_today", lambda: today)
     source = pet(birth_date=birth, age=None, species=species, life_stage="pregnant", life_stage_detail="LACTATION")
     original = deepcopy(source)

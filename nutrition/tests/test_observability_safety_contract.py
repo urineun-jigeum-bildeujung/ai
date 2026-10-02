@@ -99,6 +99,7 @@ def test_missing_dependency_down_no_recreate(client, monkeypatch, tmp_path, rela
 
 @pytest.mark.parametrize("status", ["READY", "SAFETY_BLOCKED", "INSUFFICIENT_DATA", "SERVICE_DEGRADED", "FAILED"])
 def test_http200_and_domain_are_separate(client, monkeypatch, status):
+    """Verify HTTP success and domain status are counted independently without pet identifiers."""
     body = {"analysis_status": status, "pet_id": "private-pet"}
     monkeypatch.setattr(api, "_analyze_direct", lambda req: body)
     response = client.post("/api/nutrition/analyze", json=payload())
@@ -109,6 +110,7 @@ def test_http200_and_domain_are_separate(client, monkeypatch, status):
 
 
 def test_safety_and_analysis_counted_separately(client, monkeypatch):
+    """Verify safety and analysis outcomes are exported as separate metric axes."""
     monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": "INSUFFICIENT_DATA", "safety_status": "SAFETY_BLOCKED"})
     client.post("/api/nutrition/analyze", json=payload())
     text = client.get("/metrics").text
@@ -123,6 +125,7 @@ def test_invalid_id_replaced_not_exported(client, request_id):
 
 
 def test_errors_and_unknown_paths_do_not_leak(client, monkeypatch):
+    """Verify error responses and unmatched-route metrics do not expose private request data."""
     response = client.get("/health", headers={"X-Request-ID": "request_12345678"})
     assert response.headers["x-request-id"] == "request_12345678"
     assert client.post("/api/nutrition/analyze", json={}).status_code == 422
@@ -140,6 +143,7 @@ def test_errors_and_unknown_paths_do_not_leak(client, monkeypatch):
 
 
 def test_concurrent_requests_no_context_cross_contamination(client, monkeypatch):
+    """Verify concurrent requests keep independent domain counts and HTTP totals."""
     monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": req.product.name})
     def request(index):
         body = payload()
@@ -163,6 +167,7 @@ def test_catalog_query_does_not_create_missing_database(tmp_path):
 
 
 def test_unknown_domain_value_and_dependency_errors_are_redacted(client, monkeypatch):
+    """Verify unknown domain values and dependency exception details stay out of public output."""
     monkeypatch.setattr(api, "_analyze_direct", lambda req: {"analysis_status": "private-value"})
     client.post("/api/nutrition/analyze", json=payload())
     def fail(*args):

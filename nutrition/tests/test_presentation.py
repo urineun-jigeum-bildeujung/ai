@@ -6,6 +6,7 @@ from presentation import build_nutrition_presentation
 
 
 def item(**changes):
+    """Build a synthetic nutrient item with raw, normalized, and reference values."""
     return {'nutrient_code':'CRUDE_PROTEIN','value':.26,'unit':'PERCENT','basis':'AS_FED',
             'aligned_value':26, 'basis_normalized_value':28.9, 'basis_normalized_basis':'DRY_MATTER',
             'nias_min':18, 'nias_max':50, 'safe_upper_unit':'g/100g DM',
@@ -14,6 +15,7 @@ def item(**changes):
 
 
 def test_actual_values_bounds_and_provenance():
+    """Verify presentation preserves values, reference bounds, and synthetic provenance."""
     row = build_nutrition_presentation([item()], 'TRUE')['rows'][0]
     assert row['value'] == .26 and row['normalized_value'] == 28.9
     assert row['basis'] == 'AS_FED' and row['normalized_basis'] == 'DRY_MATTER'
@@ -24,6 +26,7 @@ def test_actual_values_bounds_and_provenance():
 
 
 def test_normalized_priority_no_ref_out_of_range_and_counts():
+    """Verify normalization priority, missing-reference handling, stable ordering, and counts."""
     rows = [item(basis_normalized_value=None), item(nutrient_code='PHOSPHORUS',nias_compare_status='NO_REF'),
             item(nutrient_code='CALCIUM',nias_compare_status='OUT_OF_RANGE'),
             item(nutrient_code='MOISTURE',nias_compare_status='NO_VALUE',basis_invalid=True)]
@@ -39,11 +42,13 @@ def test_normalized_priority_no_ref_out_of_range_and_counts():
 
 
 def test_fallback_value_and_display_name():
+    """Verify unknown nutrient codes retain their code as the name and expose the raw value."""
     row = build_nutrition_presentation([{'nutrient_code':'NEW_CODE','value':42,'nias_compare_status':'NO_REF'}], 'UNKNOWN')['rows'][0]
     assert row['display_name'] == 'NEW_CODE' and row['normalized_value'] == 42
 
 
 def test_selected_nias_unit_uses_curated_metadata_not_legacy_upper_unit():
+    """Verify selected NIAS reference units come from the curated artifact."""
     rows = [item(nutrient_code='VITAMIN_B1',reference_selection_status='SELECTED',safe_upper_unit='g/100g DM'),
             item(nutrient_code='MOISTURE',reference_selection_status='SELECTED',
                  basis='AS_FED',basis_normalized_basis='AS_FED',safe_upper_unit='g/100g DM')]

@@ -13,6 +13,7 @@ import mer_coefficient_policy_v2 as policy
     ('DOG',12,True,1.6),('DOG',12,False,1.8),('DOG',84,True,1.6),
     ('CAT',11,None,2.5),('CAT',12,True,1.2),('CAT',12,False,1.4),('CAT',84,False,1.4)])
 def test_month_boundaries_and_baseline_provenance(monkeypatch, species, months, neutered, expected):
+    """Verify birth-month boundaries select the expected factor and baseline provenance."""
     today = date(2026,10,3); monkeypatch.setattr(policy,'_today',lambda:today)
     year, month = divmod(today.year * 12 + today.month - 1 - months, 12)
     result = policy.resolve_mer_coefficient({'species':species,'birth_date':date(year,month+1,3),
@@ -30,11 +31,13 @@ def test_month_boundaries_and_baseline_provenance(monkeypatch, species, months, 
     ({'age':True},'PET_AGE_UNRESOLVED'),({'age':float('nan')},'PET_AGE_UNRESOLVED'),
     ({'birth_date':'invalid','age':None},'PET_AGE_UNRESOLVED')])
 def test_unresolved(changes, reason):
+    """Verify unsupported or incomplete pet data returns no coefficient and the expected reason."""
     result = policy.resolve_mer_coefficient({'species':'DOG','age':2,'is_neutered':True,**changes})
     assert result['coefficient'] is None and result['reason_codes'] == [reason]
 
 
 def test_bcs_disease_and_request_factor_do_not_change_policy():
+    """Verify condition scores, disease metadata, and supplied factors do not alter the baseline."""
     results = [policy.resolve_mer_coefficient({'species':'DOG','age':2,'is_neutered':True,
                'bcs':bcs,'coefficient':10,'disease':'unknown'}) for bcs in (None,1,3,5,100)]
     assert all(r == results[0] for r in results) and results[0]['coefficient'] == 1.6

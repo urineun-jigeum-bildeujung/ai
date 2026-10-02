@@ -19,6 +19,11 @@ RAW_LABELS = {
 
 
 def parse_raw_target_label(value):
+    """Map an exact NFKC-normalized label to independent species, size, and stage data.
+
+    Trim outer whitespace and return unknown targets for unrecognized labels.
+    Copy mapped lists so callers cannot mutate the shared label definitions.
+    """
     label = unicodedata.normalize('NFKC', value).strip() if isinstance(value, str) else None
     mapped = RAW_LABELS.get(label)
     if mapped is None:
@@ -27,6 +32,11 @@ def parse_raw_target_label(value):
 
 
 def load_synthetic_target(source):
+    """Return a validated synthetic target row for an exact MOCK product identity.
+
+    Require unique ID/SKU matching, synthetic provenance, and agreement with
+    the exact raw label. Return None for missing, invalid, or ambiguous data.
+    """
     if not is_mock_sku(source.get('sku')):
         return None
     try:
@@ -52,9 +62,15 @@ def load_synthetic_target(source):
 
 
 def _resolve(service, fixture, allowed, *, sequence=False):
+    """Return a target value, resolution status, and source for one target axis.
+
+    Prefer present Service data, use fixture data only when Service data is
+    absent, and report conflicting or invalid evidence without inventing a value.
+    """
     service_present = service is not None and service != []
     fixture_present = fixture is not None and fixture != []
     def valid(value):
+        """Check that a scalar or every list element belongs to the allowed target values."""
         if sequence:
             return isinstance(value, list) and all(isinstance(v, str) and v in allowed for v in value)
         return isinstance(value, str) and value in allowed
@@ -68,6 +84,11 @@ def _resolve(service, fixture, allowed, *, sequence=False):
 
 
 def resolve_product_target(product, synthetic_fixture=None):
+    """Resolve species, stage, and size with per-axis status and provenance.
+
+    Use synthetic data only for a matching MOCK ID/SKU. Preserve conflicts
+    between Service and fixture evidence and report unresolved target axes.
+    """
     # Supplying a fixture cannot bypass the Service identity namespace.
     fixture = synthetic_fixture or {}
     if (not is_mock_sku(product.get('service_sku'))
@@ -95,6 +116,11 @@ def resolve_product_target(product, synthetic_fixture=None):
 
 
 def evaluate_target_compatibility(pet, product_target):
+    """Compare pet species, marketing stage, and dog size against resolved targets.
+
+    Cat size is not applicable. Overall status prioritizes conflict, mismatch,
+    and unknown over matched, retaining per-axis details and reason codes.
+    """
     species = str(pet.get('species') or '').upper()
     target_species = product_target['species']
     species_status = ('CONFLICT' if target_species.get('status') == 'CONFLICT' else

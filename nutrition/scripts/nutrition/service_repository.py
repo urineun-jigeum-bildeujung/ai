@@ -55,6 +55,11 @@ def _cursor(env_key):
 
 
 def get_pet(pet_id, member_id):
+    """Read one undeleted pet owned by member_id and its ordered allergy codes.
+
+    Raise ServiceNotFound when the ownership-filtered query finds no pet;
+    connection failures are translated to ServiceUnavailable by the cursor.
+    """
     with _cursor("MEMBER_DATABASE_URL") as cursor:
         cursor.execute(
             "SELECT id, species, age, weight, bcs, is_neutered, birth_date, target_breed_size FROM public.pet "
@@ -72,6 +77,11 @@ def get_pet(pet_id, member_id):
 
 
 def get_product(product_id):
+    """Read one active product with its target, allergen, ingredient, and caution codes.
+
+    Raise ServiceNotFound when no active product exists; connection failures
+    are translated to ServiceUnavailable by the cursor.
+    """
     with _cursor("PRODUCT_DATABASE_URL") as cursor:
         cursor.execute(
             "SELECT id, sku, product_name, category_code, subcategory_code, target_age_group, "

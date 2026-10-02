@@ -322,6 +322,7 @@ class ServiceCompareRequest(BaseModel):
     @field_validator("product_ids", mode="before")
     @classmethod
     def validate_product_ids(cls, value):
+        """Require exactly two distinct positive integer IDs, raising ValueError otherwise."""
         if not isinstance(value, list) or len(value) != 2 or any(type(v) is not int or v <= 0 for v in value):
             raise ValueError("COMPARE_EXACTLY_TWO_POSITIVE_PRODUCT_IDS_REQUIRED")
         if value[0] == value[1]:
@@ -330,6 +331,10 @@ class ServiceCompareRequest(BaseModel):
 
 
 def _attach_projections(result, pet, product, synthetic_fixture=None):
+    """Add target, presentation, and suitability projections to result in place.
+
+    Return the resolved product target for inclusion in source provenance.
+    """
     target = resolve_product_target(product, synthetic_fixture)
     result["target_compatibility"] = evaluate_target_compatibility(pet, target)
     result["presentation"] = build_nutrition_presentation(
@@ -342,6 +347,7 @@ def _attach_projections(result, pet, product, synthetic_fixture=None):
 
 
 def _analyze_direct(req):
+    """Analyze request data and attach target projections and product label metadata."""
     result = _analyze_product(req)
     pet = req.pet.model_dump()
     if pet.get("product_target_stage") is None:
@@ -485,6 +491,7 @@ def metrics() -> PlainTextResponse:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
+    """Return service identity and the available and future endpoint lists."""
     return {
         "status": "ok",
         "service": "nutrition",
@@ -552,6 +559,11 @@ def analyze_by_product_id(req: PersistedProductAnalyzeRequest) -> dict[str, Any]
 
 
 def _authenticated_member_id(request: Request) -> int:
+    """Return the member ID after validating configuration and Gateway headers.
+
+    Raise HTTPException with 503 for missing configuration or 401 for invalid
+    credentials or member IDs; this check does not establish pet ownership.
+    """
     if not service_repository.configured():
         raise HTTPException(status_code=503, detail="SERVICE_SOURCE_NOT_CONFIGURED")
     expected = os.getenv("INTERNAL_GATEWAY_SECRET")
@@ -624,6 +636,11 @@ def report(req: AnalyzeRequest) -> dict[str, Any]:
 
 @app.post("/api/nutrition/compare")
 def compare(req: ServiceCompareRequest, request: Request) -> dict[str, Any]:
+    """Authenticate and compare two Service products for the member-owned pet.
+
+    Reuse the analysis engine for each product and map missing, unavailable,
+    and invalid source data to HTTP 404, 503, and 422 responses respectively.
+    """
     member_id = _authenticated_member_id(request)
     try:
         pet = service_repository.get_pet(req.pet_id, member_id)

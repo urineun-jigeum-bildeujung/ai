@@ -76,12 +76,19 @@ def _birth_age(value, today):
 
 
 def _target_enum(value, allowed, reason):
+    """Return None or an allowed string; raise ServiceInputError with reason otherwise."""
     if value is not None and (not isinstance(value, str) or value not in allowed):
         raise ServiceInputError(reason)
     return value
 
 
 def adapt_pet(source):
+    """Validate a Service pet row and return canonical age, allergy, and target data.
+
+    Prefer birth-date age and stage when supplied. Inconsistent allergy
+    declarations become UNKNOWN; invalid required values or target enums
+    raise ServiceInputError.
+    """
     species = {"DOG": "dog", "CAT": "cat"}.get(source.get("species"))
     if species is None:
         raise ServiceInputError("PET_SPECIES_UNSUPPORTED")
@@ -230,6 +237,12 @@ def structured_refs(product_id, codes):
 
 
 def adapt_product(source, *, index=None):
+    """Return a canonical Service product and its identity/evidence provenance.
+
+    Validate source fields and use mock fixtures or an exact local identity
+    bridge for nutrient evidence. Keep Service marketing targets separate
+    from AAFCO evidence; invalid source fields raise ServiceInputError.
+    """
     category = {"FOOD": "food", "TREAT": "treat", "SUPPLEMENT": "supplement"}.get(source.get("category_code"))
     if category is None:
         raise ServiceInputError("PRODUCT_CATEGORY_MISSING_OR_UNSUPPORTED")

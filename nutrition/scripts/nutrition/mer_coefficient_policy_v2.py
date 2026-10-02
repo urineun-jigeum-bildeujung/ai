@@ -8,6 +8,12 @@ POLICY_CONTRACT_VERSION = 'healthy_merck_v1'
 
 
 def resolve_mer_coefficient(pet):
+    """Return a healthy baseline MER factor with policy provenance and reasons.
+
+    Prefer birth-date age, falling back to numeric age when unresolved. Growth
+    factors depend on species and age; adult factors also require a boolean
+    neuter flag. Unsupported or incomplete inputs return an unresolved policy.
+    """
     species = str(pet.get('species') or '').upper()
     months = None
     if pet.get('birth_date') is not None:
