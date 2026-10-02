@@ -1,5 +1,14 @@
 // ai 레포 CI/CD — 2026-09-21 첫 작성 (인프라), 2026-09-23 nutrition 추가,
 // 2026-09-23 deployReady 게이트 + repurchase 추가.
+// 2026-10-02: Build & Scan에서 서비스마다 "같은 kaniko 컨테이너"를 돌려쓰다가,
+// 한 서비스 빌드 후(아마 kaniko의 `--cleanup` 단계에서 memory/ephemeral-storage
+// 한도를 넘겨 OOMKilled) 컨테이너가 죽어버리면 다음 서비스부터 전부
+// "Process exited immediately after creation"로 즉사하는 장애가 있었다
+// (develop#22, main#20 — nutrition까진 성공, repurchase부터 전멸).
+// Jenkins K8s 에이전트 파드는 restartPolicy: Never라 한 번 죽은 컨테이너는
+// 그 빌드 안에서 절대 안 살아난다. 그래서 서비스마다 podTemplate으로
+// 완전히 새 파드를 띄워 kaniko를 격리시켰다 — 한 서비스 빌드가 컨테이너를
+// 죽여도 다른 서비스 빌드엔 전염 안 되게.
 //
 // SERVICES 목록에 있는 서비스만 감지/빌드 대상. repurchase는 GHCR 자체 CI/CD를
 // ECR로 전환하기로 AI팀과 합의(#117) — GHCR 게시 자동화는 AI팀이 별도로 끔.
@@ -14,28 +23,10 @@ def SERVICES = [
     [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', deployReady: false],
 ]
 
-def changedServices = []
-def deployableServices = []
-def imageTag = ''
-def isRealDeploy = false
-
-pipeline {
-    // disableConcurrentBuilds()는 같은 브랜치(같은 job) 재실행만 막고, 서로 다른
-    // 브랜치의 빌드가 동시에 도는 건 못 막는다. web-ci에서 실제로 서로 다른 브랜치의
-    // 빌드 2개가 동시에 돌면서 2vCPU 빌드 노드 CPU가 포화돼 kubelet이 NotReady로
-    // 전환된 장애가 있었다(web#545). ai-ci의 node 컨테이너도 동일하게 limits.cpu: 2를
-    // 쓰고 있어 같은 위험이 있다(#132). ci-build는 web-ci/sever-ci와 공용으로 쓰는
-    // lock 이름이라 레포가 달라도 직렬화된다.
-    options {
-        disableConcurrentBuilds()
-        lock(resource: 'ci-build')
-    }
-
-    // Jenkins가 K8s 파드로 떠서 도커 데몬이 없음 — kaniko가 daemon 없이 이미지를 빌드함.
-    // sever Jenkinsfile과 동일한 kaniko/trivy/crane/awscli 구성을 그대로 재사용.
-    agent {
-        kubernetes {
-            yaml """
+// Build & Scan에서 서비스별 kaniko 파드가 공통으로 쓰는 pod yaml. 서비스마다
+// podTemplate()을 새로 띄울 때 매번 이 템플릿을 그대로 재사용한다(격리가 목적이라
+// 파드 내용 자체는 서비스별로 다를 게 없음).
+def KANIKO_POD_YAML = """
 apiVersion: v1
 kind: Pod
 spec:
@@ -107,6 +98,35 @@ spec:
         name: "workspace-volume"
         readOnly: false
 """
+
+def changedServices = []
+def deployableServices = []
+def imageTag = ''
+def isRealDeploy = false
+
+pipeline {
+    // disableConcurrentBuilds()는 같은 브랜치(같은 job) 재실행만 막고, 서로 다른
+    // 브랜치의 빌드가 동시에 도는 건 못 막는다. web-ci에서 실제로 서로 다른 브랜치의
+    // 빌드 2개가 동시에 돌면서 2vCPU 빌드 노드 CPU가 포화돼 kubelet이 NotReady로
+    // 전환된 장애가 있었다(web#545). ai-ci의 node 컨테이너도 동일하게 limits.cpu: 2를
+    // 쓰고 있어 같은 위험이 있다(#132). ci-build는 web-ci/sever-ci와 공용으로 쓰는
+    // lock 이름이라 레포가 달라도 직렬화된다.
+    options {
+        disableConcurrentBuilds()
+        lock(resource: 'ci-build')
+    }
+
+    // Jenkins가 K8s 파드로 떠서 도커 데몬이 없음. Detect Deploy/Update GitOps는
+    // git/curl/yq만 있으면 돼서 기본 jnlp 컨테이너만으로 충분하다 — kaniko 등
+    // 무거운 빌드 컨테이너는 Build & Scan 단계에서 서비스별로 따로 띄운다.
+    agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-kaniko
+"""
         }
     }
 
@@ -172,45 +192,54 @@ spec:
                         def tarFile = "${svc.name}.tar"
                         def imageRef = "${env.IMAGE_REGISTRY}/${svc.name}:${imageTag}"
 
-                        // 빌드만(push 안 함) -> Trivy CRITICAL 스캔(걸리면 실패) -> 실배포일
-                        // 때만 push. 스캔 통과 못 한 이미지는 push 코드 경로를 안 타서
-                        // 물리적으로 못 올라감 (sever와 동일한 안전장치).
-                        container('kaniko') {
-                            sh """
-                                /kaniko/executor \\
-                                  --context=`pwd`/${svc.path} \\
-                                  --dockerfile=`pwd`/${svc.dockerfile} \\
-                                  --destination=${imageRef} \\
-                                  --no-push \\
-                                  --tarPath=${tarFile} \\
-                                  --cleanup
-                            """
-                        }
+                        // 서비스마다 완전히 새 파드를 띄운다. 이전엔 모든 서비스가 한 파드의
+                        // kaniko 컨테이너를 돌려써서, 한 서비스 빌드 후 그 컨테이너가 죽으면
+                        // (OOMKilled 등) 나머지 서비스가 전부 "Process exited immediately
+                        // after creation"로 연쇄 실패했다. 파드를 분리하면 한 서비스의 빌드
+                        // 실패/컨테이너 사망이 다른 서비스 빌드에 영향을 못 준다.
+                        podTemplate(yaml: KANIKO_POD_YAML) {
+                            node(POD_LABEL) {
+                                checkout scm
 
-                        container('trivy') {
-                            sh """
-                                trivy image --input ${tarFile} \\
-                                  --severity CRITICAL --exit-code 1 --ignore-unfixed
-                            """
-                        }
-
-                        if (isRealDeploy && svc.deployReady) {
-                            if (!env.getProperty('ECR_LOGGED_IN')) {
-                                container('awscli') {
-                                    sh "aws ecr get-login-password --region ap-northeast-2 > ecr-token.txt"
+                                // 빌드만(push 안 함) -> Trivy CRITICAL 스캔(걸리면 실패) -> 실배포일
+                                // 때만 push. 스캔 통과 못 한 이미지는 push 코드 경로를 안 타서
+                                // 물리적으로 못 올라감 (sever와 동일한 안전장치).
+                                container('kaniko') {
+                                    sh """
+                                        /kaniko/executor \\
+                                          --context=`pwd`/${svc.path} \\
+                                          --dockerfile=`pwd`/${svc.dockerfile} \\
+                                          --destination=${imageRef} \\
+                                          --no-push \\
+                                          --tarPath=${tarFile} \\
+                                          --cleanup
+                                    """
                                 }
-                                container('crane') {
-                                    sh "crane auth login ${env.IMAGE_REGISTRY.split('/')[0]} --username AWS --password-stdin < ecr-token.txt"
+
+                                container('trivy') {
+                                    sh """
+                                        trivy image --input ${tarFile} \\
+                                          --severity CRITICAL --exit-code 1 --ignore-unfixed
+                                    """
                                 }
-                                sh "rm -f ecr-token.txt"
-                                env.ECR_LOGGED_IN = 'true'
-                            }
-                            container('crane') {
-                                sh "crane push ${tarFile} ${imageRef}"
+
+                                if (isRealDeploy && svc.deployReady) {
+                                    // 파드가 서비스마다 새로 뜨기 때문에 ECR 로그인도 매번 새로
+                                    // 한다 — 이전처럼 env 플래그로 캐싱해도 다음 서비스는 어차피
+                                    // 다른 파드라 재사용이 안 된다.
+                                    container('awscli') {
+                                        sh "aws ecr get-login-password --region ap-northeast-2 > ecr-token.txt"
+                                    }
+                                    container('crane') {
+                                        sh "crane auth login ${env.IMAGE_REGISTRY.split('/')[0]} --username AWS --password-stdin < ecr-token.txt"
+                                        sh "crane push ${tarFile} ${imageRef}"
+                                    }
+                                    sh "rm -f ecr-token.txt"
+                                }
+
+                                sh "rm -f ${tarFile}"
                             }
                         }
-
-                        sh "rm -f ${tarFile}"
                     }
                 }
             }
