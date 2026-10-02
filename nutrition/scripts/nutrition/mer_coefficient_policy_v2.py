@@ -10,13 +10,14 @@ POLICY_CONTRACT_VERSION = 'healthy_merck_v1'
 def resolve_mer_coefficient(pet):
     species = str(pet.get('species') or '').upper()
     months = None
+    birth_invalid = False
     if pet.get('birth_date') is not None:
         try:
             years, _ = _birth_age(pet['birth_date'], _today())
             months = round(years * 12)
         except ServiceInputError:
-            pass
-    if months is None:
+            birth_invalid = True
+    if months is None and not birth_invalid:
         years = pet.get('age_years', pet.get('age'))
         if isinstance(years, (int, float, Decimal)) and not isinstance(years, bool):
             try:
