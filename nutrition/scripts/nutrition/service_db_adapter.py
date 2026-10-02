@@ -58,8 +58,11 @@ def adapt_pet(source):
     consistent = ((declared == "KNOWN_NONE" and not codes)
                   or (declared == "KNOWN_LIST" and bool(codes)))
     profile = declared if consistent else "UNKNOWN"
-    # 동일 canonical 코드의 대소문자만 정렬한다. SALMON→fish 등의 alias 확장은 금지.
-    allergies = [c.casefold() if c.casefold() in DICTIONARY["entries"] else "SERVICE_CODE:" + c for c in codes]
+    allergies = []
+    for code in codes:
+        for canonical in service_allergen_codes(code):
+            if canonical not in allergies:
+                allergies.append(canonical)
     return {
         "id": _identifier(source.get("id")), "species": species,
         "age_years": _number(source.get("age"), positive=False),
@@ -70,6 +73,34 @@ def adapt_pet(source):
         "life_stage_detail": source.get("life_stage_detail"),
         "service_allergy_codes": codes,
     }
+
+
+# Source enum spellings whose meaning is explicitly present in dictionary v3.
+# Group codes expand to every supported constituent; unsupported enums remain
+# namespaced evidence so the existing profile gate fails closed.
+SERVICE_ALLERGEN_ALIASES = {
+    **{code: (code.casefold(),) for code in (
+        "CHICKEN", "BEEF", "PORK", "LAMB", "FISH", "SALMON", "TUNA", "DAIRY",
+        "EGG", "WHEY", "CORN", "RICE", "SOY", "POTATO", "YEAST", "TAPIOCA",
+    )},
+    "CHEESE": ("치즈",),
+    "WHEAT_GLUTEN": ("wheat",),
+    "OAT_BARLEY": ("oat", "barley"),
+    "SWEET_POTATO": ("sweet potato",),
+    "CRUSTACEAN": ("crustacean",),
+}
+
+
+def service_allergen_codes(code):
+    from allergen_service import _norm
+
+    values = SERVICE_ALLERGEN_ALIASES.get(code)
+    if values is None:
+        return ["SERVICE_CODE:" + code]
+    mapped = [DICTIONARY["aliases"].get(_norm(value)) for value in values]
+    if any(value is None or value not in DICTIONARY["entries"] for value in mapped):
+        return ["SERVICE_CODE:" + code]
+    return sorted(set(mapped))
 
 
 def local_identity_index():
@@ -106,6 +137,8 @@ def identity_coverage(products, index):
 
 
 def structured_refs(product_id, codes):
+    from allergen_service import _norm
+
     raw = json.loads(V3_PATH.read_text(encoding="utf-8"))
     index = defaultdict(set)
     for item in raw["items"]:
@@ -114,10 +147,20 @@ def structured_refs(product_id, codes):
     refs = []
     for code in codes:
         matches = index.get(code, set())
+        normalized = code
+        method = "STRUCTURED_SOURCE"
+        if not matches:
+            normalized = _norm(code)
+            canonical = DICTIONARY["aliases"].get(normalized)
+            entry = DICTIONARY["entries"].get(canonical)
+            if (normalized not in DICTIONARY["conflicts"] and canonical is not None
+                    and entry is not None and entry["allergen_code"] == canonical):
+                matches = {canonical}
+                method = "CANONICAL_ALIAS"
         resolved = len(matches) == 1
         refs.append({"product_id": product_id, "allergen_code": next(iter(matches)) if resolved else None,
-                     "raw_text": code, "normalized_text": code, "matched_text": code if resolved else None,
-                     "mapping_method": "STRUCTURED_SOURCE" if resolved else "UNRESOLVED",
+                     "raw_text": code, "normalized_text": normalized, "matched_text": normalized if resolved else None,
+                     "mapping_method": method if resolved else "UNRESOLVED",
                      "source": "SERVICE_INGREDIENT_CODE", "source_version": "SERVICE_INPUT",
                      "dictionary_version": DICTIONARY["version"]})
     return refs

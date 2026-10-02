@@ -41,10 +41,12 @@ def connection(monkeypatch, row, relations):
 
 @pytest.mark.parametrize("allergies,expected", [([], "UNKNOWN"), ([("CHICKEN",)], "KNOWN_LIST")])
 def test_pet_ownership_sql_and_profile(monkeypatch, allergies, expected):
-    conn, cur = connection(monkeypatch, (123, "DOG", 4, 0.5), [allergies])
+    conn, cur = connection(monkeypatch, (123, "DOG", 4, 0.5, 3, True, None), [allergies])
     result = repo.get_pet(123, 42)
     assert result["allergy_profile_status"] == expected and result["life_stage"] is None
     assert result["age"] == 4 and result["weight"] == 0.5
+    assert result["bcs"] == 3 and result["is_neutered"] is True
+    assert result["birth_date"] is None
     sql, params = cur.execute.call_args_list[0].args
     assert "member_id = %s" in sql and "deleted_at IS NULL" in sql and params == (123, 42)
     conn.set_session.assert_called_once_with(readonly=True, isolation_level="REPEATABLE READ", autocommit=False)
