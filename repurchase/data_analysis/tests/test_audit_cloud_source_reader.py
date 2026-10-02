@@ -9,11 +9,13 @@ import pandas as pd
 import pytest
 
 from scripts.audit_cloud_source_reader import (
+    _require_pet_ownership,
     audit_snapshots,
     main,
     run_audit,
 )
 from scripts.modeling.cloud_source_reader import OrderSourceSnapshot, PetSourceSnapshot
+from scripts.modeling.operational_orders import OperationalOrderError
 
 
 def _snapshot_pair() -> tuple[OrderSourceSnapshot, PetSourceSnapshot]:
@@ -27,7 +29,8 @@ def _snapshot_pair() -> tuple[OrderSourceSnapshot, PetSourceSnapshot]:
         claim_items=frame,
     )
     pet = PetSourceSnapshot(
-        extracted_at=pd.Timestamp("2026-10-02T00:00:01Z"), pets=frame
+        extracted_at=pd.Timestamp("2026-10-02T00:00:01Z"),
+        pets=pd.DataFrame({"pet_id": ["pet1"], "user_id": ["u1"]}),
     )
     return order, pet
 
@@ -42,7 +45,7 @@ def test_audit_counts_and_passes_explicit_cutoff(
         captured["args"] = args
         captured["cutoff"] = kwargs["as_of_timestamp"]
         return SimpleNamespace(
-            valid_items=pd.DataFrame(index=range(1)),
+            valid_items=pd.DataFrame({"user_id": ["u1"], "pet_id": ["pet1"]}),
             all_purchase_events=pd.DataFrame(index=range(2)),
             pet_purchase_events=pd.DataFrame(index=range(1)),
             excluded_late_birth_item_count=1,
@@ -61,6 +64,14 @@ def test_audit_counts_and_passes_explicit_cutoff(
     assert result.excluded_late_birth_item_count == 1
     assert captured["cutoff"] == pd.Timestamp("2026-09-29T06:44:00Z")
     assert len(captured["args"]) == 6  # type: ignore[arg-type]
+
+
+def test_pet_ownership_mismatch_is_rejected() -> None:
+    """클라우드 원천의 다른 회원 반려동물 연결을 조용히 채택하지 않습니다."""
+    items = pd.DataFrame({"user_id": ["u1", "u1"], "pet_id": ["pet-other", None]})
+    pets = pd.DataFrame({"pet_id": ["pet-other"], "user_id": ["u2"]})
+    with pytest.raises(OperationalOrderError, match="소유자"):
+        _require_pet_ownership(items, pets)
 
 
 def test_audit_rejects_future_cutoff_before_preparation() -> None:
@@ -102,7 +113,8 @@ def test_both_source_connections_limit_query_and_idle_transaction_time(
         "scripts.audit_cloud_source_reader.read_pet_source", lambda _: pet
     )
     monkeypatch.setattr(
-        "scripts.audit_cloud_source_reader.audit_snapshots", lambda *_args, **_kwargs: "ok"
+        "scripts.audit_cloud_source_reader.audit_snapshots",
+        lambda *_args, **_kwargs: "ok",
     )
 
     assert run_audit(pd.Timestamp("2026-09-29T00:00:00Z")) == "ok"

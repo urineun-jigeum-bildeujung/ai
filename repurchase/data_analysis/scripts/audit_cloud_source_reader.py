@@ -32,8 +32,7 @@ ORDER_DSN_ENV = "REPURCHASE_ORDER_DATABASE_DSN"
 MEMBER_DSN_ENV = "REPURCHASE_MEMBER_DATABASE_DSN"
 # 연결 수립 제한과 별개로, 공용 DB의 장시간 조회·유휴 트랜잭션을 차단합니다.
 _SESSION_OPTIONS = (
-    "-c statement_timeout=300000 "
-    "-c idle_in_transaction_session_timeout=60000"
+    "-c statement_timeout=300000 -c idle_in_transaction_session_timeout=60000"
 )
 
 
@@ -69,6 +68,27 @@ def _utc_timestamp(value: str) -> pd.Timestamp:
     return timestamp.tz_convert("UTC")
 
 
+def _require_pet_ownership(valid_items: pd.DataFrame, pets: pd.DataFrame) -> None:
+    """유효 구매의 반려동물이 주문 회원 소유인지 공용 DB 키로 확인합니다."""
+    required_items = {"user_id", "pet_id"}
+    required_pets = {"pet_id", "user_id"}
+    if not required_items.issubset(valid_items) or not required_pets.issubset(pets):
+        raise OperationalOrderError("반려동물 소유 관계 검증 열이 누락됐습니다.")
+    specified = valid_items.loc[valid_items["pet_id"].notna(), ["user_id", "pet_id"]]
+    if specified.empty:
+        return
+    owners = pets.loc[:, ["pet_id", "user_id"]].rename(
+        columns={"user_id": "pet_owner_id"}
+    )
+    joined = specified.merge(owners, on="pet_id", how="left", validate="many_to_one")
+    if (
+        joined["user_id"].isna().any()
+        or joined["pet_owner_id"].isna().any()
+        or joined["user_id"].ne(joined["pet_owner_id"]).any()
+    ):
+        raise OperationalOrderError("주문 회원과 반려동물 소유자가 일치하지 않습니다.")
+
+
 def audit_snapshots(
     orders: OrderSourceSnapshot,
     pets: PetSourceSnapshot,
@@ -88,6 +108,7 @@ def audit_snapshots(
         orders.claim_items,
         as_of_timestamp=cutoff,
     )
+    _require_pet_ownership(prepared.valid_items, pets.pets)
     return SourceAuditSummary(
         as_of_timestamp=cutoff.isoformat(),
         order_extracted_at=orders.extracted_at.isoformat(),
