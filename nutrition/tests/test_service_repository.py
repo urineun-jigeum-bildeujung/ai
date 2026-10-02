@@ -64,13 +64,33 @@ def test_not_found_closes_and_never_reads_relations(monkeypatch, getter, code):
 
 def test_product_aggregate_preserves_source(monkeypatch):
     conn, cur = connection(monkeypatch, (456, "bad-sku", "test", "FOOD", "DRY_FOOD", "SENIOR"),
-                           [[("DOG",)], [("SALMON",)], [("CHKN-MEAT",)]])
+                           [[("DOG",)], [("SALMON",)], [("CHKN-MEAT",)], [("CHOCOLATE_CACAO",)]])
     result = repo.get_product(456)
     assert result["target_species"] == ["DOG"] and result["allergen_flags"] == ["SALMON"]
     assert result["ingredient_codes"] == ["CHKN-MEAT"] and result["target_age_group"] == "SENIOR"
+    assert result["caution_codes"] == ["CHOCOLATE_CACAO"]
+    assert "public.product_cautions" in cur.execute.call_args_list[-1].args[0]
     assert "aafco_life_stage" not in result and "nutrition_items" not in result
     assert "is_active = TRUE" in cur.execute.call_args_list[0].args[0]
     assert all(call.args[1] == (456,) for call in cur.execute.call_args_list)
+    conn.close.assert_called_once()
+
+
+def test_list_active_products_preserves_independent_caution_codes(monkeypatch):
+    conn, cur = connection(monkeypatch, None, [
+        [(456, "bad-sku", "test", "FOOD", "DRY_FOOD", "ADULT")],
+        [(456, "DOG")], [(456, "SALMON")], [(456, "CHKN-MEAT")],
+        [(456, "CHOCOLATE_CACAO"), (456, "HIGH_FAT")],
+    ])
+    result = repo.list_active_products()[0]
+    assert result["caution_codes"] == ["CHOCOLATE_CACAO", "HIGH_FAT"]
+    assert result["ingredient_codes"] == ["CHKN-MEAT"]
+    assert result["allergen_flags"] == ["SALMON"]
+    sql, params = cur.execute.call_args_list[-1].args
+    assert "public.product_cautions" in sql and "ANY(%s)" in sql and params == ([456],)
+    assert all(call.args[0].startswith("SELECT ") for call in cur.execute.call_args_list)
+    conn.set_session.assert_called_once_with(readonly=True, isolation_level="REPEATABLE READ", autocommit=False)
+    conn.commit.assert_not_called()
     conn.close.assert_called_once()
 
 
