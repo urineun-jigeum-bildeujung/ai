@@ -21,7 +21,7 @@ import hmac
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 
 # nutrition/ 패키지 경로
@@ -300,6 +300,7 @@ class ServiceIdAnalyzeRequest(BaseModel):
     model_config = {"extra": "forbid"}
     pet_id: int = Field(..., gt=0, strict=True)
     product_id: int = Field(..., gt=0, strict=True)
+    allergy_profile_status: Literal["UNKNOWN", "KNOWN_NONE", "KNOWN_LIST"] | None = None
 
 
 def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str, Any]:
@@ -319,7 +320,10 @@ def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str,
     result["input_provenance"] = loaded["provenance"]
     # Feeding policy sees the actual Service stage, never the legacy Mock
     # Nutrition-only age-rule compatibility adjustment above.
-    coefficient = resolve_mer_coefficient(pet_source)
+    coefficient = resolve_mer_coefficient(
+        {**pet_source, "life_stage": pet["life_stage"]}
+        if pet_source.get("birth_date") is not None else pet_source
+    )
     feeding = calculate_feeding(
         weight_kg=pet["weight_kg"], species=pet["species"],
         energy=mock_energy(product_source, source_meta), coefficient=coefficient,
@@ -499,6 +503,9 @@ def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dic
         raise HTTPException(status_code=401, detail="SERVICE_UNAUTHORIZED")
     try:
         pet = service_repository.get_pet(req.pet_id, int(members[0]))
+        # FE declaration is checked against SELECTed pet_allergy rows by adapt_pet.
+        # Omission never promotes the DB list to a known profile.
+        pet = {**pet, "allergy_profile_status": req.allergy_profile_status or "UNKNOWN"}
         product = service_repository.get_product(req.product_id)
         return observe_domain_result(analyze_service_records(pet, product))
     except service_repository.ServiceNotFound as exc:
