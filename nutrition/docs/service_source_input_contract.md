@@ -30,7 +30,9 @@
 
 `KNOWN_NONE`은 명시 상태 + 빈 목록, `KNOWN_LIST`는 명시 상태 + 비어 있지 않은 목록일 때만 일관적이다. `pet_allergy` 0행 또는 상태 미등록을 알레르기 없음으로 해석하지 않는다. Pet profile이 SoT이며 Product가 이를 덮어쓸 수 없다.
 
-서비스 code를 Nutrition code로 무조건 통합하지 않는다. 지원하지 않는 code는 unresolved이며 `SALMON → fish` 같은 parent/child 추론은 하지 않는다.
+Service `AllergenCode`는 `sever/dev` revision `230e598833f684c6c9f2ce605776e230a5b6f236`와 AI v3 사전의 명시 alias를 기준으로 변환한다. SALMON/TUNA → fish, CHEESE/WHEY → dairy, CRUSTACEAN → shellfish, WHEAT_GLUTEN → wheat, OAT_BARLEY → oat + barley, SWEET_POTATO/TAPIOCA → potato를 사용한다. 지원된 정확한 enum 값만 변환하며 원문 `service_allergy_codes`를 보존한다. v3에 근거 없는 enum은 `SERVICE_CODE:` unresolved로 유지하고 parent group, fuzzy text, 독성 namespace를 알레르겐으로 임의 확장하지 않는다.
+
+최신 Pet domain/entity/DTO/migration에도 명시 allergy_profile_status 또는 life-stage 저장 필드가 없다. 따라서 알레르기 0행은 UNKNOWN이며 KNOWN_NONE persistence gap은 남는다. 기존 Mock Nutrition의 age-rule 호환 경로는 Feeding 정책과 분리한다. Feeding은 실제 Service stage와 승인 계수 없음을 명시하고 `MER_COEFFICIENT_UNRESOLVED`, `daily_serving_g=null`로 반환한다. 기존 bcs/is_neutered/birth_date 컬럼을 read-only 추가 조회하되 생애주기를 새로 추정하지 않는다.
 
 ## Product 최소 입력
 
@@ -42,7 +44,7 @@
 | `target_species` | 관계 source에서 집계한 DOG/CAT 배열 | 미지원/누락 None, Safety fail-close |
 | `target_age_group` | `service_target_age_group` 및 provenance 메타데이터 | AAFCO 단계로 승격 금지 |
 | `allergen_flags` | 서비스 알레르겐 code 배열 | 교집합 없음은 안전 근거 아님 |
-| `ingredient_codes` | 기존 dictionary ingredient code exact match만 STRUCTURED_SOURCE | 미등록/복수 매핑은 UNRESOLVED |
+| `ingredient_codes` | dictionary ingredient code exact match 우선 STRUCTURED_SOURCE; 미일치 시 충돌 없는 정확한 v3 alias를 CANONICAL_ALIAS | 미등록/복수 매핑은 UNRESOLVED |
 
 같은 service namespace에서 Pet allergies와 Product flags가 정확히 교차하면 명시적 충돌 근거로 차단할 수 있다. 교집합 부재는 원료 evidence/profile/species/life-stage gate를 우회하지 않는다. `product_allergens`의 생성 주체 및 provenance 보장 정책은 외부 담당자가 확정해야 한다.
 
