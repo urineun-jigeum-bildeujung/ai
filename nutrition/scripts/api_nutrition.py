@@ -3,7 +3,7 @@
 - POST /api/nutrition/analyze   1사료 분석 (FR-AI-1-01~05)
 - POST /api/nutrition/safety    안전 7원칙 P0 검증
 - POST /api/nutrition/report    리포트 생성 (FR-AI-1-06)
-- POST /api/nutrition/compare   Future / Not Implemented (HTTP 501)
+- POST /api/nutrition/compare   Service-ID comparison
 - GET  /health                  서비스 상태
 
 실행:
@@ -32,7 +32,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from fastapi import FastAPI, HTTPException, Request  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
+from pydantic import BaseModel, Field, field_validator  # noqa: E402
 from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 from observability import Metrics, ObservabilityMiddleware, check_dependencies, observe_domain_result  # noqa: E402
 
@@ -46,8 +46,12 @@ from product_input_adapter import load_product_input  # type: ignore  # noqa: E4
 from service_db_adapter import adapt_pet, adapt_product, evaluate_service_safety, ServiceInputError  # noqa: E402
 from mock_integration_fixture import probe_fixture  # noqa: E402
 from feeding import calculate_feeding  # noqa: E402
-from mer_coefficient_policy import resolve_mer_coefficient  # noqa: E402
+from mer_coefficient_policy_v2 import resolve_mer_coefficient  # noqa: E402
 from mock_feeding_fixture import mock_energy  # noqa: E402
+from service_compare import compare_service_analyses
+from suitability import build_suitability
+from presentation import build_nutrition_presentation
+from product_target_contract import load_synthetic_target, resolve_product_target, evaluate_target_compatibility
 import service_repository  # noqa: E402
 from nutrition_readiness import (  # type: ignore  # noqa: E402
     evaluate_nutrition_coverage,
@@ -259,6 +263,8 @@ class PetIn(BaseModel):
     # Optional raw-detail contract for NIAS rules that distinguish a broad
     # growth/reproduction stage. Omission is intentionally not inferred.
     life_stage_detail: str | None = None
+    target_breed_size: Literal["SMALL", "MEDIUM", "LARGE"] | None = None
+    product_target_stage: Literal["GROWTH", "ADULT", "SENIOR"] | None = None
 
 
 class ProductIn(BaseModel):
@@ -278,6 +284,10 @@ class ProductIn(BaseModel):
     # Explicit label/source product type has priority over moisture inference
     # only for the documented DRY/WET forms. Unsupported strings remain unknown.
     product_form: str | None = None
+    service_target_age_group: Literal["GROWTH", "ADULT", "SENIOR"] | None = None
+    service_target_breed_size: Literal["SMALL", "MEDIUM", "LARGE"] | None = None
+    feeding_target: str | None = None
+    feeding_method: str | None = None
     product_attributes: dict[str, str] = Field(default_factory=dict)
     ingredient_source: str = "PRODUCT_LABEL"
     ingredient_source_version: str = "API_REQUEST"
@@ -303,6 +313,50 @@ class ServiceIdAnalyzeRequest(BaseModel):
     allergy_profile_status: Literal["UNKNOWN", "KNOWN_NONE", "KNOWN_LIST"] | None = None
 
 
+class ServiceCompareRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    pet_id: int = Field(..., gt=0, strict=True)
+    product_ids: list[int] = Field(..., min_length=2, max_length=2)
+    allergy_profile_status: Literal["UNKNOWN", "KNOWN_NONE", "KNOWN_LIST"] | None = None
+
+    @field_validator("product_ids", mode="before")
+    @classmethod
+    def validate_product_ids(cls, value):
+        if not isinstance(value, list) or len(value) != 2 or any(type(v) is not int or v <= 0 for v in value):
+            raise ValueError("COMPARE_EXACTLY_TWO_POSITIVE_PRODUCT_IDS_REQUIRED")
+        if value[0] == value[1]:
+            raise ValueError("COMPARE_PRODUCT_IDS_MUST_BE_DISTINCT")
+        return value
+
+
+def _attach_projections(result, pet, product, synthetic_fixture=None):
+    target = resolve_product_target(product, synthetic_fixture)
+    result["target_compatibility"] = evaluate_target_compatibility(pet, target)
+    result["presentation"] = build_nutrition_presentation(
+        result.get("nutrition_items", []), result["nutrition_comparison_status"])
+    result["suitability"] = build_suitability(
+        nutrition_comparison=result.get("nutrition_comparison"),
+        target_compatibility=result["target_compatibility"],
+        safety_status=result["safety_status"], excluded=result["excluded"])
+    return target
+
+
+def _analyze_direct(req):
+    result = _analyze_product(req)
+    pet = req.pet.model_dump()
+    if pet.get("product_target_stage") is None:
+        age = pet["age_years"]
+        pet["product_target_stage"] = "GROWTH" if age < 1 else "ADULT" if age < 7 else "SENIOR"
+    product = req.product.model_dump()
+    _attach_projections(result, pet, product)
+    result["product_label"] = {
+        "feeding_target": product.get("feeding_target"), "feeding_method": product.get("feeding_method"),
+        "target_age_group": product.get("service_target_age_group"),
+        "target_breed_size": product.get("service_target_breed_size"), "source": "API_REQUEST",
+    }
+    return result
+
+
 def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str, Any]:
     """ownership 확인을 마친 source에만 사용할 내부 경계. HTTP 인증을 대신하지 않는다."""
     pet = adapt_pet(pet_source)
@@ -317,21 +371,38 @@ def analyze_service_records(pet_source: dict, product_source: dict) -> dict[str,
     product = loaded["product"]
     req = AnalyzeRequest(pet=PetIn(**pet), product=ProductIn(**product))
     result = _analyze_product(req, source_safety=evaluate_service_safety(pet, product))
-    result["input_provenance"] = loaded["provenance"]
-    # Feeding policy sees the actual Service stage, never the legacy Mock
-    # Nutrition-only age-rule compatibility adjustment above.
-    coefficient = resolve_mer_coefficient(
-        {**pet_source, "life_stage": pet["life_stage"]}
-        if pet_source.get("birth_date") is not None else pet_source
-    )
+    target = _attach_projections(result, pet, product, load_synthetic_target(product_source))
+    loaded["provenance"]["product_target"] = target
+    # MER uses canonical calendar age and the Service neuter flag. The
+    # Nutrition reference-stage compatibility adjustment cannot select a factor.
+    coefficient = resolve_mer_coefficient({**pet, "is_neutered": pet_source.get("is_neutered")})
     feeding = calculate_feeding(
         weight_kg=pet["weight_kg"], species=pet["species"],
         energy=mock_energy(product_source, source_meta), coefficient=coefficient,
+        allow_energy_requirement=True,
     )
     if result["excluded"]:
         feeding.update(status="BLOCKED", daily_serving_g=None, mer_kcal_per_day=None)
         feeding["reason_codes"].append("FEEDING_SAFETY_EXCLUDED")
+    feeding.update(applicability=coefficient["applicability"],
+                   disclaimer_code=coefficient["disclaimer_code"])
     result["feeding"] = feeding
+    result["product_label"] = {
+        "feeding_target": product.get("feeding_target"),
+        "feeding_method": product.get("feeding_method"),
+        "target_age_group": product.get("service_target_age_group"),
+        "target_breed_size": product.get("service_target_breed_size"),
+        "source": "SERVICE_DB",
+    }
+    if source_meta.get("type") == "MOCK_INTEGRATION_FIXTURE":
+        loaded["provenance"]["integration_data"] = {
+            "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC", "production_evidence": False,
+            "schema_contract": "SERVICE_DB_COMPATIBLE",
+            "fixture_version": source_meta.get("fixture_version"),
+            "result_type": "DERIVED_RULE_RESULT",
+            "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA",
+        }
+    result["input_provenance"] = loaded["provenance"]
     return result
 
 
@@ -428,15 +499,9 @@ def health() -> dict[str, Any]:
             "POST /api/nutrition/analyze/by-service-id",
             "POST /api/nutrition/safety",
             "POST /api/nutrition/report",
+            "POST /api/nutrition/compare",
         ],
-        "future_endpoints": [
-            {
-                "method": "POST",
-                "path": "/api/nutrition/compare",
-                "status": "NOT_IMPLEMENTED",
-                "http_status": 501,
-            },
-        ],
+        "future_endpoints": [],
     }
 
 
@@ -449,7 +514,7 @@ def analyze(req: AnalyzeRequest) -> dict[str, Any]:
          nutrient_score, nutrients_checked, aafco_pass, lifestage_match,
          warnings, consumer_card, details, ingredient_normalized[]}
     """
-    return observe_domain_result(_analyze_product(req))
+    return observe_domain_result(_analyze_direct(req))
 
 
 @app.post("/api/nutrition/analyze/by-product-id")
@@ -481,14 +546,12 @@ def analyze_by_product_id(req: PersistedProductAnalyzeRequest) -> dict[str, Any]
             "source_validation_errors": [item["type"] for item in exc.errors()],
             "input_provenance": loaded["provenance"],
         })
-    result = _analyze_product(AnalyzeRequest(pet=req.pet, product=product))
+    result = _analyze_direct(AnalyzeRequest(pet=req.pet, product=product))
     result["input_provenance"] = loaded["provenance"]
     return observe_domain_result(result)
 
 
-@app.post("/api/nutrition/analyze/by-service-id")
-def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dict[str, Any]:
-    """Gateway 인증과 SQL ownership을 모두 통과한 실제 source만 분석한다."""
+def _authenticated_member_id(request: Request) -> int:
     if not service_repository.configured():
         raise HTTPException(status_code=503, detail="SERVICE_SOURCE_NOT_CONFIGURED")
     expected = os.getenv("INTERNAL_GATEWAY_SECRET")
@@ -501,8 +564,15 @@ def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dic
     if (len(members) != 1 or not members[0].isascii() or not members[0].isdecimal()
             or len(members[0]) > 19 or not 0 < int(members[0]) <= 9223372036854775807):
         raise HTTPException(status_code=401, detail="SERVICE_UNAUTHORIZED")
+    return int(members[0])
+
+
+@app.post("/api/nutrition/analyze/by-service-id")
+def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dict[str, Any]:
+    """Gateway 인증과 SQL ownership을 모두 통과한 실제 source만 분석한다."""
+    member_id = _authenticated_member_id(request)
     try:
-        pet = service_repository.get_pet(req.pet_id, int(members[0]))
+        pet = service_repository.get_pet(req.pet_id, member_id)
         # FE declaration is checked against SELECTed pet_allergy rows by adapt_pet.
         # Omission never promotes the DB list to a known profile.
         pet = {**pet, "allergy_profile_status": req.allergy_profile_status or "UNKNOWN"}
@@ -553,9 +623,20 @@ def report(req: AnalyzeRequest) -> dict[str, Any]:
 
 
 @app.post("/api/nutrition/compare")
-def compare() -> dict[str, Any]:
-    """Reserved comparison route; it is outside the current runtime scope."""
-    raise HTTPException(status_code=501, detail="NOT_IMPLEMENTED: comparison is outside the current Nutrition runtime scope")
+def compare(req: ServiceCompareRequest, request: Request) -> dict[str, Any]:
+    member_id = _authenticated_member_id(request)
+    try:
+        pet = service_repository.get_pet(req.pet_id, member_id)
+        pet = {**pet, "allergy_profile_status": req.allergy_profile_status or "UNKNOWN"}
+        products = [service_repository.get_product(pid) for pid in req.product_ids]
+        analyses = [observe_domain_result(analyze_service_records(pet, product)) for product in products]
+        return compare_service_analyses(req.pet_id, req.product_ids, analyses)
+    except service_repository.ServiceNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from None
+    except service_repository.ServiceUnavailable:
+        raise HTTPException(status_code=503, detail="SERVICE_DB_UNAVAILABLE") from None
+    except (ServiceInputError, ValidationError):
+        raise HTTPException(status_code=422, detail="SERVICE_SOURCE_INVALID") from None
 
 
 def _now_iso() -> str:
