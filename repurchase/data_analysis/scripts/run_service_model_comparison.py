@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from scripts.modeling.lightgbm_baseline import create_lightgbm_classifier
 from scripts.modeling.operational_event_intervals import (
     build_operational_event_intervals,
 )
@@ -34,6 +35,7 @@ from scripts.modeling.service_model_comparison import (
     select_service_aft_boost_rounds,
     select_service_aft_scale,
 )
+from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
 
 
 def _file_sha256(path: Path) -> str:
@@ -253,6 +255,17 @@ def run_comparison(
         "train_end_at": train_end.isoformat(),
         "validation_end_at": validation_end.isoformat(),
         "test_evaluated": False,
+        # 기본값까지 포함한 실제 학습 팩토리 설정을 남겨 이후 검증자가
+        # 코드 지문뿐 아니라 두 후보의 설정 자체를 대조할 수 있게 합니다.
+        "model_configuration": {
+            "xgboost_aft": {
+                "parameters": create_xgboost_aft_parameters(
+                    loss_distribution_scale=selected_scale
+                ),
+                "num_boost_round": selected_rounds,
+            },
+            "lightgbm": {"parameters": create_lightgbm_classifier().get_params()},
+        },
         "validation_population": _summarize_validation_population(split.validation),
         "summary": comparison.summary.to_dict(orient="records"),
         "calibration": comparison.calibration.to_dict(orient="records"),

@@ -40,6 +40,17 @@ def frozen_inputs(
         },
         "code_sha256": {path.name: _file_sha256(path) for path in preflight.CODE_PATHS},
         "aft_configuration": preflight.FROZEN_AFT.copy(),
+        "model_configuration": {
+            "xgboost_aft": {
+                "parameters": preflight.create_xgboost_aft_parameters(
+                    loss_distribution_scale=2.0
+                ),
+                "num_boost_round": 20,
+            },
+            "lightgbm": {
+                "parameters": preflight.create_lightgbm_classifier().get_params()
+            },
+        },
         "evaluation": {
             "horizon_days": 30,
             "primary_metric": "ipcw_brier_score",
@@ -62,6 +73,7 @@ def frozen_inputs(
         )
     }
     comparison["test_evaluated"] = False
+    comparison["model_configuration"] = copy.deepcopy(manifest["model_configuration"])
     comparison["aft_scale_selection"] = {
         "loss_distribution": "normal",
         "fixed_num_boost_round": 20,
@@ -107,6 +119,7 @@ def test_preflight_rejects_changed_source_file(frozen_inputs: tuple) -> None:
         ("feature_generation_version", 999, "feature_generation_version"),
         ("runtime_versions", {"python": "0.0.0"}, "runtime_versions"),
         ("aft_configuration", {"loss_distribution": "normal"}, "AFT 후보"),
+        ("model_configuration", {}, "학습 설정"),
         ("evaluation", {"horizon_days": 7}, "지표 계약"),
     ],
 )
@@ -133,4 +146,18 @@ def test_preflight_rejects_result_with_test_evaluated(frozen_inputs: tuple) -> N
     comparison["test_evaluated"] = True
 
     with pytest.raises(ValueError, match="Test 평가가 없는"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_changed_validation_model_settings(
+    frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest, comparison, sources = frozen_inputs
+    comparison["model_configuration"]["lightgbm"]["parameters"]["n_estimators"] = 200
+
+    def fail_if_source_opened(_: Path) -> str:
+        raise AssertionError("설정 오류 뒤에는 원천 파일을 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
+    with pytest.raises(ValueError, match="학습 설정"):
         preflight.validate_manifest(manifest, comparison, sources)

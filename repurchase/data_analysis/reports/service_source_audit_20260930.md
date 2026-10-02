@@ -630,3 +630,23 @@ manifest에는 `schema_version=1`, 기존 결과와 동일한
 최종 Test 실행 허가, 모델 아티팩트의 재현성, LightGBM 학습 설정 전체의
 고정 또는 운영 모델 승인을 뜻하지 않는다. 실제 manifest를 승인·고정하고
 나머지 평가 대상/제외 기준과 아티팩트 계약을 확인하는 작업은 별도로 남는다.
+
+### 두 모델 학습 설정 기록 (#182)
+
+Validation 결과 JSON에 실제 학습 팩토리에서 얻은 XGBoost AFT 파라미터와
+부스팅 횟수, LightGBM의 기본값 포함 파라미터 **22개**를
+`model_configuration`으로 기록한다. 사전검증은 이를 manifest, Validation
+결과, 현재 코드의 학습 팩토리 사이에서 대조하며 누락·변경은 원천 파일을
+읽기 전에 거절한다. 기존 결과 JSON에는 이 필드가 없으므로 새 계약에
+사용하려면 Validation을 다시 실행해야 한다.
+
+같은 로컬 원천 추출본의 70/85% 컷을 Validation만 재실행해 AFT
+`normal`/20회/scale **2.0**, LightGBM 설정 22개가 결과에 기록되는 것을
+확인했다. 결과의 30일 IPCW Brier는 AFT **0.120627**, LightGBM
+**0.122557**이며, 사용자 단위 쌍 Bootstrap 1,000회(seed 42)의
+`AFT − LightGBM` 95% 구간은 **-0.002825~-0.001039**다. 앞선 동일 컷
+실험의 수치와 반올림 수준에서 일치하고 `test_evaluated=false`다.
+로컬 결과는 `/private/tmp/repurchase-service-model-config-validation-70-85.json`에
+보관했다. 목데이터 Validation 탐색 결과이지 Test·실사용자 성능이 아니다.
+모델 아티팩트 파일 해시, 평가 대상/제외 기준 및 최종 manifest 승인은 아직
+남아 있으므로 이 변경만으로 Test를 열지 않는다.

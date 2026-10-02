@@ -395,6 +395,20 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     assert selected["aft_round_selection"]["selected_rounds"] == 7
     assert "aft_round_selection" not in fixed
     assert scale["aft_scale_selection"]["selected_scale"] == 2.0
+    assert selected["model_configuration"]["xgboost_aft"]["num_boost_round"] == 7
+    assert (
+        fixed["model_configuration"]["xgboost_aft"]["parameters"][
+            "aft_loss_distribution_scale"
+        ]
+        == 1.0
+    )
+    assert (
+        scale["model_configuration"]["xgboost_aft"]["parameters"][
+            "aft_loss_distribution_scale"
+        ]
+        == 2.0
+    )
+    assert scale["model_configuration"]["lightgbm"]["parameters"]["random_state"] == 42
 
 
 def test_validation_population_counts_each_history_bucket_once() -> None:
