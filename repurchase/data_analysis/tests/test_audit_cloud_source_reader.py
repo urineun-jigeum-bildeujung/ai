@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pandas as pd
@@ -78,3 +79,37 @@ def test_missing_dsn_and_naive_cutoff_do_not_connect(
     with pytest.raises(ValueError, match="REPURCHASE_ORDER_DATABASE_DSN"):
         run_audit(pd.Timestamp("2026-09-29T00:00:00Z"))
     assert main(["--as-of", "2026-09-29T00:00:00"]) == 2
+
+
+def test_both_source_connections_limit_query_and_idle_transaction_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """접속 제한뿐 아니라 각 원천 조회 세션의 실행·유휴 시간을 제한합니다."""
+    order, pet = _snapshot_pair()
+    connections: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setenv("REPURCHASE_ORDER_DATABASE_DSN", "dbname=order_db")
+    monkeypatch.setenv("REPURCHASE_MEMBER_DATABASE_DSN", "dbname=member_db")
+
+    def connect(dsn: str, **kwargs: object) -> nullcontext[str]:
+        connections.append((dsn, kwargs))
+        return nullcontext(dsn)
+
+    monkeypatch.setattr("scripts.audit_cloud_source_reader.psycopg.connect", connect)
+    monkeypatch.setattr(
+        "scripts.audit_cloud_source_reader.read_order_source", lambda _: order
+    )
+    monkeypatch.setattr(
+        "scripts.audit_cloud_source_reader.read_pet_source", lambda _: pet
+    )
+    monkeypatch.setattr(
+        "scripts.audit_cloud_source_reader.audit_snapshots", lambda *_args, **_kwargs: "ok"
+    )
+
+    assert run_audit(pd.Timestamp("2026-09-29T00:00:00Z")) == "ok"
+    assert [dsn for dsn, _ in connections] == ["dbname=order_db", "dbname=member_db"]
+    assert all(kwargs["connect_timeout"] == 10 for _, kwargs in connections)
+    assert all(
+        kwargs["options"]
+        == "-c statement_timeout=300000 -c idle_in_transaction_session_timeout=60000"
+        for _, kwargs in connections
+    )
