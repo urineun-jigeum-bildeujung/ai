@@ -614,3 +614,19 @@ Test를 열기 전에는 관측 종료 컷, 평가 대상·제외 기준, 학습
 사용하고, 그 결과에 맞춰 후보나 설정을 다시 고르지 않는다. 이 단계의
 수치는 목데이터와 반복 사용한 Validation에 대한 탐색 결과이며, 실제
 사용자 성능·배포 성능·날짜/범위/신뢰도 제공 가능성을 뜻하지 않는다.
+
+### 최종 평가 입력 사전검증 경로 (#179)
+
+별도 `scripts.validate_service_final_evaluation` 명령은 승인된 manifest,
+기존 Validation 결과 JSON, 원천 CSV 6개의 경로를 받아 **설정부터 검사**한다.
+manifest에는 `schema_version=1`, 기존 결과와 동일한
+`source_sha256`·`runtime_versions`·`feature_generation_version`·관측/분할 컷,
+`aft_configuration`(normal/20회/scale 2.0), `evaluation`(30일 IPCW Brier,
+사용자 Bootstrap 1,000회·seed 42), 현재 `modeling/*.py` 및 비교 실행
+스크립트의 `code_sha256`을 명시한다. 파일 해시와 코드 지문은 설정 검증 뒤
+대조한다. 원천 파일은 바이트 해시만 읽고 행·Test 라벨·성과는 파싱하지 않는다.
+
+통과 상태 `input_contract_verified`는 **입력 계약 일부가 일치한다**는 뜻이다.
+최종 Test 실행 허가, 모델 아티팩트의 재현성, LightGBM 학습 설정 전체의
+고정 또는 운영 모델 승인을 뜻하지 않는다. 실제 manifest를 승인·고정하고
+나머지 평가 대상/제외 기준과 아티팩트 계약을 확인하는 작업은 별도로 남는다.
