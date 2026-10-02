@@ -12,6 +12,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 import mock_integration_fixture as fixture
 import service_db_adapter as adapter
+import audit_mock_fixture_coverage as audit
 
 
 def product(product_id=1, sku=None, category="FOOD", species=None, subcategory="DRY_FOOD", age="ADULT"):
@@ -137,3 +138,62 @@ def test_nutrition_ready_does_not_override_unknown_pet_safety():
     assert result["safety_status"] == "SAFETY_DATA_INSUFFICIENT"
     assert result["excluded"] is True
     assert result["analysis_status"] == "INSUFFICIENT_DATA"
+
+
+def _audit_products(mock_count=286, non_mock_count=36):
+    products = []
+    for product_id in range(1, mock_count + 1):
+        products.append(product(product_id, sku=f"MOCK-{product_id:04d}"))
+    for product_id in range(10_000, 10_000 + non_mock_count):
+        products.append(product(product_id, sku=f"REAL-{product_id:04d}"))
+    return products
+
+
+def test_audit_accepts_active_non_mock_products_when_mock_coverage_is_complete(monkeypatch):
+    monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: _audit_products())
+
+    report = audit.build_report(expected_mock_total=286)
+
+    assert report["active_product_total"] == 322
+    assert report["mock_product_total"] == 286
+    assert report["non_mock_product_total"] == 36
+    assert report["acceptance"]["expected_mock_total_match"] is True
+    assert report["acceptance"]["all_mock_processed"] is True
+    assert report["observations"]["all_mock_namespace"] is False
+    monkeypatch.setattr(sys, "argv", ["audit_mock_fixture_coverage"])
+    assert audit.main() == 0
+
+
+def test_audit_rejects_when_mock_product_count_is_short(monkeypatch):
+    monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: _audit_products(285, 37))
+
+    report = audit.build_report(expected_mock_total=286)
+
+    assert report["active_product_total"] == 322
+    assert report["acceptance"]["expected_mock_total_match"] is False
+    monkeypatch.setattr(sys, "argv", ["audit_mock_fixture_coverage"])
+    assert audit.main() == 2
+
+
+def test_audit_rejects_when_a_mock_product_has_no_fixture_status(monkeypatch):
+    products = _audit_products()
+    original_coverage_record = audit.coverage_record
+
+    def missing_fixture(source):
+        if source["sku"] == "MOCK-0001":
+            return {
+                "service_product_id": source["id"],
+                "service_sku": source["sku"],
+                "fixture_status": "NOT_MOCK_PRODUCT",
+                "fixture_profile": None,
+                "nutrition_comparison_possible": False,
+            }
+        return original_coverage_record(source)
+
+    monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: products)
+    monkeypatch.setattr(audit, "coverage_record", missing_fixture)
+
+    report = audit.build_report(expected_mock_total=286)
+
+    assert report["acceptance"]["expected_mock_total_match"] is True
+    assert report["acceptance"]["all_mock_processed"] is False
