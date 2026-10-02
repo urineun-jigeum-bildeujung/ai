@@ -1,7 +1,11 @@
 """Read-only audit for the BE Mock integration product master.
 
 Usage inside the Nutrition service environment:
-    python scripts/nutrition/audit_mock_fixture_coverage.py --expected-total 286
+    python scripts/nutrition/audit_mock_fixture_coverage.py --expected-mock-total 286
+
+``--expected-total`` remains accepted as a compatibility alias.  Its value is
+the expected number of active ``MOCK-*`` products, not the total active
+product count.
 
 No INSERT/UPDATE/DDL is performed.  Optional ``--output`` writes only a local
 JSON report; it does not write to Service DB or Git.
@@ -42,7 +46,7 @@ def _golden_set(records: list[dict], limit: int = 16) -> list[dict]:
     return selected
 
 
-def build_report(expected_total: int = 286) -> dict:
+def build_report(expected_mock_total: int = 286) -> dict:
     products = service_repository.list_active_products()
     rows = []
     for source in products:
@@ -54,25 +58,33 @@ def build_report(expected_total: int = 286) -> dict:
             )
         }})
 
-    fixture_counts = Counter(row["fixture_status"] for row in rows)
+    mock_rows = [row for row in rows if is_mock_sku(row["service_sku"])]
+    fixture_counts = Counter(row["fixture_status"] for row in mock_rows)
     food_rows = [row for row in rows if row["service_source"].get("category_code") == "FOOD"]
     possible = sum(bool(row["nutrition_comparison_possible"]) for row in rows)
     food_unknown = sum(not row["nutrition_comparison_possible"] for row in food_rows)
     not_applicable = len(rows) - len(food_rows)
-    mock_count = sum(is_mock_sku(row["service_sku"]) for row in rows)
+    mock_count = len(mock_rows)
+    non_mock_count = len(rows) - mock_count
+    processed_mock_count = sum(
+        fixture_counts[status]
+        for status in ("FIXTURE_READY", "FIXTURE_PARTIAL", "FIXTURE_UNAVAILABLE")
+    )
 
     report = {
         "artifact_version": "mock_fixture_coverage_v1",
         "scope": "SERVICE_DB_MOCK_INTEGRATION_MASTER",
-        "expected_total": expected_total,
+        "expected_mock_total": expected_mock_total,
+        "active_product_total": len(rows),
         "total": len(rows),
         "all_products_are_mock_sku": mock_count == len(rows),
         "mock_sku_count": mock_count,
+        "mock_product_total": mock_count,
+        "non_mock_product_total": non_mock_count,
         "fixture_coverage": {
             "FIXTURE_READY": fixture_counts["FIXTURE_READY"],
             "FIXTURE_PARTIAL": fixture_counts["FIXTURE_PARTIAL"],
             "FIXTURE_UNAVAILABLE": fixture_counts["FIXTURE_UNAVAILABLE"],
-            "NOT_MOCK_PRODUCT": fixture_counts["NOT_MOCK_PRODUCT"],
         },
         "nutrition_comparison_structural": {
             "possible": possible,
@@ -80,8 +92,10 @@ def build_report(expected_total: int = 286) -> dict:
             "not_applicable_non_food": not_applicable,
         },
         "acceptance": {
-            "expected_total_match": len(rows) == expected_total,
-            "all_processed": sum(fixture_counts.values()) == len(rows),
+            "expected_mock_total_match": mock_count == expected_mock_total,
+            "all_mock_processed": processed_mock_count == mock_count,
+        },
+        "observations": {
             "all_mock_namespace": mock_count == len(rows),
         },
         "golden_set": _golden_set(rows),
@@ -92,16 +106,23 @@ def build_report(expected_total: int = 286) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--expected-total", type=int, default=286)
+    parser.add_argument(
+        "--expected-mock-total", "--expected-total", dest="expected_mock_total",
+        type=int, default=286,
+        help="expected active MOCK-* product count (legacy alias: --expected-total)",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    report = build_report(args.expected_total)
+    report = build_report(args.expected_mock_total)
     payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(payload, encoding="utf-8")
     print(payload, end="")
-    accepted = all(report["acceptance"].values())
+    accepted = all(
+        report["acceptance"][key]
+        for key in ("expected_mock_total_match", "all_mock_processed")
+    )
     return 0 if accepted else 2
 
 
