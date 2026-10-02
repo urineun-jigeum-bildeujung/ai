@@ -144,7 +144,7 @@ def _validate_aft_round_selection(
 
 
 def run_comparison(
-    paths: dict[str, Path],
+    paths: dict[str, Path] | None,
     *,
     observation_end_at: pd.Timestamp,
     bootstrap_replicates: int = 1_000,
@@ -153,8 +153,10 @@ def run_comparison(
     aft_round_candidates: tuple[int, ...] | None = None,
     aft_scale_candidates: tuple[float, ...] | None = None,
     inner_train_ratio: float = 0.8,
+    sources: dict[str, pd.DataFrame] | None = None,
+    source_metadata: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    """원천 해시, 시간 컷과 평가 수치를 한 실행 결과로 묶습니다."""
+    """CSV 또는 메모리 원천의 출처, 시간 컷과 평가 수치를 한 결과로 묶습니다."""
     end = pd.Timestamp(observation_end_at)
     if end.tzinfo is None:
         raise ValueError("관측 종료 시각은 timezone-aware 시각이어야 합니다.")
@@ -169,7 +171,19 @@ def run_comparison(
     _validate_aft_round_selection(
         aft_round_candidates, aft_scale_candidates, inner_train_ratio
     )
-    sources = _read_sources(paths)
+    if sources is None:
+        if paths is None or source_metadata is not None:
+            raise ValueError("CSV 경로와 메모리 원천 메타데이터가 일치하지 않습니다.")
+        sources = _read_sources(paths)
+        source_metadata = {
+            "source_sha256": {name: _file_sha256(path) for name, path in paths.items()}
+        }
+    elif (
+        paths is not None
+        or source_metadata is None
+        or set(source_metadata) != {"source_snapshots"}
+    ):
+        raise ValueError("메모리 원천에는 DB 스냅샷 메타데이터만 필요합니다.")
     orders = sources["orders"]
     items = sources["order_items"]
     status = build_order_status_intervals(sources["histories"])
@@ -244,7 +258,7 @@ def run_comparison(
     comparison = compare_service_aft_lightgbm(split, **comparison_options)
     _require_finite_c_index(comparison.summary)
     result: dict[str, object] = {
-        "source_sha256": {name: _file_sha256(path) for name, path in paths.items()},
+        **source_metadata,
         "runtime_versions": {
             "python": sys.version.split()[0],
             "pandas": version("pandas"),
