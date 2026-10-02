@@ -7,7 +7,21 @@
   "assignment_rule": "Fixed arithmetic midpoint of the project's Mock DRY_FOOD and WET_FOOD ranges; no species/stage adjustment is defined in that contract. Unsupported forms remain missing.",
   "manufacturer_evidence": false,
   "forms": {
-    "DRY_FOOD": {"range_kcal_per_kg": [3200, 4500], "energy_density_kcal_per_kg": 3850},
-    "WET_FOOD": {"range_kcal_per_kg": [500, 1000], "energy_density_kcal_per_kg": 750}
-  }
+    "DRY_FOOD": {
+      "range_kcal_per_kg": [
+        3200,
+        4500
+      ],
+      "energy_density_kcal_per_kg": 3850
+    },
+    "WET_FOOD": {
+      "range_kcal_per_kg": [
+        500,
+        1000
+      ],
+      "energy_density_kcal_per_kg": 750
+    }
+  },
+  "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+  "production_evidence": false
 }

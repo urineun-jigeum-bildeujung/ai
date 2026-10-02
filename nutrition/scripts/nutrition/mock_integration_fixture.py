@@ -127,6 +127,9 @@ def build_mock_fixture(source: dict[str, Any]) -> dict[str, Any] | None:
         "fixture_status": status,
         "fixture_reason": reason,
         "real_product_identity_claimed": False,
+        "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+        "production_evidence": False,
+        "schema_contract": "SERVICE_DB_COMPATIBLE",
     }
     return {
         "identifier": {

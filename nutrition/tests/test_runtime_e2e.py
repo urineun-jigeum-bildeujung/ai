@@ -90,7 +90,7 @@ class RuntimeE2ETests(unittest.TestCase):
         registered_paths = {route.path for route in app.routes}
         self.assertEqual(body["service"], "nutrition")
         self.assertIn("POST /api/nutrition/analyze", body["endpoints"])
-        self.assertNotIn("POST /api/nutrition/compare", body["endpoints"])
+        self.assertIn("POST /api/nutrition/compare", body["endpoints"])
         self.assertTrue({
             "/health",
             "/api/nutrition/analyze",
@@ -99,10 +99,7 @@ class RuntimeE2ETests(unittest.TestCase):
             "/api/nutrition/report",
             "/api/nutrition/compare",
         }.issubset(registered_paths))
-        self.assertEqual(body["future_endpoints"], [{
-            "method": "POST", "path": "/api/nutrition/compare",
-            "status": "NOT_IMPLEMENTED", "http_status": 501,
-        }])
+        self.assertEqual(body["future_endpoints"], [])
 
     def test_food_analysis_returns_all_five_status_axes(self) -> None:
         body = self.post_analyze(dog_pet(), dog_food())
@@ -232,9 +229,27 @@ class RuntimeE2ETests(unittest.TestCase):
         compare = self.client.post("/api/nutrition/compare")
         self.assertEqual(safety.status_code, 200, safety.text)
         self.assertEqual(report.status_code, 200, report.text)
-        self.assertEqual(compare.status_code, 501)
-        self.assertIn("NOT_IMPLEMENTED", compare.json()["detail"])
+        self.assertEqual(compare.status_code, 422)
+        self.assertTrue(compare.json()["detail"])
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_direct_call_optional_additions_and_legacy_axes():
+    client = TestClient(app)
+    body = {'pet':dog_pet(), 'product':dog_food()}
+    old = client.post('/api/nutrition/analyze',json=body)
+    assert old.status_code == 200
+    body['pet'].update(target_breed_size='SMALL',product_target_stage='ADULT')
+    body['product'].update(service_target_age_group='ADULT',service_target_breed_size='SMALL',
+                           feeding_target='성체',feeding_method='표시 메타데이터')
+    new = client.post('/api/nutrition/analyze',json=body)
+    assert new.status_code == 200
+    for key in ('excluded','exclude_reasons','safety_status','safety_reason_codes','analysis_status',
+                'nutrition_comparison_status','aafco_pass','input_readiness','nutrition_coverage','consumer_card'):
+        assert old.json()[key] == new.json()[key]
+    assert new.json()['target_compatibility']['status'] == 'MATCHED'
+    assert new.json()['presentation']['rows']
+    assert new.json()['product_label']['feeding_method'] == '표시 메타데이터'
