@@ -2,7 +2,8 @@
 
 - 원천 목데이터는 BE, 결과 테이블과 예측값 적재는 AI가 관리한다.
 - `001_prediction_storage.sql`은 PostgreSQL 15 이상용 첫 스키마 버전이다.
-- `repurchase`는 제안한 전용 스키마명이며 실제 DB·스키마·권한 확정 전 공용 DB에 적용하지 않는다.
+- 2026-10-02 개발 환경의 `repurchase_db`에 `ai_dev`로 `001_prediction_storage.sql`을 적용했다. `repurchase` 스키마, 테이블 2개, `latest_predictions` 뷰를 확인했고 두 테이블의 초기 행 수는 모두 0건이었다.
+- 접속·스키마/테이블 생성·1건 입력·조회 권한은 롤백 트랜잭션으로 검증했다. 이는 운영 배치 실행이나 FE 조회 권한 검증을 의미하지 않는다.
 - 기존 스키마에 덮어쓰지 않는다. 이미 같은 이름이 있으면 중단하고 충돌을 확인한다.
 - 사용자 키는 현재 AI 계약에 맞춰 text이며 서비스 member.id를 문자열로 변환한다. pet_id는 서비스 bigint, 미지정은 NULL이다.
 - 저장 구조, 발행 안전성 제약, 최신 결과 뷰와 독립된 DB 적재 함수까지 구현했다. 운영 배치의 추론 흐름에는 아직 연결하지 않았다.
@@ -19,4 +20,4 @@ AI 쓰기 로직은 한 트랜잭션에서 STAGING 생성 → 결과 저장 → 
 
 `test_prediction_storage.sql`은 로컬 일회용 DB에서만 실행한다. 최신 결과, 건수 불일치 발행 거절, 발행 후 수정 거절, 중복 멱등키, 확률 제약을 확인하고 트랜잭션 종료 시 데이터를 롤백한다. 운영 DB를 테스트 대상으로 사용하지 않는다.
 
-`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 이 코드는 아직 운영 배치의 모델 추론 흐름에 연결되지 않았으며 공용 DB에 적용하지 않았다.
+`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 개발 DB에는 저장 구조만 적용했으며, 이 적재 함수를 운영 배치의 모델 추론 흐름에 연결하거나 실제 예측 결과를 발행하지 않았다.
