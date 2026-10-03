@@ -14,6 +14,7 @@ from scripts import run_service_model_comparison as runner
 from scripts.modeling.service_model_comparison import (
     AFTRoundSelection,
     AFTScaleSelection,
+    ProductGroupSmoothingSelection,
 )
 from scripts.run_service_model_comparison import (
     _file_sha256,
@@ -264,8 +265,34 @@ def test_library_rejects_joint_aft_search_before_reading_csv() -> None:
         )
 
 
-def test_inner_aft_selection_precedes_outer_validation_label_generation(
+@pytest.mark.parametrize(
+    "candidates", [(1.0,), (0.0, 1.0), (1.0, 1.0), (1.0, float("nan"))]
+)
+def test_library_rejects_invalid_group_smoothing_before_reading_csv(
+    candidates: tuple[float, ...],
+) -> None:
+    with pytest.raises(ValueError, match="상품군 확률 수축 강도 후보"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            product_group_smoothing_candidates=candidates,
+        )
+
+
+@pytest.mark.parametrize(
+    ("selector", "selection_options"),
+    [
+        ("select_service_aft_boost_rounds", {"aft_round_candidates": (5, 20)}),
+        (
+            "select_service_product_group_smoothing",
+            {"product_group_smoothing_candidates": (1.0, 4.0)},
+        ),
+    ],
+)
+def test_inner_selection_precedes_outer_validation_label_generation(
     monkeypatch: pytest.MonkeyPatch,
+    selector: str,
+    selection_options: dict[str, object],
 ) -> None:
     """외부 Validation 라벨을 만들기 전에 내부 시점의 표본을 다시 생성합니다."""
     first = pd.Timestamp("2024-01-01T00:00:00Z")
@@ -324,7 +351,7 @@ def test_inner_aft_selection_precedes_outer_validation_label_generation(
         raise SelectionReached
 
     monkeypatch.setattr(runner, "build_service_train_validation_split", capture_split)
-    monkeypatch.setattr(runner, "select_service_aft_boost_rounds", stop_at_selection)
+    monkeypatch.setattr(runner, selector, stop_at_selection)
 
     with pytest.raises(SelectionReached):
         runner.run_comparison(
@@ -332,8 +359,8 @@ def test_inner_aft_selection_precedes_outer_validation_label_generation(
             observation_end_at=end,
             train_fraction=0.4,
             validation_fraction=0.55,
-            aft_round_candidates=(5, 20),
             inner_train_ratio=0.8,
+            **selection_options,
         )
 
     outer_train_end = first + (end - first) * 0.4
@@ -417,6 +444,21 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
             ),
         ),
     )
+    monkeypatch.setattr(
+        runner,
+        "select_service_product_group_smoothing",
+        lambda *args, **kwargs: ProductGroupSmoothingSelection(
+            selected_strength=4.0,
+            candidates=pd.DataFrame(
+                [
+                    {
+                        "product_group_smoothing_strength": 4.0,
+                        "ipcw_brier_score": 0.1,
+                    }
+                ]
+            ),
+        ),
+    )
     training_options: list[dict[str, object]] = []
 
     def record_outer_training(*args: object, **kwargs: object) -> SimpleNamespace:
@@ -443,14 +485,31 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
         sources=sources,
         source_metadata={"source_snapshots": {"order_extracted_at": end.isoformat()}},
     )
+    baseline = runner.run_comparison(
+        {}, observation_end_at=end, product_group_smoothing_candidates=(1.0, 4.0)
+    )
 
-    assert [item["aft_boost_rounds"] for item in training_options] == [7, 20, 20, 20]
+    assert [item["aft_boost_rounds"] for item in training_options] == [
+        7,
+        20,
+        20,
+        20,
+        20,
+    ]
     assert "aft_loss_distribution_scale" not in training_options[0]
     assert "aft_loss_distribution_scale" not in training_options[1]
     assert training_options[2]["aft_loss_distribution_scale"] == 2.0
+    assert training_options[4]["product_group_smoothing_strength"] == 4.0
     assert selected["aft_round_selection"]["selected_rounds"] == 7
     assert "aft_round_selection" not in fixed
     assert scale["aft_scale_selection"]["selected_scale"] == 2.0
+    assert baseline["product_group_smoothing_selection"]["selected_strength"] == 4.0
+    assert baseline["model_configuration"]["product_group_probability_baseline"] == {
+        "product_group_smoothing_strength": 4.0,
+        "horizon_days": 30,
+        "source_key": "target_id",
+        "prior": "train_global_ipcw_event_probability",
+    }
     assert scale["evaluation_population_policy"] == (
         runner.service_evaluation_population_policy()
     )

@@ -40,6 +40,7 @@ from scripts.modeling.service_model_comparison import (
     compare_service_aft_lightgbm,
     select_service_aft_boost_rounds,
     select_service_aft_scale,
+    select_service_product_group_smoothing,
 )
 from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
 
@@ -163,6 +164,25 @@ def _validate_aft_round_selection(
         )
 
 
+def _validate_product_group_smoothing_candidates(
+    candidates: tuple[float, ...] | None,
+) -> None:
+    if candidates is not None and (
+        len(candidates) < 2
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+            for value in candidates
+        )
+        or len(set(candidates)) != len(candidates)
+    ):
+        raise ValueError(
+            "상품군 확률 수축 강도 후보는 서로 다른 양의 유한한 숫자 2개 이상이어야 합니다."
+        )
+
+
 def run_comparison(
     paths: dict[str, Path] | None,
     *,
@@ -172,6 +192,7 @@ def run_comparison(
     validation_fraction: float = 0.85,
     aft_round_candidates: tuple[int, ...] | None = None,
     aft_scale_candidates: tuple[float, ...] | None = None,
+    product_group_smoothing_candidates: tuple[float, ...] | None = None,
     inner_train_ratio: float = 0.8,
     sources: dict[str, pd.DataFrame] | None = None,
     source_metadata: dict[str, object] | None = None,
@@ -191,6 +212,7 @@ def run_comparison(
     _validate_aft_round_selection(
         aft_round_candidates, aft_scale_candidates, inner_train_ratio
     )
+    _validate_product_group_smoothing_candidates(product_group_smoothing_candidates)
     code_hashes = IMPORTED_MODEL_CODE_SHA256
     if model_code_sha256() != code_hashes:
         raise ValueError("모델 비교 실행 전에 코드 파일이 변경됐습니다.")
@@ -234,7 +256,13 @@ def run_comparison(
     selected_scale = 1.0
     selection_record: dict[str, object] | None = None
     scale_selection_record: dict[str, object] | None = None
-    if aft_round_candidates is not None or aft_scale_candidates is not None:
+    smoothing_selection_record: dict[str, object] | None = None
+    selected_smoothing_strength: float | None = None
+    if (
+        aft_round_candidates is not None
+        or aft_scale_candidates is not None
+        or product_group_smoothing_candidates is not None
+    ):
         # 내부 라벨·검열을 내부 종료 컷으로 다시 만들고, 바깥 Validation은 보지 않습니다.
         inner_train_end = first + (train_end - first) * inner_train_ratio
         inner_split = build_service_train_validation_split(
@@ -257,7 +285,7 @@ def run_comparison(
                 "selected_rounds": selected_rounds,
                 "candidate_scores": selection.candidates.to_dict(orient="records"),
             }
-        else:
+        if aft_scale_candidates is not None:
             scale_selection = select_service_aft_scale(
                 inner_split, candidate_scales=aft_scale_candidates
             )
@@ -275,6 +303,22 @@ def run_comparison(
                     orient="records"
                 ),
             }
+        if product_group_smoothing_candidates is not None:
+            smoothing_selection = select_service_product_group_smoothing(
+                inner_split, candidate_strengths=product_group_smoothing_candidates
+            )
+            selected_smoothing_strength = smoothing_selection.selected_strength
+            smoothing_selection_record = {
+                "inner_train_end_at": inner_train_end.isoformat(),
+                "inner_validation_end_at": train_end.isoformat(),
+                "inner_train_ratio": inner_train_ratio,
+                "selection_metric": "ipcw_brier_score",
+                "tie_break": "lowest_product_group_smoothing_strength",
+                "selected_strength": selected_smoothing_strength,
+                "candidate_scores": smoothing_selection.candidates.to_dict(
+                    orient="records"
+                ),
+            }
     # 후보 선택이 끝난 다음에만 바깥 Validation의 라벨을 생성합니다.
     split = build_service_train_validation_split(
         events, orders, train_end_at=train_end, validation_end_at=validation_end
@@ -285,6 +329,10 @@ def run_comparison(
     }
     if aft_scale_candidates is not None:
         comparison_options["aft_loss_distribution_scale"] = selected_scale
+    if selected_smoothing_strength is not None:
+        comparison_options["product_group_smoothing_strength"] = (
+            selected_smoothing_strength
+        )
     comparison = compare_service_aft_lightgbm(split, **comparison_options)
     _require_finite_c_index(comparison.summary)
     if model_code_sha256() != code_hashes:
@@ -343,6 +391,14 @@ def run_comparison(
         result["aft_round_selection"] = selection_record
     if scale_selection_record is not None:
         result["aft_scale_selection"] = scale_selection_record
+    if smoothing_selection_record is not None:
+        result["product_group_smoothing_selection"] = smoothing_selection_record
+        result["model_configuration"]["product_group_probability_baseline"] = {
+            "product_group_smoothing_strength": selected_smoothing_strength,
+            "horizon_days": 30,
+            "source_key": "target_id",
+            "prior": "train_global_ipcw_event_probability",
+        }
     return result
 
 
@@ -357,6 +413,7 @@ def main() -> None:
     parser.add_argument("--validation-fraction", type=float, default=0.85)
     parser.add_argument("--aft-round-candidates", type=int, nargs="+")
     parser.add_argument("--aft-scale-candidates", type=float, nargs="+")
+    parser.add_argument("--product-group-smoothing-candidates", type=float, nargs="+")
     parser.add_argument("--inner-train-ratio", type=float, default=0.8)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -380,10 +437,16 @@ def main() -> None:
         if args.aft_scale_candidates is not None
         else None
     )
+    smoothing_candidates = (
+        tuple(args.product_group_smoothing_candidates)
+        if args.product_group_smoothing_candidates is not None
+        else None
+    )
     try:
         _validate_aft_round_selection(
             candidate_rounds, candidate_scales, args.inner_train_ratio
         )
+        _validate_product_group_smoothing_candidates(smoothing_candidates)
     except ValueError as exc:
         parser.error(str(exc))
     paths = {
@@ -405,6 +468,7 @@ def main() -> None:
         validation_fraction=args.validation_fraction,
         aft_round_candidates=candidate_rounds,
         aft_scale_candidates=candidate_scales,
+        product_group_smoothing_candidates=smoothing_candidates,
         inner_train_ratio=args.inner_train_ratio,
     )
     rendered = json.dumps(
