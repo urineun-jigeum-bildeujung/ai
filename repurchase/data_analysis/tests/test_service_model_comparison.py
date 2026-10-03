@@ -271,6 +271,20 @@ def test_service_comparison_adds_group_baseline_on_same_validation_rows() -> Non
     assert summary["outcome_known_count"].nunique() == 1
     assert summary["ipcw_reference_brier_score"].nunique() == 1
     assert comparison.calibration.groupby("model")["sample_count"].sum().eq(6).all()
+    paired = comparison.product_group_aft_bootstrap
+    assert paired is not None
+    assert paired.summary["outcome_known_count"] == 6
+    assert paired.summary["point_reference_brier_score"] == pytest.approx(
+        summary.loc["product_group_probability_baseline", "ipcw_brier_score"]
+    )
+    assert paired.summary["point_candidate_brier_score"] == pytest.approx(
+        summary.loc["xgboost_aft", "ipcw_brier_score"]
+    )
+    assert paired.summary["point_brier_improvement"] == pytest.approx(
+        summary.loc["product_group_probability_baseline", "ipcw_brier_score"]
+        - summary.loc["xgboost_aft", "ipcw_brier_score"]
+    )
+    assert len(paired.trials) == 10
     json.dumps(summary.reset_index().to_dict(orient="records"), allow_nan=False)
 
 
@@ -464,6 +478,7 @@ def test_comparison_trains_both_models_and_preserves_validation_count() -> None:
     assert comparison.summary["validation_sample_count"].tolist() == [6, 6]
     assert comparison.summary["outcome_known_count"].tolist() == [6, 6]
     assert comparison.paired_bootstrap.summary["outcome_known_count"] == 6
+    assert comparison.product_group_aft_bootstrap is None
     assert comparison.calibration.groupby("model")["sample_count"].sum().to_dict() == {
         "xgboost_aft": 6,
         "lightgbm": 6,

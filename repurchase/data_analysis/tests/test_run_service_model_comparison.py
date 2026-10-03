@@ -468,6 +468,10 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
             calibration=pd.DataFrame(),
             brier_attribution=pd.DataFrame(),
             paired_bootstrap=SimpleNamespace(summary={}, trials=pd.DataFrame()),
+            product_group_aft_bootstrap=SimpleNamespace(
+                summary={"point_brier_improvement": 0.01},
+                trials=pd.DataFrame([{"brier_improvement": 0.01}]),
+            ),
         )
 
     monkeypatch.setattr(runner, "compare_service_aft_lightgbm", record_outer_training)
@@ -504,6 +508,13 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     assert "aft_round_selection" not in fixed
     assert scale["aft_scale_selection"]["selected_scale"] == 2.0
     assert baseline["product_group_smoothing_selection"]["selected_strength"] == 4.0
+    assert "product_group_aft_bootstrap" not in fixed
+    assert baseline["product_group_aft_bootstrap"] == {
+        "reference_model": "product_group_probability_baseline",
+        "candidate_model": "xgboost_aft",
+        "summary": {"point_brier_improvement": 0.01},
+        "trials": [{"brier_improvement": 0.01}],
+    }
     assert baseline["model_configuration"]["product_group_probability_baseline"] == {
         "product_group_smoothing_strength": 4.0,
         "horizon_days": 30,

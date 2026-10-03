@@ -46,6 +46,7 @@ class ServiceModelComparison:
     calibration: pd.DataFrame
     paired_bootstrap: IPCWUserBootstrapResult
     brier_attribution: pd.DataFrame
+    product_group_aft_bootstrap: IPCWUserBootstrapResult | None = None
 
 
 @dataclass(frozen=True)
@@ -590,6 +591,7 @@ def compare_service_aft_lightgbm(
         results.append(metrics)
         calibrations.append(calibration)
 
+    product_group_aft_bootstrap = None
     if product_group_smoothing_strength is not None:
         baseline = fit_hierarchical_event_probability_baseline(
             _service_product_group_rows(weighted_train),
@@ -616,6 +618,16 @@ def compare_service_aft_lightgbm(
         )
         results.append(metrics)
         calibrations.append(calibration)
+        baseline_pair_rows = weighted_validation.copy()
+        baseline_pair_rows["reference_predicted_event_probability"] = (
+            baseline_probability
+        )
+        baseline_pair_rows["candidate_predicted_event_probability"] = aft_probability
+        product_group_aft_bootstrap = bootstrap_ipcw_brier_pair_difference_by_user(
+            baseline_pair_rows,
+            bootstrap_replicates=bootstrap_replicates,
+            random_seed=bootstrap_random_seed,
+        )
 
     paired_rows = weighted_validation.copy()
     paired_rows["reference_predicted_event_probability"] = aft_probability
@@ -640,4 +652,5 @@ def compare_service_aft_lightgbm(
         calibration=pd.concat(calibrations, ignore_index=True),
         paired_bootstrap=paired_bootstrap,
         brier_attribution=brier_attribution,
+        product_group_aft_bootstrap=product_group_aft_bootstrap,
     )
