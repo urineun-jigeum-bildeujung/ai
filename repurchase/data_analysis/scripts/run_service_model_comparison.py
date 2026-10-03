@@ -399,6 +399,16 @@ def run_comparison(
             "source_key": "target_id",
             "prior": "train_global_ipcw_event_probability",
         }
+        if comparison.product_group_aft_bootstrap is None:
+            raise ValueError("상품군 기준선과 AFT의 쌍 비교 결과가 없습니다.")
+        result["product_group_aft_bootstrap"] = {
+            "reference_model": "product_group_probability_baseline",
+            "candidate_model": "xgboost_aft",
+            "summary": comparison.product_group_aft_bootstrap.summary,
+            "trials": comparison.product_group_aft_bootstrap.trials.to_dict(
+                orient="records"
+            ),
+        }
     return result
 
 
