@@ -113,22 +113,14 @@ pipeline {
     // lock 이름이라 레포가 달라도 직렬화된다.
     options {
         disableConcurrentBuilds()
+        // agent none으로 Pod 없이 기다리고, 모든 단계 에이전트 반환까지 잠금을 유지한다.
         lock(resource: 'ci-build')
     }
 
     // Jenkins가 K8s 파드로 떠서 도커 데몬이 없음. Detect Deploy/Update GitOps는
     // git/curl/yq만 있으면 돼서 기본 jnlp 컨테이너만으로 충분하다 — kaniko 등
     // 무거운 빌드 컨테이너는 Build & Scan 단계에서 서비스별로 따로 띄운다.
-    agent {
-        kubernetes {
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  serviceAccountName: jenkins-kaniko
-"""
-        }
-    }
+    agent none
 
     parameters {
         // 수동 빌드 시 여기 값 채워서 실행 = 특정 서비스만 강제로 빌드 (비워두면 자동 감지).
@@ -142,6 +134,20 @@ spec:
 
     stages {
         stage('Detect Deploy') {
+            // 이 단계가 끝나면 탐지 Pod를 반환한다. Kaniko Pod를 기다리는 동안 유지하지 않는다.
+            agent {
+                kubernetes {
+                    inheritFrom ''
+                    podRetention never()
+                    idleMinutes 0
+                    yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-kaniko
+"""
+                }
+            }
             steps {
                 script {
                     // sever와 동일한 기준: PR 검증 빌드나 develop 아닌 브랜치 push는
@@ -182,6 +188,7 @@ spec:
         }
 
         stage('Build & Scan') {
+            // 단계 자체에는 에이전트를 두지 않고, 아래에서 서비스별 Pod 하나씩만 할당한다.
             when {
                 expression { return !changedServices.isEmpty() }
             }
@@ -197,7 +204,7 @@ spec:
                         // (OOMKilled 등) 나머지 서비스가 전부 "Process exited immediately
                         // after creation"로 연쇄 실패했다. 파드를 분리하면 한 서비스의 빌드
                         // 실패/컨테이너 사망이 다른 서비스 빌드에 영향을 못 준다.
-                        podTemplate(yaml: KANIKO_POD_YAML) {
+                        podTemplate(yaml: KANIKO_POD_YAML, inheritFrom: '', podRetention: never(), idleMinutes: 0) {
                             node(POD_LABEL) {
                                 checkout scm
 
@@ -246,7 +253,21 @@ spec:
         }
 
         stage('Update GitOps') {
+            agent {
+                kubernetes {
+                    inheritFrom ''
+                    podRetention never()
+                    idleMinutes 0
+                    yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  serviceAccountName: jenkins-kaniko
+"""
+                }
+            }
             when {
+                beforeAgent true
                 expression {
                     return isRealDeploy && changedServices.any { svcName ->
                         SERVICES.find { it.name == svcName }?.deployReady
