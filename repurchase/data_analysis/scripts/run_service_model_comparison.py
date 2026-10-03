@@ -8,6 +8,7 @@ import json
 import math
 import sys
 from importlib.metadata import version
+from numbers import Integral
 from pathlib import Path
 
 import numpy as np
@@ -183,6 +184,18 @@ def _validate_product_group_smoothing_candidates(
         )
 
 
+def _validate_conditional_landmarks(days: tuple[int, ...] | None) -> None:
+    if days is not None and (
+        not days
+        or len(set(days)) != len(days)
+        or any(
+            isinstance(day, bool) or not isinstance(day, Integral) or day < 0
+            for day in days
+        )
+    ):
+        raise ValueError("조건부 평가 시점은 중복 없는 0 이상의 정수 일수여야 합니다.")
+
+
 def run_comparison(
     paths: dict[str, Path] | None,
     *,
@@ -193,6 +206,7 @@ def run_comparison(
     aft_round_candidates: tuple[int, ...] | None = None,
     aft_scale_candidates: tuple[float, ...] | None = None,
     product_group_smoothing_candidates: tuple[float, ...] | None = None,
+    conditional_landmark_days: tuple[int, ...] | None = None,
     inner_train_ratio: float = 0.8,
     sources: dict[str, pd.DataFrame] | None = None,
     source_metadata: dict[str, object] | None = None,
@@ -213,6 +227,7 @@ def run_comparison(
         aft_round_candidates, aft_scale_candidates, inner_train_ratio
     )
     _validate_product_group_smoothing_candidates(product_group_smoothing_candidates)
+    _validate_conditional_landmarks(conditional_landmark_days)
     code_hashes = IMPORTED_MODEL_CODE_SHA256
     if model_code_sha256() != code_hashes:
         raise ValueError("모델 비교 실행 전에 코드 파일이 변경됐습니다.")
@@ -333,6 +348,8 @@ def run_comparison(
         comparison_options["product_group_smoothing_strength"] = (
             selected_smoothing_strength
         )
+    if conditional_landmark_days is not None:
+        comparison_options["conditional_landmark_days"] = conditional_landmark_days
     comparison = compare_service_aft_lightgbm(split, **comparison_options)
     _require_finite_c_index(comparison.summary)
     if model_code_sha256() != code_hashes:
@@ -409,6 +426,14 @@ def run_comparison(
                 orient="records"
             ),
         }
+    if comparison.conditional_landmarks is not None:
+        result["conditional_aft_landmarks"] = {
+            "window_days": 30,
+            "landmark_days": list(conditional_landmark_days),
+            "summary": comparison.conditional_landmarks.to_dict(orient="records"),
+            "calibration": comparison.conditional_calibration.to_dict(orient="records"),
+            "test_evaluated": False,
+        }
     return result
 
 
@@ -424,6 +449,7 @@ def main() -> None:
     parser.add_argument("--aft-round-candidates", type=int, nargs="+")
     parser.add_argument("--aft-scale-candidates", type=float, nargs="+")
     parser.add_argument("--product-group-smoothing-candidates", type=float, nargs="+")
+    parser.add_argument("--conditional-landmarks", type=int, nargs="+")
     parser.add_argument("--inner-train-ratio", type=float, default=0.8)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -452,11 +478,17 @@ def main() -> None:
         if args.product_group_smoothing_candidates is not None
         else None
     )
+    conditional_landmarks = (
+        tuple(args.conditional_landmarks)
+        if args.conditional_landmarks is not None
+        else None
+    )
     try:
         _validate_aft_round_selection(
             candidate_rounds, candidate_scales, args.inner_train_ratio
         )
         _validate_product_group_smoothing_candidates(smoothing_candidates)
+        _validate_conditional_landmarks(conditional_landmarks)
     except ValueError as exc:
         parser.error(str(exc))
     paths = {
@@ -479,6 +511,7 @@ def main() -> None:
         aft_round_candidates=candidate_rounds,
         aft_scale_candidates=candidate_scales,
         product_group_smoothing_candidates=smoothing_candidates,
+        conditional_landmark_days=conditional_landmarks,
         inner_train_ratio=args.inner_train_ratio,
     )
     rendered = json.dumps(
