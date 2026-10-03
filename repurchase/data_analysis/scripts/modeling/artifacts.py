@@ -22,6 +22,9 @@ from lightgbm import LGBMClassifier
 from .features import (
     FEATURE_GENERATION_VERSION,
     MINIMAL_MODEL_FEATURE_COLUMNS,
+    SUPPORTED_FEATURE_GENERATION_VERSIONS,
+    ModelFeatureError,
+    read_feature_generation_version,
     select_minimal_model_features,
 )
 from .xgboost_aft import (
@@ -139,6 +142,7 @@ def save_model_artifact(
         family = "xgboost_aft"
         feature_columns = model.feature_columns
         library_version = xgb.__version__
+        feature_generation_version = model.feature_generation_version
         # 확률 계산에는 분포와 scale이 필수이므로 모델 파일과 따로 보존합니다.
         aft_metadata: dict[str, object] = {
             "loss_distribution": model.loss_distribution,
@@ -175,6 +179,9 @@ def save_model_artifact(
             raise ModelArtifactError("학습된 이진 LightGBM 모델만 저장할 수 있습니다.")
         feature_columns = tuple(model.booster_.feature_name())
         library_version = lgb.__version__
+        feature_generation_version = getattr(
+            model, "repurchase_feature_generation_version", None
+        )
         aft_metadata = {}
         if getattr(model, "repurchase_horizon_days", None) != horizon_days:
             raise ModelArtifactError(
@@ -185,6 +192,11 @@ def save_model_artifact(
         raise ModelArtifactError("지원하지 않는 재구매 모델 유형입니다.")
 
     _validate_contract(feature_columns, horizon_days)
+    if (
+        type(feature_generation_version) is not int
+        or feature_generation_version not in SUPPORTED_FEATURE_GENERATION_VERSIONS
+    ):
+        raise ModelArtifactError("모델의 피처 생성 규칙 버전이 올바르지 않습니다.")
     directory = Path(directory)
     if directory.exists():
         raise ModelArtifactError("기존 모델 아티팩트 디렉터리는 덮어쓸 수 없습니다.")
@@ -209,7 +221,7 @@ def save_model_artifact(
             "model_sha256": _sha256(model_path),
             "library_version": library_version,
             "feature_columns": list(feature_columns),
-            "feature_generation_version": FEATURE_GENERATION_VERSION,
+            "feature_generation_version": feature_generation_version,
             "horizon_days": horizon_days,
             **aft_metadata,
         }
@@ -275,7 +287,8 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
     feature_columns = tuple(columns)
     if (
         type(manifest.get("feature_generation_version")) is not int
-        or manifest["feature_generation_version"] != FEATURE_GENERATION_VERSION
+        or manifest["feature_generation_version"]
+        not in SUPPORTED_FEATURE_GENERATION_VERSIONS
     ):
         raise ModelArtifactError("모델의 피처 생성 규칙 버전과 현재 코드가 다릅니다.")
     horizon_days = manifest.get("horizon_days")
@@ -337,6 +350,7 @@ def load_model_artifact(directory: Path) -> LoadedModelArtifact:
                 loss_distribution_scale=float(loss_distribution_scale),
                 num_boost_round=num_boost_round,
                 training_aft_nloglik=tuple(float(value) for value in training_loss),
+                feature_generation_version=manifest["feature_generation_version"],
             )
         else:
             model = lgb.Booster(model_file=str(model_path))
@@ -378,8 +392,21 @@ def predict_artifact_probability(
         raise ModelArtifactError(
             "추론 표본은 비어 있지 않고 행 인덱스가 고유해야 합니다."
         )
-    if artifact.feature_generation_version != FEATURE_GENERATION_VERSION:
-        raise ModelArtifactError("모델의 피처 생성 규칙 버전과 현재 코드가 다릅니다.")
+    if artifact.feature_generation_version not in SUPPORTED_FEATURE_GENERATION_VERSIONS:
+        raise ModelArtifactError("지원하지 않는 모델 피처 생성 규칙 버전입니다.")
+    try:
+        input_version = read_feature_generation_version(
+            rows,
+            require_explicit=(
+                artifact.feature_generation_version != FEATURE_GENERATION_VERSION
+            ),
+        )
+    except ModelFeatureError as error:
+        raise ModelArtifactError(
+            "추론 입력의 피처 생성 규칙 버전이 올바르지 않습니다."
+        ) from error
+    if input_version != artifact.feature_generation_version:
+        raise ModelArtifactError("모델과 추론 입력의 피처 생성 규칙 버전이 다릅니다.")
     if artifact.family == "xgboost_aft":
         if not isinstance(artifact.model, XGBoostAFTTrainingResult):
             raise ModelArtifactError("AFT 모델 유형이 아티팩트 선언과 다릅니다.")

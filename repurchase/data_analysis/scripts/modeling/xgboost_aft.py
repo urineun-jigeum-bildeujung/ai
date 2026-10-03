@@ -18,7 +18,12 @@ import xgboost as xgb
 from pandas.api.types import is_bool_dtype, is_complex_dtype, is_numeric_dtype
 from scipy.special import log_ndtr
 
-from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
+from .features import (
+    FEATURE_GENERATION_VERSION,
+    MINIMAL_MODEL_FEATURE_COLUMNS,
+    read_feature_generation_version,
+    select_minimal_model_features,
+)
 
 
 class XGBoostAFTError(ValueError):
@@ -154,6 +159,7 @@ class XGBoostAFTTrainingData:
     feature_columns: tuple[str, ...]
     source_sample_count: int
     excluded_zero_duration_count: int
+    feature_generation_version: int = FEATURE_GENERATION_VERSION
 
     @property
     def included_sample_count(self) -> int:
@@ -171,6 +177,7 @@ class XGBoostAFTTrainingResult:
     loss_distribution_scale: float
     num_boost_round: int
     training_aft_nloglik: tuple[float, ...]
+    feature_generation_version: int = FEATURE_GENERATION_VERSION
 
 
 @dataclass(frozen=True)
@@ -277,6 +284,7 @@ def build_xgboost_aft_training_data(
         raise XGBoostAFTError("XGBoost AFT 학습 필수 컬럼이 누락됐습니다: ['split']")
     if rows["split"].isna().any() or not rows["split"].eq("train").all():
         raise XGBoostAFTError("XGBoost AFT 학습에는 Train 표본만 사용합니다.")
+    feature_generation_version = read_feature_generation_version(rows)
 
     # AFT에서 사용할 행을 먼저 확정한 뒤 같은 행에서 피처를 선택합니다.
     # 이 순서를 지켜야 0일 제외 후 피처와 구간 라벨의 사용자 대응이 어긋나지 않습니다.
@@ -318,6 +326,7 @@ def build_xgboost_aft_training_data(
         feature_columns=tuple(features.columns),
         source_sample_count=label_bounds.source_sample_count,
         excluded_zero_duration_count=(label_bounds.excluded_zero_duration_count),
+        feature_generation_version=feature_generation_version,
     )
 
 
@@ -392,6 +401,7 @@ def train_xgboost_aft_model(
         loss_distribution_scale=float(loss_distribution_scale),
         num_boost_round=int(num_boost_round),
         training_aft_nloglik=training_loss,
+        feature_generation_version=training_data.feature_generation_version,
     )
 
 
