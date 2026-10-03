@@ -28,7 +28,9 @@ def test_month_boundaries_and_baseline_provenance(monkeypatch, species, months, 
     ({'is_neutered':None},'NEUTER_STATUS_MISSING_OR_INVALID'),
     ({'species':'BIRD'},'PET_SPECIES_UNSUPPORTED'),({'age':None},'PET_AGE_UNRESOLVED'),
     ({'age':True},'PET_AGE_UNRESOLVED'),({'age':float('nan')},'PET_AGE_UNRESOLVED'),
-    ({'birth_date':'invalid','age':None},'PET_AGE_UNRESOLVED')])
+    ({'birth_date':'invalid','age':None},'PET_AGE_UNRESOLVED'),
+    ({'birth_date':'invalid','age':2},'PET_AGE_UNRESOLVED'),
+    ({'birth_date':date(2999,1,1),'age':2},'PET_AGE_UNRESOLVED')])
 def test_unresolved(changes, reason):
     result = policy.resolve_mer_coefficient({'species':'DOG','age':2,'is_neutered':True,**changes})
     assert result['coefficient'] is None and result['reason_codes'] == [reason]
