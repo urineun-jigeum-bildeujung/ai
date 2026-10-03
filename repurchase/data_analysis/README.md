@@ -212,6 +212,14 @@ GitHub의 **Actions → Repurchase CI → 해당 실행 → Artifacts**에서 �
   --output '<접근-제한된-결과-JSON-경로>'
 ```
 
+CSV 비교기와 동일하게 `--train-fraction`·`--validation-fraction`으로 시간
+구간을 옮기고, `--aft-round-candidates 5 20 50 100` 또는
+`--aft-scale-candidates 0.5 1.0 2.0`으로 Train 내부 선택 실험을 실행할 수
+있습니다. 두 후보군은 한 번에 지정하지 않으며, 내부 컷 비율은
+`--inner-train-ratio`로 지정합니다. 잘못된 비율·후보는 DB 접속 전에
+거절됩니다. 이 옵션은 평가용이며 운영 모델 선택이나 배치 적재를 의미하지
+않습니다.
+
 실제 DB에서 이 명령을 실행하거나 서비스 모델 성능을 확인한 결과는 아직 없습니다.
 DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅샷으로 해석하지
 않습니다. 비교 결과는 검증 후 별도 모델 선정 결정에 사용합니다.
