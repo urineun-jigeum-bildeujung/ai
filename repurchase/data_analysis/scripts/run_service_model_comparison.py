@@ -43,6 +43,10 @@ from scripts.modeling.service_model_comparison import (
 )
 from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
 
+MODEL_CODE_PATHS = tuple(sorted((Path(__file__).parent / "modeling").glob("*.py"))) + (
+    Path(__file__),
+)
+
 
 def _file_sha256(path: Path) -> str:
     """추출 파일을 변경하지 않고 원본 바이트의 SHA-256을 계산합니다."""
@@ -51,6 +55,11 @@ def _file_sha256(path: Path) -> str:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def model_code_sha256() -> dict[str, str]:
+    """Validation 결과를 만든 모델 코드의 바이트 지문을 기록합니다."""
+    return {path.name: _file_sha256(path) for path in MODEL_CODE_PATHS}
 
 
 def _read_sources(paths: dict[str, Path]) -> dict[str, pd.DataFrame]:
@@ -174,6 +183,7 @@ def run_comparison(
     _validate_aft_round_selection(
         aft_round_candidates, aft_scale_candidates, inner_train_ratio
     )
+    code_hashes = model_code_sha256()
     if sources is None:
         if paths is None or source_metadata is not None:
             raise ValueError("CSV 경로와 메모리 원천 메타데이터가 일치하지 않습니다.")
@@ -267,8 +277,11 @@ def run_comparison(
         comparison_options["aft_loss_distribution_scale"] = selected_scale
     comparison = compare_service_aft_lightgbm(split, **comparison_options)
     _require_finite_c_index(comparison.summary)
+    if model_code_sha256() != code_hashes:
+        raise ValueError("모델 비교 실행 중 코드 파일이 변경됐습니다.")
     result: dict[str, object] = {
         **source_metadata,
+        "code_sha256": code_hashes,
         "source_quarantine": {
             "missing_history_order_count": quarantine.missing_history_order_count,
             "missing_history_paid_order_count": (
