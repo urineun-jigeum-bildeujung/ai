@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Final
-
 import pandas as pd
 
-from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
+from .features import (
+    MINIMAL_MODEL_FEATURE_COLUMNS,
+    TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
+    select_minimal_model_features,
+)
 from .operational_event_intervals import OperationalEventIntervals
 from .operational_feature_recount import (
     recount_target_interval_features_as_of,
@@ -15,9 +17,7 @@ from .operational_feature_recount import (
 from .operational_label_rebuild import rebuild_service_labels_from_event_intervals
 from .operational_orders import OperationalOrderError
 
-# 기존 최종 스냅샷/UCI 피처 버전 1과 다른 시점 복원 의미를 구분합니다.
-# 이 버전의 학습 표본은 버전 1 모델 아티팩트에 연결하면 안 됩니다.
-TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION: Final[int] = 2
+# 기존 import 경로를 유지하되 버전 정의는 공통 피처 계약에서 가져옵니다.
 
 
 def _attach_recounted(

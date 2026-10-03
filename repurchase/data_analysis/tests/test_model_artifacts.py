@@ -19,7 +19,10 @@ from scripts.modeling.artifacts import (
     predict_artifact_probability,
     save_model_artifact,
 )
-from scripts.modeling.features import FEATURE_GENERATION_VERSION
+from scripts.modeling.features import (
+    FEATURE_GENERATION_VERSION,
+    TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
+)
 from scripts.modeling.lightgbm_baseline import (
     LightGBMTrainingData,
     predict_lightgbm_repurchase_probability,
@@ -47,9 +50,10 @@ def _feature_rows() -> pd.DataFrame:
     )
 
 
-def _trained_aft_model():
+def _trained_aft_model(version: int = FEATURE_GENERATION_VERSION):
     """우측검열을 포함한 작은 표본으로 실제 AFT 파일을 생성합니다."""
     rows = _feature_rows().copy()
+    rows["feature_generation_version"] = version
     rows["survival_observed_duration_days"] = [10.0, 20.0, 30.0, 40.0]
     rows["survival_event_observed"] = pd.array(
         [True, False, True, False], dtype="boolean"
@@ -58,7 +62,7 @@ def _trained_aft_model():
     return train_xgboost_aft_model(build_xgboost_aft_training_data(rows))
 
 
-def _trained_lightgbm_model():
+def _trained_lightgbm_model(version: int = FEATURE_GENERATION_VERSION):
     """두 정답 클래스를 가진 실제 LightGBM 후보를 학습합니다."""
     features = pd.concat([_feature_rows()] * 10, ignore_index=True)
     training_data = LightGBMTrainingData(
@@ -66,6 +70,7 @@ def _trained_lightgbm_model():
         features=features,
         target=pd.Series([0, 1] * 20, dtype="int8"),
         sample_weight=pd.Series([1.0] * 40, dtype="float64"),
+        feature_generation_version=version,
     )
     return train_lightgbm_classifier(training_data)
 
@@ -110,6 +115,28 @@ def test_lightgbm_artifact_roundtrip_preserves_probability(tmp_path) -> None:
     assert artifact.horizon_days == 30
     assert restored.index.equals(rows.index)
     np.testing.assert_allclose(restored.to_numpy(), original.to_numpy())
+
+
+@pytest.mark.parametrize("family", ["xgboost_aft", "lightgbm"])
+def test_service_v2_artifact_requires_matching_input_version(tmp_path, family) -> None:
+    """서비스 시점 피처 모델은 저장·로드 후 명시적 v2 입력에만 사용합니다."""
+    version = TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION
+    model = (
+        _trained_aft_model(version)
+        if family == "xgboost_aft"
+        else _trained_lightgbm_model(version)
+    )
+    directory = save_model_artifact(model, tmp_path / family, horizon_days=30)
+    artifact = load_model_artifact(directory)
+    assert artifact.feature_generation_version == version
+    rows = _feature_rows().assign(feature_generation_version=version)
+    assert len(predict_artifact_probability(artifact, rows)) == len(rows)
+    for invalid_rows in (
+        _feature_rows(),
+        _feature_rows().assign(feature_generation_version=FEATURE_GENERATION_VERSION),
+    ):
+        with pytest.raises(ModelArtifactError, match="피처 생성 규칙 버전"):
+            predict_artifact_probability(artifact, invalid_rows)
 
 
 def test_artifact_rejects_modified_model_file(tmp_path) -> None:
@@ -206,7 +233,7 @@ def test_artifact_rejects_incompatible_feature_generation_version(tmp_path) -> N
     )
     manifest_file = directory / "manifest.json"
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-    manifest["feature_generation_version"] = FEATURE_GENERATION_VERSION + 1
+    manifest["feature_generation_version"] = 999
     manifest["artifact_id"] = _artifact_id(manifest)
     manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
 
