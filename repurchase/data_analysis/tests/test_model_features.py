@@ -2,14 +2,41 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from scripts.modeling.features import (
     MINIMAL_MODEL_FEATURE_COLUMNS,
     ModelFeatureError,
+    read_feature_generation_version,
     select_minimal_model_features,
 )
+
+
+@pytest.mark.parametrize("invalid", [True, np.bool_(True), 1.0, 3])
+def test_feature_version_rejects_invalid_value_hidden_by_deduplication(
+    invalid: object,
+) -> None:
+    rows = pd.DataFrame(
+        {"feature_generation_version": pd.Series([1, invalid], dtype="object")}
+    )
+
+    with pytest.raises(ModelFeatureError, match="지원하지 않는"):
+        read_feature_generation_version(rows)
+
+
+def test_feature_version_rejects_two_supported_versions() -> None:
+    rows = pd.DataFrame({"feature_generation_version": [1, 2]})
+
+    with pytest.raises(ModelFeatureError, match="서로 다른"):
+        read_feature_generation_version(rows)
+
+
+def test_feature_version_accepts_one_supported_integer_version() -> None:
+    rows = pd.DataFrame({"feature_generation_version": [np.int64(2), 2]})
+
+    assert read_feature_generation_version(rows) == 2
 
 
 def make_model_rows() -> pd.DataFrame:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Integral
 
 import numpy as np
 import pandas as pd
@@ -247,15 +248,16 @@ def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
         ("history_interval_count", "과거 구매 간격 수"),
         ("user_prior_order_count", "사용자 과거 주문 수"),
     ):
-        count_values = pd.to_numeric(rows[column], errors="coerce").to_numpy(
-            dtype="float64", na_value=np.nan
-        )
-        if (
-            not np.isfinite(count_values).all()
-            or (count_values < 0).any()
-            or not np.equal(count_values, np.floor(count_values)).all()
+        if any(
+            isinstance(value, (bool, np.bool_))
+            or not isinstance(value, Integral)
+            or value < 0
+            or value > np.iinfo(np.int64).max
+            for value in rows[column].array
         ):
-            raise OperationalOrderError(f"{label}는 0 이상의 정수여야 합니다.")
+            raise OperationalOrderError(
+                f"{label}는 int64 범위의 0 이상의 정수여야 합니다."
+            )
 
     # 기존 평가 계약으로 두 확률·가중치·정답을 먼저 검증합니다.
     for column in (

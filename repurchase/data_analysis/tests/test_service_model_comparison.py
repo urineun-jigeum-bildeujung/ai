@@ -107,6 +107,37 @@ def test_brier_attribution_reconciles_history_user_orders_and_product_group() ->
     assert history.loc["2+", "global_brier_contribution"] == pytest.approx(0.16)
 
 
+def test_brier_attribution_preserves_large_user_order_count_exactly() -> None:
+    rows = _weighted_validation()
+    rows["target_id"] = ["g1"] * 4
+    rows["history_interval_count"] = [0] * 4
+    rows["user_prior_order_count"] = [2**53 + 1, 0, 0, 0]
+    rows["reference_predicted_event_probability"] = [0.2] * 4
+    rows["candidate_predicted_event_probability"] = [0.3] * 4
+
+    attribution = summarize_service_brier_attribution(rows)
+    counts = attribution.loc[
+        attribution["segment_kind"].eq("user_prior_order_count"), "segment_value"
+    ]
+
+    assert str(2**53 + 1) in counts.tolist()
+    assert str(2**53) not in counts.tolist()
+
+
+def test_brier_attribution_rejects_user_order_count_above_int64() -> None:
+    rows = _weighted_validation()
+    rows["target_id"] = ["g1"] * 4
+    rows["history_interval_count"] = [0] * 4
+    rows["user_prior_order_count"] = pd.Series(
+        [2**63, 0, 0, 0], index=rows.index, dtype="object"
+    )
+    rows["reference_predicted_event_probability"] = [0.2] * 4
+    rows["candidate_predicted_event_probability"] = [0.3] * 4
+
+    with pytest.raises(OperationalOrderError, match="int64 범위"):
+        summarize_service_brier_attribution(rows)
+
+
 @pytest.mark.parametrize("invalid", [None, -1, 1.5, float("inf")])
 def test_brier_attribution_rejects_invalid_history_count(invalid: object) -> None:
     rows = _weighted_validation()
