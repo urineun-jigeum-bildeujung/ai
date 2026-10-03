@@ -185,7 +185,8 @@ def validate_manifest(
     ):
         raise ValueError("Validation 결과의 후보·지표 계약이 다릅니다.")
 
-    # 모델 코드 변경 역시 별도 검토가 필요하므로 관련 Python 파일 지문을 고정합니다.
+    # 이 검사는 디스크 파일의 일치만 확인합니다. 실행 코드 동일성은 별도의
+    # 불변 이미지/체크아웃에서 모델을 실행했다는 운영 증거가 필요합니다.
     expected_code_hashes = manifest.get("code_sha256")
     code_paths = {path.name: path for path in CODE_PATHS}
     if not isinstance(expected_code_hashes, dict) or set(expected_code_hashes) != set(
