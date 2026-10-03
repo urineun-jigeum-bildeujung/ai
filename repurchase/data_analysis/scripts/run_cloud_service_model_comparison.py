@@ -24,6 +24,7 @@ from scripts.modeling.cloud_source_reader import OrderSourceSnapshot, PetSourceS
 from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.run_service_model_comparison import (
     _validate_aft_round_selection,
+    _validate_product_group_smoothing_candidates,
     run_comparison,
 )
 
@@ -38,6 +39,7 @@ def compare_snapshots(
     validation_fraction: float = 0.85,
     aft_round_candidates: tuple[int, ...] | None = None,
     aft_scale_candidates: tuple[float, ...] | None = None,
+    product_group_smoothing_candidates: tuple[float, ...] | None = None,
     inner_train_ratio: float = 0.8,
 ) -> dict[str, object]:
     """소유 관계와 관측 컷을 먼저 검증한 뒤 같은 모델 비교기에 전달합니다."""
@@ -60,6 +62,7 @@ def compare_snapshots(
         validation_fraction=validation_fraction,
         aft_round_candidates=aft_round_candidates,
         aft_scale_candidates=aft_scale_candidates,
+        product_group_smoothing_candidates=product_group_smoothing_candidates,
         inner_train_ratio=inner_train_ratio,
     )
 
@@ -85,6 +88,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--validation-fraction", type=float, default=0.85)
     parser.add_argument("--aft-round-candidates", type=int, nargs="+")
     parser.add_argument("--aft-scale-candidates", type=float, nargs="+")
+    parser.add_argument("--product-group-smoothing-candidates", type=float, nargs="+")
     parser.add_argument("--inner-train-ratio", type=float, default=0.8)
     parser.add_argument("--prompt-password", action="store_true")
     parser.add_argument("--output", type=Path)
@@ -109,9 +113,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.aft_scale_candidates is not None
             else None
         )
+        smoothing_candidates = (
+            tuple(args.product_group_smoothing_candidates)
+            if args.product_group_smoothing_candidates is not None
+            else None
+        )
         _validate_aft_round_selection(
             candidate_rounds, candidate_scales, args.inner_train_ratio
         )
+        _validate_product_group_smoothing_candidates(smoothing_candidates)
         if args.output is not None and not args.output.parent.is_dir():
             raise ValueError("결과 파일의 상위 디렉터리가 없습니다.")
         orders, pets = read_cloud_snapshots(prompt_password=args.prompt_password)
@@ -124,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
             validation_fraction=args.validation_fraction,
             aft_round_candidates=candidate_rounds,
             aft_scale_candidates=candidate_scales,
+            product_group_smoothing_candidates=smoothing_candidates,
             inner_train_ratio=args.inner_train_ratio,
         )
         rendered = json.dumps(
