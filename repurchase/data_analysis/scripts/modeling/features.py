@@ -62,17 +62,18 @@ def read_feature_generation_version(
     versions = rows["feature_generation_version"]
     if versions.empty or versions.isna().any():
         raise ModelFeatureError("피처 생성 규칙 버전이 비어 있거나 결측입니다.")
-    unique = versions.drop_duplicates()
-    if len(unique) != 1:
+    validated = []
+    for value in versions.array:
+        if (
+            isinstance(value, (bool, np.bool_))
+            or not isinstance(value, Integral)
+            or value not in SUPPORTED_FEATURE_GENERATION_VERSIONS
+        ):
+            raise ModelFeatureError("지원하지 않는 피처 생성 규칙 버전입니다.")
+        validated.append(int(value))
+    if len(set(validated)) != 1:
         raise ModelFeatureError("서로 다른 피처 생성 규칙 버전을 섞을 수 없습니다.")
-    value = unique.iloc[0]
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, Integral)
-        or value not in SUPPORTED_FEATURE_GENERATION_VERSIONS
-    ):
-        raise ModelFeatureError("지원하지 않는 피처 생성 규칙 버전입니다.")
-    return int(value)
+    return validated[0]
 
 
 def _validate_count_features(features: pd.DataFrame) -> None:
