@@ -11,8 +11,13 @@ from numbers import Integral
 import pandas as pd
 
 from .artifacts import LoadedModelArtifact, ModelArtifactError
-from .features import FEATURE_GENERATION_VERSION
+from .features import (
+    FEATURE_GENERATION_VERSION,
+    TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
+)
 from .inference_features import build_current_features_from_valid_purchases
+from .operational_current_features import build_temporal_service_current_features
+from .operational_event_intervals import OperationalEventIntervals
 from .xgboost_aft import (
     XGBoostAFTTrainingResult,
     build_xgboost_aft_prediction_data,
@@ -63,6 +68,75 @@ def predict_current_repurchase_probability(
         [
             "user_id",
             "product_id",
+            "order_id",
+            "anchor_at",
+            "as_of_timestamp",
+            "elapsed_days",
+        ],
+    ].copy()
+    result["window_days"] = window_days
+    result["conditional_repurchase_probability"] = probability.to_numpy(copy=True)
+    result["artifact_id"] = artifact.artifact_id
+    return result
+
+
+def predict_temporal_service_current_probability(
+    artifact: LoadedModelArtifact,
+    event_intervals: OperationalEventIntervals,
+    orders: pd.DataFrame,
+    *,
+    as_of_timestamp: pd.Timestamp,
+    window_days: int,
+) -> pd.DataFrame:
+    """복원된 서비스 구매 이력과 v2 AFT로 향후 재구매 확률을 계산합니다.
+
+    모델 선정·배포나 예측 결과의 DB 적재는 수행하지 않습니다.
+    """
+    if artifact.family != "xgboost_aft" or not isinstance(
+        artifact.model, XGBoostAFTTrainingResult
+    ):
+        raise ModelArtifactError(
+            "고정 기간 LightGBM 확률은 현재 시점 조건부 확률로 변환할 수 없습니다."
+        )
+    if (
+        artifact.feature_generation_version
+        != TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION
+    ):
+        raise ModelArtifactError(
+            "서비스 현재 예측에는 시점 피처 버전 2 모델이 필요합니다."
+        )
+    if (
+        isinstance(window_days, bool)
+        or not isinstance(window_days, Integral)
+        or window_days <= 0
+    ):
+        raise ModelArtifactError("미래 예측 기간은 0보다 큰 정수 일수여야 합니다.")
+
+    current = build_temporal_service_current_features(
+        event_intervals, orders, as_of_timestamp=as_of_timestamp
+    )
+    if (
+        not current["feature_generation_version"]
+        .eq(artifact.feature_generation_version)
+        .all()
+    ):
+        raise ModelArtifactError("모델과 서비스 피처 생성 규칙 버전이 다릅니다.")
+    prediction_data = build_xgboost_aft_prediction_data(
+        current, feature_columns=artifact.feature_columns
+    )
+    duration = predict_xgboost_aft_duration(artifact.model, prediction_data)
+    probability = calculate_xgboost_aft_conditional_probability(
+        artifact.model,
+        duration,
+        current["elapsed_days"],
+        window_days=window_days,
+    )
+    result = current.loc[
+        :,
+        [
+            "user_id",
+            "pet_id",
+            "target_id",
             "order_id",
             "anchor_at",
             "as_of_timestamp",
