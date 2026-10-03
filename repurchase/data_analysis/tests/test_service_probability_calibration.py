@@ -83,3 +83,48 @@ def test_calibration_cli_does_not_overwrite_result(
     assert runner.main() == 1
     assert output.read_text(encoding="utf-8") == "existing"
     assert "FileExistsError" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("scale", [0.0, -1.0, float("nan"), float("inf"), True])
+def test_calibration_rejects_invalid_aft_scale_before_source_read(scale: float) -> None:
+    """잘못된 AFT scale은 원천 파일을 열기 전에 거부합니다."""
+    with pytest.raises(ValueError, match="AFT scale"):
+        runner.run_calibration(
+            {},
+            observation_end_at=pd.Timestamp("2026-10-03T00:00:00+09:00"),
+            landmark_days=(0,),
+            aft_loss_distribution_scale=scale,
+        )
+
+
+def test_calibration_cli_passes_frozen_aft_configuration(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """CLI의 고정 후보 설정이 실험 호출과 결과 파일에 전달됩니다."""
+    output = tmp_path / "result.json"
+    args = ["calibration"]
+    for name in ("orders", "order-items", "pets", "histories", "claims", "claim-items"):
+        args.extend((f"--{name}", "unused.csv"))
+    args.extend(
+        (
+            "--observation-end-at",
+            "2026-10-03T00:00:00+09:00",
+            "--aft-boost-rounds",
+            "20",
+            "--aft-loss-distribution-scale",
+            "2.0",
+            "--output",
+            str(output),
+        )
+    )
+    monkeypatch.setattr("sys.argv", args)
+
+    def fake_run(paths, **kwargs):
+        assert kwargs["aft_boost_rounds"] == 20
+        assert kwargs["aft_loss_distribution_scale"] == 2.0
+        return {"aft_configuration": kwargs["aft_loss_distribution_scale"]}
+
+    monkeypatch.setattr(runner, "run_calibration", fake_run)
+    assert runner.main() == 0
+    assert pd.read_json(output, typ="series")["aft_configuration"] == 2.0
+    assert "repurchase_calibration_completed" in capsys.readouterr().out

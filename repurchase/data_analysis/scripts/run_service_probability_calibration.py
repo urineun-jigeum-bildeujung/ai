@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import sys
+from numbers import Integral
 from pathlib import Path
 
 import pandas as pd
@@ -49,6 +50,8 @@ def run_calibration(
     train_fraction: float = 0.70,
     validation_fraction: float = 0.85,
     inner_train_ratio: float = 0.80,
+    aft_boost_rounds: int = AFT_BOOST_ROUNDS,
+    aft_loss_distribution_scale: float = AFT_LOSS_DISTRIBUTION_SCALE,
     bootstrap_replicates: int = 1_000,
 ) -> dict[str, object]:
     """원천 감사부터 보정 평가까지 실행하고 입력·설정·지표를 반환합니다."""
@@ -65,6 +68,18 @@ def run_calibration(
         raise ValueError("Train·Validation·내부 Train 시간 컷 비율이 잘못됐습니다.")
     if isinstance(bootstrap_replicates, bool) or bootstrap_replicates < 1:
         raise ValueError("Bootstrap 반복 횟수는 양의 정수여야 합니다.")
+    if (
+        isinstance(aft_boost_rounds, bool)
+        or not isinstance(aft_boost_rounds, Integral)
+        or aft_boost_rounds < 1
+    ):
+        raise ValueError("AFT 부스팅 횟수는 양의 정수여야 합니다.")
+    if (
+        isinstance(aft_loss_distribution_scale, bool)
+        or not math.isfinite(aft_loss_distribution_scale)
+        or aft_loss_distribution_scale <= 0
+    ):
+        raise ValueError("AFT scale은 양의 유한값이어야 합니다.")
     code_hashes = model_code_sha256()
     source_hashes = {name: _file_sha256(path) for name, path in paths.items()}
     sources = _read_sources(paths)
@@ -100,8 +115,8 @@ def run_calibration(
         outer,
         landmark_days=landmark_days,
         horizon_days=HORIZON_DAYS,
-        aft_boost_rounds=AFT_BOOST_ROUNDS,
-        aft_loss_distribution_scale=AFT_LOSS_DISTRIBUTION_SCALE,
+        aft_boost_rounds=aft_boost_rounds,
+        aft_loss_distribution_scale=aft_loss_distribution_scale,
         bootstrap_replicates=bootstrap_replicates,
     )
     if model_code_sha256() != code_hashes:
@@ -124,8 +139,8 @@ def run_calibration(
         "landmark_days": list(landmark_days),
         "horizon_days": HORIZON_DAYS,
         "aft_configuration": {
-            "num_boost_round": AFT_BOOST_ROUNDS,
-            "loss_distribution_scale": AFT_LOSS_DISTRIBUTION_SCALE,
+            "num_boost_round": aft_boost_rounds,
+            "loss_distribution_scale": aft_loss_distribution_scale,
         },
         "same_inner_train_aft_for_both_candidates": True,
         "test_evaluated": False,
@@ -149,6 +164,12 @@ def main() -> int:
     parser.add_argument("--observation-end-at", required=True, type=pd.Timestamp)
     parser.add_argument("--landmark-days", nargs="+", type=int, default=[0, 7, 14, 30])
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--aft-boost-rounds", type=int, default=AFT_BOOST_ROUNDS)
+    parser.add_argument(
+        "--aft-loss-distribution-scale",
+        type=float,
+        default=AFT_LOSS_DISTRIBUTION_SCALE,
+    )
     parser.add_argument("--bootstrap-replicates", type=int, default=1_000)
     args = parser.parse_args()
     paths = {
@@ -171,6 +192,8 @@ def main() -> int:
             paths,
             observation_end_at=args.observation_end_at,
             landmark_days=tuple(args.landmark_days),
+            aft_boost_rounds=args.aft_boost_rounds,
+            aft_loss_distribution_scale=args.aft_loss_distribution_scale,
             bootstrap_replicates=args.bootstrap_replicates,
         )
         with args.output.open("x", encoding="utf-8") as destination:
