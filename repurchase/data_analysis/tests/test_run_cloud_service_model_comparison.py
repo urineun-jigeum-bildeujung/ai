@@ -84,6 +84,7 @@ def test_compare_snapshots_passes_audited_frames_without_csv(
     assert options["aft_round_candidates"] is None
     assert options["aft_scale_candidates"] is None
     assert options["product_group_smoothing_candidates"] is None
+    assert options["conditional_landmark_days"] is None
     assert options["inner_train_ratio"] == 0.8
 
 
@@ -109,12 +110,14 @@ def test_compare_snapshots_forwards_selection_options(
         validation_fraction=0.55,
         aft_scale_candidates=(0.5, 1.0, 2.0),
         product_group_smoothing_candidates=(1.0, 4.0),
+        conditional_landmark_days=(0, 7, 14, 30),
         inner_train_ratio=0.75,
     ) == {"summary": []}
     assert received["train_fraction"] == 0.4
     assert received["validation_fraction"] == 0.55
     assert received["aft_scale_candidates"] == (0.5, 1.0, 2.0)
     assert received["product_group_smoothing_candidates"] == (1.0, 4.0)
+    assert received["conditional_landmark_days"] == (0, 7, 14, 30)
     assert received["inner_train_ratio"] == 0.75
 
 
@@ -148,6 +151,28 @@ def test_invalid_bootstrap_rejected_before_db_access(
                 "2026-09-29T15:44:00+09:00",
                 "--bootstrap-replicates",
                 "0",
+            ]
+        )
+        == 2
+    )
+
+
+@pytest.mark.parametrize("days", [("7", "7"), ("-1",)])
+def test_invalid_landmarks_rejected_before_db_access(
+    days: tuple[str, ...], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        runner,
+        "read_cloud_snapshots",
+        lambda **_: pytest.fail("잘못된 시점 설정에서 DB를 읽었습니다."),
+    )
+    assert (
+        runner.main(
+            [
+                "--observation-end-at",
+                "2026-09-29T15:44:00+09:00",
+                "--conditional-landmarks",
+                *days,
             ]
         )
         == 2
