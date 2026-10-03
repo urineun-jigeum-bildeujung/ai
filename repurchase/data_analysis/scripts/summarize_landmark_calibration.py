@@ -35,6 +35,17 @@ def summarize_landmark_calibration(report: dict[str, Any]) -> list[dict[str, Any
     landmarks = report.get("conditional_aft_landmarks")
     if not isinstance(landmarks, dict) or landmarks.get("test_evaluated") is not False:
         raise ValueError("시점별 Validation 결과가 필요합니다.")
+    requested_days = landmarks.get("landmark_days")
+    if (
+        not isinstance(requested_days, list)
+        or not requested_days
+        or any(
+            isinstance(day, bool) or not isinstance(day, int) or day < 0
+            for day in requested_days
+        )
+        or len(set(requested_days)) != len(requested_days)
+    ):
+        raise ValueError("시점별 평가 요청 일수가 올바르지 않습니다.")
     summaries = landmarks.get("summary")
     calibration = landmarks.get("calibration")
     if not isinstance(summaries, list) or not summaries:
@@ -144,8 +155,8 @@ def summarize_landmark_calibration(report: dict[str, Any]) -> list[dict[str, Any
                 "bins": sorted(bins, key=lambda row: row["bin_index"]),
             }
         )
-    if set(by_day) != seen_days:
-        raise ValueError("평가 요약에 없는 calibration 시점이 있습니다.")
+    if set(by_day) != seen_days or seen_days != set(requested_days):
+        raise ValueError("시점별 평가 요청·요약·calibration 일수가 다릅니다.")
     return results
 
 
@@ -156,9 +167,11 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path, required=True, help="진단 결과 JSON")
     args = parser.parse_args()
-    if args.input.resolve() == args.output.resolve():
-        parser.error("입력과 출력 경로는 달라야 합니다.")
     try:
+        if args.input.resolve() == args.output.resolve() or (
+            args.output.exists() and args.input.samefile(args.output)
+        ):
+            parser.error("입력과 출력 경로는 달라야 합니다.")
         raw = args.input.read_bytes()
         report = json.loads(raw)
         if not isinstance(report, dict):

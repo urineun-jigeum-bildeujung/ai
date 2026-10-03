@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
+from scripts import summarize_landmark_calibration as runner
 from scripts.summarize_landmark_calibration import summarize_landmark_calibration
 
 
@@ -14,6 +18,7 @@ def _report() -> dict:
         "test_evaluated": False,
         "conditional_aft_landmarks": {
             "test_evaluated": False,
+            "landmark_days": [7],
             "summary": [
                 {
                     "elapsed_days": 7,
@@ -81,6 +86,8 @@ def test_weighted_direction_and_support_are_reported() -> None:
         lambda r: r["conditional_aft_landmarks"]["calibration"][1].update(
             calibration_gap=-0.1
         ),
+        lambda r: r["conditional_aft_landmarks"].update(landmark_days=[0, 7]),
+        lambda r: r["conditional_aft_landmarks"].update(landmark_days=[7, 7]),
     ],
 )
 def test_inconsistent_or_test_results_are_rejected(mutation) -> None:
@@ -89,3 +96,38 @@ def test_inconsistent_or_test_results_are_rejected(mutation) -> None:
 
     with pytest.raises(ValueError):
         summarize_landmark_calibration(report)
+
+
+@pytest.mark.parametrize("same_file_kind", ["same_path", "hard_link", "symbolic_link"])
+def test_cli_never_overwrites_its_input(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    same_file_kind: str,
+) -> None:
+    source = tmp_path / "validation.json"
+    original = json.dumps(_report())
+    source.write_text(original, encoding="utf-8")
+    output = tmp_path / "diagnostics.json"
+    if same_file_kind == "same_path":
+        output = source
+    elif same_file_kind == "hard_link":
+        output.hardlink_to(source)
+    else:
+        output.symlink_to(source)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "summarize_landmark_calibration",
+            "--input",
+            str(source),
+            "--output",
+            str(output),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        runner.main()
+
+    assert exc.value.code == 2
+    assert source.read_text(encoding="utf-8") == original
