@@ -1,0 +1,91 @@
+"""시점별 확률 보정 오차 진단의 입력 계약과 가중 요약을 검증합니다."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+import pytest
+
+from scripts.summarize_landmark_calibration import summarize_landmark_calibration
+
+
+def _report() -> dict:
+    return {
+        "test_evaluated": False,
+        "conditional_aft_landmarks": {
+            "test_evaluated": False,
+            "summary": [
+                {
+                    "elapsed_days": 7,
+                    "at_risk_count": 4,
+                    "outcome_known_count": 3,
+                    "expected_calibration_error": 0.12,
+                }
+            ],
+            "calibration": [
+                {
+                    "elapsed_days": 7,
+                    "calibration_bin_index": 0,
+                    "sample_count": 2,
+                    "ipcw_weight_share": 0.6,
+                    "mean_predicted_probability": 0.1,
+                    "observed_event_rate": 0.3,
+                    "calibration_gap": -0.2,
+                },
+                {
+                    "elapsed_days": 7,
+                    "calibration_bin_index": 1,
+                    "sample_count": 1,
+                    "ipcw_weight_share": 0.4,
+                    "mean_predicted_probability": 0.25,
+                    "observed_event_rate": 0.25,
+                    "calibration_gap": 0.0,
+                },
+            ],
+        },
+    }
+
+
+def test_weighted_direction_and_support_are_reported() -> None:
+    result = summarize_landmark_calibration(_report())
+
+    assert len(result) == 1
+    assert result[0]["outcome_known_count"] == 3
+    assert result[0]["weighted_mean_predicted_probability"] == pytest.approx(0.16)
+    assert result[0]["weighted_observed_event_rate"] == pytest.approx(0.28)
+    assert result[0]["weighted_probability_gap"] == pytest.approx(-0.12)
+    assert result[0]["underprediction_ipcw_weight_share"] == pytest.approx(0.6)
+    assert result[0]["expected_calibration_error"] == pytest.approx(0.12)
+    assert result[0]["bins"][1]["sample_count"] == 1
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda r: r.update(test_evaluated=True),
+        lambda r: r["conditional_aft_landmarks"]["summary"][0].update(
+            outcome_known_count=2
+        ),
+        lambda r: r["conditional_aft_landmarks"]["summary"][0].update(
+            expected_calibration_error=0.02
+        ),
+        lambda r: r["conditional_aft_landmarks"]["calibration"][1].update(
+            ipcw_weight_share=0.2
+        ),
+        lambda r: r["conditional_aft_landmarks"]["calibration"][1].update(
+            calibration_bin_index=0
+        ),
+        lambda r: r["conditional_aft_landmarks"]["calibration"][1].update(
+            observed_event_rate=float("nan")
+        ),
+        lambda r: r["conditional_aft_landmarks"]["calibration"][1].update(
+            calibration_gap=-0.1
+        ),
+    ],
+)
+def test_inconsistent_or_test_results_are_rejected(mutation) -> None:
+    report = deepcopy(_report())
+    mutation(report)
+
+    with pytest.raises(ValueError):
+        summarize_landmark_calibration(report)
