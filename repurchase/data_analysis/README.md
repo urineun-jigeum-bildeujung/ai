@@ -293,6 +293,14 @@ Train 내부 시간 분할의 IPCW Brier로만 선택하며, 선택 후 전체 T
 꼬리 구간의 개별 오차를 일반화하지 않습니다. 보정 후보는 별도의 Train 내부
 구간에서 학습하고 외부 Validation에서 평가해야 합니다.
 
+`scripts.run_service_probability_calibration`은 AFT 부스팅 횟수와 scale을
+`--aft-boost-rounds`, `--aft-loss-distribution-scale`로 명시할 수 있습니다.
+기본값 20회/1.0은 기존 실험을 재현하기 위한 값입니다. 최종 평가 후보로
+기록된 20회/2.0 재검증은
+`reports/service_probability_calibration_fixed_aft_20261003.md`에 정리했습니다.
+0일 Brier는 보정 후 소폭 악화되고 사용자 Bootstrap 구간이 0을 포함하므로,
+네 시점 전체에 Isotonic 보정을 적용하거나 Test·운영 확률 노출을 승인하지 않습니다.
+
 최종 평가 사전검증은 Validation 결과에 기록된 코드 SHA-256도 현재 코드·승인
 manifest와 대조합니다. 이전 형식의 결과 JSON에는 이 지문이 없어 재실행이
 필요합니다. 모듈 로드 시점과 비교 실행 전후의 디스크 지문을 대조하지만, Python이
