@@ -44,6 +44,7 @@ def _validate_split_boundaries(
     inner_split: ServiceTemporalSplit,
     outer_split: ServiceTemporalSplit,
 ) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp]:
+    """내부 학습·보정과 외부 평가 표본의 시간 경계를 확인합니다."""
     for name, rows in (
         ("내부 Train", inner_split.train),
         ("내부 보정", inner_split.validation),
@@ -78,6 +79,7 @@ def _validate_split_boundaries(
 
 
 def _conditional_probability(model, rows: pd.DataFrame, window_days: int) -> pd.Series:
+    """AFT 생존분포에서 표본별 조건부 재구매 확률을 계산합니다."""
     prediction_input = build_xgboost_aft_prediction_data(
         rows, feature_columns=model.feature_columns
     )

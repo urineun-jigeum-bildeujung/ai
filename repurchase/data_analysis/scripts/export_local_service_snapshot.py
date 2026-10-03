@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import hashlib
+import ipaddress
 import json
 import os
 from datetime import UTC, datetime
@@ -31,6 +32,7 @@ class SnapshotDatabaseError(Exception):
 
 
 def _sha256(path: Path) -> str:
+    """파일 내용을 스트리밍으로 읽어 SHA-256 지문을 계산합니다."""
     digest = hashlib.sha256()
     with path.open("rb") as source:
         for chunk in iter(lambda: source.read(1024 * 1024), b""):
@@ -51,6 +53,16 @@ def _serialize_nullable_pet_id(items: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("pet_id를 정밀도 손실 없이 CSV로 직렬화할 수 없습니다.")
     result["pet_id"] = values.astype("Int64")
     return result
+
+
+def _sslmode_for_host(host: str) -> str:
+    """로컬 포트포워딩만 평문으로 연결하고 원격 주소에는 TLS를 요구합니다."""
+    if host.lower() == "localhost":
+        return "disable"
+    try:
+        return "disable" if ipaddress.ip_address(host).is_loopback else "require"
+    except ValueError:
+        return "require"
 
 
 def verify_snapshot(directory: Path) -> dict[str, object]:
@@ -94,6 +106,8 @@ def prepare_model_order_items(directory: Path) -> Path:
         },
     )
     normalized = _serialize_nullable_pet_id(items)
+    if len(normalized) != manifest["files"]["order_items"]["rows"]:
+        raise ValueError("파생 파일 건수가 원본과 다릅니다.")
     old_umask = os.umask(0o077)
     try:
         normalized.to_csv(derived, index=False)
@@ -112,8 +126,6 @@ def prepare_model_order_items(directory: Path) -> Path:
         )
     finally:
         os.umask(old_umask)
-    if len(normalized) != manifest["files"]["order_items"]["rows"]:
-        raise ValueError("파생 파일 건수가 원본과 다릅니다.")
     return derived
 
 
@@ -127,7 +139,7 @@ def export_snapshot(*, host: str, port: int, user: str, output_root: Path) -> Pa
             user=user,
             password=order_password,
             dbname="order_db",
-            sslmode="disable",
+            sslmode=_sslmode_for_host(host),
             autocommit=True,
             connect_timeout=10,
             options="-c statement_timeout=300000 -c idle_in_transaction_session_timeout=60000",
@@ -145,7 +157,7 @@ def export_snapshot(*, host: str, port: int, user: str, output_root: Path) -> Pa
             user=user,
             password=member_password,
             dbname="member_db",
-            sslmode="disable",
+            sslmode=_sslmode_for_host(host),
             autocommit=True,
             connect_timeout=10,
             options="-c statement_timeout=300000 -c idle_in_transaction_session_timeout=60000",
