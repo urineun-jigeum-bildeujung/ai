@@ -27,6 +27,9 @@ from scripts.modeling.operational_orders import OperationalOrderError
 from scripts.modeling.operational_purchase_inputs import (
     prepare_operational_purchase_inputs_as_of,
 )
+from scripts.modeling.operational_source_quarantine import (
+    quarantine_unrestorable_orders,
+)
 
 ORDER_DSN_ENV = "REPURCHASE_ORDER_DATABASE_DSN"
 MEMBER_DSN_ENV = "REPURCHASE_MEMBER_DATABASE_DSN"
@@ -56,6 +59,11 @@ class SourceAuditSummary:
     all_purchase_event_count: int
     pet_purchase_event_count: int
     excluded_late_birth_item_count: int
+    quarantined_missing_history_order_count: int = 0
+    quarantined_missing_history_paid_order_count: int = 0
+    quarantined_missing_history_order_item_count: int = 0
+    quarantined_status_mismatch_order_count: int = 0
+    quarantined_status_mismatch_order_item_count: int = 0
 
 
 def _utc_timestamp(value: str) -> pd.Timestamp:
@@ -99,13 +107,20 @@ def audit_snapshots(
     cutoff = _utc_timestamp(as_of_timestamp.isoformat())
     if cutoff > orders.extracted_at or cutoff > pets.extracted_at:
         raise ValueError("관측 컷이 원천 DB 추출 시각보다 늦습니다.")
-    prepared = prepare_operational_purchase_inputs_as_of(
+    usable_orders = quarantine_unrestorable_orders(
         orders.orders,
         orders.order_items,
-        pets.pets,
         orders.status_histories,
         orders.claims,
         orders.claim_items,
+    )
+    prepared = prepare_operational_purchase_inputs_as_of(
+        usable_orders.orders,
+        usable_orders.order_items,
+        pets.pets,
+        usable_orders.status_histories,
+        usable_orders.claims,
+        usable_orders.claim_items,
         as_of_timestamp=cutoff,
     )
     _require_pet_ownership(prepared.valid_items, pets.pets)
@@ -123,6 +138,21 @@ def audit_snapshots(
         all_purchase_event_count=len(prepared.all_purchase_events),
         pet_purchase_event_count=len(prepared.pet_purchase_events),
         excluded_late_birth_item_count=prepared.excluded_late_birth_item_count,
+        quarantined_missing_history_order_count=(
+            usable_orders.missing_history_order_count
+        ),
+        quarantined_missing_history_paid_order_count=(
+            usable_orders.missing_history_paid_order_count
+        ),
+        quarantined_missing_history_order_item_count=(
+            usable_orders.missing_history_order_item_count
+        ),
+        quarantined_status_mismatch_order_count=(
+            usable_orders.status_mismatch_order_count
+        ),
+        quarantined_status_mismatch_order_item_count=(
+            usable_orders.status_mismatch_order_item_count
+        ),
     )
 
 
@@ -205,7 +235,17 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         json.dumps(
-            {"event": "repurchase_source_audit_passed", **asdict(summary)},
+            {
+                "event": (
+                    "repurchase_source_audit_quarantined"
+                    if (
+                        summary.quarantined_missing_history_order_count
+                        or summary.quarantined_status_mismatch_order_count
+                    )
+                    else "repurchase_source_audit_passed"
+                ),
+                **asdict(summary),
+            },
             ensure_ascii=False,
             sort_keys=True,
         )

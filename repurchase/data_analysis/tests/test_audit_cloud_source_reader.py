@@ -19,14 +19,27 @@ from scripts.modeling.operational_orders import OperationalOrderError
 
 
 def _snapshot_pair() -> tuple[OrderSourceSnapshot, PetSourceSnapshot]:
-    frame = pd.DataFrame({"id": [1]})
+    frame = pd.DataFrame({"id": [1], "order_id": [1]})
     order = OrderSourceSnapshot(
         extracted_at=pd.Timestamp("2026-10-02T00:00:00Z"),
-        orders=frame,
+        orders=pd.DataFrame(
+            {
+                "order_id": [1],
+                "order_status": ["PAID"],
+                "paid_at": [pd.Timestamp("2026-09-29T00:00:00Z")],
+            }
+        ),
         order_items=frame,
-        status_histories=frame,
-        claims=frame,
-        claim_items=frame,
+        status_histories=pd.DataFrame(
+            {
+                "history_id": [100],
+                "order_id": [1],
+                "to_status": ["PAID"],
+                "changed_at": ["2026-09-29T00:00:00Z"],
+            }
+        ),
+        claims=pd.DataFrame({"claim_id": [200], "order_id": [1]}),
+        claim_items=pd.DataFrame({"claim_item_id": [300], "claim_id": [200]}),
     )
     pet = PetSourceSnapshot(
         extracted_at=pd.Timestamp("2026-10-02T00:00:01Z"),
@@ -62,8 +75,117 @@ def test_audit_counts_and_passes_explicit_cutoff(
     assert result.order_count == 1
     assert result.all_purchase_event_count == 2
     assert result.excluded_late_birth_item_count == 1
+    assert result.quarantined_missing_history_order_count == 0
     assert captured["cutoff"] == pd.Timestamp("2026-09-29T06:44:00Z")
     assert len(captured["args"]) == 6  # type: ignore[arg-type]
+
+
+def test_missing_history_order_and_related_rows_are_quarantined(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    order, pet = _snapshot_pair()
+    order = OrderSourceSnapshot(
+        extracted_at=order.extracted_at,
+        orders=pd.DataFrame(
+            {
+                "order_id": [1, 2],
+                "order_status": ["PAID", "PAID"],
+                "paid_at": [pd.Timestamp("2026-09-29T00:00:00Z")] * 2,
+            }
+        ),
+        order_items=pd.DataFrame({"order_item_id": [10, 20], "order_id": [1, 2]}),
+        status_histories=pd.DataFrame(
+            {
+                "history_id": [100],
+                "order_id": [1],
+                "to_status": ["PAID"],
+                "changed_at": ["2026-09-29T00:00:00Z"],
+            }
+        ),
+        claims=pd.DataFrame({"claim_id": [200], "order_id": [2]}),
+        claim_items=pd.DataFrame({"claim_item_id": [300], "claim_id": [200]}),
+    )
+    captured: dict[str, object] = {}
+
+    def prepare(*args: object, **_kwargs: object) -> SimpleNamespace:
+        captured["args"] = args
+        return SimpleNamespace(
+            valid_items=pd.DataFrame({"user_id": ["u1"], "pet_id": ["pet1"]}),
+            all_purchase_events=pd.DataFrame(index=range(1)),
+            pet_purchase_events=pd.DataFrame(index=range(1)),
+            excluded_late_birth_item_count=0,
+        )
+
+    monkeypatch.setattr(
+        "scripts.audit_cloud_source_reader.prepare_operational_purchase_inputs_as_of",
+        prepare,
+    )
+    result = audit_snapshots(
+        order, pet, as_of_timestamp=pd.Timestamp("2026-09-29T15:44:00+09:00")
+    )
+    args = captured["args"]
+    assert isinstance(args, tuple)
+    assert args[0]["order_id"].tolist() == [1]
+    assert args[1]["order_item_id"].tolist() == [10]
+    assert args[4].empty and args[5].empty
+    assert result.order_count == 2
+    assert result.quarantined_missing_history_order_count == 1
+    assert result.quarantined_missing_history_paid_order_count == 1
+    assert result.quarantined_missing_history_order_item_count == 1
+    assert result.quarantined_status_mismatch_order_count == 0
+
+
+def test_mismatched_final_status_quarantines_history_and_related_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    order, pet = _snapshot_pair()
+    order = OrderSourceSnapshot(
+        extracted_at=order.extracted_at,
+        orders=pd.DataFrame(
+            {
+                "order_id": [1, 2],
+                "order_status": ["PAID", "CONFIRMED"],
+                "paid_at": [pd.Timestamp("2026-09-29T00:00:00Z")] * 2,
+            }
+        ),
+        order_items=pd.DataFrame({"order_item_id": [10, 20], "order_id": [1, 2]}),
+        status_histories=pd.DataFrame(
+            {
+                "history_id": [100, 200],
+                "order_id": [1, 2],
+                "to_status": ["PAID", "DELIVERED"],
+                "changed_at": ["2026-09-29T00:00:00Z"] * 2,
+            }
+        ),
+        claims=pd.DataFrame({"claim_id": [300], "order_id": [2]}),
+        claim_items=pd.DataFrame({"claim_item_id": [400], "claim_id": [300]}),
+    )
+    captured: dict[str, object] = {}
+
+    def prepare(*args: object, **_kwargs: object) -> SimpleNamespace:
+        captured["args"] = args
+        return SimpleNamespace(
+            valid_items=pd.DataFrame({"user_id": ["u1"], "pet_id": ["pet1"]}),
+            all_purchase_events=pd.DataFrame(index=range(1)),
+            pet_purchase_events=pd.DataFrame(index=range(1)),
+            excluded_late_birth_item_count=0,
+        )
+
+    monkeypatch.setattr(
+        "scripts.audit_cloud_source_reader.prepare_operational_purchase_inputs_as_of",
+        prepare,
+    )
+    result = audit_snapshots(
+        order, pet, as_of_timestamp=pd.Timestamp("2026-09-29T15:44:00+09:00")
+    )
+    args = captured["args"]
+    assert isinstance(args, tuple)
+    assert args[0]["order_id"].tolist() == [1]
+    assert args[1]["order_item_id"].tolist() == [10]
+    assert args[3]["history_id"].tolist() == [100]
+    assert args[4].empty and args[5].empty
+    assert result.quarantined_status_mismatch_order_count == 1
+    assert result.quarantined_status_mismatch_order_item_count == 1
 
 
 def test_pet_ownership_mismatch_is_rejected() -> None:
