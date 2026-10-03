@@ -74,6 +74,8 @@ def main(argv: list[str] | None = None) -> int:
         end = _parse_observation_end(args.observation_end_at)
         if args.bootstrap_replicates < 1:
             raise ValueError("Bootstrap 반복 횟수는 1 이상이어야 합니다.")
+        if args.output is not None and not args.output.parent.is_dir():
+            raise ValueError("결과 파일의 상위 디렉터리가 없습니다.")
         orders, pets = read_cloud_snapshots(prompt_password=args.prompt_password)
         result = compare_snapshots(
             orders,
@@ -102,6 +104,18 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+    except OSError as error:
+        # 파일 쓰기 오류에는 로컬 경로나 권한 정보가 포함될 수 있습니다.
+        print(
+            json.dumps(
+                {
+                    "event": "repurchase_model_comparison_failed",
+                    "error_type": type(error).__name__,
+                }
+            ),
+            file=sys.stderr,
+        )
+        return 1
     except psycopg.Error as error:
         # DB 드라이버 메시지에는 호스트·접속 문자열이 포함될 수 있습니다.
         print(
