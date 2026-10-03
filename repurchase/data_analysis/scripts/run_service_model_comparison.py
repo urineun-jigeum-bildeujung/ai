@@ -20,6 +20,9 @@ from scripts.modeling.operational_event_intervals import (
 from scripts.modeling.operational_quantity_intervals import (
     build_order_item_quantity_intervals,
 )
+from scripts.modeling.operational_source_quarantine import (
+    quarantine_unrestorable_orders,
+)
 from scripts.modeling.operational_status_intervals import build_order_status_intervals
 from scripts.modeling.operational_temporal_split import (
     build_service_train_validation_split,
@@ -184,11 +187,18 @@ def run_comparison(
         or set(source_metadata) != {"source_snapshots"}
     ):
         raise ValueError("메모리 원천에는 DB 스냅샷 메타데이터만 필요합니다.")
-    orders = sources["orders"]
-    items = sources["order_items"]
-    status = build_order_status_intervals(sources["histories"])
+    quarantine = quarantine_unrestorable_orders(
+        sources["orders"],
+        sources["order_items"],
+        sources["histories"],
+        sources["claims"],
+        sources["claim_items"],
+    )
+    orders = quarantine.orders
+    items = quarantine.order_items
+    status = build_order_status_intervals(quarantine.status_histories)
     quantity = build_order_item_quantity_intervals(
-        orders, items, sources["claims"], sources["claim_items"]
+        orders, items, quarantine.claims, quarantine.claim_items
     )
     valid = build_valid_purchase_item_intervals(status, quantity)
     events = build_operational_event_intervals(valid, orders, items, sources["pets"])
@@ -259,6 +269,19 @@ def run_comparison(
     _require_finite_c_index(comparison.summary)
     result: dict[str, object] = {
         **source_metadata,
+        "source_quarantine": {
+            "missing_history_order_count": quarantine.missing_history_order_count,
+            "missing_history_paid_order_count": (
+                quarantine.missing_history_paid_order_count
+            ),
+            "missing_history_order_item_count": (
+                quarantine.missing_history_order_item_count
+            ),
+            "status_mismatch_order_count": quarantine.status_mismatch_order_count,
+            "status_mismatch_order_item_count": (
+                quarantine.status_mismatch_order_item_count
+            ),
+        },
         "runtime_versions": {
             "python": sys.version.split()[0],
             "pandas": version("pandas"),

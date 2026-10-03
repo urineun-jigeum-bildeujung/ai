@@ -264,6 +264,22 @@ def test_inner_aft_selection_precedes_outer_validation_label_generation(
         )
     }
     monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    monkeypatch.setattr(
+        runner,
+        "quarantine_unrestorable_orders",
+        lambda orders, items, histories, claims, claim_items: SimpleNamespace(
+            orders=orders,
+            order_items=items,
+            status_histories=histories,
+            claims=claims,
+            claim_items=claim_items,
+            missing_history_order_count=0,
+            missing_history_paid_order_count=0,
+            missing_history_order_item_count=0,
+            status_mismatch_order_count=0,
+            status_mismatch_order_item_count=0,
+        ),
+    )
     for name in (
         "build_order_status_intervals",
         "build_order_item_quantity_intervals",
@@ -324,6 +340,22 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
         )
     }
     monkeypatch.setattr(runner, "_read_sources", lambda paths: sources)
+    monkeypatch.setattr(
+        runner,
+        "quarantine_unrestorable_orders",
+        lambda orders, items, histories, claims, claim_items: SimpleNamespace(
+            orders=orders,
+            order_items=items,
+            status_histories=histories,
+            claims=claims,
+            claim_items=claim_items,
+            missing_history_order_count=0,
+            missing_history_paid_order_count=0,
+            missing_history_order_item_count=0,
+            status_mismatch_order_count=0,
+            status_mismatch_order_item_count=0,
+        ),
+    )
     # 모델 실행 경로만 검증하므로 CI 설치 패키지의 메타데이터에 의존하지 않습니다.
     monkeypatch.setattr(runner, "version", lambda package: "test-version")
     for name in (
