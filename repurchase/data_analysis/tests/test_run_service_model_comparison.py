@@ -387,8 +387,14 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     scale = runner.run_comparison(
         {}, observation_end_at=end, aft_scale_candidates=(1.0, 2.0)
     )
+    live = runner.run_comparison(
+        None,
+        observation_end_at=end,
+        sources=sources,
+        source_metadata={"source_snapshots": {"order_extracted_at": end.isoformat()}},
+    )
 
-    assert [item["aft_boost_rounds"] for item in training_options] == [7, 20, 20]
+    assert [item["aft_boost_rounds"] for item in training_options] == [7, 20, 20, 20]
     assert "aft_loss_distribution_scale" not in training_options[0]
     assert "aft_loss_distribution_scale" not in training_options[1]
     assert training_options[2]["aft_loss_distribution_scale"] == 2.0
@@ -412,6 +418,18 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
         == 2.0
     )
     assert scale["model_configuration"]["lightgbm"]["parameters"]["random_state"] == 42
+    assert live["summary"] == fixed["summary"]
+    assert live["source_snapshots"]["order_extracted_at"] == end.isoformat()
+    assert "source_sha256" not in live
+
+
+def test_memory_source_requires_snapshot_metadata() -> None:
+    with pytest.raises(ValueError, match="메모리 원천"):
+        runner.run_comparison(
+            None,
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            sources={},
+        )
 
 
 def test_validation_population_counts_each_history_bucket_once() -> None:

@@ -126,10 +126,10 @@ def audit_snapshots(
     )
 
 
-def run_audit(
-    as_of_timestamp: pd.Timestamp, *, prompt_password: bool = False
-) -> SourceAuditSummary:
-    """DB 연결을 열어 점검하며 비밀번호·원천 행은 디스크에 쓰지 않습니다."""
+def read_cloud_snapshots(
+    *, prompt_password: bool = False
+) -> tuple[OrderSourceSnapshot, PetSourceSnapshot]:
+    """두 원천 DB를 독립된 읽기 전용 스냅샷으로 읽고 연결을 닫습니다."""
     order_dsn = os.environ.get(ORDER_DSN_ENV)
     member_dsn = os.environ.get(MEMBER_DSN_ENV)
     if not order_dsn or not member_dsn:
@@ -154,6 +154,14 @@ def run_audit(
         **({"password": member_password} if member_password is not None else {}),
     ) as connection:
         pets = read_pet_source(connection)
+    return orders, pets
+
+
+def run_audit(
+    as_of_timestamp: pd.Timestamp, *, prompt_password: bool = False
+) -> SourceAuditSummary:
+    """DB 연결을 열어 점검하며 비밀번호·원천 행은 디스크에 쓰지 않습니다."""
+    orders, pets = read_cloud_snapshots(prompt_password=prompt_password)
     return audit_snapshots(orders, pets, as_of_timestamp=as_of_timestamp)
 
 
