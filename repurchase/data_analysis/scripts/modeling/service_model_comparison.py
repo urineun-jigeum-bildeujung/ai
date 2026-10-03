@@ -24,6 +24,10 @@ from .maturity_analysis import add_split_ipcw_weights
 from .operational_aft_input import build_service_aft_training_rows
 from .operational_orders import OperationalOrderError
 from .operational_temporal_split import ServiceTemporalSplit
+from .probability_baseline import (
+    fit_hierarchical_event_probability_baseline,
+    predict_hierarchical_event_probability_baseline,
+)
 from .xgboost_aft import (
     XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
@@ -58,6 +62,93 @@ class AFTScaleSelection:
 
     selected_scale: float
     candidates: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class ProductGroupSmoothingSelection:
+    """Train 내부 평가로 고른 상품군 확률 prior 수축 강도입니다."""
+
+    selected_strength: float
+    candidates: pd.DataFrame
+
+
+def _service_product_group_rows(rows: pd.DataFrame) -> pd.DataFrame:
+    """서비스 상품군 키를 기존 계층형 확률 기준선의 키로 명시적으로 연결합니다."""
+    if "target_id" not in rows or rows["target_id"].isna().any():
+        raise OperationalOrderError("서비스 상품군 키가 누락됐습니다.")
+    result = rows.copy()
+    result["product_id"] = result["target_id"]
+    return result
+
+
+def select_service_product_group_smoothing(
+    inner_split: ServiceTemporalSplit,
+    *,
+    candidate_strengths: tuple[float, ...],
+    horizon_days: int = 30,
+) -> ProductGroupSmoothingSelection:
+    """바깥 Validation을 보지 않고 내부 IPCW Brier로 prior 강도를 선택합니다."""
+    if (
+        len(candidate_strengths) < 2
+        or any(
+            isinstance(value, (bool, np.bool_))
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or value <= 0
+            for value in candidate_strengths
+        )
+        or len(set(candidate_strengths)) != len(candidate_strengths)
+    ):
+        raise OperationalOrderError(
+            "상품군 확률 수축 강도 후보는 서로 다른 양의 유한한 숫자 2개 이상이어야 합니다."
+        )
+    _validate_aft_inner_split(inner_split)
+    train = add_split_ipcw_weights(inner_split.train, horizon_days=horizon_days)
+    validation = add_split_ipcw_weights(
+        inner_split.validation, horizon_days=horizon_days
+    )
+    train_groups = _service_product_group_rows(train)
+    validation_groups = _service_product_group_rows(inner_split.validation)
+    results: list[dict[str, int | float]] = []
+    for strength in sorted(float(value) for value in candidate_strengths):
+        model = fit_hierarchical_event_probability_baseline(
+            train_groups, product_smoothing_strength=strength
+        )
+        probability = predict_hierarchical_event_probability_baseline(
+            model, validation_groups
+        )["predicted_event_probability"]
+        if not probability.index.equals(validation.index):
+            raise OperationalOrderError(
+                "상품군 확률 기준선 예측 행 순서가 Validation과 다릅니다."
+            )
+        evaluation = validation.copy()
+        evaluation["predicted_event_probability"] = probability
+        brier = evaluate_ipcw_brier_score(
+            evaluation, reference_probability=model.global_event_probability
+        )
+        if not np.isfinite(float(brier["ipcw_brier_score"])):
+            raise OperationalOrderError(
+                "상품군 확률 기준선 내부 Brier가 유한하지 않습니다."
+            )
+        results.append(
+            {
+                "product_group_smoothing_strength": strength,
+                "ipcw_brier_score": float(brier["ipcw_brier_score"]),
+                "validation_sample_count": int(brier["validation_sample_count"]),
+                "outcome_known_count": int(brier["outcome_known_count"]),
+            }
+        )
+    selected = min(
+        results,
+        key=lambda row: (
+            row["ipcw_brier_score"],
+            row["product_group_smoothing_strength"],
+        ),
+    )
+    return ProductGroupSmoothingSelection(
+        selected_strength=float(selected["product_group_smoothing_strength"]),
+        candidates=pd.DataFrame(results),
+    )
 
 
 def select_service_aft_scale(
@@ -421,6 +512,7 @@ def compare_service_aft_lightgbm(
     calibration_bin_count: int = 10,
     bootstrap_replicates: int = 1_000,
     bootstrap_random_seed: int = 42,
+    product_group_smoothing_strength: float | None = None,
 ) -> ServiceModelComparison:
     """Train에서만 학습하고 두 후보를 같은 Validation 행에서 비교합니다.
 
@@ -483,6 +575,33 @@ def compare_service_aft_lightgbm(
             weighted_validation,
             probability,
             model_name=name,
+            reference_probability=reference_probability,
+            calibration_bin_count=calibration_bin_count,
+        )
+        metrics.update(
+            {
+                "horizon_days": horizon_days,
+                "train_sample_count": len(split.train),
+                "aft_train_sample_count": aft_train.included_sample_count,
+                "lightgbm_train_sample_count": len(lightgbm_train.target),
+                "aft_boost_rounds": aft_boost_rounds,
+            }
+        )
+        results.append(metrics)
+        calibrations.append(calibration)
+
+    if product_group_smoothing_strength is not None:
+        baseline = fit_hierarchical_event_probability_baseline(
+            _service_product_group_rows(weighted_train),
+            product_smoothing_strength=product_group_smoothing_strength,
+        )
+        baseline_probability = predict_hierarchical_event_probability_baseline(
+            baseline, _service_product_group_rows(split.validation)
+        )["predicted_event_probability"]
+        metrics, calibration = _evaluate_candidate(
+            weighted_validation,
+            baseline_probability,
+            model_name="product_group_probability_baseline",
             reference_probability=reference_probability,
             calibration_bin_count=calibration_bin_count,
         )

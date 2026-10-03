@@ -83,6 +83,7 @@ def test_compare_snapshots_passes_audited_frames_without_csv(
     assert options["validation_fraction"] == 0.85
     assert options["aft_round_candidates"] is None
     assert options["aft_scale_candidates"] is None
+    assert options["product_group_smoothing_candidates"] is None
     assert options["inner_train_ratio"] == 0.8
 
 
@@ -107,11 +108,13 @@ def test_compare_snapshots_forwards_selection_options(
         train_fraction=0.4,
         validation_fraction=0.55,
         aft_scale_candidates=(0.5, 1.0, 2.0),
+        product_group_smoothing_candidates=(1.0, 4.0),
         inner_train_ratio=0.75,
     ) == {"summary": []}
     assert received["train_fraction"] == 0.4
     assert received["validation_fraction"] == 0.55
     assert received["aft_scale_candidates"] == (0.5, 1.0, 2.0)
+    assert received["product_group_smoothing_candidates"] == (1.0, 4.0)
     assert received["inner_train_ratio"] == 0.75
 
 
@@ -158,6 +161,8 @@ def test_invalid_bootstrap_rejected_before_db_access(
         ["--train-fraction", "nan"],
         ["--aft-round-candidates", "5", "5"],
         ["--aft-scale-candidates", "0.5", "0.5"],
+        ["--product-group-smoothing-candidates", "1"],
+        ["--product-group-smoothing-candidates", "0", "1"],
         ["--aft-round-candidates", "5", "20", "--aft-scale-candidates", "0.5", "1"],
         ["--inner-train-ratio", "1"],
     ],
@@ -201,6 +206,9 @@ def test_main_passes_selection_options_to_comparison(
                 "--aft-round-candidates",
                 "5",
                 "20",
+                "--product-group-smoothing-candidates",
+                "1",
+                "4",
             ]
         )
         == 0
@@ -209,6 +217,7 @@ def test_main_passes_selection_options_to_comparison(
     assert received["train_fraction"] == 0.55
     assert received["validation_fraction"] == 0.70
     assert received["aft_round_candidates"] == (5, 20)
+    assert received["product_group_smoothing_candidates"] == (1.0, 4.0)
 
 
 def test_missing_output_directory_rejected_before_db_access(

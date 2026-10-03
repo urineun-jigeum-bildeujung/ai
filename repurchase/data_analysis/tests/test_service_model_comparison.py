@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -16,6 +18,7 @@ from scripts.modeling.service_model_comparison import (
     _evaluate_candidate,
     compare_service_aft_lightgbm,
     select_service_aft_boost_rounds,
+    select_service_product_group_smoothing,
     summarize_service_brier_attribution,
 )
 
@@ -201,6 +204,74 @@ def _service_rows(*, split_name: str) -> pd.DataFrame:
     return _attach_evaluation_contract(
         rows, split_name=split_name, split_end_at=split_end
     )
+
+
+def test_product_group_smoothing_is_selected_on_inner_split_only() -> None:
+    inner_split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    selected = select_service_product_group_smoothing(
+        inner_split, candidate_strengths=(1.0, 4.0)
+    )
+
+    assert selected.selected_strength in (1.0, 4.0)
+    assert selected.candidates["product_group_smoothing_strength"].tolist() == [
+        1.0,
+        4.0,
+    ]
+    assert selected.candidates["validation_sample_count"].eq(6).all()
+    assert selected.candidates["outcome_known_count"].gt(0).all()
+    assert (
+        selected.selected_strength
+        == selected.candidates.loc[
+            selected.candidates["ipcw_brier_score"].idxmin(),
+            "product_group_smoothing_strength",
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "candidates", [(1.0,), (0.0, 1.0), (1.0, 1.0), (1.0, float("nan"))]
+)
+def test_product_group_smoothing_rejects_invalid_candidates(
+    candidates: tuple[float, ...],
+) -> None:
+    inner_split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    with pytest.raises(OperationalOrderError, match="수축 강도 후보"):
+        select_service_product_group_smoothing(
+            inner_split, candidate_strengths=candidates
+        )
+
+
+def test_service_comparison_adds_group_baseline_on_same_validation_rows() -> None:
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    comparison = compare_service_aft_lightgbm(
+        split,
+        bootstrap_replicates=10,
+        product_group_smoothing_strength=4.0,
+    )
+
+    summary = comparison.summary.set_index("model")
+    assert set(summary.index) == {
+        "xgboost_aft",
+        "lightgbm",
+        "product_group_probability_baseline",
+    }
+    assert summary["validation_sample_count"].eq(6).all()
+    assert summary["outcome_known_count"].nunique() == 1
+    assert summary["ipcw_reference_brier_score"].nunique() == 1
+    assert comparison.calibration.groupby("model")["sample_count"].sum().eq(6).all()
+    json.dumps(summary.reset_index().to_dict(orient="records"), allow_nan=False)
 
 
 def test_aft_round_selection_uses_inner_validation_only() -> None:
