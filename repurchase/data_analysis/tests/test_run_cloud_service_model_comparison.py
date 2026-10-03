@@ -79,6 +79,40 @@ def test_compare_snapshots_passes_audited_frames_without_csv(
     assert options["sources"]["pets"] is pets.pets
     assert options["source_metadata"]["source_snapshots"]["order_count"] == 1
     assert options["bootstrap_replicates"] == 10
+    assert options["train_fraction"] == 0.70
+    assert options["validation_fraction"] == 0.85
+    assert options["aft_round_candidates"] is None
+    assert options["aft_scale_candidates"] is None
+    assert options["inner_train_ratio"] == 0.8
+
+
+def test_compare_snapshots_forwards_selection_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    orders, pets = _snapshots()
+    cutoff = pd.Timestamp("2026-09-29T06:44:00Z")
+    monkeypatch.setattr(runner, "audit_snapshots", lambda *_, **__: object())
+    monkeypatch.setattr(runner, "asdict", lambda _: {})
+    received: dict[str, object] = {}
+
+    def compare(paths: object, **kwargs: object) -> dict[str, object]:
+        received.update(kwargs)
+        return {"summary": []}
+
+    monkeypatch.setattr(runner, "run_comparison", compare)
+    assert runner.compare_snapshots(
+        orders,
+        pets,
+        observation_end_at=cutoff,
+        train_fraction=0.4,
+        validation_fraction=0.55,
+        aft_scale_candidates=(0.5, 1.0, 2.0),
+        inner_train_ratio=0.75,
+    ) == {"summary": []}
+    assert received["train_fraction"] == 0.4
+    assert received["validation_fraction"] == 0.55
+    assert received["aft_scale_candidates"] == (0.5, 1.0, 2.0)
+    assert received["inner_train_ratio"] == 0.75
 
 
 @pytest.mark.parametrize("cutoff", ["2026-09-29T15:44:00", "NaT", "invalid"])
@@ -115,6 +149,66 @@ def test_invalid_bootstrap_rejected_before_db_access(
         )
         == 2
     )
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["--train-fraction", "0.85", "--validation-fraction", "0.70"],
+        ["--train-fraction", "nan"],
+        ["--aft-round-candidates", "5", "5"],
+        ["--aft-scale-candidates", "0.5", "0.5"],
+        ["--aft-round-candidates", "5", "20", "--aft-scale-candidates", "0.5", "1"],
+        ["--inner-train-ratio", "1"],
+    ],
+)
+def test_invalid_model_selection_rejected_before_db_access(
+    options: list[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        runner,
+        "read_cloud_snapshots",
+        lambda **_: pytest.fail("잘못된 모델 설정에서 DB를 읽었습니다."),
+    )
+    assert (
+        runner.main(["--observation-end-at", "2026-09-29T15:44:00+09:00", *options])
+        == 2
+    )
+
+
+def test_main_passes_selection_options_to_comparison(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(runner, "read_cloud_snapshots", lambda **_: _snapshots())
+    received: dict[str, object] = {}
+
+    def compare(*_: object, **kwargs: object) -> dict[str, object]:
+        received.update(kwargs)
+        return {"summary": []}
+
+    monkeypatch.setattr(runner, "compare_snapshots", compare)
+    assert (
+        runner.main(
+            [
+                "--observation-end-at",
+                "2026-09-29T15:44:00+09:00",
+                "--train-fraction",
+                "0.55",
+                "--validation-fraction",
+                "0.70",
+                "--aft-round-candidates",
+                "5",
+                "20",
+            ]
+        )
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out) == {"summary": []}
+    assert received["train_fraction"] == 0.55
+    assert received["validation_fraction"] == 0.70
+    assert received["aft_round_candidates"] == (5, 20)
 
 
 def test_missing_output_directory_rejected_before_db_access(
