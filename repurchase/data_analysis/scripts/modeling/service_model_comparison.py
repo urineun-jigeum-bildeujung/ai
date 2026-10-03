@@ -25,13 +25,16 @@ from .operational_aft_input import build_service_aft_training_rows
 from .operational_orders import OperationalOrderError
 from .operational_temporal_split import ServiceTemporalSplit
 from .probability_baseline import (
+    fit_global_event_probability_baseline,
     fit_hierarchical_event_probability_baseline,
     predict_hierarchical_event_probability_baseline,
 )
+from .service_landmark_validation import build_service_landmark_cohort
 from .xgboost_aft import (
     XGBoostAFTTrainingData,
     build_xgboost_aft_prediction_data,
     build_xgboost_aft_training_data,
+    calculate_xgboost_aft_conditional_probability,
     calculate_xgboost_aft_event_probability,
     predict_xgboost_aft_duration,
     train_xgboost_aft_model,
@@ -47,6 +50,8 @@ class ServiceModelComparison:
     paired_bootstrap: IPCWUserBootstrapResult
     brier_attribution: pd.DataFrame
     product_group_aft_bootstrap: IPCWUserBootstrapResult | None = None
+    conditional_landmarks: pd.DataFrame | None = None
+    conditional_calibration: pd.DataFrame | None = None
 
 
 @dataclass(frozen=True)
@@ -514,6 +519,7 @@ def compare_service_aft_lightgbm(
     bootstrap_replicates: int = 1_000,
     bootstrap_random_seed: int = 42,
     product_group_smoothing_strength: float | None = None,
+    conditional_landmark_days: tuple[int, ...] | None = None,
 ) -> ServiceModelComparison:
     """Train에서만 학습하고 두 후보를 같은 Validation 행에서 비교합니다.
 
@@ -525,6 +531,17 @@ def compare_service_aft_lightgbm(
     if split.train.empty or split.validation.empty:
         raise OperationalOrderError(
             "서비스 비교에는 Train·Validation이 모두 필요합니다."
+        )
+    if conditional_landmark_days is not None and (
+        not conditional_landmark_days
+        or len(set(conditional_landmark_days)) != len(conditional_landmark_days)
+        or any(
+            isinstance(day, bool) or not isinstance(day, Integral) or day < 0
+            for day in conditional_landmark_days
+        )
+    ):
+        raise OperationalOrderError(
+            "조건부 평가 시점은 중복 없는 0 이상의 정수 일수여야 합니다."
         )
 
     train = _canonical_service_train_order(split.train)
@@ -647,10 +664,82 @@ def compare_service_aft_lightgbm(
         attribution_improvement, point_improvement, rtol=1e-10, atol=1e-12
     ):
         raise OperationalOrderError("Brier 기여도와 사용자 쌍 비교 결과가 다릅니다.")
+    conditional_landmarks = None
+    conditional_calibration = None
+    if conditional_landmark_days is not None:
+        landmark_results = []
+        landmark_calibrations = []
+        for elapsed_days in conditional_landmark_days:
+            train_cohort = build_service_landmark_cohort(
+                train, elapsed_days=elapsed_days, split_name="train"
+            )
+            validation_cohort = build_service_landmark_cohort(
+                split.validation,
+                elapsed_days=elapsed_days,
+                split_name="validation",
+            )
+            landmark_train = add_split_ipcw_weights(
+                train_cohort.rows, horizon_days=horizon_days
+            )
+            reference = fit_global_event_probability_baseline(landmark_train)
+            landmark_validation = add_split_ipcw_weights(
+                validation_cohort.rows, horizon_days=horizon_days
+            )
+            prediction_input = build_xgboost_aft_prediction_data(
+                validation_cohort.rows, feature_columns=aft_model.feature_columns
+            )
+            duration = predict_xgboost_aft_duration(aft_model, prediction_input)
+            probability = calculate_xgboost_aft_conditional_probability(
+                aft_model,
+                duration,
+                validation_cohort.rows["elapsed_days"],
+                window_days=horizon_days,
+            )
+            if not probability.index.equals(landmark_validation.index):
+                raise OperationalOrderError(
+                    "시점별 조건부 예측 행이 Validation 위험집단과 다릅니다."
+                )
+            landmark_validation["predicted_event_probability"] = probability
+            brier = evaluate_ipcw_brier_score(
+                landmark_validation,
+                reference_probability=reference.global_event_probability,
+            )
+            calibration = summarize_ipcw_calibration(
+                landmark_validation, bin_count=calibration_bin_count
+            )
+            calibration["elapsed_days"] = elapsed_days
+            landmark_results.append(
+                {
+                    "elapsed_days": elapsed_days,
+                    "train_at_risk_count": len(train_cohort.rows),
+                    "source_validation_count": validation_cohort.source_sample_count,
+                    "excluded_prior_event_count": (
+                        validation_cohort.excluded_prior_event_count
+                    ),
+                    "excluded_prior_censor_count": (
+                        validation_cohort.excluded_prior_censor_count
+                    ),
+                    "at_risk_count": len(validation_cohort.rows),
+                    "at_risk_user_count": int(landmark_validation["user_id"].nunique()),
+                    "ipcw_brier_score": float(brier["ipcw_brier_score"]),
+                    "ipcw_reference_brier_score": float(
+                        brier["ipcw_reference_brier_score"]
+                    ),
+                    "outcome_known_count": int(brier["outcome_known_count"]),
+                    "expected_calibration_error": float(
+                        calibration["weighted_absolute_gap_contribution"].sum()
+                    ),
+                }
+            )
+            landmark_calibrations.append(calibration)
+        conditional_landmarks = pd.DataFrame(landmark_results)
+        conditional_calibration = pd.concat(landmark_calibrations, ignore_index=True)
     return ServiceModelComparison(
         summary=pd.DataFrame(results),
         calibration=pd.concat(calibrations, ignore_index=True),
         paired_bootstrap=paired_bootstrap,
         brier_attribution=brier_attribution,
         product_group_aft_bootstrap=product_group_aft_bootstrap,
+        conditional_landmarks=conditional_landmarks,
+        conditional_calibration=conditional_calibration,
     )
