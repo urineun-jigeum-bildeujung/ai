@@ -95,6 +95,24 @@ def test_library_entry_rejects_invalid_options_before_reading_csv(
         )
 
 
+def test_library_rejects_code_changed_after_import_before_source_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """모듈 로드 후 디스크 코드가 바뀌면 CSV를 읽기 전에 거절합니다."""
+    changed = dict(runner.IMPORTED_MODEL_CODE_SHA256)
+    changed["run_service_model_comparison.py"] = "0" * 64
+    monkeypatch.setattr(runner, "model_code_sha256", lambda: changed)
+
+    def fail_if_source_opened(_: dict[str, Path]) -> dict[str, pd.DataFrame]:
+        raise AssertionError("코드 변경 후에는 CSV를 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(runner, "_read_sources", fail_if_source_opened)
+    with pytest.raises(ValueError, match="실행 전에 코드 파일이 변경"):
+        runner.run_comparison(
+            {}, observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00")
+        )
+
+
 def test_cli_does_not_write_nonfinite_json(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -453,6 +471,8 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     assert live["summary"] == fixed["summary"]
     assert live["source_snapshots"]["order_extracted_at"] == end.isoformat()
     assert "source_sha256" not in live
+    assert selected["code_sha256"] == runner.model_code_sha256()
+    assert live["code_sha256"] == selected["code_sha256"]
 
 
 def test_memory_source_requires_snapshot_metadata() -> None:
