@@ -79,3 +79,48 @@ def test_latest_history_uses_timestamp_then_id() -> None:
 
     assert result.status_mismatch_order_count == 0
     assert result.orders["order_id"].tolist() == [1]
+
+
+def test_cutoff_quarantine_does_not_use_later_status_to_remove_past_order() -> None:
+    """컷 이후 전이는 보존하되 과거 주문의 격리 근거로 쓰지 않습니다."""
+    orders = pd.DataFrame(
+        {
+            "order_id": [1, 2, 3, 4],
+            "order_status": ["CONFIRMED", "CONFIRMED", "PAID", "PAID"],
+            "paid_at": ["2026-01-01T00:00:00Z"] * 3 + ["2026-08-01T00:00:00Z"],
+        }
+    )
+    histories = pd.DataFrame(
+        {
+            "history_id": [11, 12, 21, 31, 41],
+            "order_id": [1, 1, 2, 3, 4],
+            "to_status": ["PAID", "DELIVERED", "PAID", "PAID", "PAID"],
+            "changed_at": [
+                "2026-01-01T00:00:00Z",
+                "2026-08-02T00:00:00Z",
+                "2026-01-01T00:00:00Z",
+                "2026-08-02T00:00:00Z",
+                "2026-08-02T00:00:00Z",
+            ],
+        }
+    )
+    items = pd.DataFrame(
+        {"order_item_id": [101, 201, 301, 401], "order_id": [1, 2, 3, 4]}
+    )
+    claims = pd.DataFrame(columns=["claim_id", "order_id"])
+    claim_items = pd.DataFrame(columns=["claim_item_id", "claim_id"])
+
+    result = quarantine_unrestorable_orders(
+        orders,
+        items,
+        histories,
+        claims,
+        claim_items,
+        as_of_at=pd.Timestamp("2026-06-01T00:00:00Z"),
+    )
+
+    assert result.orders["order_id"].tolist() == [1, 4]
+    assert result.status_histories["history_id"].tolist() == [11, 12, 41]
+    assert result.missing_history_order_count == 1
+    assert result.status_mismatch_order_count == 1
+    assert orders["order_id"].tolist() == [1, 2, 3, 4]
