@@ -16,6 +16,7 @@ from scripts.modeling.lightgbm_baseline import (
 )
 from scripts.modeling.maturity_analysis import add_split_ipcw_weights
 from scripts.modeling.operational_aft_input import build_service_aft_training_rows
+from scripts.modeling.operational_asof import _utc
 from scripts.modeling.operational_event_intervals import (
     build_operational_event_intervals,
 )
@@ -84,12 +85,14 @@ def build_refit_rows(
     sources: dict[str, pd.DataFrame], *, validation_end_at: pd.Timestamp
 ) -> pd.DataFrame:
     """Validation 종료 컷에서 라벨과 시점 피처를 새로 생성합니다. Test는 만들지 않습니다."""
+    sources = _eligible_training_sources(sources, validation_end_at=validation_end_at)
     quarantine = quarantine_unrestorable_orders(
         sources["orders"],
         sources["order_items"],
         sources["histories"],
         sources["claims"],
         sources["claim_items"],
+        as_of_at=validation_end_at,
     )
     orders = quarantine.orders
     items = quarantine.order_items
@@ -109,6 +112,48 @@ def build_refit_rows(
             rows, split_name="train", split_end_at=validation_end_at
         )
     )
+
+
+def _eligible_training_sources(
+    sources: dict[str, pd.DataFrame], *, validation_end_at: pd.Timestamp
+) -> dict[str, pd.DataFrame]:
+    """컷 전 결제 주문과 연결 원천만 남기되 해당 주문의 이후 클레임은 보존합니다."""
+    cutoff = _utc(validation_end_at, column="validation_end_at")
+    orders = sources["orders"]
+    paid_at = orders["paid_at"].map(
+        lambda value: None if pd.isna(value) else _utc(value, column="paid_at")
+    )
+    eligible = orders.loc[
+        paid_at.map(lambda value: value is not None and value <= cutoff)
+    ].copy()
+    items = (
+        sources["order_items"]
+        .loc[sources["order_items"]["order_id"].isin(eligible["order_id"])]
+        .copy()
+    )
+    histories = (
+        sources["histories"]
+        .loc[sources["histories"]["order_id"].isin(eligible["order_id"])]
+        .copy()
+    )
+    claims = (
+        sources["claims"]
+        .loc[sources["claims"]["order_id"].isin(eligible["order_id"])]
+        .copy()
+    )
+    claim_items = (
+        sources["claim_items"]
+        .loc[sources["claim_items"]["claim_id"].isin(claims["claim_id"])]
+        .copy()
+    )
+    return {
+        **sources,
+        "orders": eligible,
+        "order_items": items,
+        "histories": histories,
+        "claims": claims,
+        "claim_items": claim_items,
+    }
 
 
 def freeze_models(
