@@ -15,8 +15,15 @@ from scripts.modeling.artifacts import (
     load_model_artifact,
     save_model_artifact,
 )
-from scripts.modeling.current_prediction import predict_current_repurchase_probability
-from scripts.modeling.features import FEATURE_GENERATION_VERSION
+from scripts.modeling.current_prediction import (
+    predict_current_repurchase_probability,
+    predict_temporal_service_current_probability,
+)
+from scripts.modeling.features import (
+    FEATURE_GENERATION_VERSION,
+    TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION,
+)
+from scripts.modeling.operational_event_intervals import OperationalEventIntervals
 from scripts.modeling.xgboost_aft import (
     XGBoostAFTError,
     XGBoostAFTTrainingResult,
@@ -109,7 +116,9 @@ def test_elapsed_and_duration_must_have_identical_index_order() -> None:
         )
 
 
-def _trained_model() -> XGBoostAFTTrainingResult:
+def _trained_model(
+    version: int = FEATURE_GENERATION_VERSION,
+) -> XGBoostAFTTrainingResult:
     """저장 모델을 실제로 불러오는 통합 테스트용 작은 AFT 모델을 학습합니다."""
     rows = pd.DataFrame(
         {
@@ -120,6 +129,7 @@ def _trained_model() -> XGBoostAFTTrainingResult:
             "survival_observed_duration_days": [10.0, 20.0, 30.0, 40.0],
             "survival_event_observed": [True, False, True, False],
             "split": "train",
+            "feature_generation_version": version,
         }
     )
     return train_xgboost_aft_model(build_xgboost_aft_training_data(rows))
@@ -197,5 +207,83 @@ def test_fixed_horizon_lightgbm_is_not_a_conditional_survival_model() -> None:
             artifact,
             _purchase_events(),
             as_of_timestamp=pd.Timestamp("2026-01-21T00:00:00Z"),
+            window_days=30,
+        )
+
+
+def _service_events() -> tuple[OperationalEventIntervals, pd.DataFrame]:
+    paid = pd.to_datetime(
+        ["2026-01-01T00:00:00Z", "2026-01-11T00:00:00Z", "2026-01-31T00:00:00Z"]
+    )
+    orders = pd.DataFrame(
+        {"user_id": ["u1"] * 3, "order_id": ["o1", "o2", "o3"], "paid_at": paid}
+    )
+    user = pd.DataFrame(
+        {
+            "user_id": ["u1"] * 3,
+            "order_id": orders["order_id"],
+            "valid_from": paid,
+            "valid_until": pd.to_datetime([None, "2026-01-20T00:00:00Z", None]),
+        }
+    )
+    pet = user.copy()
+    pet["pet_id"] = "p1"
+    pet["product_group_id_snapshot"] = "g1"
+    return OperationalEventIntervals(user_orders=user, pet_targets=pet), orders
+
+
+def test_temporal_service_current_prediction_uses_as_of_purchase_state(
+    tmp_path,
+) -> None:
+    """환불 전후의 유효 앵커가 달라지고 미래 주문은 현재 예측에 섞이지 않습니다."""
+    artifact = load_model_artifact(
+        save_model_artifact(
+            _trained_model(TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION),
+            tmp_path / "service-aft",
+            horizon_days=30,
+        )
+    )
+    events, orders = _service_events()
+    before = predict_temporal_service_current_probability(
+        artifact,
+        events,
+        orders,
+        as_of_timestamp=pd.Timestamp("2026-01-15T00:00:00Z"),
+        window_days=30,
+    )
+    after = predict_temporal_service_current_probability(
+        artifact,
+        events,
+        orders,
+        as_of_timestamp=pd.Timestamp("2026-02-01T00:00:00Z"),
+        window_days=30,
+    )
+
+    assert before.loc[0, ["user_id", "pet_id", "target_id", "order_id"]].tolist() == [
+        "u1",
+        "p1",
+        "g1",
+        "o2",
+    ]
+    assert before.loc[0, "elapsed_days"] == 4
+    assert after.loc[0, "order_id"] == "o3"
+    assert after.loc[0, "elapsed_days"] == 1
+    assert before.loc[0, "artifact_id"] == artifact.artifact_id
+    assert 0 <= before.loc[0, "conditional_repurchase_probability"] <= 1
+    assert 0 <= after.loc[0, "conditional_repurchase_probability"] <= 1
+
+
+def test_temporal_service_current_prediction_rejects_v1_model(tmp_path) -> None:
+    """동일한 피처 열 이름이어도 UCI 버전 1 모델은 서비스 이력에 쓰지 않습니다."""
+    artifact = load_model_artifact(
+        save_model_artifact(_trained_model(), tmp_path / "uci-aft", horizon_days=30)
+    )
+    events, orders = _service_events()
+    with pytest.raises(ModelArtifactError, match="버전 2"):
+        predict_temporal_service_current_probability(
+            artifact,
+            events,
+            orders,
+            as_of_timestamp=pd.Timestamp("2026-01-15T00:00:00Z"),
             window_days=30,
         )

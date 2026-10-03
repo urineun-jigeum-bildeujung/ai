@@ -71,7 +71,7 @@ def build_order_item_quantity_intervals(
         raise OperationalOrderError("클레임 상품에 존재하지 않는 클레임이 있습니다.")
     if not claim_items["order_item_id"].isin(order_items["order_item_id"]).all():
         raise OperationalOrderError("클레임 상품에 존재하지 않는 주문상품이 있습니다.")
-    if not claims["claim_type"].isin({"CANCEL", "RETURN"}).all():
+    if not claims["claim_type"].isin({"CANCEL", "RETURN", "EXCHANGE"}).all():
         raise OperationalOrderError("지원하지 않는 클레임 유형이 있습니다.")
     if (
         not claims["claim_status"]
@@ -79,6 +79,10 @@ def build_order_item_quantity_intervals(
         .all()
     ):
         raise OperationalOrderError("지원하지 않는 클레임 상태가 있습니다.")
+    if (
+        claims["claim_type"].eq("EXCHANGE") & claims["claim_status"].eq("COMPLETED")
+    ).any():
+        raise OperationalOrderError("완료된 교환의 구매 수량 복원 규칙이 없습니다.")
 
     paid_at = {
         order_id: None if pd.isna(value) else _utc(value, column="paid_at")

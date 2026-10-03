@@ -71,11 +71,12 @@ def test_candidate_rejects_same_labels_in_different_order() -> None:
         )
 
 
-def test_brier_attribution_reconciles_history_and_product_group() -> None:
-    """두 분해 축의 전역 기여도 합계가 같은 전체 Brier 차이로 돌아옵니다."""
+def test_brier_attribution_reconciles_history_user_orders_and_product_group() -> None:
+    """세 분해 축의 전역 기여도 합계가 같은 전체 Brier 차이로 돌아옵니다."""
     rows = _weighted_validation()
     rows["target_id"] = ["g1", "g1", "g2", "g2"]
     rows["history_interval_count"] = [0, 0, 1, 2]
+    rows["user_prior_order_count"] = [0, 1, 1, 3]
     rows["ipcw_event_within_horizon"] = [True, False, True, False]
     rows["ipcw_weight"] = [1.0, 2.0, 1.0, 2.0]
     rows["reference_predicted_event_probability"] = [0.2, 0.2, 0.8, 0.8]
@@ -88,14 +89,53 @@ def test_brier_attribution_reconciles_history_and_product_group() -> None:
     products = attribution.loc[
         attribution["segment_kind"].eq("product_group")
     ].set_index("segment_value")
+    user_orders = attribution.loc[
+        attribution["segment_kind"].eq("user_prior_order_count")
+    ].set_index("segment_value")
 
     assert history["outcome_known_count"].sum() == 4
     assert products["outcome_known_count"].sum() == 4
+    assert user_orders["outcome_known_count"].sum() == 4
     assert history["global_brier_contribution"].sum() == pytest.approx(0.24)
     assert products["global_brier_contribution"].sum() == pytest.approx(0.24)
+    assert user_orders["global_brier_contribution"].sum() == pytest.approx(0.24)
+    assert user_orders.loc["0", "global_brier_contribution"] == pytest.approx(0.065)
+    assert user_orders.loc["1", "global_brier_contribution"] == pytest.approx(0.015)
+    assert user_orders.loc["3", "global_brier_contribution"] == pytest.approx(0.16)
     assert history.loc["0", "global_brier_contribution"] == pytest.approx(0.075)
     assert history.loc["1", "global_brier_contribution"] == pytest.approx(0.005)
     assert history.loc["2+", "global_brier_contribution"] == pytest.approx(0.16)
+
+
+def test_brier_attribution_preserves_large_user_order_count_exactly() -> None:
+    rows = _weighted_validation()
+    rows["target_id"] = ["g1"] * 4
+    rows["history_interval_count"] = [0] * 4
+    rows["user_prior_order_count"] = [2**53 + 1, 0, 0, 0]
+    rows["reference_predicted_event_probability"] = [0.2] * 4
+    rows["candidate_predicted_event_probability"] = [0.3] * 4
+
+    attribution = summarize_service_brier_attribution(rows)
+    counts = attribution.loc[
+        attribution["segment_kind"].eq("user_prior_order_count"), "segment_value"
+    ]
+
+    assert str(2**53 + 1) in counts.tolist()
+    assert str(2**53) not in counts.tolist()
+
+
+def test_brier_attribution_rejects_user_order_count_above_int64() -> None:
+    rows = _weighted_validation()
+    rows["target_id"] = ["g1"] * 4
+    rows["history_interval_count"] = [0] * 4
+    rows["user_prior_order_count"] = pd.Series(
+        [2**63, 0, 0, 0], index=rows.index, dtype="object"
+    )
+    rows["reference_predicted_event_probability"] = [0.2] * 4
+    rows["candidate_predicted_event_probability"] = [0.3] * 4
+
+    with pytest.raises(OperationalOrderError, match="int64 범위"):
+        summarize_service_brier_attribution(rows)
 
 
 @pytest.mark.parametrize("invalid", [None, -1, 1.5, float("inf")])
@@ -103,10 +143,24 @@ def test_brier_attribution_rejects_invalid_history_count(invalid: object) -> Non
     rows = _weighted_validation()
     rows["target_id"] = ["g1"] * 4
     rows["history_interval_count"] = [0, 1, 2, invalid]
+    rows["user_prior_order_count"] = [0, 1, 2, 3]
     rows["reference_predicted_event_probability"] = [0.2] * 4
     rows["candidate_predicted_event_probability"] = [0.3] * 4
 
     with pytest.raises(OperationalOrderError, match="과거 구매 간격 수"):
+        summarize_service_brier_attribution(rows)
+
+
+@pytest.mark.parametrize("invalid", [None, -1, 1.5, float("inf")])
+def test_brier_attribution_rejects_invalid_user_order_count(invalid: object) -> None:
+    rows = _weighted_validation()
+    rows["target_id"] = ["g1"] * 4
+    rows["history_interval_count"] = [0, 1, 2, 3]
+    rows["user_prior_order_count"] = [0, 1, 2, invalid]
+    rows["reference_predicted_event_probability"] = [0.2] * 4
+    rows["candidate_predicted_event_probability"] = [0.3] * 4
+
+    with pytest.raises(OperationalOrderError, match="사용자 과거 주문 수"):
         summarize_service_brier_attribution(rows)
 
 
@@ -343,7 +397,11 @@ def test_comparison_trains_both_models_and_preserves_validation_count() -> None:
         "xgboost_aft": 6,
         "lightgbm": 6,
     }
-    for segment_kind in ("history_interval_count", "product_group"):
+    for segment_kind in (
+        "history_interval_count",
+        "user_prior_order_count",
+        "product_group",
+    ):
         contribution = comparison.brier_attribution.loc[
             comparison.brier_attribution["segment_kind"].eq(segment_kind),
             "global_brier_contribution",

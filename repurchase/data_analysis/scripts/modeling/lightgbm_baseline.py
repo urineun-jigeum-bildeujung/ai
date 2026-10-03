@@ -17,7 +17,12 @@ import pandas as pd
 from lightgbm import LGBMClassifier
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 
-from .features import MINIMAL_MODEL_FEATURE_COLUMNS, select_minimal_model_features
+from .features import (
+    FEATURE_GENERATION_VERSION,
+    MINIMAL_MODEL_FEATURE_COLUMNS,
+    read_feature_generation_version,
+    select_minimal_model_features,
+)
 
 
 class LightGBMBaselineError(ValueError):
@@ -64,6 +69,7 @@ class LightGBMTrainingData:
     features: pd.DataFrame
     target: pd.Series
     sample_weight: pd.Series
+    feature_generation_version: int = FEATURE_GENERATION_VERSION
 
 
 def _validate_training_rows(rows: pd.DataFrame) -> int:
@@ -96,6 +102,7 @@ def build_lightgbm_training_data(
 ) -> LightGBMTrainingData:
     """정답을 확인할 수 있는 Train 행으로 LightGBM 학습 입력을 만듭니다."""
     horizon_days = _validate_training_rows(rows)
+    feature_generation_version = read_feature_generation_version(rows)
 
     outcome_known = rows["ipcw_outcome_known"]
     if outcome_known.isna().any() or not is_bool_dtype(outcome_known.dtype):
@@ -143,6 +150,7 @@ def build_lightgbm_training_data(
         features=features,
         target=encoded_target,
         sample_weight=normalized_weight,
+        feature_generation_version=feature_generation_version,
     )
 
 
@@ -160,6 +168,9 @@ def train_lightgbm_classifier(
     )
     # 30일 정답으로 학습한 모델을 다른 기간의 확률로 잘못 배포하지 않도록 보존합니다.
     model.repurchase_horizon_days = training_data.horizon_days
+    model.repurchase_feature_generation_version = (
+        training_data.feature_generation_version
+    )
     return model
 
 
