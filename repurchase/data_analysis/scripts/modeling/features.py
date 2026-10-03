@@ -8,6 +8,7 @@ LightGBM과 XGBoost AFT가 서로 다른 입력 정보를 사용하면 모델 �
 from __future__ import annotations
 
 from collections.abc import Sequence
+from numbers import Integral
 from typing import Final
 
 import numpy as np
@@ -24,6 +25,10 @@ class ModelFeatureError(ValueError):
 # 아래 버전은 열 이름뿐 아니라 과거 간격·주문 수의 계산 의미를 나타냅니다.
 # samples.py와 inference_features.py의 계산 규칙이 바뀌면 버전을 올리고 재학습합니다.
 FEATURE_GENERATION_VERSION: Final[int] = 1
+TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION: Final[int] = 2
+SUPPORTED_FEATURE_GENERATION_VERSIONS: Final[frozenset[int]] = frozenset(
+    {FEATURE_GENERATION_VERSION, TEMPORAL_SERVICE_FEATURE_GENERATION_VERSION}
+)
 MINIMAL_MODEL_FEATURE_COLUMNS: Final[tuple[str, ...]] = (
     "history_interval_count",
     "history_median_days",
@@ -42,6 +47,32 @@ OPTIONAL_CONTINUOUS_FEATURE_COLUMNS: Final[tuple[str, ...]] = (
     "history_median_days",
     "history_relative_mad",
 )
+
+
+def read_feature_generation_version(
+    rows: pd.DataFrame, *, require_explicit: bool = False
+) -> int:
+    """학습·추론 행의 피처 의미 버전을 읽고 혼합 버전을 거절합니다."""
+    if not rows.columns.is_unique:
+        raise ModelFeatureError("피처 컬럼 이름이 중복됐습니다.")
+    if "feature_generation_version" not in rows.columns:
+        if require_explicit:
+            raise ModelFeatureError("피처 생성 규칙 버전이 누락됐습니다.")
+        return FEATURE_GENERATION_VERSION
+    versions = rows["feature_generation_version"]
+    if versions.empty or versions.isna().any():
+        raise ModelFeatureError("피처 생성 규칙 버전이 비어 있거나 결측입니다.")
+    unique = versions.drop_duplicates()
+    if len(unique) != 1:
+        raise ModelFeatureError("서로 다른 피처 생성 규칙 버전을 섞을 수 없습니다.")
+    value = unique.iloc[0]
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, Integral)
+        or value not in SUPPORTED_FEATURE_GENERATION_VERSIONS
+    ):
+        raise ModelFeatureError("지원하지 않는 피처 생성 규칙 버전입니다.")
+    return int(value)
 
 
 def _validate_count_features(features: pd.DataFrame) -> None:

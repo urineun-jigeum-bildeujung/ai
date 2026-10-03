@@ -222,7 +222,7 @@ def _validate_aft_inner_split(inner_split: ServiceTemporalSplit) -> None:
 
 
 def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
-    """같은 정답 확인 행의 Brier 차이를 이력량·상품군별로 분해합니다.
+    """같은 정답 확인 행의 Brier 차이를 이력량·주문 수·상품군별로 분해합니다.
 
     각 기여도의 분모는 Validation 정답 확인 행의 **전체 IPCW 가중치**입니다.
     따라서 같은 축의 구간 기여도를 합하면 전체 AFT−LightGBM Brier와
@@ -232,6 +232,7 @@ def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
         "user_id",
         "target_id",
         "history_interval_count",
+        "user_prior_order_count",
         "reference_predicted_event_probability",
         "candidate_predicted_event_probability",
     }
@@ -242,15 +243,19 @@ def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
         raise OperationalOrderError(
             "Brier 기여도 사용자·상품군 키에 결측값이 있습니다."
         )
-    count_values = pd.to_numeric(
-        rows["history_interval_count"], errors="coerce"
-    ).to_numpy(dtype="float64", na_value=np.nan)
-    if (
-        not np.isfinite(count_values).all()
-        or (count_values < 0).any()
-        or not np.equal(count_values, np.floor(count_values)).all()
+    for column, label in (
+        ("history_interval_count", "과거 구매 간격 수"),
+        ("user_prior_order_count", "사용자 과거 주문 수"),
     ):
-        raise OperationalOrderError("과거 구매 간격 수는 0 이상의 정수여야 합니다.")
+        count_values = pd.to_numeric(rows[column], errors="coerce").to_numpy(
+            dtype="float64", na_value=np.nan
+        )
+        if (
+            not np.isfinite(count_values).all()
+            or (count_values < 0).any()
+            or not np.equal(count_values, np.floor(count_values)).all()
+        ):
+            raise OperationalOrderError(f"{label}는 0 이상의 정수여야 합니다.")
 
     # 기존 평가 계약으로 두 확률·가중치·정답을 먼저 검증합니다.
     for column in (
@@ -275,11 +280,14 @@ def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
         bins=[-0.5, 0.5, 1.5, float("inf")],
         labels=["0", "1", "2+"],
     )
+    # 임의의 빈도 임계값 없이 실제 과거 주문 수 각각의 오차를 남깁니다.
+    known["user_order_count"] = known["user_prior_order_count"].astype("int64")
     known["product_group"] = known["target_id"].astype("string")
     total_weight = float(weights.sum())
     results: list[pd.DataFrame] = []
     for segment_kind, column in (
         ("history_interval_count", "history_bucket"),
+        ("user_prior_order_count", "user_order_count"),
         ("product_group", "product_group"),
     ):
         grouped = (
@@ -311,7 +319,11 @@ def summarize_service_brier_attribution(rows: pd.DataFrame) -> pd.DataFrame:
         (known["aft_weighted_error"] - known["lightgbm_weighted_error"]).sum()
         / total_weight
     )
-    for segment_kind in ("history_interval_count", "product_group"):
+    for segment_kind in (
+        "history_interval_count",
+        "user_prior_order_count",
+        "product_group",
+    ):
         contribution = float(
             attribution.loc[
                 attribution["segment_kind"].eq(segment_kind),
