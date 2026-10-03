@@ -36,6 +36,10 @@ from scripts.run_service_model_comparison import (
     model_code_sha256,
 )
 
+HORIZON_DAYS = 30
+AFT_BOOST_ROUNDS = 20
+AFT_LOSS_DISTRIBUTION_SCALE = 1.0
+
 
 def run_calibration(
     paths: dict[str, Path],
@@ -47,6 +51,7 @@ def run_calibration(
     inner_train_ratio: float = 0.80,
     bootstrap_replicates: int = 1_000,
 ) -> dict[str, object]:
+    """원천 감사부터 보정 평가까지 실행하고 입력·설정·지표를 반환합니다."""
     end = pd.Timestamp(observation_end_at)
     if pd.isna(end) or end.tzinfo is None:
         raise ValueError("관측 종료 시각에는 시간대가 필요합니다.")
@@ -94,6 +99,9 @@ def run_calibration(
         inner,
         outer,
         landmark_days=landmark_days,
+        horizon_days=HORIZON_DAYS,
+        aft_boost_rounds=AFT_BOOST_ROUNDS,
+        aft_loss_distribution_scale=AFT_LOSS_DISTRIBUTION_SCALE,
         bootstrap_replicates=bootstrap_replicates,
     )
     if model_code_sha256() != code_hashes:
@@ -114,8 +122,11 @@ def run_calibration(
         "calibration_end_at": train_end.isoformat(),
         "outer_validation_end_at": validation_end.isoformat(),
         "landmark_days": list(landmark_days),
-        "horizon_days": 30,
-        "aft_configuration": {"num_boost_round": 20, "loss_distribution_scale": 1.0},
+        "horizon_days": HORIZON_DAYS,
+        "aft_configuration": {
+            "num_boost_round": AFT_BOOST_ROUNDS,
+            "loss_distribution_scale": AFT_LOSS_DISTRIBUTION_SCALE,
+        },
         "same_inner_train_aft_for_both_candidates": True,
         "test_evaluated": False,
         "summary": trial.summary.to_dict(orient="records"),
@@ -131,6 +142,7 @@ def run_calibration(
 
 
 def main() -> int:
+    """로컬 CSV와 관측 컷을 받아 기존 결과를 덮어쓰지 않고 저장합니다."""
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("orders", "order_items", "pets", "histories", "claims", "claim_items"):
         parser.add_argument(f"--{name.replace('_', '-')}", required=True, type=Path)
