@@ -96,6 +96,18 @@ def test_library_entry_rejects_invalid_options_before_reading_csv(
         )
 
 
+@pytest.mark.parametrize("days", [(), (7, 7), (-1,), (True,)])
+def test_library_rejects_invalid_landmarks_before_reading_csv(
+    days: tuple[object, ...],
+) -> None:
+    with pytest.raises(ValueError, match="조건부 평가 시점"):
+        runner.run_comparison(
+            {},
+            observation_end_at=pd.Timestamp("2026-09-29T15:44:00+09:00"),
+            conditional_landmark_days=days,
+        )
+
+
 def test_library_rejects_code_changed_after_import_before_source_read(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -472,6 +484,8 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
                 summary={"point_brier_improvement": 0.01},
                 trials=pd.DataFrame([{"brier_improvement": 0.01}]),
             ),
+            conditional_landmarks=None,
+            conditional_calibration=None,
         )
 
     monkeypatch.setattr(runner, "compare_service_aft_lightgbm", record_outer_training)

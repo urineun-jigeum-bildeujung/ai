@@ -288,6 +288,33 @@ def test_service_comparison_adds_group_baseline_on_same_validation_rows() -> Non
     json.dumps(summary.reset_index().to_dict(orient="records"), allow_nan=False)
 
 
+def test_service_comparison_evaluates_fixed_aft_at_landmarks() -> None:
+    split = ServiceTemporalSplit(
+        train=_service_rows(split_name="train"),
+        validation=_service_rows(split_name="validation"),
+    )
+
+    comparison = compare_service_aft_lightgbm(
+        split,
+        bootstrap_replicates=10,
+        conditional_landmark_days=(0, 7),
+    )
+
+    landmarks = comparison.conditional_landmarks
+    calibration = comparison.conditional_calibration
+    assert landmarks is not None
+    assert calibration is not None
+    assert landmarks["elapsed_days"].tolist() == [0, 7]
+    assert landmarks["source_validation_count"].eq(6).all()
+    assert landmarks["at_risk_count"].le(6).all()
+    assert landmarks["outcome_known_count"].gt(0).all()
+    assert landmarks.loc[0, "ipcw_brier_score"] == pytest.approx(
+        comparison.summary.set_index("model").loc["xgboost_aft", "ipcw_brier_score"]
+    )
+    assert calibration.groupby("elapsed_days")["sample_count"].sum().gt(0).all()
+    json.dumps(landmarks.to_dict(orient="records"), allow_nan=False)
+
+
 def test_aft_round_selection_uses_inner_validation_only() -> None:
     """후보 모두 같은 내부 정답 확인 행으로 점수를 매깁니다."""
     split = ServiceTemporalSplit(
