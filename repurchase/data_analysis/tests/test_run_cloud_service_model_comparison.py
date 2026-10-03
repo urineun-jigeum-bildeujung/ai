@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -114,3 +115,63 @@ def test_invalid_bootstrap_rejected_before_db_access(
         )
         == 2
     )
+
+
+def test_missing_output_directory_rejected_before_db_access(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        runner,
+        "read_cloud_snapshots",
+        lambda **_: pytest.fail("결과 경로 오류에서 DB를 읽었습니다."),
+    )
+    output = tmp_path / "missing" / "result.json"
+    assert (
+        runner.main(
+            [
+                "--observation-end-at",
+                "2026-09-29T15:44:00+09:00",
+                "--output",
+                str(output),
+            ]
+        )
+        == 2
+    )
+    assert json.loads(capsys.readouterr().err)["message"] == (
+        "결과 파일의 상위 디렉터리가 없습니다."
+    )
+
+
+def test_write_failure_returns_structured_error_without_path(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(runner, "read_cloud_snapshots", lambda **_: _snapshots())
+    monkeypatch.setattr(runner, "compare_snapshots", lambda *_, **__: {"summary": []})
+
+    def fail_write(*_: object, **__: object) -> None:
+        raise PermissionError("private path")
+
+    monkeypatch.setattr(Path, "write_text", fail_write)
+    output = tmp_path / "result.json"
+    assert (
+        runner.main(
+            [
+                "--observation-end-at",
+                "2026-09-29T15:44:00+09:00",
+                "--output",
+                str(output),
+            ]
+        )
+        == 1
+    )
+    error_output = capsys.readouterr().err
+    assert json.loads(error_output) == {
+        "event": "repurchase_model_comparison_failed",
+        "error_type": "PermissionError",
+    }
+    assert "private path" not in error_output
+    assert not output.exists()
