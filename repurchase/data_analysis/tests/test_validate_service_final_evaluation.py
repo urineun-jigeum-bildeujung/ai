@@ -19,6 +19,7 @@ from scripts.run_service_model_comparison import _file_sha256
 def frozen_inputs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> tuple[dict, dict, dict[str, Path]]:
+    """동일 원천·설정·디스크 코드 지문을 가진 최소 사전검증 입력을 만듭니다."""
     # CI의 경량 테스트 환경에는 학습 패키지의 메타데이터가 없을 수 있습니다.
     package_versions = {"pandas": "2.3.3", "xgboost": "3.2.0", "lightgbm": "4.7.0"}
     monkeypatch.setattr(preflight, "version", package_versions.__getitem__)
@@ -73,6 +74,7 @@ def frozen_inputs(
             "validation_fraction",
             "feature_generation_version",
             "runtime_versions",
+            "code_sha256",
         )
     }
     comparison["test_evaluated"] = False
@@ -99,6 +101,7 @@ def frozen_inputs(
 
 
 def test_preflight_accepts_matching_frozen_inputs(frozen_inputs: tuple) -> None:
+    """고정 설정·파일 지문이 모두 일치하면 입력 계약만 승인합니다."""
     manifest, comparison, sources = frozen_inputs
 
     result = preflight.validate_manifest(manifest, comparison, sources)
@@ -109,6 +112,7 @@ def test_preflight_accepts_matching_frozen_inputs(frozen_inputs: tuple) -> None:
 
 
 def test_preflight_rejects_changed_source_file(frozen_inputs: tuple) -> None:
+    """원천 CSV의 바이트가 바뀌면 승인한 스냅샷으로 취급하지 않습니다."""
     manifest, comparison, sources = frozen_inputs
     sources["orders"].write_text("changed\n", encoding="utf-8")
 
@@ -137,6 +141,7 @@ def test_preflight_rejects_changed_contract_before_source_access(
     value: object,
     message: str,
 ) -> None:
+    """설정 불일치는 원천 파일 해시 계산보다 먼저 거절합니다."""
     manifest, comparison, sources = frozen_inputs
     manifest[field] = value
 
@@ -149,6 +154,7 @@ def test_preflight_rejects_changed_contract_before_source_access(
 
 
 def test_preflight_rejects_result_with_test_evaluated(frozen_inputs: tuple) -> None:
+    """이미 Test를 본 결과를 Validation 기준으로 재사용하지 않습니다."""
     manifest, comparison, sources = frozen_inputs
     comparison["test_evaluated"] = True
 
@@ -159,6 +165,7 @@ def test_preflight_rejects_result_with_test_evaluated(frozen_inputs: tuple) -> N
 def test_preflight_rejects_changed_validation_model_settings(
     frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Validation에 기록된 학습 설정이 승인값과 다르면 거절합니다."""
     manifest, comparison, sources = frozen_inputs
     comparison["model_configuration"]["lightgbm"]["parameters"]["n_estimators"] = 200
 
@@ -173,6 +180,7 @@ def test_preflight_rejects_changed_validation_model_settings(
 def test_preflight_rejects_changed_validation_population_policy(
     frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Validation의 모집단 정책이 바뀌면 원천 접근 전에 거절합니다."""
     manifest, comparison, sources = frozen_inputs
     comparison["evaluation_population_policy"]["unknown_outcome"] = "drop_row"
 
@@ -181,4 +189,36 @@ def test_preflight_rejects_changed_validation_population_policy(
 
     monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
     with pytest.raises(ValueError, match="모집단·제외 기준"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_validation_from_different_model_code(
+    frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """현재 코드로 manifest를 만들어도 과거 코드의 Validation 결과는 거절합니다."""
+    manifest, comparison, sources = frozen_inputs
+    comparison["code_sha256"] = dict(comparison["code_sha256"])
+    comparison["code_sha256"]["run_service_model_comparison.py"] = "0" * 64
+
+    def fail_if_source_opened(_: Path) -> str:
+        raise AssertionError("코드 지문 불일치 뒤에는 원천 파일을 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
+    with pytest.raises(ValueError, match="Validation 결과.*모델 코드 SHA-256"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_legacy_validation_without_code_hash(
+    frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """기존 결과의 지문 누락을 원천 파일 접근 이전에 거절합니다."""
+    manifest, comparison, sources = frozen_inputs
+    del comparison["code_sha256"]
+
+    def fail_if_source_opened(_: Path) -> str:
+        raise AssertionError("지문 누락 뒤에는 원천 파일을 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
+
+    with pytest.raises(ValueError, match="Validation 결과.*모델 코드 SHA-256"):
         preflight.validate_manifest(manifest, comparison, sources)
