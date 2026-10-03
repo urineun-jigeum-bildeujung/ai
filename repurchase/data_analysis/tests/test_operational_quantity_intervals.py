@@ -140,3 +140,23 @@ def test_nonempty_claim_quantity_still_requires_integer() -> None:
 
     with pytest.raises(OperationalOrderError, match="quantity"):
         build_order_item_quantity_intervals(orders, items, claims, claim_items)
+
+
+def test_requested_exchange_does_not_change_purchase_quantity() -> None:
+    orders, items, claims, claim_items = _sources()
+    claims.loc[3, "claim_type"] = "EXCHANGE"
+
+    intervals = build_order_item_quantity_intervals(orders, items, claims, claim_items)
+
+    assert _remaining_at(intervals, "i1", "2026-01-04T00:00:00Z") == 5
+    assert _remaining_at(intervals, "i2", "2026-01-11T00:00:00Z") == 2
+
+
+def test_completed_exchange_requires_explicit_quantity_rule() -> None:
+    orders, items, claims, claim_items = _sources()
+    claims.loc[3, "claim_type"] = "EXCHANGE"
+    claims.loc[3, "claim_status"] = "COMPLETED"
+    claims.loc[3, "completed_at"] = "2026-01-12T00:00:00Z"
+
+    with pytest.raises(OperationalOrderError, match="완료된 교환"):
+        build_order_item_quantity_intervals(orders, items, claims, claim_items)
