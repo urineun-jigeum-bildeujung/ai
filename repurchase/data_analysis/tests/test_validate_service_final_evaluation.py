@@ -73,6 +73,7 @@ def frozen_inputs(
             "validation_fraction",
             "feature_generation_version",
             "runtime_versions",
+            "code_sha256",
         )
     }
     comparison["test_evaluated"] = False
@@ -181,4 +182,30 @@ def test_preflight_rejects_changed_validation_population_policy(
 
     monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
     with pytest.raises(ValueError, match="모집단·제외 기준"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_validation_from_different_model_code(
+    frozen_inputs: tuple, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """현재 코드로 manifest를 만들어도 과거 코드의 Validation 결과는 거절합니다."""
+    manifest, comparison, sources = frozen_inputs
+    comparison["code_sha256"] = dict(comparison["code_sha256"])
+    comparison["code_sha256"]["run_service_model_comparison.py"] = "0" * 64
+
+    def fail_if_source_opened(_: Path) -> str:
+        raise AssertionError("코드 지문 불일치 뒤에는 원천 파일을 읽으면 안 됩니다.")
+
+    monkeypatch.setattr(preflight, "_file_sha256", fail_if_source_opened)
+    with pytest.raises(ValueError, match="Validation 결과.*모델 코드 SHA-256"):
+        preflight.validate_manifest(manifest, comparison, sources)
+
+
+def test_preflight_rejects_legacy_validation_without_code_hash(
+    frozen_inputs: tuple,
+) -> None:
+    manifest, comparison, sources = frozen_inputs
+    del comparison["code_sha256"]
+
+    with pytest.raises(ValueError, match="Validation 결과.*모델 코드 SHA-256"):
         preflight.validate_manifest(manifest, comparison, sources)

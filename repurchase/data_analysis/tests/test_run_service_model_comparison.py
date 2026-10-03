@@ -453,6 +453,8 @@ def test_selected_aft_setting_reaches_outer_training_and_fixed_path_stays_unchan
     assert live["summary"] == fixed["summary"]
     assert live["source_snapshots"]["order_extracted_at"] == end.isoformat()
     assert "source_sha256" not in live
+    assert selected["code_sha256"] == runner.model_code_sha256()
+    assert live["code_sha256"] == selected["code_sha256"]
 
 
 def test_memory_source_requires_snapshot_metadata() -> None:

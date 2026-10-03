@@ -23,7 +23,7 @@ from scripts.modeling.service_evaluation_population import (
     service_evaluation_population_policy,
 )
 from scripts.modeling.xgboost_aft import create_xgboost_aft_parameters
-from scripts.run_service_model_comparison import _file_sha256
+from scripts.run_service_model_comparison import MODEL_CODE_PATHS, _file_sha256
 
 SOURCE_NAMES = (
     "orders",
@@ -38,9 +38,7 @@ FROZEN_AFT = {
     "num_boost_round": 20,
     "loss_distribution_scale": 2.0,
 }
-CODE_PATHS = tuple(sorted((Path(__file__).parent / "modeling").glob("*.py"))) + (
-    Path(__file__).parent / "run_service_model_comparison.py",
-)
+CODE_PATHS = MODEL_CODE_PATHS
 
 
 def _aware_timestamp(value: object, name: str) -> pd.Timestamp:
@@ -194,6 +192,8 @@ def validate_manifest(
         code_paths
     ):
         raise ValueError("모델 코드 SHA-256 목록이 현재 코드와 다릅니다.")
+    if comparison.get("code_sha256") != expected_code_hashes:
+        raise ValueError("Validation 결과와 manifest의 모델 코드 SHA-256이 다릅니다.")
     for name, path in code_paths.items():
         if _file_sha256(path) != expected_code_hashes[name]:
             raise ValueError(f"{name} 모델 코드 SHA-256이 승인값과 다릅니다.")
