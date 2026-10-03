@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -21,7 +22,10 @@ from scripts.audit_cloud_source_reader import (
 )
 from scripts.modeling.cloud_source_reader import OrderSourceSnapshot, PetSourceSnapshot
 from scripts.modeling.operational_orders import OperationalOrderError
-from scripts.run_service_model_comparison import run_comparison
+from scripts.run_service_model_comparison import (
+    _validate_aft_round_selection,
+    run_comparison,
+)
 
 
 def compare_snapshots(
@@ -30,6 +34,11 @@ def compare_snapshots(
     *,
     observation_end_at: pd.Timestamp,
     bootstrap_replicates: int = 1_000,
+    train_fraction: float = 0.70,
+    validation_fraction: float = 0.85,
+    aft_round_candidates: tuple[int, ...] | None = None,
+    aft_scale_candidates: tuple[float, ...] | None = None,
+    inner_train_ratio: float = 0.8,
 ) -> dict[str, object]:
     """소유 관계와 관측 컷을 먼저 검증한 뒤 같은 모델 비교기에 전달합니다."""
     audit = audit_snapshots(orders, pets, as_of_timestamp=observation_end_at)
@@ -47,6 +56,11 @@ def compare_snapshots(
         source_metadata={"source_snapshots": asdict(audit)},
         observation_end_at=observation_end_at,
         bootstrap_replicates=bootstrap_replicates,
+        train_fraction=train_fraction,
+        validation_fraction=validation_fraction,
+        aft_round_candidates=aft_round_candidates,
+        aft_scale_candidates=aft_scale_candidates,
+        inner_train_ratio=inner_train_ratio,
     )
 
 
@@ -67,6 +81,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--observation-end-at", required=True)
     parser.add_argument("--bootstrap-replicates", type=int, default=1_000)
+    parser.add_argument("--train-fraction", type=float, default=0.70)
+    parser.add_argument("--validation-fraction", type=float, default=0.85)
+    parser.add_argument("--aft-round-candidates", type=int, nargs="+")
+    parser.add_argument("--aft-scale-candidates", type=float, nargs="+")
+    parser.add_argument("--inner-train-ratio", type=float, default=0.8)
     parser.add_argument("--prompt-password", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
@@ -74,6 +93,25 @@ def main(argv: list[str] | None = None) -> int:
         end = _parse_observation_end(args.observation_end_at)
         if args.bootstrap_replicates < 1:
             raise ValueError("Bootstrap 반복 횟수는 1 이상이어야 합니다.")
+        if not (
+            math.isfinite(args.train_fraction)
+            and math.isfinite(args.validation_fraction)
+            and 0 < args.train_fraction < args.validation_fraction < 1
+        ):
+            raise ValueError("시간 컷 비율은 0 < Train < Validation < 1이어야 합니다.")
+        candidate_rounds = (
+            tuple(args.aft_round_candidates)
+            if args.aft_round_candidates is not None
+            else None
+        )
+        candidate_scales = (
+            tuple(args.aft_scale_candidates)
+            if args.aft_scale_candidates is not None
+            else None
+        )
+        _validate_aft_round_selection(
+            candidate_rounds, candidate_scales, args.inner_train_ratio
+        )
         if args.output is not None and not args.output.parent.is_dir():
             raise ValueError("결과 파일의 상위 디렉터리가 없습니다.")
         orders, pets = read_cloud_snapshots(prompt_password=args.prompt_password)
@@ -82,6 +120,11 @@ def main(argv: list[str] | None = None) -> int:
             pets,
             observation_end_at=end,
             bootstrap_replicates=args.bootstrap_replicates,
+            train_fraction=args.train_fraction,
+            validation_fraction=args.validation_fraction,
+            aft_round_candidates=candidate_rounds,
+            aft_scale_candidates=candidate_scales,
+            inner_train_ratio=args.inner_train_ratio,
         )
         rendered = json.dumps(
             result, ensure_ascii=False, indent=2, default=str, allow_nan=False
