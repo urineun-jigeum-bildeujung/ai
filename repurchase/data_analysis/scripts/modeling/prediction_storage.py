@@ -81,13 +81,18 @@ def publish_prediction_publication(
     """한 배치를 발행하거나 동일 내용 재실행을 중복 없이 인정합니다.
 
     동일 멱등키의 다른 내용, 미완성 배치, DB 오류는 예외로 전달됩니다.
-    모든 새 행과 PUBLISHED 전환은 하나의 트랜잭션으로 롤백됩니다.
+    모든 새 행과 PUBLISHED/SHADOW 전환은 하나의 트랜잭션으로 롤백됩니다.
     """
     batches, results = validate_prediction_publications(
         candidate_batch, candidate_results
     )
-    if len(batches) != 1 or batches.iloc[0]["publication_status"] != "PUBLISHED":
-        raise PredictionPublicationError("완결된 PUBLISHED 배치 한 건이 필요합니다.")
+    if len(batches) != 1 or batches.iloc[0]["publication_status"] not in {
+        "PUBLISHED",
+        "SHADOW",
+    }:
+        raise PredictionPublicationError(
+            "완결된 PUBLISHED 또는 SHADOW 배치 한 건이 필요합니다."
+        )
     if (
         not connection.autocommit
         or connection.info.transaction_status != TransactionStatus.IDLE
@@ -133,8 +138,8 @@ def publish_prediction_publication(
                     copy.write_row(tuple(_db_value(value) for value in row))
             cursor.execute(
                 """UPDATE repurchase.prediction_batches
-                   SET publication_status = 'PUBLISHED'
+                   SET publication_status = %s
                    WHERE publication_id = %s""",
-                (publication_id,),
+                (str(batch["publication_status"]), publication_id),
             )
     return PublicationWriteResult(publication_id, inserted=True)

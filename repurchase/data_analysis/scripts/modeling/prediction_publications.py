@@ -36,7 +36,7 @@ RESULT_COLUMNS = (
     "prediction_status",
     "conditional_repurchase_probability",
 )
-PUBLICATION_STATUSES = frozenset({"STAGING", "PUBLISHED", "FAILED"})
+PUBLICATION_STATUSES = frozenset({"STAGING", "PUBLISHED", "FAILED", "SHADOW"})
 PREDICTION_STATUSES = frozenset({"READY", "INSUFFICIENT_DATA", "SUPPRESSED"})
 TARGET_SCOPES = frozenset({"PRODUCT_GROUP", "CATEGORY"})
 RESULT_KEY_COLUMNS = (
@@ -184,19 +184,19 @@ def validate_prediction_publications(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """결과 발행 계약을 검사하고 정규화한 안전한 복사본을 반환합니다.
 
-    작성 중이거나 실패한 배치는 일부 결과를 가질 수 있습니다. 반면 PUBLISHED
-    배치는 예상한 결과 수가 모두 존재해야 조회 가능한 완결 배치로 인정합니다.
+    작성 중이거나 실패한 배치는 일부 결과를 가질 수 있습니다. PUBLISHED와
+    내부 검증용 SHADOW는 예상한 결과 수가 모두 있어야 완결 배치로 인정합니다.
     """
     normalized_batches = _normalize_batches(batches)
     normalized_results = _normalize_results(results, normalized_batches)
     actual_counts = normalized_results.groupby("publication_id", observed=True).size()
     for batch in normalized_batches.itertuples(index=False):
         actual = int(actual_counts.get(batch.publication_id, 0))
-        if batch.publication_status == "PUBLISHED" and actual != int(
+        if batch.publication_status in {"PUBLISHED", "SHADOW"} and actual != int(
             batch.expected_result_count
         ):
             raise PredictionPublicationError(
-                "PUBLISHED 배치의 실제 결과 수가 expected_result_count와 다릅니다."
+                "완결 배치의 실제 결과 수가 expected_result_count와 다릅니다."
             )
     return normalized_batches, normalized_results
 
