@@ -87,9 +87,12 @@ def publish_prediction_publication(
         candidate_batch, candidate_results
     )
     if len(batches) != 1 or batches.iloc[0]["publication_status"] not in {
-        "PUBLISHED", "SHADOW"
+        "PUBLISHED",
+        "SHADOW",
     }:
-        raise PredictionPublicationError("완결된 PUBLISHED 또는 SHADOW 배치 한 건이 필요합니다.")
+        raise PredictionPublicationError(
+            "완결된 PUBLISHED 또는 SHADOW 배치 한 건이 필요합니다."
+        )
     if (
         not connection.autocommit
         or connection.info.transaction_status != TransactionStatus.IDLE
