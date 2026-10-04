@@ -62,6 +62,8 @@ def _require_keys(rows: pd.DataFrame, columns: tuple[str, ...], name: str) -> No
     """조인·상품군 판정에 필요한 식별키가 비어 있지 않은지 확인합니다."""
     for column in columns:
         values = rows[column]
+        if values.empty:
+            continue
         if (
             values.isna().any()
             or values.map(
