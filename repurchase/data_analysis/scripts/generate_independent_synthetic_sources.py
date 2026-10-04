@@ -198,10 +198,18 @@ def generate_pair(
     start: datetime,
     user_count: int = 120,
     duration_days: int = 540,
+    first_seed: int = 4201,
+    first_id_offset: int = 9_000_000_000_000,
 ) -> list[dict[str, object]]:
-    if start.tzinfo is None or user_count < 1 or duration_days < 450:
+    if (
+        start.tzinfo is None
+        or user_count < 1
+        or duration_days < 450
+        or first_seed < 0
+        or first_id_offset < 0
+    ):
         raise ValueError(
-            "시작 시각에는 시간대가 필요하며, 사용자 수는 양수이고 기간은 450일 이상이어야 합니다."
+            "시작 시각에는 시간대가 필요하며, 사용자 수는 양수, 기간은 450일 이상, 시드와 ID 오프셋은 음수가 아니어야 합니다."
         )
     start = start.astimezone(UTC)
     paths = [output_root / role for role in ROLES]
@@ -214,8 +222,8 @@ def generate_pair(
             path,
             role=role,
             start=start + timedelta(days=position * (duration_days + 1)),
-            seed=4201 + position,
-            id_offset=9_000_000_000_000 + position * 1_000_000_000,
+            seed=first_seed + position,
+            id_offset=first_id_offset + position * 1_000_000_000,
             user_count=user_count,
             duration_days=duration_days,
         )
@@ -229,6 +237,8 @@ def main() -> None:
     parser.add_argument("--start-at", required=True, help="시간대가 있는 ISO-8601 시각")
     parser.add_argument("--user-count", type=int, default=120)
     parser.add_argument("--duration-days", type=int, default=540)
+    parser.add_argument("--first-seed", type=int, default=4201)
+    parser.add_argument("--first-id-offset", type=int, default=9_000_000_000_000)
     args = parser.parse_args()
     print(
         json.dumps(
@@ -237,6 +247,8 @@ def main() -> None:
                 start=datetime.fromisoformat(args.start_at),
                 user_count=args.user_count,
                 duration_days=args.duration_days,
+                first_seed=args.first_seed,
+                first_id_offset=args.first_id_offset,
             ),
             ensure_ascii=False,
         )
