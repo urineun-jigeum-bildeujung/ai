@@ -96,7 +96,10 @@ def _order_ids_in_window(
     orders = pd.read_csv(path, usecols=["order_id", "paid_at"], dtype="string")
     if orders["order_id"].isna().any() or orders["order_id"].duplicated().any():
         raise ValueError("주문 ID가 누락되거나 중복됐습니다.")
-    paid = pd.to_datetime(orders["paid_at"], utc=True, errors="coerce")
+    parsed_paid = orders["paid_at"].map(
+        lambda value: pd.NaT if pd.isna(value) else _timestamp(value, "paid_at")
+    )
+    paid = pd.to_datetime(parsed_paid, utc=True, errors="coerce")
     if orders["paid_at"].notna().sum() != paid.notna().sum():
         raise ValueError("결제 시각 형식이 유효하지 않습니다.")
     if paid.gt(end).any():
