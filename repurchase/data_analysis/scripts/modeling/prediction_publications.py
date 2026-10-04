@@ -204,7 +204,7 @@ def validate_prediction_publications(
 def select_latest_published_predictions(
     batches: pd.DataFrame, results: pd.DataFrame
 ) -> pd.DataFrame:
-    """완결 발행된 결과 중 조회 키별 최신 데이터 컷 한 행을 선택합니다."""
+    """가장 최신의 완결된 전체 스냅샷 배치만 선택합니다."""
     normalized_batches, normalized_results = validate_prediction_publications(
         batches, results
     )
@@ -228,16 +228,13 @@ def select_latest_published_predictions(
     if visible.empty:
         return visible
 
-    # created_at이 늦더라도 오래된 데이터 컷이 최신 결과를 덮지 못하게
-    # as_of_timestamp를 첫 번째 기준으로 두고 같은 컷의 재발행만 created_at으로 정렬합니다.
-    ordered = visible.sort_values(
-        [*RESULT_KEY_COLUMNS, "as_of_timestamp", "created_at", "publication_id"],
-        kind="stable",
-        na_position="first",
+    # 늦게 완료된 오래된 컷과 새 배치에서 사라진 키를 모두 배제합니다.
+    latest_batch = published.sort_values(
+        ["as_of_timestamp", "created_at", "publication_id"], kind="stable"
+    ).iloc[-1]["publication_id"]
+    return visible.loc[visible["publication_id"].eq(latest_batch)].reset_index(
+        drop=True
     )
-    return ordered.drop_duplicates(
-        subset=list(RESULT_KEY_COLUMNS), keep="last"
-    ).reset_index(drop=True)
 
 
 def merge_idempotent_publication(

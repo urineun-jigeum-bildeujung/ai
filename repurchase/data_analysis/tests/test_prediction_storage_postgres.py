@@ -44,7 +44,11 @@ def local_connection() -> psycopg.Connection[object]:
         pytest.fail("기존 repurchase 스키마가 있는 테스트 DB는 사용하지 않습니다.")
     migration_dir = Path(__file__).resolve().parents[2] / "database"
     try:
-        for migration in ("001_prediction_storage.sql", "002_shadow_publication.sql"):
+        for migration in (
+            "001_prediction_storage.sql",
+            "002_shadow_publication.sql",
+            "003_latest_full_snapshot.sql",
+        ):
             connection.execute((migration_dir / migration).read_text(encoding="utf-8"))
         yield connection
     finally:
@@ -171,3 +175,38 @@ def test_incomplete_shadow_batch_is_rejected_before_writing(
     assert local_connection.execute(
         "SELECT count(*) FROM repurchase.prediction_batches"
     ).fetchone() == (0,)
+
+
+def test_latest_view_uses_only_newest_full_snapshot(
+    local_connection: psycopg.Connection[object],
+) -> None:
+    """과거 사용자 키와 늦게 끝난 오래된 컷이 최신 뷰에 섞이지 않습니다."""
+    old_batch, old_result = _candidate(publication_id="old")
+    old_batch.loc[0, "idempotency_key"] = "old"
+    old_result.loc[0, "user_id"] = "old-only"
+    assert publish_prediction_publication(
+        local_connection, old_batch, old_result
+    ).inserted
+
+    new_batch, new_result = _candidate(publication_id="new")
+    new_batch.loc[0, "idempotency_key"] = "new"
+    new_batch.loc[0, "as_of_timestamp"] = "2026-01-03T00:00:00+00:00"
+    new_batch.loc[0, "created_at"] = "2026-01-03T01:00:00+00:00"
+    assert publish_prediction_publication(
+        local_connection, new_batch, new_result
+    ).inserted
+
+    assert local_connection.execute(
+        "SELECT publication_id, user_id FROM repurchase.latest_predictions"
+    ).fetchall() == [("new", "42")]
+
+    late_batch, late_result = _candidate(publication_id="older-late")
+    late_batch.loc[0, "idempotency_key"] = "older-late"
+    late_batch.loc[0, "created_at"] = "2026-01-04T00:00:00+00:00"
+    late_result.loc[0, "user_id"] = "late-only"
+    assert publish_prediction_publication(
+        local_connection, late_batch, late_result
+    ).inserted
+    assert local_connection.execute(
+        "SELECT publication_id, user_id FROM repurchase.latest_predictions"
+    ).fetchall() == [("new", "42")]
