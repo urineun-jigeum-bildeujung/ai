@@ -57,6 +57,35 @@ def test_published_batch_must_contain_every_expected_result(
         validate_prediction_publications(batches, results)
 
 
+def test_complete_shadow_batch_is_valid_but_invisible(
+    prediction_publication_contract: dict[str, object],
+) -> None:
+    """내부 검증 배치는 완결성을 요구하지만 서비스 최신 결과에서 제외합니다."""
+    batches = _as_rows(prediction_publication_contract, "batches")
+    results = _as_rows(prediction_publication_contract, "results")
+    batches.loc[batches["publication_id"].eq("pub-new"), "publication_status"] = (
+        "SHADOW"
+    )
+
+    validate_prediction_publications(batches, results)
+    assert "pub-new" not in set(
+        select_latest_published_predictions(batches, results)["publication_id"]
+    )
+
+
+def test_incomplete_shadow_batch_is_rejected(
+    prediction_publication_contract: dict[str, object],
+) -> None:
+    batches = _as_rows(prediction_publication_contract, "batches")
+    results = _as_rows(prediction_publication_contract, "results")
+    batches.loc[
+        batches["publication_id"].eq("pub-newer-failed"), "publication_status"
+    ] = "SHADOW"
+
+    with pytest.raises(PredictionPublicationError, match="실제 결과 수"):
+        validate_prediction_publications(batches, results)
+
+
 def test_same_idempotency_key_and_payload_do_not_create_duplicates(
     prediction_publication_contract: dict[str, object],
 ) -> None:
