@@ -350,7 +350,8 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 
 서비스 상품군 운영 모델은 아직 선정되지 않았으며, 이 비교 명령은 예측값을
 클라우드 DB에 적재하지 않습니다. `contract-check` 명령은 고정된 원천 데이터와
-결과 발행 계약을 검사할 뿐 운영 추론이 아닙니다.
+결과 발행 계약을 검사할 뿐 운영 추론이 아닙니다. 별도 `shadow-check`와
+`shadow-run`은 사전 고정 AFT의 내부 검증 전용이며 사용자 노출용 발행은 하지 않습니다.
 
 ### 로컬 계약 점검
 
@@ -364,6 +365,44 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 
 성공하면 입력 파일의 SHA-256과 단계별 처리 건수가 JSON 한 줄로 출력되고 종료
 코드 `0`을 반환합니다. 계약 위반은 `2`, 예상하지 못한 시스템 장애는 `1`입니다.
+
+### AFT 내부 검증 배치
+
+`shadow-check`는 완료된 로컬 스냅샷의 해시·행 수와 모델 아티팩트 ID를 확인하고,
+주문 상태·클레임 시점 복원 → 사용자·반려동물·상품군 피처 → AFT 조건부 확률까지
+계산합니다. DB 연결이나 결과 파일 생성은 없습니다. 2026-10-03 스냅샷을
+`2026-10-03T11:03:00Z` 컷으로 확인한 결과, 원천 주문 44,777건 중 19건을
+격리하고 내부 검증 대상 50,517건을 만들었습니다. 이 수치는 dev DB의 현재값이나
+모델 성능 지표가 아닙니다.
+
+```bash
+.venv/bin/python -m scripts.run_repurchase_batch shadow-check \
+  --snapshot-directory data/raw/local_service_snapshots/service-20261003T110358Z \
+  --model-directory data/processed/pretest-frozen-review-20261004/xgboost_aft \
+  --artifact-id ec25eb1bcd8f24ce36a2397c1544cb087cb970af532365de7f8ec900aeb4b7fb \
+  --as-of 2026-10-03T11:03:00Z --window-days 30
+```
+
+`shadow-run`은 DB가 재가동되고 002 마이그레이션이 적용된 뒤에만 실행합니다.
+`REPURCHASE_ORDER_DATABASE_DSN`, `REPURCHASE_MEMBER_DATABASE_DSN`,
+`REPURCHASE_RESULT_DATABASE_DSN`을 Secret으로 주입하며, 셋째 연결은 반드시
+`repurchase_db`여야 합니다. 명시적 `--allow-shadow-write`, 시간대가 포함된
+`--as-of`·`--created-at`, 재시도에도 불변인 `--publication-id`, 고정
+`--artifact-id`가 없으면 적재하지 않습니다. 원천은 DB별 읽기 전용 스냅샷으로
+조회하고, 결과는 트랜잭션 안에서 `SHADOW`로 완료합니다. `latest_predictions`는
+`PUBLISHED`만 조회하므로 내부 결과를 사용자에게 제공하지 않습니다. 소스 DB 간
+동일 시각 스냅샷은 보장되지 않습니다. 실행 주기·Secret 이름의 인프라 반영과
+실제 dev DB 적재 검증은 아직 하지 않았습니다.
+
+```bash
+python -m scripts.run_repurchase_batch shadow-run \
+  --model-directory /models/xgboost_aft \
+  --artifact-id '<고정-AFT-artifact-id>' \
+  --as-of '<시간대-포함-관측-컷>' \
+  --created-at '<재시도에도-고정할-배치-생성-시각>' \
+  --publication-id '<재시도에도-고정할-실행-ID>' \
+  --window-days 30 --allow-shadow-write
+```
 
 ### Docker 이미지와 smoke test
 
@@ -395,8 +434,8 @@ docker run --rm \
 
 실제 모델 추론 단계에서는 검증된 아티팩트를 읽기 전용 볼륨 또는 객체 저장소로
 주입합니다. 클라우드 연결 정보는 Secret 관리 기능으로 전달하고 로그에 값을
-출력하지 않습니다. 실제 DB 어댑터·스케줄러·결과 적재는 데이터 계약 확정 후
-별도 작업에서 연결합니다.
+출력하지 않습니다. 내부 검증용 DB 어댑터와 SHADOW 적재 경로는 구현했지만,
+스케줄러 연결·dev DB 마이그레이션·실제 적재·사용자 노출 결정은 별도 단계입니다.
 
 운영·CI의 Linux AMD64 환경은 GPU 의존성을 포함하지 않는 `xgboost-cpu`를
 사용합니다. XGBoost 3.2에서 CPU 전용 wheel을 제공하지 않는 ARM64·macOS는 같은
