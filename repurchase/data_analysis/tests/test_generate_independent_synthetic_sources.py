@@ -60,3 +60,11 @@ def test_generator_never_overwrites_existing_snapshot(tmp_path: Path) -> None:
     generate_pair(tmp_path, start=start, user_count=2)
     with pytest.raises(ValueError, match="이미 존재"):
         generate_pair(tmp_path, start=start, user_count=2)
+
+
+def test_generator_rejects_window_too_short_for_landmark_calibration(
+    tmp_path: Path,
+) -> None:
+    start = datetime.fromisoformat("2026-10-04T00:00:00+00:00")
+    with pytest.raises(ValueError, match="450일 이상"):
+        generate_pair(tmp_path, start=start, duration_days=180)

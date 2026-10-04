@@ -17,7 +17,7 @@ from pathlib import Path
 
 from scripts.export_local_service_snapshot import verify_snapshot
 
-VERSION = "independent-synthetic-v1"
+VERSION = "independent-synthetic-v2"
 HEADERS = {
     "orders": (
         "order_id",
@@ -197,11 +197,11 @@ def generate_pair(
     *,
     start: datetime,
     user_count: int = 120,
-    duration_days: int = 180,
+    duration_days: int = 540,
 ) -> list[dict[str, object]]:
-    if start.tzinfo is None or user_count < 1 or duration_days < 31:
+    if start.tzinfo is None or user_count < 1 or duration_days < 450:
         raise ValueError(
-            "시작 시각에는 시간대가 필요하고 사용자 수와 기간은 양수여야 합니다."
+            "시작 시각에는 시간대가 필요하며, 사용자 수는 양수이고 기간은 450일 이상이어야 합니다."
         )
     start = start.astimezone(UTC)
     paths = [output_root / role for role in ROLES]
@@ -228,6 +228,7 @@ def main() -> None:
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--start-at", required=True, help="시간대가 있는 ISO-8601 시각")
     parser.add_argument("--user-count", type=int, default=120)
+    parser.add_argument("--duration-days", type=int, default=540)
     args = parser.parse_args()
     print(
         json.dumps(
@@ -235,6 +236,7 @@ def main() -> None:
                 args.output_root,
                 start=datetime.fromisoformat(args.start_at),
                 user_count=args.user_count,
+                duration_days=args.duration_days,
             ),
             ensure_ascii=False,
         )
