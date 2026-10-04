@@ -384,6 +384,8 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 ```
 
 `shadow-run`은 DB가 가동 중이고 002 마이그레이션이 적용된 환경에서만 실행합니다.
+수동 EKS 실행 이후의 변경 입력·실패 시 미발행 검증과 인프라 담당 경계는
+[SHADOW 검증 인계](SHADOW_VALIDATION_HANDOFF.md)에 분리해 기록합니다.
 `REPURCHASE_ORDER_DATABASE_DSN`, `REPURCHASE_MEMBER_DATABASE_DSN`,
 `REPURCHASE_RESULT_DATABASE_DSN`을 Secret으로 주입하며, 셋째 연결은 반드시
 `repurchase_db`여야 합니다. 명시적 `--allow-shadow-write`, 시간대가 포함된
@@ -391,8 +393,9 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 `--artifact-id`가 없으면 적재하지 않습니다. 원천은 DB별 읽기 전용 스냅샷으로
 조회하고, 결과는 트랜잭션 안에서 `SHADOW`로 완료합니다. `latest_predictions`는
 `PUBLISHED`만 조회하므로 내부 결과를 사용자에게 제공하지 않습니다. 소스 DB 간
-동일 시각 스냅샷은 보장되지 않습니다. 실행 주기·Secret 이름의 인프라 반영은
-아직 확인되지 않았으며, 실제 dev DB의 수동 SHADOW 적재는 아래처럼 검증했습니다.
+동일 시각 스냅샷은 보장되지 않습니다. 필요한 Secret은 수동 Job에 주입됐지만
+정기 CronJob은 아직 활성화하지 않았습니다. 실제 dev DB의 수동 SHADOW 적재는
+아래처럼 검증했습니다.
 
 2026-10-04 일회용 로컬 PostgreSQL 16의 세 DB에 위 스냅샷을 적재해
 `shadow-run` 전체 경로를 검증했습니다. 주문 44,777건 중 19건을 격리하고
@@ -406,6 +409,12 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 배치·예측 건수는 1건·50,517건으로 유지됐고 `latest_predictions`는 0건입니다.
 이는 내부 적재·멱등성 검증이며 사용자 노출용 확률의 성능 승인이나 정기 실행
 검증이 아닙니다. 실행에 사용한 비밀번호와 원천 행은 문서·Git에 기록하지 않습니다.
+
+2026-10-04 EKS 수동 Job에서는 별도 실행 ID
+`shadow-eks-20261003T110300Z-ec25eb1b-v1`로 같은 50,517건을 `SHADOW`에
+저장했습니다. 별도 재시도 Job에서 같은 ID의 `inserted=false`를 확인했고,
+DB의 배치 1건·예측 50,517건과 사용자 최신 조회 뷰 0건은 그대로였습니다.
+이 결과는 위 dev 수동 실행 ID와 구분해서 관리합니다.
 
 ```bash
 python -m scripts.run_repurchase_batch shadow-run \
