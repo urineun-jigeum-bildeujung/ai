@@ -394,6 +394,12 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 동일 시각 스냅샷은 보장되지 않습니다. 실행 주기·Secret 이름의 인프라 반영과
 실제 dev DB 적재 검증은 아직 하지 않았습니다.
 
+2026-10-04 일회용 로컬 PostgreSQL 16의 세 DB에 위 스냅샷을 적재해
+`shadow-run` 전체 경로를 검증했습니다. 주문 44,777건 중 19건을 격리하고
+예측 50,517건을 `SHADOW`로 적재했으며, 동일 실행 ID 재시도는 추가 적재
+없이 성공했습니다. DB의 예상·실제 결과는 모두 50,517건이고
+`latest_predictions` 조회 결과는 0건입니다. 이는 공용 dev DB 실행 결과가 아닙니다.
+
 ```bash
 python -m scripts.run_repurchase_batch shadow-run \
   --model-directory /models/xgboost_aft \
