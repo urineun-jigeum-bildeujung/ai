@@ -43,6 +43,24 @@ def test_only_complete_published_batches_are_exposed_as_latest(
     ) == {"user-1": 0.7, "user-2": 0.3}
 
 
+def test_new_full_snapshot_does_not_reuse_missing_old_target(
+    prediction_publication_contract: dict[str, object],
+) -> None:
+    """새 전체 배치에서 빠진 대상은 과거 배치 결과로 다시 나타나지 않습니다."""
+    batches = _as_rows(prediction_publication_contract, "batches")
+    results = _as_rows(prediction_publication_contract, "results")
+    results = results.loc[
+        ~(results["publication_id"].eq("pub-new") & results["user_id"].eq("user-2"))
+    ].copy()
+    batches.loc[batches["publication_id"].eq("pub-new"), "expected_result_count"] = 1
+
+    latest = select_latest_published_predictions(batches, results)
+
+    assert len(latest) == 1
+    assert latest.iloc[0]["publication_id"] == "pub-new"
+    assert latest.iloc[0]["user_id"] == "user-1"
+
+
 def test_published_batch_must_contain_every_expected_result(
     prediction_publication_contract: dict[str, object],
 ) -> None:
