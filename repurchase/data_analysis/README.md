@@ -301,6 +301,14 @@ Train 내부 시간 분할의 IPCW Brier로만 선택하며, 선택 후 전체 T
 0일 Brier는 보정 후 소폭 악화되고 사용자 Bootstrap 구간이 0을 포함하므로,
 네 시점 전체에 Isotonic 보정을 적용하거나 Test·운영 확률 노출을 승인하지 않습니다.
 
+별도 합성 개발·평가 생성본의 동결 평가와 새 시드 반복은
+`reports/independent_synthetic_final_evaluation_20261005.md` 및
+`reports/independent_synthetic_replication_20261005.md`에 기록했습니다.
+두 최종 평가에서 경과 0일·저이력 구간의 점추정 악화가 반복됐습니다.
+`scripts.summarize_independent_synthetic_final`은 결과 JSON의 경과일별·저이력
+쌍 비교를 검사해 요약하지만, 학습·후보 선택이나 운영 공개 승인은 하지 않습니다.
+같은 생성 규칙의 합성 반복이므로 실제 사용자 분포의 검증으로 해석하지 않습니다.
+
 최종 평가 사전검증은 Validation 결과에 기록된 코드 SHA-256도 현재 코드·승인
 manifest와 대조합니다. 이전 형식의 결과 JSON에는 이 지문이 없어 재실행이
 필요합니다. 모듈 로드 시점과 비교 실행 전후의 디스크 지문을 대조하지만, Python이
