@@ -42,11 +42,10 @@ def local_connection() -> psycopg.Connection[object]:
     ):
         connection.close()
         pytest.fail("기존 repurchase 스키마가 있는 테스트 DB는 사용하지 않습니다.")
-    ddl = (
-        Path(__file__).resolve().parents[2] / "database" / "001_prediction_storage.sql"
-    )
+    migration_dir = Path(__file__).resolve().parents[2] / "database"
     try:
-        connection.execute(ddl.read_text(encoding="utf-8"))
+        for migration in ("001_prediction_storage.sql", "002_shadow_publication.sql"):
+            connection.execute((migration_dir / migration).read_text(encoding="utf-8"))
         yield connection
     finally:
         connection.execute("DROP SCHEMA IF EXISTS repurchase CASCADE")
@@ -129,6 +128,43 @@ def test_incomplete_batch_is_rejected_before_writing(
 ) -> None:
     batch, result = _candidate(publication_id="pub-incomplete")
     batch.loc[0, "idempotency_key"] = "incomplete"
+    batch.loc[0, "expected_result_count"] = 2
+    with pytest.raises(PredictionPublicationError, match="실제 결과 수"):
+        publish_prediction_publication(local_connection, batch, result)
+    assert local_connection.execute(
+        "SELECT count(*) FROM repurchase.prediction_batches"
+    ).fetchone() == (0,)
+
+
+def test_shadow_batch_is_complete_immutable_and_invisible(
+    local_connection: psycopg.Connection[object],
+) -> None:
+    batch, result = _candidate()
+    batch.loc[0, "publication_status"] = "SHADOW"
+
+    assert publish_prediction_publication(local_connection, batch, result).inserted
+    assert local_connection.execute(
+        "SELECT publication_status FROM repurchase.prediction_batches"
+    ).fetchone() == ("SHADOW",)
+    assert local_connection.execute(
+        "SELECT count(*) FROM repurchase.repurchase_predictions"
+    ).fetchone() == (1,)
+    assert local_connection.execute(
+        "SELECT count(*) FROM repurchase.latest_predictions"
+    ).fetchone() == (0,)
+    assert not publish_prediction_publication(local_connection, batch, result).inserted
+    with pytest.raises(psycopg.Error, match="STAGING이 아닌 배치"):
+        local_connection.execute(
+            "UPDATE repurchase.repurchase_predictions "
+            "SET conditional_repurchase_probability = 0.8"
+        )
+
+
+def test_incomplete_shadow_batch_is_rejected_before_writing(
+    local_connection: psycopg.Connection[object],
+) -> None:
+    batch, result = _candidate()
+    batch.loc[0, "publication_status"] = "SHADOW"
     batch.loc[0, "expected_result_count"] = 2
     with pytest.raises(PredictionPublicationError, match="실제 결과 수"):
         publish_prediction_publication(local_connection, batch, result)

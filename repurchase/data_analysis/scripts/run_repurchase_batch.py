@@ -1,7 +1,7 @@
 """재구매 배치 컨테이너가 호출하는 단일 실행 진입점입니다.
 
-현재는 실제 클라우드 DB나 서비스 모델을 연결하지 않습니다. 고정된 원천·결과
-계약 파일을 외부 경로로 받아 전체 계약을 검증하고 구조화된 JSON 로그를 남깁니다.
+계약 검사와 명시적으로 승인된 AFT 내부 검증 배치를 분리합니다. 내부 검증
+배치는 SHADOW 상태로만 적재하며 서비스 최신 조회에는 표시하지 않습니다.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from typing import NoReturn, cast
 
 import pandas as pd
 
+from scripts.modeling.artifacts import ModelArtifactError
 from scripts.modeling.operational_orders import (
     OperationalOrderError,
     build_valid_order_items,
@@ -27,6 +28,12 @@ from scripts.modeling.prediction_publications import (
     validate_prediction_publications,
 )
 from scripts.modeling.purchase_events import build_product_group_purchase_events
+from scripts.shadow_batch_runtime import (
+    ShadowBatchContractError,
+    ShadowDatabaseError,
+    check_local_shadow_batch,
+    run_live_shadow_batch,
+)
 
 SUCCESS_EXIT_CODE = 0
 UNEXPECTED_FAILURE_EXIT_CODE = 1
@@ -221,6 +228,27 @@ def _build_parser() -> _BatchArgumentParser:
         required=True,
         help="발행 배치와 결과를 포함한 계약 JSON 경로",
     )
+    shadow_check = commands.add_parser(
+        "shadow-check", help="완료된 로컬 스냅샷으로 AFT 추론만 검증합니다."
+    )
+    shadow_run = commands.add_parser(
+        "shadow-run", help="공용 원천을 읽고 결과를 SHADOW로만 적재합니다."
+    )
+    for command in (shadow_check, shadow_run):
+        command.add_argument("--model-directory", type=Path, required=True)
+        command.add_argument("--artifact-id", required=True)
+        command.add_argument(
+            "--as-of", required=True, help="시간대가 포함된 고정 관측 컷"
+        )
+        command.add_argument("--window-days", type=int, default=30)
+    shadow_check.add_argument("--snapshot-directory", type=Path, required=True)
+    shadow_run.add_argument(
+        "--created-at", required=True, help="재시도에도 같은 배치 생성 시각"
+    )
+    shadow_run.add_argument(
+        "--publication-id", required=True, help="재시도에도 같은 실행 ID"
+    )
+    shadow_run.add_argument("--allow-shadow-write", action="store_true")
     return parser
 
 
@@ -236,16 +264,41 @@ def main(argv: Sequence[str] | None = None) -> int:
     """명령을 실행하고 운영 환경이 구분할 수 있는 종료 코드를 반환합니다."""
     try:
         arguments = _build_parser().parse_args(argv)
-        if arguments.command != "contract-check":
+        if arguments.command == "contract-check":
+            summary = run_contract_check(
+                arguments.source_contract,
+                arguments.publication_contract,
+            )
+            event = "repurchase_batch_contract_checked"
+        elif arguments.command == "shadow-check":
+            summary = check_local_shadow_batch(
+                snapshot_directory=arguments.snapshot_directory,
+                artifact_directory=arguments.model_directory,
+                expected_artifact_id=arguments.artifact_id,
+                as_of_timestamp=arguments.as_of,
+                window_days=arguments.window_days,
+            )
+            event = "repurchase_shadow_checked"
+        elif arguments.command == "shadow-run":
+            summary = run_live_shadow_batch(
+                artifact_directory=arguments.model_directory,
+                expected_artifact_id=arguments.artifact_id,
+                as_of_timestamp=arguments.as_of,
+                created_at=arguments.created_at,
+                window_days=arguments.window_days,
+                publication_id=arguments.publication_id,
+                allow_shadow_write=arguments.allow_shadow_write,
+            )
+            event = "repurchase_shadow_stored"
+        else:
             raise BatchRuntimeError(f"지원하지 않는 명령입니다: {arguments.command}")
-        summary = run_contract_check(
-            arguments.source_contract,
-            arguments.publication_contract,
-        )
     except (
         BatchRuntimeError,
         OperationalOrderError,
         PredictionPublicationError,
+        ShadowBatchContractError,
+        ShadowDatabaseError,
+        ModelArtifactError,
     ) as error:
         _write_json(
             {
@@ -265,7 +318,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "event": "repurchase_batch_failed",
                 "status": "FAILED",
                 "error_type": type(error).__name__,
-                "message": str(error),
+                "message": "상세 정보는 비공개 예외 로그에서 확인해야 합니다.",
             },
             stream=sys.stderr,
         )
@@ -273,7 +326,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     _write_json(
         {
-            "event": "repurchase_batch_contract_checked",
+            "event": event,
             "status": "SUCCEEDED",
             **asdict(summary),
         },
