@@ -318,6 +318,15 @@ CSV 6개를 받아 Validation 종료 컷까지 재학습한 AFT·LightGBM을 새
 `scripts.validate_frozen_service_test_readiness`는 고정 기록·Validation 결과·원천
 6개·두 모델 파일의 해시와 추론 계약을 다시 대조합니다. 통과해도 Test 행은
 생성하지 않으며, 최종 평가 실행 또는 모델 운영 채택을 승인한다는 뜻은 아닙니다.
+`scripts.run_frozen_service_test`는 리뷰·병합 이후 명시적인
+`--confirm-final-test`로만 실행합니다. Validation 종료 이후부터 고정 관측 종료
+시각까지의 구매 앵커를 같은 30일 IPCW 모집단에서 두 고정 모델로 평가하고,
+Brier·C-index·calibration·사용자 단위 쌍 Bootstrap을 기록합니다. 실행 직전
+고정 디렉터리 옆에 `<고정 디렉터리명>-final-test`를 독점 생성합니다. 실패해도
+실행 기록을 남겨 자동 재실행을 막으며, 수동 재시도 여부는 원인 검토 후 별도
+결정해야 합니다. 이 장치는 해당 로컬 경로의 중복 실행만 막고 다른 호스트로
+복사한 모델의 전역 중복 실행까지 보장하지는 않습니다. Test 결과로 모델을
+재선택하지 않으며, 이 도구를 현재 개발 단계에서 아직 실행하지 않았습니다.
 2026-10-03 dev DB에서 상품군 기준선을 포함해 실행한 결과, Validation
 19,189행 중 정답 확인 13,625행에서 IPCW Brier는 상품군 기준선 0.134545,
 AFT 0.121258, LightGBM 0.123063이었습니다. 상품군 수축 강도는 Train 내부
