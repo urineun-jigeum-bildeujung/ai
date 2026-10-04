@@ -25,4 +25,4 @@ AI 쓰기 로직은 한 트랜잭션에서 STAGING 생성 → 결과 저장 → 
 
 `test_prediction_storage.sql`은 로컬 일회용 DB에서만 실행한다. 최신 결과, 건수 불일치 발행 거절, 발행 후 수정 거절, 중복 멱등키, 확률 제약을 확인하고 트랜잭션 종료 시 데이터를 롤백한다. 운영 DB를 테스트 대상으로 사용하지 않는다.
 
-`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 개발 DB에는 저장 구조만 적용했으며, 이 적재 함수를 운영 배치의 모델 추론 흐름에 연결하거나 실제 예측 결과를 발행하지 않았다.
+`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 001 저장 구조는 개발 DB에 적용했지만 002는 아직 적용하지 않았다. AFT 추론에서 SHADOW 적재까지의 코드 경로는 연결했으며 실제 dev DB 적재와 사용자 노출용 PUBLISHED 발행은 하지 않았다.
