@@ -10,6 +10,7 @@ LANDMARKS = (0, 7, 14, 30)
 
 
 def summarize(result: dict) -> dict:
+    """Validate paired synthetic metrics and return a non-approval summary."""
     if (
         result.get("status") != "synthetic_final_evaluation_not_real_user_approval"
         or result.get("test_evaluated") is not True
@@ -32,6 +33,7 @@ def summarize(result: dict) -> dict:
         raw, calibrated, pair = by_key[day, "raw"], by_key[day, "isotonic"], by_day[day]
         if (
             raw["outcome_known_count"] != calibrated["outcome_known_count"]
+            or raw["at_risk_count"] != calibrated["at_risk_count"]
             or pair["outcome_known_count"] != raw["outcome_known_count"]
             or abs(
                 pair["point_brier_improvement"]
@@ -56,11 +58,14 @@ def summarize(result: dict) -> dict:
             }
         )
     subgroups = result.get("low_history_subgroups", [])
-    history = {
-        (r["candidate"], r["group"]): r
-        for r in subgroups
-        if r["elapsed_days"] == 0 and r["feature"] == "history_interval_count"
-    }
+    history_rows = [
+        row
+        for row in subgroups
+        if row["elapsed_days"] == 0 and row["feature"] == "history_interval_count"
+    ]
+    history = {(row["candidate"], row["group"]): row for row in history_rows}
+    if len(history) != len(history_rows):
+        raise ValueError("저이력 구간 키가 중복됐습니다.")
     low_history = []
     for group in ("0", "1-2"):
         raw, calibrated = history.get(("raw", group)), history.get(("isotonic", group))
@@ -92,6 +97,7 @@ def summarize(result: dict) -> dict:
 
 
 def main() -> None:
+    """Write a validated post-hoc summary to a new local JSON file."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)

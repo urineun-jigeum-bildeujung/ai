@@ -8,6 +8,7 @@ from scripts.summarize_independent_synthetic_final import summarize
 
 
 def _result() -> dict:
+    """Build a minimal four-landmark, two-candidate evaluation result."""
     rows = []
     pairs = []
     for day in (0, 7, 14, 30):
@@ -16,6 +17,7 @@ def _result() -> dict:
                 {
                     "elapsed_days": day,
                     "candidate": candidate,
+                    "at_risk_count": 12,
                     "outcome_known_count": 10,
                     "ipcw_brier_score": brier,
                     "expected_calibration_error": 0.05,
@@ -56,6 +58,7 @@ def _result() -> dict:
 
 
 def test_summary_preserves_mixed_outcome_and_no_go() -> None:
+    """A mixed holdout cannot be promoted to operational approval."""
     result = summarize(_result())
     assert result["uniform_brier_improvement"] is False
     assert result["operational_probability_publication_approved"] is False
@@ -64,9 +67,18 @@ def test_summary_preserves_mixed_outcome_and_no_go() -> None:
 
 
 @pytest.mark.parametrize(
-    "change", ["approval", "missing_landmark", "mismatched_pair", "missing_subgroup"]
+    "change",
+    [
+        "approval",
+        "missing_landmark",
+        "mismatched_pair",
+        "mismatched_at_risk",
+        "missing_subgroup",
+        "duplicate_subgroup",
+    ],
 )
 def test_summary_rejects_incomplete_or_unsafe_result(change: str) -> None:
+    """Reject unpaired populations, duplicate keys, and approval changes."""
     result = copy.deepcopy(_result())
     if change == "approval":
         result["operational_probability_publication_approved"] = True
@@ -74,6 +86,12 @@ def test_summary_rejects_incomplete_or_unsafe_result(change: str) -> None:
         result["summary"].pop()
     elif change == "mismatched_pair":
         result["paired_bootstrap_summary"][0]["point_brier_improvement"] = 0.1
+    elif change == "mismatched_at_risk":
+        result["summary"][1]["at_risk_count"] = 13
+    elif change == "duplicate_subgroup":
+        result["low_history_subgroups"].append(
+            copy.deepcopy(result["low_history_subgroups"][0])
+        )
     else:
         result["low_history_subgroups"].pop()
     with pytest.raises(ValueError):
