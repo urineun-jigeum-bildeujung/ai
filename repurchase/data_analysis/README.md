@@ -383,7 +383,7 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
   --as-of 2026-10-03T11:03:00Z --window-days 30
 ```
 
-`shadow-run`은 DB가 재가동되고 002 마이그레이션이 적용된 뒤에만 실행합니다.
+`shadow-run`은 DB가 가동 중이고 002 마이그레이션이 적용된 환경에서만 실행합니다.
 `REPURCHASE_ORDER_DATABASE_DSN`, `REPURCHASE_MEMBER_DATABASE_DSN`,
 `REPURCHASE_RESULT_DATABASE_DSN`을 Secret으로 주입하며, 셋째 연결은 반드시
 `repurchase_db`여야 합니다. 명시적 `--allow-shadow-write`, 시간대가 포함된
@@ -391,14 +391,21 @@ DB별 추출 시각이 다르므로 갱신 중에는 원자적 교차 DB 스냅�
 `--artifact-id`가 없으면 적재하지 않습니다. 원천은 DB별 읽기 전용 스냅샷으로
 조회하고, 결과는 트랜잭션 안에서 `SHADOW`로 완료합니다. `latest_predictions`는
 `PUBLISHED`만 조회하므로 내부 결과를 사용자에게 제공하지 않습니다. 소스 DB 간
-동일 시각 스냅샷은 보장되지 않습니다. 실행 주기·Secret 이름의 인프라 반영과
-실제 dev DB 적재 검증은 아직 하지 않았습니다.
+동일 시각 스냅샷은 보장되지 않습니다. 실행 주기·Secret 이름의 인프라 반영은
+아직 확인되지 않았으며, 실제 dev DB의 수동 SHADOW 적재는 아래처럼 검증했습니다.
 
 2026-10-04 일회용 로컬 PostgreSQL 16의 세 DB에 위 스냅샷을 적재해
 `shadow-run` 전체 경로를 검증했습니다. 주문 44,777건 중 19건을 격리하고
 예측 50,517건을 `SHADOW`로 적재했으며, 동일 실행 ID 재시도는 추가 적재
 없이 성공했습니다. DB의 예상·실제 결과는 모두 50,517건이고
 `latest_predictions` 조회 결과는 0건입니다. 이는 공용 dev DB 실행 결과가 아닙니다.
+
+2026-10-04 공용 dev DB에서 같은 고정 AFT·관측 컷으로 `shadow-run`을 실행해
+`publication_id=shadow-dev-20261003T110300Z-ec25eb1b-v1`의 SHADOW 배치
+1건·예측 50,517건을 저장했습니다. 동일 ID 재실행 결과 `inserted=false`, 전체
+배치·예측 건수는 1건·50,517건으로 유지됐고 `latest_predictions`는 0건입니다.
+이는 내부 적재·멱등성 검증이며 사용자 노출용 확률의 성능 승인이나 정기 실행
+검증이 아닙니다. 실행에 사용한 비밀번호와 원천 행은 문서·Git에 기록하지 않습니다.
 
 ```bash
 python -m scripts.run_repurchase_batch shadow-run \
@@ -440,8 +447,9 @@ docker run --rm \
 
 실제 모델 추론 단계에서는 검증된 아티팩트를 읽기 전용 볼륨 또는 객체 저장소로
 주입합니다. 클라우드 연결 정보는 Secret 관리 기능으로 전달하고 로그에 값을
-출력하지 않습니다. 내부 검증용 DB 어댑터와 SHADOW 적재 경로는 구현했지만,
-스케줄러 연결·dev DB 마이그레이션·실제 적재·사용자 노출 결정은 별도 단계입니다.
+출력하지 않습니다. 내부 검증용 DB 어댑터와 SHADOW 적재 경로를 구현했고,
+dev DB의 002 마이그레이션·수동 SHADOW 적재도 검증했습니다. 스케줄러 연결과
+사용자 노출 결정은 별도 단계입니다.
 
 운영·CI의 Linux AMD64 환경은 GPU 의존성을 포함하지 않는 `xgboost-cpu`를
 사용합니다. XGBoost 3.2에서 CPU 전용 wheel을 제공하지 않는 ARM64·macOS는 같은
