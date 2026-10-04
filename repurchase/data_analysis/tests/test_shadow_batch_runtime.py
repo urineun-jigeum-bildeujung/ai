@@ -12,10 +12,16 @@ import pytest
 from scripts.modeling.artifacts import LoadedModelArtifact, ModelArtifactError
 from scripts.modeling.prediction_publications import select_latest_published_predictions
 from scripts.modeling.shadow_batch import prepare_shadow_publication
-from scripts.run_repurchase_batch import CONTRACT_REJECTION_EXIT_CODE, main
+from scripts.run_repurchase_batch import (
+    CONTRACT_REJECTION_EXIT_CODE,
+    UNEXPECTED_FAILURE_EXIT_CODE,
+    main,
+)
 from scripts.shadow_batch_runtime import (
     ShadowBatchContractError,
+    ShadowDatabaseError,
     _check_cut,
+    _summary,
     run_live_shadow_batch,
 )
 from scripts.shadow_batch_runtime import (
@@ -43,6 +49,11 @@ def test_shadow_preparation_preserves_storage_contract_without_exposure(
     class FakeQuarantine:
         orders = pd.DataFrame({"order_id": [1, 2]})
         order_items = status_histories = claims = claim_items = pd.DataFrame()
+        missing_history_order_count = 1
+        missing_history_paid_order_count = 1
+        missing_history_order_item_count = 2
+        status_mismatch_order_count = 0
+        status_mismatch_order_item_count = 0
 
     monkeypatch.setattr(
         shadow_batch, "quarantine_unrestorable_orders", lambda *a, **k: FakeQuarantine()
@@ -76,6 +87,7 @@ def test_shadow_preparation_preserves_storage_contract_without_exposure(
         for name in ("order_items", "histories", "claims", "claim_items", "pets")
     }
     sources["orders"] = pd.DataFrame({"order_id": [1, 2, 3]})
+    sources["order_items"] = pd.DataFrame({"order_item_id": [1, 2, 3, 4]})
 
     prepared = prepare_shadow_publication(
         sources,
@@ -87,8 +99,16 @@ def test_shadow_preparation_preserves_storage_contract_without_exposure(
     )
 
     assert prepared.source_order_count == 3
+    assert prepared.source_order_item_count == 4
     assert prepared.quarantined_order_count == 1
+    assert prepared.quarantined_missing_history_order_count == 1
+    assert prepared.quarantined_missing_history_paid_order_count == 1
+    assert prepared.quarantined_missing_history_order_item_count == 2
+    assert prepared.quarantined_status_mismatch_order_count == 0
     assert prepared.target_count == 2
+    summary = _summary(prepared, mode="shadow-check", inserted=None)
+    assert summary.quarantined_missing_history_order_item_count == 2
+    assert summary.prediction_count == 2
     assert prepared.results.loc[0, "pet_id"] == 12
     assert pd.isna(prepared.results.loc[1, "pet_id"])
     assert str(prepared.results["pet_id"].dtype) == "Int64"
@@ -173,3 +193,43 @@ def test_shadow_run_cli_rejects_missing_write_consent(capsys: object) -> None:
     payload = json.loads(capsys.readouterr().err)
     assert exit_code == CONTRACT_REJECTION_EXIT_CODE
     assert payload["error_type"] == "ShadowBatchContractError"
+
+
+def test_shadow_run_cli_classifies_database_failure_as_execution_failure(
+    monkeypatch: pytest.MonkeyPatch, capsys: object
+) -> None:
+    from scripts import run_repurchase_batch
+
+    def fail(**_kwargs: object) -> None:
+        raise ShadowDatabaseError("order_db", "08006")
+
+    monkeypatch.setattr(run_repurchase_batch, "run_live_shadow_batch", fail)
+    exit_code = main(
+        [
+            "shadow-run",
+            "--model-directory",
+            "unused",
+            "--artifact-id",
+            "fixed-aft-v2",
+            "--as-of",
+            "2026-01-02T00:00:00Z",
+            "--created-at",
+            "2026-01-03T00:00:00Z",
+            "--publication-id",
+            "shadow-run-1",
+            "--allow-shadow-write",
+        ]
+    )
+    captured = capsys.readouterr()
+    payload = json.loads(captured.err)
+    assert exit_code == UNEXPECTED_FAILURE_EXIT_CODE
+    assert captured.out == ""
+    assert len(captured.err.splitlines()) == 1
+    assert payload == {
+        "database": "order_db",
+        "error_type": "ShadowDatabaseError",
+        "event": "repurchase_batch_failed",
+        "message": "데이터베이스 연결 또는 쓰기에 실패했습니다.",
+        "sqlstate": "08006",
+        "status": "FAILED",
+    }

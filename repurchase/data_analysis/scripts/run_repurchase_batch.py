@@ -297,7 +297,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         OperationalOrderError,
         PredictionPublicationError,
         ShadowBatchContractError,
-        ShadowDatabaseError,
         ModelArtifactError,
     ) as error:
         _write_json(
@@ -310,6 +309,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             stream=sys.stderr,
         )
         return CONTRACT_REJECTION_EXIT_CODE
+    except ShadowDatabaseError as error:
+        _write_json(
+            {
+                "event": "repurchase_batch_failed",
+                "status": "FAILED",
+                "error_type": type(error).__name__,
+                "database": error.database,
+                "sqlstate": error.sqlstate,
+                "message": "데이터베이스 연결 또는 쓰기에 실패했습니다.",
+            },
+            stream=sys.stderr,
+        )
+        return UNEXPECTED_FAILURE_EXIT_CODE
     except (
         Exception
     ) as error:  # pragma: no cover - 마지막 안전망은 통합 테스트로 검증합니다.
