@@ -13,14 +13,14 @@
 // SERVICES 목록에 있는 서비스만 감지/빌드 대상. repurchase는 GHCR 자체 CI/CD를
 // ECR로 전환하기로 AI팀과 합의(#117) — GHCR 게시 자동화는 AI팀이 별도로 끔.
 //
-// deployReady: false인 서비스는 빌드+Trivy 스캔까지만 하고 ECR push/GitOps 갱신은
-// 건너뜀. repurchase는 컨테이너 내부 명령이 아직 계약 검증용만 연결돼 있어서
-// (AI팀 요청, #117) false로 유지. recommendation은 2026-09-28 ECR 레포/네임스페이스/
+// publishReady: true는 ECR push를 허용하고, deployReady: true는 ECR push와
+// GitOps 갱신을 모두 허용한다. repurchase는 SHADOW 검증용 이미지 게시만 허용하고
+// GitOps 배포는 보류한다. recommendation은 2026-09-28 ECR 레포/네임스페이스/
 // gitops-value 값파일이 모두 준비되어 true로 전환(서빙 API, Dockerfile.api 기준).
 def SERVICES = [
     [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile.api', deployReady: true],
     [name: 'nutrition', path: 'nutrition', dockerfile: 'nutrition/Dockerfile', deployReady: true],
-    [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', deployReady: false],
+    [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', publishReady: true, deployReady: false],
 ]
 
 // Build & Scan에서 서비스별 kaniko 파드가 공통으로 쓰는 pod yaml. 서비스마다
@@ -230,7 +230,7 @@ spec:
                                     """
                                 }
 
-                                if (isRealDeploy && svc.deployReady) {
+                                if (isRealDeploy && (svc.publishReady || svc.deployReady)) {
                                     // 파드가 서비스마다 새로 뜨기 때문에 ECR 로그인도 매번 새로
                                     // 한다 — 이전처럼 env 플래그로 캐싱해도 다음 서비스는 어차피
                                     // 다른 파드라 재사용이 안 된다.
