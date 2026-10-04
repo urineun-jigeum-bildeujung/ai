@@ -88,9 +88,9 @@ def prepare_shadow_publication(
         {
             "publication_id": publication_id,
             "user_id": predictions["user_id"].astype("string"),
-            "pet_id": predictions["pet_id"].map(
-                lambda value: None if pd.isna(value) else int(str(value))
-            ),
+            # 미지정 pet이 섞이면 pandas가 정수 ID를 12.0 같은 float로 올립니다.
+            # nullable 정수형으로 복원하되 소수 ID는 조용히 잘라내지 않습니다.
+            "pet_id": predictions["pet_id"].astype("Int64"),
             "target_scope": "PRODUCT_GROUP",
             "target_id": predictions["target_id"].astype("string"),
             "window_days": window_days,
