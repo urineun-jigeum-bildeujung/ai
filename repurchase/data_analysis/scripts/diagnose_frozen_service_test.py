@@ -72,8 +72,10 @@ def _load_verified_inputs(
         or result.get("validation_end_at") != manifest.get("validation_end_at")
         or result.get("observation_end_at")
         != manifest.get("observation_end_at_assumption")
+        or result.get("horizon_days")
+        != manifest.get("evaluation", {}).get("horizon_days")
     ):
-        raise ValueError("최종 Test와 고정 모델의 원천·시점 계약이 다릅니다.")
+        raise ValueError("최종 Test와 고정 모델의 원천·시점·평가 기간 계약이 다릅니다.")
     current_code = model_code_sha256()
     recorded_code = manifest["code_sha256"]
     if any(
