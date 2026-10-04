@@ -34,3 +34,7 @@ cd repurchase/data_analysis
 | 30 | 95 | 0.491372 | 0.100756 | 0.242050~0.517569 |
 
 모든 경과일에서 합성 Validation의 Brier와 ECE가 감소했다. 다만 30일 경과 구간은 확인 가능한 결과가 95행뿐이고, 구매 주기를 단순 시뮬레이션했으므로 큰 개선폭을 실사용 효과로 해석할 수 없다. 기존 UCI Test·dev SHADOW의 NO-GO 판단은 그대로이며, 별도 원천 감사와 실제 분포의 독립 데이터 검증 전에는 확률 공개를 승인하지 않는다.
+
+## 최종 평가 실행 전 동결 게이트
+
+`independent_synthetic_calibration_freeze.json`에 개발용 결과 해시, Isotonic 후보, AFT 20 rounds/scale 1.0, 경과 0·7·14·30일, 30일 예측 기간, 사용자 Bootstrap 1,000회/seed 42를 고정했다. `scripts.evaluate_independent_synthetic_calibration`은 기본 실행에서 생성본 분리·해시와 개발용 Brier 재현만 확인한다. 최종 원천 피처·라벨은 `--evaluate`가 있어야 열고, 개발용으로 학습한 동일 AFT와 고정 매핑을 적용한다. 최종 결과는 덮어쓰지 않으며 합성 파이프라인 검증으로만 표시한다.
