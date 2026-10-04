@@ -7,7 +7,7 @@
 - 기존 스키마에 덮어쓰지 않는다. 이미 같은 이름이 있으면 중단하고 충돌을 확인한다.
 - 사용자 키는 현재 AI 계약에 맞춰 text이며 서비스 member.id를 문자열로 변환한다. pet_id는 서비스 bigint, 미지정은 NULL이다.
 - 저장 구조, 발행 안전성 제약, 최신 결과 뷰와 독립된 DB 적재 함수까지 구현했다. 운영 배치의 추론 흐름에는 아직 연결하지 않았다.
-- `002_shadow_publication.sql`은 내부 검증용 `SHADOW` 완료 상태를 추가한다. `latest_predictions`는 여전히 `PUBLISHED`만 조회하므로 shadow 결과는 서비스 조회 대상이 아니다. 002는 아직 공유 개발 DB에 적용하지 않았다.
+- `002_shadow_publication.sql`은 내부 검증용 `SHADOW` 완료 상태를 추가한다. `latest_predictions`는 여전히 `PUBLISHED`만 조회하므로 shadow 결과는 서비스 조회 대상이 아니다. 2026-10-04에 개발 `repurchase_db`에 002를 적용하고 SHADOW 배치 1건·예측 50,517건을 확인했다. 같은 실행 ID 재시도에서 추가 적재는 0건, 조회 뷰의 노출 결과는 0건이었다.
 
 ## 후속 적재 로직
 
@@ -21,8 +21,8 @@ AI 쓰기 로직은 한 트랜잭션에서 STAGING 생성 → 결과 저장 → 
 
 최초 적용은 승인된 DB에 `psql -X -v ON_ERROR_STOP=1 -f 001_prediction_storage.sql`로 실행한다. 접속 자격 증명은 명령이나 저장소에 넣지 않는다. 재실행은 마이그레이션 이력에서 차단하며, 후속 변경은 번호가 다른 SQL로 추가한다.
 
-기존 001 적용 DB의 SHADOW 확장은 승인된 유지보수 시점에 `psql -X -v ON_ERROR_STOP=1 -f 002_shadow_publication.sql`로 한 번만 적용한다. 적용 전후 `prediction_batches` 상태 제약과 `latest_predictions` 뷰가 `PUBLISHED`만 노출하는지 확인한다. 개발 인프라가 중지된 동안 자동 적용하지 않는다.
+기존 001 적용 DB의 SHADOW 확장은 `psql -X -v ON_ERROR_STOP=1 -f 002_shadow_publication.sql`로 한 번만 적용한다. 개발 DB에는 이미 적용했으므로 **다시 실행하지 않는다**. 다른 환경에 적용할 때는 전후 `prediction_batches` 상태 제약과 `latest_predictions` 뷰가 `PUBLISHED`만 노출하는지 확인한다.
 
 `test_prediction_storage.sql`은 로컬 일회용 DB에서만 실행한다. 최신 결과, 건수 불일치 발행 거절, 발행 후 수정 거절, 중복 멱등키, 확률 제약을 확인하고 트랜잭션 종료 시 데이터를 롤백한다. 운영 DB를 테스트 대상으로 사용하지 않는다.
 
-`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 001 저장 구조는 개발 DB에 적용했지만 002는 아직 적용하지 않았다. AFT 추론에서 SHADOW 적재까지의 코드 경로는 연결했으며 실제 dev DB 적재와 사용자 노출용 PUBLISHED 발행은 하지 않았다.
+`scripts.modeling.prediction_storage.publish_prediction_publication()`은 호출자가 전달한 psycopg autocommit 연결에서 한 배치를 원자적으로 발행한다. 동일 멱등키와 동일 내용은 추가 저장 없이 성공, 다른 내용은 오류다. 연결 자격 증명은 코드·로그에 기록하지 않는다. 로컬 통합 테스트는 별도 `repurchase_writer_test` DB의 `REPURCHASE_TEST_DATABASE_DSN`이 설정될 때만 실행하고 스키마를 만들었다가 제거한다. 001·002는 개발 DB에 적용했고 AFT 추론에서 SHADOW 적재까지 검증했다. 사용자 노출용 `PUBLISHED` 발행은 하지 않았다.
