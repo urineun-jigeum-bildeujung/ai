@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "purpose": "synthetic_pipeline_evaluation_only",
+  "development_result_sha256": "9491ea255494b0b0313c3fdb1ca0a84e68eb91141092572aebc9b2769d9759ff",
+  "development_dataset_run_id": "calibration_development-6201-20320906",
+  "final_dataset_run_id": "final_evaluation-6202-20340301",
+  "development_manifest_sha256": "bf87cec9f6da2821bfaecfc90563318b2e6e6c2ea2858a010bc347fb659eeab7",
+  "final_manifest_sha256": "acf2609d22e4545f8494118e694a14c1f2b2743ce3702d8739893a397f0e1bb9",
+  "candidate": "ipcw_weighted_isotonic",
+  "aft_num_boost_round": 20,
+  "aft_loss_distribution_scale": 1.0,
+  "horizon_days": 30,
+  "landmark_days": [0, 7, 14, 30],
+  "bootstrap_replicates": 1000,
+  "bootstrap_random_seed": 42,
+  "decision_rule": "development_validation_brier_lower_at_every_landmark",
+  "final_evaluation_used_for_selection": false,
+  "operational_probability_publication_approved": false
+}

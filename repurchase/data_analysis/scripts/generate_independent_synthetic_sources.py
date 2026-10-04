@@ -17,7 +17,7 @@ from pathlib import Path
 
 from scripts.export_local_service_snapshot import verify_snapshot
 
-VERSION = "independent-synthetic-v2"
+VERSION = "independent-synthetic-v3"
 HEADERS = {
     "orders": (
         "order_id",
@@ -68,6 +68,7 @@ def _create_one(
     id_offset: int,
     user_count: int,
     duration_days: int,
+    arrival_span_days: int,
 ) -> dict[str, object]:
     if directory.exists():
         raise ValueError(f"출력 디렉터리가 이미 존재합니다: {directory}")
@@ -78,6 +79,9 @@ def _create_one(
     for index in range(user_count):
         user_id = id_offset + index + 1
         pet_id = id_offset + 1_000_000 + index + 1
+        first_order_offset = (
+            rng.uniform(0, arrival_span_days) if arrival_span_days else 0.0
+        )
         frames["pets"].append(
             (
                 pet_id,
@@ -89,7 +93,7 @@ def _create_one(
             group_id = 10_000 + group_index * 100 + index % 12
             # Latent cadence is sampled independently for each synthetic user/group.
             cadence = rng.uniform(18, 62)
-            elapsed = rng.uniform(0, 18)
+            elapsed = first_order_offset + rng.uniform(0, 18)
             while elapsed < duration_days - 2:
                 paid = start + timedelta(days=elapsed)
                 ordered = paid - timedelta(minutes=5)
@@ -159,6 +163,7 @@ def _create_one(
         "id_offset": id_offset,
         "user_count": user_count,
         "duration_days": duration_days,
+        "arrival_span_days": arrival_span_days,
         "cadence_days": [18, 62],
         "jitter_log_sigma": 0.18,
         "claims": "none",
@@ -200,6 +205,7 @@ def generate_pair(
     duration_days: int = 540,
     first_seed: int = 4201,
     first_id_offset: int = 9_000_000_000_000,
+    arrival_span_days: int = 0,
 ) -> list[dict[str, object]]:
     if (
         start.tzinfo is None
@@ -207,9 +213,11 @@ def generate_pair(
         or duration_days < 450
         or first_seed < 0
         or first_id_offset < 0
+        or arrival_span_days < 0
+        or arrival_span_days > duration_days - 90
     ):
         raise ValueError(
-            "시작 시각에는 시간대가 필요하며, 사용자 수는 양수, 기간은 450일 이상, 시드와 ID 오프셋은 음수가 아니어야 합니다."
+            "시작 시각에는 시간대가 필요하며, 사용자 수는 양수, 기간은 450일 이상, 시드·ID 오프셋은 음수가 아니고 사용자 유입 기간은 관측 종료 90일 전에 끝나야 합니다."
         )
     start = start.astimezone(UTC)
     paths = [output_root / role for role in ROLES]
@@ -226,6 +234,7 @@ def generate_pair(
             id_offset=first_id_offset + position * 1_000_000_000,
             user_count=user_count,
             duration_days=duration_days,
+            arrival_span_days=arrival_span_days,
         )
         for position, (path, role) in enumerate(zip(paths, ROLES, strict=True))
     ]
@@ -239,6 +248,7 @@ def main() -> None:
     parser.add_argument("--duration-days", type=int, default=540)
     parser.add_argument("--first-seed", type=int, default=4201)
     parser.add_argument("--first-id-offset", type=int, default=9_000_000_000_000)
+    parser.add_argument("--arrival-span-days", type=int, default=0)
     args = parser.parse_args()
     print(
         json.dumps(
@@ -249,6 +259,7 @@ def main() -> None:
                 duration_days=args.duration_days,
                 first_seed=args.first_seed,
                 first_id_offset=args.first_id_offset,
+                arrival_span_days=args.arrival_span_days,
             ),
             ensure_ascii=False,
         )

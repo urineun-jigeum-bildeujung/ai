@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from scripts.generate_independent_synthetic_sources import generate_pair
@@ -88,3 +89,30 @@ def test_new_seed_and_id_namespace_create_independent_pair(tmp_path: Path) -> No
     assert final["random_seed"] == 5202
     assert development["generation_params"]["id_offset"] == 11_000_000_000_000
     assert final["generation_params"]["id_offset"] == 11_001_000_000_000
+
+
+def test_staggered_user_arrivals_create_late_first_orders(tmp_path: Path) -> None:
+    """New users must enter later development windows as well as early ones."""
+    root = tmp_path / "staggered"
+    generate_pair(
+        root,
+        start=datetime.fromisoformat("2029-09-20T00:00:00+00:00"),
+        user_count=80,
+        arrival_span_days=450,
+    )
+    directory = root / "calibration_development"
+    plan = json.loads((directory / "evaluation-plan.json").read_text())
+    orders = pd.read_csv(directory / "orders.csv", parse_dates=["paid_at"])
+    first_by_user = orders.groupby("user_id")["paid_at"].min()
+    assert plan["generation_params"]["arrival_span_days"] == 450
+    assert (first_by_user > pd.Timestamp("2030-09-20T00:00:00+00:00")).any()
+
+
+def test_arrival_span_must_leave_followup_time(tmp_path: Path) -> None:
+    """Reject arrivals so late that a useful future window cannot exist."""
+    with pytest.raises(ValueError, match="90일"):
+        generate_pair(
+            tmp_path,
+            start=datetime.fromisoformat("2029-09-20T00:00:00+00:00"),
+            arrival_span_days=451,
+        )
