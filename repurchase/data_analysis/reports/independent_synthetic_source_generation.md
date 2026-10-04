@@ -38,3 +38,7 @@ cd repurchase/data_analysis
 ## 최종 평가 실행 전 동결 게이트
 
 `independent_synthetic_calibration_freeze.json`에 개발용 결과 해시, Isotonic 후보, AFT 20 rounds/scale 1.0, 경과 0·7·14·30일, 30일 예측 기간, 사용자 Bootstrap 1,000회/seed 42를 고정했다. `scripts.evaluate_independent_synthetic_calibration`은 기본 실행에서 생성본 분리·해시와 개발용 Brier 재현만 확인한다. 최종 원천 피처·라벨은 `--evaluate`가 있어야 열고, 개발용으로 학습한 동일 AFT와 고정 매핑을 적용한다. 최종 결과는 덮어쓰지 않으며 합성 파이프라인 검증으로만 표시한다.
+
+최종 평가를 한 번 실행한 뒤의 결과와 판정은 [독립 합성 최종 평가 보고서](independent_synthetic_final_evaluation_20261005.md)에 기록했다. 이 절 위의 개발용 수치는 최종 결과가 아니며, 최종 평가에서는 경과일별 개선이 일관되지 않아 운영 확률 공개 NO-GO를 유지했다.
+
+후속 독립 시드 반복은 [재현 실험 보고서](independent_synthetic_replication_20261005.md)에 기록했다. 생성기의 `--first-seed`와 `--first-id-offset`으로 기존 생성본과 시드·ID 공간을 분리했다. 동일한 생성 규칙에서 경과 0일·저이력 구간의 실패가 반복됐으므로, 합성 반복 실험만으로 운영 승인이나 실사용 성능 주장을 하지 않는다.

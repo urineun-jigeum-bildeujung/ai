@@ -1,5 +1,6 @@
 """Synthetic snapshots must be reproducible, isolated, and source-contract compatible."""
 
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -68,3 +69,22 @@ def test_generator_rejects_window_too_short_for_landmark_calibration(
     start = datetime.fromisoformat("2026-10-04T00:00:00+00:00")
     with pytest.raises(ValueError, match="450일 이상"):
         generate_pair(tmp_path, start=start, duration_days=180)
+
+
+def test_new_seed_and_id_namespace_create_independent_pair(tmp_path: Path) -> None:
+    root = tmp_path / "new-pair"
+    generate_pair(
+        root,
+        start=datetime.fromisoformat("2029-09-20T00:00:00+00:00"),
+        user_count=2,
+        first_seed=5201,
+        first_id_offset=11_000_000_000_000,
+    )
+    development = json.loads(
+        (root / "calibration_development" / "evaluation-plan.json").read_text()
+    )
+    final = json.loads((root / "final_evaluation" / "evaluation-plan.json").read_text())
+    assert development["random_seed"] == 5201
+    assert final["random_seed"] == 5202
+    assert development["generation_params"]["id_offset"] == 11_000_000_000_000
+    assert final["generation_params"]["id_offset"] == 11_001_000_000_000
