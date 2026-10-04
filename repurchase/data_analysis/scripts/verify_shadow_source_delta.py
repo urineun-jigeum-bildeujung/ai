@@ -23,12 +23,12 @@ def _next_id(frame: pd.DataFrame, column: str) -> str:
 
 
 def _candidate(
-    sources: dict[str, pd.DataFrame], baseline: pd.DataFrame
+    sources: dict[str, pd.DataFrame], baseline: pd.DataFrame, *, as_of: pd.Timestamp
 ) -> tuple[pd.Series, pd.Series]:
     orders = sources["orders"]
     items = sources["order_items"]
     eligible = items.merge(
-        orders[["order_id", "user_id", "order_status"]],
+        orders[["order_id", "user_id", "order_status", "ordered_at", "paid_at"]],
         on="order_id",
         validate="many_to_one",
     )
@@ -37,6 +37,8 @@ def _candidate(
         & eligible["item_status"].eq("PAID")
         & eligible["order_status"].eq("CONFIRMED")
         & eligible["is_replenishable_snapshot"].eq(True)
+        & pd.to_datetime(eligible["ordered_at"], utc=True).le(as_of)
+        & pd.to_datetime(eligible["paid_at"], utc=True).le(as_of)
     ]
     repeated = (
         eligible.groupby(["user_id", "pet_id", "product_group_id_snapshot"], sort=True)[
@@ -90,7 +92,7 @@ def verify_delta(
         )
 
     before = prepare(sources, "local-source-delta-before")
-    old_order, old_item = _candidate(sources, before.results)
+    old_order, old_item = _candidate(sources, before.results, as_of=as_of)
     new_order_id = _next_id(sources["orders"], "order_id")
     new_item_id = _next_id(sources["order_items"], "order_item_id")
     first_history_id = int(_next_id(sources["histories"], "history_id"))
