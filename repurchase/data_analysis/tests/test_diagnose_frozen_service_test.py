@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
-from scripts.diagnose_frozen_service_test import summarize_segment_error
+from scripts.diagnose_frozen_service_test import (
+    _load_verified_inputs,
+    summarize_segment_error,
+)
+from scripts.run_service_model_comparison import _file_sha256
 
 
 def _rows() -> pd.DataFrame:
@@ -51,3 +58,40 @@ def test_segment_diagnostics_reject_invalid_known_probability(invalid: float) ->
 def test_segment_diagnostics_require_contract_columns() -> None:
     with pytest.raises(ValueError, match="필요한 평가 열"):
         summarize_segment_error(_rows().drop(columns="ipcw_weight"))
+
+
+def test_diagnostics_reject_horizon_changed_after_final_test(tmp_path: Path) -> None:
+    frozen = tmp_path / "frozen"
+    final = tmp_path / "final"
+    frozen.mkdir()
+    final.mkdir()
+    manifest = {
+        "source_sha256": {},
+        "validation_end_at": "2026-01-01T00:00:00Z",
+        "observation_end_at_assumption": "2026-02-01T00:00:00Z",
+        "evaluation": {"horizon_days": 30},
+    }
+    (frozen / "pretest-manifest.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
+    result = {
+        "test_evaluated": True,
+        "source_sha256": {},
+        "validation_end_at": manifest["validation_end_at"],
+        "observation_end_at": manifest["observation_end_at_assumption"],
+        "horizon_days": 14,
+        "evaluator_sha256": _file_sha256(
+            Path(__file__).resolve().parents[1]
+            / "scripts"
+            / "run_frozen_service_test.py"
+        ),
+    }
+    result_path = final / "result.json"
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+    (final / "execution-state.json").write_text(
+        json.dumps({"status": "completed", "result_sha256": _file_sha256(result_path)}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="평가 기간 계약"):
+        _load_verified_inputs(frozen, result_path, tmp_path)
