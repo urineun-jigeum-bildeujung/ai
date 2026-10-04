@@ -64,10 +64,10 @@ def test_shadow_preparation_preserves_storage_contract_without_exposure(
         "predict_temporal_service_current_probability",
         lambda *a, **k: pd.DataFrame(
             {
-                "user_id": [42],
-                "pet_id": [12],
-                "target_id": [9],
-                "conditional_repurchase_probability": [0.4],
+                "user_id": [42, 42],
+                "pet_id": [12.0, float("nan")],
+                "target_id": [9, 10],
+                "conditional_repurchase_probability": [0.4, 0.3],
             }
         ),
     )
@@ -88,8 +88,10 @@ def test_shadow_preparation_preserves_storage_contract_without_exposure(
 
     assert prepared.source_order_count == 3
     assert prepared.quarantined_order_count == 1
-    assert prepared.target_count == 1
+    assert prepared.target_count == 2
     assert prepared.results.loc[0, "pet_id"] == 12
+    assert pd.isna(prepared.results.loc[1, "pet_id"])
+    assert str(prepared.results["pet_id"].dtype) == "Int64"
     assert prepared.results.loc[0, "user_id"] == "42"
     assert prepared.batch.loc[0, "publication_status"] == "SHADOW"
     assert select_latest_published_predictions(prepared.batch, prepared.results).empty
