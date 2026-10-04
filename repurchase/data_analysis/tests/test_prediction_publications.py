@@ -50,10 +50,7 @@ def test_new_full_snapshot_does_not_reuse_missing_old_target(
     batches = _as_rows(prediction_publication_contract, "batches")
     results = _as_rows(prediction_publication_contract, "results")
     results = results.loc[
-        ~(
-            results["publication_id"].eq("pub-new")
-            & results["user_id"].eq("user-2")
-        )
+        ~(results["publication_id"].eq("pub-new") & results["user_id"].eq("user-2"))
     ].copy()
     batches.loc[batches["publication_id"].eq("pub-new"), "expected_result_count"] = 1
 

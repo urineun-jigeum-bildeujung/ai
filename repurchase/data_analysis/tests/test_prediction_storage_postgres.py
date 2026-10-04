@@ -184,13 +184,17 @@ def test_latest_view_uses_only_newest_full_snapshot(
     old_batch, old_result = _candidate(publication_id="old")
     old_batch.loc[0, "idempotency_key"] = "old"
     old_result.loc[0, "user_id"] = "old-only"
-    assert publish_prediction_publication(local_connection, old_batch, old_result).inserted
+    assert publish_prediction_publication(
+        local_connection, old_batch, old_result
+    ).inserted
 
     new_batch, new_result = _candidate(publication_id="new")
     new_batch.loc[0, "idempotency_key"] = "new"
     new_batch.loc[0, "as_of_timestamp"] = "2026-01-03T00:00:00+00:00"
     new_batch.loc[0, "created_at"] = "2026-01-03T01:00:00+00:00"
-    assert publish_prediction_publication(local_connection, new_batch, new_result).inserted
+    assert publish_prediction_publication(
+        local_connection, new_batch, new_result
+    ).inserted
 
     assert local_connection.execute(
         "SELECT publication_id, user_id FROM repurchase.latest_predictions"
@@ -200,7 +204,9 @@ def test_latest_view_uses_only_newest_full_snapshot(
     late_batch.loc[0, "idempotency_key"] = "older-late"
     late_batch.loc[0, "created_at"] = "2026-01-04T00:00:00+00:00"
     late_result.loc[0, "user_id"] = "late-only"
-    assert publish_prediction_publication(local_connection, late_batch, late_result).inserted
+    assert publish_prediction_publication(
+        local_connection, late_batch, late_result
+    ).inserted
     assert local_connection.execute(
         "SELECT publication_id, user_id FROM repurchase.latest_predictions"
     ).fetchall() == [("new", "42")]
