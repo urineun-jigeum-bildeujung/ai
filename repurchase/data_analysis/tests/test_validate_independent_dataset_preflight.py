@@ -141,6 +141,27 @@ def test_preflight_rejects_same_generation_run(tmp_path: Path) -> None:
         validate_preflight(baseline, final, development, evaluation)
 
 
+def test_preflight_rejects_paid_at_without_timezone(tmp_path: Path) -> None:
+    baseline, final, development, evaluation = _inputs(tmp_path)
+    order_path = evaluation / "orders.csv"
+    content = order_path.read_text(encoding="utf-8")
+    order_path.write_text(
+        content.replace(
+            "2026-04-01T00:00:00Z,2026-04-01T00:00:00Z",
+            "2026-04-01T00:00:00Z,2026-04-01T00:00:00",
+        ),
+        encoding="utf-8",
+    )
+    manifest_path = evaluation / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["files"]["orders"]["sha256"] = hashlib.sha256(
+        order_path.read_bytes()
+    ).hexdigest()
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="paid_at은 시간대"):
+        validate_preflight(baseline, final, development, evaluation)
+
+
 def test_preflight_rejects_unmatured_orders(tmp_path: Path) -> None:
     baseline, final, development, evaluation = _inputs(tmp_path)
     plan_path = evaluation / "evaluation-plan.json"
