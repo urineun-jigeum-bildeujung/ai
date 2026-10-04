@@ -22,7 +22,13 @@ class ShadowPreparation:
     batch: pd.DataFrame
     results: pd.DataFrame
     source_order_count: int
+    source_order_item_count: int
     quarantined_order_count: int
+    quarantined_missing_history_order_count: int
+    quarantined_missing_history_paid_order_count: int
+    quarantined_missing_history_order_item_count: int
+    quarantined_status_mismatch_order_count: int
+    quarantined_status_mismatch_order_item_count: int
     target_count: int
 
 
@@ -129,6 +135,12 @@ def prepare_shadow_publication(
         batch=batch,
         results=results,
         source_order_count=len(orders),
+        source_order_item_count=len(sources["order_items"]),
         quarantined_order_count=len(orders) - len(quarantine.orders),
+        quarantined_missing_history_order_count=quarantine.missing_history_order_count,
+        quarantined_missing_history_paid_order_count=quarantine.missing_history_paid_order_count,
+        quarantined_missing_history_order_item_count=quarantine.missing_history_order_item_count,
+        quarantined_status_mismatch_order_count=quarantine.status_mismatch_order_count,
+        quarantined_status_mismatch_order_item_count=quarantine.status_mismatch_order_item_count,
         target_count=len(results),
     )
