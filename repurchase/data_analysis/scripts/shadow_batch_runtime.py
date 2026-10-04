@@ -45,7 +45,13 @@ class ShadowBatchSummary:
     artifact_id: str
     as_of_timestamp: str
     source_order_count: int
+    source_order_item_count: int
     quarantined_order_count: int
+    quarantined_missing_history_order_count: int
+    quarantined_missing_history_paid_order_count: int
+    quarantined_missing_history_order_item_count: int
+    quarantined_status_mismatch_order_count: int
+    quarantined_status_mismatch_order_item_count: int
     prediction_count: int
     inserted: bool | None
 
@@ -157,7 +163,13 @@ def _summary(
         artifact_id=str(batch["artifact_id"]),
         as_of_timestamp=batch["as_of_timestamp"].isoformat(),
         source_order_count=prepared.source_order_count,
+        source_order_item_count=prepared.source_order_item_count,
         quarantined_order_count=prepared.quarantined_order_count,
+        quarantined_missing_history_order_count=prepared.quarantined_missing_history_order_count,
+        quarantined_missing_history_paid_order_count=prepared.quarantined_missing_history_paid_order_count,
+        quarantined_missing_history_order_item_count=prepared.quarantined_missing_history_order_item_count,
+        quarantined_status_mismatch_order_count=prepared.quarantined_status_mismatch_order_count,
+        quarantined_status_mismatch_order_item_count=prepared.quarantined_status_mismatch_order_item_count,
         prediction_count=prepared.target_count,
         inserted=inserted,
     )
