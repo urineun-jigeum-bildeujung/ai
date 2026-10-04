@@ -308,6 +308,11 @@ Train 내부 시간 분할의 IPCW Brier로만 선택하며, 선택 후 전체 T
 `scripts.summarize_independent_synthetic_final`은 결과 JSON의 경과일별·저이력
 쌍 비교를 검사해 요약하지만, 학습·후보 선택이나 운영 공개 승인은 하지 않습니다.
 같은 생성 규칙의 합성 반복이므로 실제 사용자 분포의 검증으로 해석하지 않습니다.
+후속 [저이력 진단](reports/independent_synthetic_history_diagnostic_20261005.md)에서는
+앞선 개발본에 간격 0개·1~2개 사용자가 없었음을 확인했습니다. 사용자 유입을
+분산한 새 개발본에서도 경과 0일·간격 0개 Brier가 보정 후 악화돼 새 최종 평가본은
+열지 않았습니다. `scripts.diagnose_independent_calibration_history`는 개발본만으로
+이 구간을 검사하며, 통과 여부가 운영 확률 공개 승인을 의미하지는 않습니다.
 
 최종 평가 사전검증은 Validation 결과에 기록된 코드 SHA-256도 현재 코드·승인
 manifest와 대조합니다. 이전 형식의 결과 JSON에는 이 지문이 없어 재실행이
