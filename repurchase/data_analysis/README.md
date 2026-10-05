@@ -319,6 +319,10 @@ Train 내부 시간 분할의 IPCW Brier로만 선택하며, 선택 후 전체 T
 악화됐고 사용자 Bootstrap 95% 구간은 0을 포함합니다. 개발본 전용
 `scripts.diagnose_independent_development_history`로 재현하며 최종 평가본은
 열지 않았습니다.
+후속 [이력 상호작용 보정 개발 비교](reports/independent_history_logistic_development_20261005.md)는
+서로 다른 v6·v7 개발 시드에서 원본 AFT·Isotonic·L2 로지스틱 후보를 동일 행으로
+비교합니다. 두 개발본의 점추정 스크린은 통과했지만 7일·간격 0개 구간의
+Bootstrap 구간은 0을 포함합니다. 최종 평가본과 운영 확률 공개는 아직 별개입니다.
 
 최종 평가 사전검증은 Validation 결과에 기록된 코드 SHA-256도 현재 코드·승인
 manifest와 대조합니다. 이전 형식의 결과 JSON에는 이 지문이 없어 재실행이
