@@ -247,3 +247,21 @@ def test_partial_db_configuration_not_ready(monkeypatch, key):
         result = client.get("/ready")
         assert result.status_code == 503 and result.json()["runtime_mode"] == "service"
         assert client.post(PATH, json=BODY, headers=HEADERS).json()["detail"] == "SERVICE_SOURCE_NOT_CONFIGURED"
+
+
+def test_added_pet_size_column_uses_actual_source(monkeypatch):
+    _, cur = connection(monkeypatch, (123,'DOG',4,8,3,True,None,'MEDIUM'), [[]])
+    assert repo.get_pet(123,42)['target_breed_size'] == 'MEDIUM'
+    assert 'birth_date, target_breed_size' in cur.execute.call_args_list[0].args[0]
+
+
+def test_added_product_columns_shared_by_single_and_list(monkeypatch):
+    row = (456,'MOCK-0456','synthetic','FOOD','DRY_FOOD','ADULT','LARGE','성체','급여 표시 원문')
+    _, cur = connection(monkeypatch,row,[[],[],[],[]])
+    one = repo.get_product(456)
+    for key in ('target_breed_size','feeding_target','feeding_method'):
+        assert key in cur.execute.call_args_list[0].args[0]
+    connection(monkeypatch,None,[[row],[],[],[],[]])
+    listed = repo.list_active_products()[0]
+    assert listed == one
+    assert listed['target_breed_size'] == 'LARGE' and listed['feeding_method'] == '급여 표시 원문'
