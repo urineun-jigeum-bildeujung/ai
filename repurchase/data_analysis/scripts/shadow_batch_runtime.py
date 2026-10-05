@@ -5,7 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -36,6 +38,7 @@ class ShadowDatabaseError(RuntimeError):
 FROZEN_SHADOW_AFT_ARTIFACT_ID = (
     "ec25eb1bcd8f24ce36a2397c1544cb087cb970af532365de7f8ec900aeb4b7fb"
 )
+KST = timezone(timedelta(hours=9))
 
 
 @dataclass(frozen=True)
@@ -54,6 +57,58 @@ class ShadowBatchSummary:
     quarantined_status_mismatch_order_item_count: int
     prediction_count: int
     inserted: bool | None
+
+
+@dataclass(frozen=True)
+class DailyShadowSlot:
+    """시연용 하루 한 번 배치의 논리적 실행 슬롯입니다."""
+
+    as_of_timestamp: str
+    created_at: str
+    publication_id: str
+
+
+def daily_shadow_slot(
+    *,
+    now: pd.Timestamp,
+    scheduled_time_kst: str,
+    run_date_kst: str | None = None,
+) -> DailyShadowSlot:
+    """같은 KST 날짜·예정 시각의 재시도가 같은 컷과 ID를 사용하게 합니다.
+
+    created_at은 실제 컨테이너 시작 시각이 아닌 논리적 예정 실행 시각입니다.
+    지연된 날짜의 재실행에는 run_date_kst를 명시합니다.
+    """
+    current = _timestamp(str(now), name="now")
+    if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", scheduled_time_kst):
+        raise ShadowBatchContractError("scheduled_time_kst는 HH:MM 형식이어야 합니다.")
+    if run_date_kst is None:
+        run_day = current.tz_convert(KST).date()
+    else:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", run_date_kst):
+            raise ShadowBatchContractError(
+                "run_date_kst는 YYYY-MM-DD 형식이어야 합니다."
+            )
+        try:
+            run_day = date.fromisoformat(run_date_kst)
+        except ValueError as error:
+            raise ShadowBatchContractError(
+                "run_date_kst는 유효한 날짜여야 합니다."
+            ) from error
+    hour, minute = map(int, scheduled_time_kst.split(":"))
+    slot = pd.Timestamp(datetime.combine(run_day, time(hour, minute, tzinfo=KST)))
+    slot_utc = slot.tz_convert("UTC")
+    if slot_utc > current:
+        raise ShadowBatchContractError("예정 실행 시각이 현재보다 늦습니다.")
+    timestamp = slot_utc.isoformat()
+    return DailyShadowSlot(
+        as_of_timestamp=timestamp,
+        created_at=timestamp,
+        publication_id=(
+            f"demo-shadow-{run_day:%Y%m%d}T{hour:02d}{minute:02d}KST-"
+            f"{FROZEN_SHADOW_AFT_ARTIFACT_ID[:12]}-30d-v1"
+        ),
+    )
 
 
 def _sha256(path: Path) -> str:
