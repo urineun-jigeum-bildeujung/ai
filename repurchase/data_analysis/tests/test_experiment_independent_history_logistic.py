@@ -1,11 +1,14 @@
 """Development candidate selection is complete and never reads final labels."""
 
+import json
+
 import pandas as pd
 import pytest
 
 from scripts.experiment_independent_history_logistic import (
     _development_screen,
     _group_scores,
+    experiment,
 )
 
 
@@ -61,3 +64,21 @@ def test_development_screen_rejects_missing_low_history_group():
     landmark["history_groups"].pop()
     with pytest.raises(ValueError, match="저이력 평가 표본"):
         _development_screen([landmark])
+
+
+@pytest.mark.parametrize("days", [[0, 14, 30], [7, 0, 14, 30], [0, 7, 14, 30, 60]])
+def test_experiment_rejects_incomplete_landmarks_before_model_fit(
+    days, monkeypatch, tmp_path
+):
+    result_path = tmp_path / "development.json"
+    result_path.write_text(json.dumps({"landmark_days": days}), encoding="utf-8")
+    monkeypatch.setattr(
+        "scripts.experiment_independent_history_logistic.validate_development",
+        lambda *args: None,
+    )
+    monkeypatch.setattr(
+        "scripts.experiment_independent_history_logistic._fit_and_reproduce_development",
+        lambda *args: pytest.fail("모델을 학습하면 안 됩니다."),
+    )
+    with pytest.raises(ValueError, match="경과 시점"):
+        experiment(result_path, tmp_path)

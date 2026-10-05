@@ -37,6 +37,8 @@ def test_final_screen_checks_whole_and_both_low_history_groups():
 
 
 def test_final_labels_are_not_read_if_frozen_input_fails(monkeypatch, tmp_path):
+    (tmp_path / "manifest.json").write_text("{}", encoding="utf-8")
+
     def invalid(*args):
         raise ValueError("invalid frozen input")
 
@@ -53,6 +55,29 @@ def test_final_labels_are_not_read_if_frozen_input_fails(monkeypatch, tmp_path):
             development_comparison_path=tmp_path,
             development_dir=tmp_path,
             evaluation_dir=tmp_path,
+            baseline_dir=tmp_path,
+            baseline_test_result=tmp_path,
+        )
+
+
+def test_final_run_marker_is_exclusive_across_output_names(tmp_path):
+    final_dir = tmp_path / "final"
+    final_dir.mkdir()
+    (final_dir / "manifest.json").write_text("{}", encoding="utf-8")
+    freeze = tmp_path / "freeze.json"
+    freeze.write_text("{}", encoding="utf-8")
+    marker = evaluator._reserve_final_run(final_dir, freeze)
+    assert marker.is_dir()
+    assert (marker / "execution-state.json").is_file()
+    with pytest.raises(ValueError, match="이미 있습니다"):
+        evaluator._reserve_final_run(final_dir, freeze)
+    with pytest.raises(ValueError, match="이미 있습니다"):
+        evaluator.evaluate_frozen(
+            freeze_path=freeze,
+            development_result_path=tmp_path / "other-output.json",
+            development_comparison_path=tmp_path,
+            development_dir=tmp_path,
+            evaluation_dir=final_dir,
             baseline_dir=tmp_path,
             baseline_test_result=tmp_path,
         )

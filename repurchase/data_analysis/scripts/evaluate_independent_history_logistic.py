@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -50,6 +51,39 @@ from scripts.run_service_model_comparison import _file_sha256, model_code_sha256
 from scripts.validate_independent_dataset_preflight import validate_preflight
 
 LANDMARK_DAYS = [0, 7, 14, 30]
+
+
+def _run_marker_path(evaluation_dir: Path) -> Path:
+    """Bind the single-use marker to the final manifest, not an output path."""
+    resolved = evaluation_dir.resolve()
+    digest = _file_sha256(resolved / "manifest.json")
+    return resolved.parent / f".{resolved.name}-history-logistic-final-{digest}"
+
+
+def _reserve_final_run(evaluation_dir: Path, freeze_path: Path) -> Path:
+    """Reserve final-label access exclusively; retain the marker after failure."""
+    marker = _run_marker_path(evaluation_dir)
+    try:
+        marker.mkdir(exist_ok=False)
+    except FileExistsError as exc:
+        raise ValueError("이 최종 합성 데이터의 평가 기록이 이미 있습니다.") from exc
+    (marker / "execution-state.json").write_text(
+        json.dumps(
+            {
+                "status": "started",
+                "started_at": datetime.now(UTC).isoformat(),
+                "final_manifest_sha256": _file_sha256(evaluation_dir / "manifest.json"),
+                "freeze_sha256": _file_sha256(freeze_path),
+                "evaluator_sha256": _file_sha256(Path(__file__)),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return marker
 
 
 def validate_frozen_inputs(
@@ -200,6 +234,8 @@ def evaluate_frozen(
     baseline_test_result: Path,
 ) -> dict[str, object]:
     """Validate, reproduce the fixed model, then open one synthetic final set."""
+    if _run_marker_path(evaluation_dir).exists():
+        raise ValueError("이 최종 합성 데이터의 평가 기록이 이미 있습니다.")
     freeze, development, comparison, preflight = validate_frozen_inputs(
         freeze_path,
         development_result_path,
@@ -247,7 +283,8 @@ def evaluate_frozen(
             raise ValueError("동결된 개발 보정 계수를 재현하지 못했습니다.")
         calibrators[day] = fitted
 
-    # No final purchase event or label is parsed before all frozen checks pass.
+    # Reserve exactly once after development reproduction, before final labels.
+    _reserve_final_run(evaluation_dir, freeze_path)
     final_events, final_orders = _events(evaluation_dir)
     final_plan = json.loads(
         (evaluation_dir / "evaluation-plan.json").read_text(encoding="utf-8")
@@ -379,6 +416,21 @@ def main() -> None:
         destination.write(
             json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
         )
+    marker = _run_marker_path(args.evaluation_directory)
+    (marker / "execution-state.json").write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "result_sha256": _file_sha256(args.output),
+                "completed_at": datetime.now(UTC).isoformat(),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(json.dumps({"status": result["status"], "output": str(args.output)}))
 
 

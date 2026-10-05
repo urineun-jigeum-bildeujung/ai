@@ -33,6 +33,7 @@ from scripts.modeling.service_landmark_validation import build_service_landmark_
 from scripts.run_service_model_comparison import _file_sha256
 
 HISTORY_GROUPS = ("0", "1-2", "3+")
+LANDMARK_DAYS = [0, 7, 14, 30]
 
 
 def _group_mask(count: pd.Series, label: str) -> pd.Series:
@@ -128,6 +129,8 @@ def experiment(
         raise ValueError("Bootstrap 반복 횟수는 양수여야 합니다.")
     result = json.loads(result_path.read_text(encoding="utf-8"))
     validate_development(result, development_dir)
+    if result.get("landmark_days") != LANDMARK_DAYS:
+        raise ValueError("개발 결과의 경과 시점이 완전하지 않습니다.")
     configuration = result["aft_configuration"]
     freeze = {
         "aft_num_boost_round": configuration["num_boost_round"],
