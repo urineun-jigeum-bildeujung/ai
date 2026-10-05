@@ -91,7 +91,11 @@ def read_demo_shadow_predictions(
         raise DemoShadowAccessError("max_results는 1~500의 정수여야 합니다.")
     if not isinstance(expected_artifact_id, str) or not expected_artifact_id.strip():
         raise DemoShadowAccessError("고정 모델 ID가 필요합니다.")
-    if connection.info.dbname != "repurchase_db":
+    is_local_test_database = (
+        connection.info.dbname == "repurchase_writer_test"
+        and connection.info.host in {"127.0.0.1", "localhost", "::1"}
+    )
+    if connection.info.dbname != "repurchase_db" and not is_local_test_database:
         raise DemoShadowAccessError("repurchase_db 읽기 연결이 필요합니다.")
 
     rows = connection.execute(
