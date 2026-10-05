@@ -313,6 +313,12 @@ Train 내부 시간 분할의 IPCW Brier로만 선택하며, 선택 후 전체 T
 분산한 새 개발본에서도 경과 0일·간격 0개 Brier가 보정 후 악화돼 새 최종 평가본은
 열지 않았습니다. `scripts.diagnose_independent_calibration_history`는 개발본만으로
 이 구간을 검사하며, 통과 여부가 운영 확률 공개 승인을 의미하지는 않습니다.
+후속 [저이력 표본 확대 실험](reports/independent_synthetic_history_stability_20261005.md)은
+사용자 1,200명·주문 21,168건의 별도 합성 개발본에서 네 경과일을 다시 확인합니다.
+7일·간격 0개 구간은 보정 후 Brier 점추정이 0.250597→0.251069로 소폭
+악화됐고 사용자 Bootstrap 95% 구간은 0을 포함합니다. 개발본 전용
+`scripts.diagnose_independent_development_history`로 재현하며 최종 평가본은
+열지 않았습니다.
 
 최종 평가 사전검증은 Validation 결과에 기록된 코드 SHA-256도 현재 코드·승인
 manifest와 대조합니다. 이전 형식의 결과 JSON에는 이 지문이 없어 재실행이
