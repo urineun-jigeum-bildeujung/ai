@@ -32,6 +32,7 @@ from scripts.shadow_batch_runtime import (
     ShadowBatchContractError,
     ShadowDatabaseError,
     check_local_shadow_batch,
+    daily_shadow_slot,
     run_live_shadow_batch,
 )
 
@@ -249,6 +250,19 @@ def _build_parser() -> _BatchArgumentParser:
         "--publication-id", required=True, help="재시도에도 같은 실행 ID"
     )
     shadow_run.add_argument("--allow-shadow-write", action="store_true")
+    demo_daily = commands.add_parser(
+        "demo-daily-shadow-run",
+        help="목데이터 시연용 30일 확률을 KST 날짜별 SHADOW 배치로 적재합니다.",
+    )
+    demo_daily.add_argument("--model-directory", type=Path, required=True)
+    demo_daily.add_argument("--artifact-id", required=True)
+    demo_daily.add_argument(
+        "--scheduled-time-kst", required=True, help="CronJob 예정 시각 HH:MM"
+    )
+    demo_daily.add_argument(
+        "--run-date-kst", help="지연된 날짜를 재실행할 때만 YYYY-MM-DD로 지정"
+    )
+    demo_daily.add_argument("--allow-shadow-write", action="store_true")
     return parser
 
 
@@ -290,6 +304,24 @@ def main(argv: Sequence[str] | None = None) -> int:
                 allow_shadow_write=arguments.allow_shadow_write,
             )
             event = "repurchase_shadow_stored"
+        elif arguments.command == "demo-daily-shadow-run":
+            if not arguments.allow_shadow_write:
+                raise ShadowBatchContractError("--allow-shadow-write가 필요합니다.")
+            slot = daily_shadow_slot(
+                now=pd.Timestamp.now(tz="UTC"),
+                scheduled_time_kst=arguments.scheduled_time_kst,
+                run_date_kst=arguments.run_date_kst,
+            )
+            summary = run_live_shadow_batch(
+                artifact_directory=arguments.model_directory,
+                expected_artifact_id=arguments.artifact_id,
+                as_of_timestamp=slot.as_of_timestamp,
+                created_at=slot.created_at,
+                window_days=30,
+                publication_id=slot.publication_id,
+                allow_shadow_write=True,
+            )
+            event = "repurchase_demo_shadow_stored"
         else:
             raise BatchRuntimeError(f"지원하지 않는 명령입니다: {arguments.command}")
     except (

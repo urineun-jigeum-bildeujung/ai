@@ -453,6 +453,44 @@ python -m scripts.run_repurchase_batch shadow-run \
   --window-days 30 --allow-shadow-write
 ```
 
+### 목데이터 시연용 일별 SHADOW 실행 준비
+
+`demo-daily-shadow-run`은 기존 AFT·30일 출력·`SHADOW` 상태만 사용합니다.
+`--scheduled-time-kst`는 인프라 Job의 예정 시각과 **동일한 HH:MM**이어야
+합니다. 코드가 실행 당일의 KST 날짜와 이 시각으로 논리적 관측 컷, `created_at`,
+발행 ID를 만듭니다. 따라서 같은 날짜의 재시도는 같은 ID, 다음 날짜는 새 ID를
+사용합니다. `created_at`은 실제 Pod 시작 시각이 아닌 논리적 예정 시각입니다.
+전날 실행을 수동 재시도할 때는 `--run-date-kst YYYY-MM-DD`를 명시합니다.
+예정 시각보다 일찍 실행하면 거절합니다.
+
+```bash
+python -m scripts.run_repurchase_batch demo-daily-shadow-run \
+  --model-directory /models/xgboost_aft \
+  --artifact-id ec25eb1bcd8f24ce36a2397c1544cb087cb970af532365de7f8ec900aeb4b7fb \
+  --scheduled-time-kst '<인프라와-합의한-HH:MM>' \
+  --allow-shadow-write
+```
+
+시연에서는 2026-10-06·07 오전 **09:30 KST에 일회성 Job 두 건**으로 사용하고,
+정기 CronJob은 활성화하지 않습니다. 이 명령은 아직 클라우드 Job에서 실행·검증하지
+않았습니다. 고정된 과거
+목데이터에서도 기준 날짜가 바뀌면 마지막 구매 후 경과일이 변하므로 매일 새 결과가
+생길 수 있습니다. 원천 간 동시 스냅샷은 아니며, 같은 날짜에 과거 원천을 수정해
+재실행하면 멱등 내용 불일치로 중단될 수 있습니다. DB 보관 기간·행 증가량·실패 알림,
+목계정 전용 조회 및 화면 표시를 확정해야 화면 시연까지 할 수 있습니다. 이 경로는
+`PUBLISHED` 발행 또는 실사용자 공개를 하지 않습니다. 이미지 재빌드·ECR 업로드,
+서버와 DB 가동, 두 일회성 Job의 생성·실행은 인프라 담당입니다.
+
+시연 결과 조회의 AI 측 어댑터는
+`scripts.modeling.demo_shadow_reader.read_demo_shadow_predictions()`입니다.
+인증 계층이 확인한 사용자 ID, 동일한 요청 사용자 ID, 서버가 관리하는 목계정 허용
+목록, 고정 모델 ID가 모두 필요합니다. 최신 `demo-shadow-*` SHADOW 배치 한 건에서
+해당 사용자·30일 결과만 읽고, 대상 사용자가 새 배치에 없으면 오래된 결과를
+보충하지 않습니다. `source_kind=MOCK_DATA_DEMO`를 반환합니다. **이 함수는
+HTTP API나 인증 그 자체가 아닙니다.** BE/FE 연결 전 읽기 전용 DB 계정과 목계정
+인증 경로를 확정해야 하며 브라우저에 DB 자격 증명을 주지 않습니다. 기존
+`repurchase.latest_predictions`의 `PUBLISHED` 전용 정책은 유지합니다.
+
 ### Docker 이미지와 smoke test
 
 저장소 루트에서 재구매 디렉터리를 빌드 컨텍스트로 사용합니다.
