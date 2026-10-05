@@ -18,10 +18,12 @@ from scripts.run_repurchase_batch import (
     main,
 )
 from scripts.shadow_batch_runtime import (
+    DailyShadowSlot,
     ShadowBatchContractError,
     ShadowDatabaseError,
     _check_cut,
     _summary,
+    daily_shadow_slot,
     run_live_shadow_batch,
 )
 from scripts.shadow_batch_runtime import (
@@ -233,3 +235,89 @@ def test_shadow_run_cli_classifies_database_failure_as_execution_failure(
         "sqlstate": "08006",
         "status": "FAILED",
     }
+
+
+def test_demo_daily_slot_is_stable_on_retry_and_changes_next_day() -> None:
+    first = daily_shadow_slot(
+        now=pd.Timestamp("2026-10-06T09:30:01+09:00"),
+        scheduled_time_kst="09:30",
+    )
+    retry = daily_shadow_slot(
+        now=pd.Timestamp("2026-10-06T22:00:00+09:00"),
+        scheduled_time_kst="09:30",
+    )
+    next_day = daily_shadow_slot(
+        now=pd.Timestamp("2026-10-07T09:30:01+09:00"),
+        scheduled_time_kst="09:30",
+    )
+    delayed_retry = daily_shadow_slot(
+        now=pd.Timestamp("2026-10-07T09:30:01+09:00"),
+        scheduled_time_kst="09:30",
+        run_date_kst="2026-10-06",
+    )
+    assert first == retry == delayed_retry
+    assert first.as_of_timestamp == "2026-10-06T00:30:00+00:00"
+    assert first.created_at == first.as_of_timestamp
+    assert first.publication_id != next_day.publication_id
+    assert first.publication_id.startswith("demo-shadow-20261006T0930KST-")
+    assert next_day.publication_id.startswith("demo-shadow-20261007T0930KST-")
+    assert first.publication_id.endswith("-30d-v1")
+
+
+@pytest.mark.parametrize(
+    ("scheduled_time", "run_date"),
+    [
+        ("3:00", None),
+        ("24:00", None),
+        ("03:60", None),
+        ("03:00", "2026-02-30"),
+        ("03:00", "2026-10-06"),
+    ],
+)
+def test_demo_daily_slot_rejects_invalid_or_future_schedule(
+    scheduled_time: str, run_date: str | None
+) -> None:
+    with pytest.raises(ShadowBatchContractError):
+        daily_shadow_slot(
+            now=pd.Timestamp("2026-10-05T03:00:01+09:00"),
+            scheduled_time_kst=scheduled_time,
+            run_date_kst=run_date,
+        )
+
+
+def test_demo_daily_cli_keeps_shadow_write_and_30_day_contract(
+    monkeypatch: pytest.MonkeyPatch, capsys: object
+) -> None:
+    from scripts import run_repurchase_batch
+
+    arguments = [
+        "demo-daily-shadow-run",
+        "--model-directory",
+        "unused",
+        "--artifact-id",
+        "fixed-aft-v2",
+        "--scheduled-time-kst",
+        "03:00",
+    ]
+    assert main(arguments) == CONTRACT_REJECTION_EXIT_CODE
+    assert "--allow-shadow-write" in capsys.readouterr().err
+
+    slot = DailyShadowSlot(
+        "2026-10-04T18:00:00+00:00", "2026-10-04T18:00:00+00:00", "demo-id"
+    )
+    monkeypatch.setattr(
+        run_repurchase_batch, "daily_shadow_slot", lambda **_kwargs: slot
+    )
+
+    def fail(**kwargs: object) -> None:
+        assert kwargs["window_days"] == 30
+        assert kwargs["publication_id"] == "demo-id"
+        assert kwargs["as_of_timestamp"] == slot.as_of_timestamp
+        assert kwargs["created_at"] == slot.created_at
+        assert kwargs["allow_shadow_write"] is True
+        raise ShadowDatabaseError("order_db", "08006")
+
+    monkeypatch.setattr(run_repurchase_batch, "run_live_shadow_batch", fail)
+    assert main([*arguments, "--allow-shadow-write"]) == UNEXPECTED_FAILURE_EXIT_CODE
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["error_type"] == "ShadowDatabaseError"
