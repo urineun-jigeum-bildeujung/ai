@@ -14,13 +14,13 @@
 // ECR로 전환하기로 AI팀과 합의(#117) — GHCR 게시 자동화는 AI팀이 별도로 끔.
 //
 // publishReady: true는 ECR push를 허용하고, deployReady: true는 ECR push와
-// GitOps 갱신을 모두 허용한다. repurchase는 SHADOW 검증용 이미지 게시만 허용하고
-// GitOps 배포는 보류한다. recommendation은 2026-09-28 ECR 레포/네임스페이스/
+// GitOps 갱신을 모두 허용한다. repurchase는 values 태그 갱신으로 다음 SHADOW Job을
+// suspend=true로 준비한다. 실행은 수동 승인 후 재개한다. recommendation은 ECR 레포/네임스페이스/
 // gitops-value 값파일이 모두 준비되어 true로 전환(서빙 API, Dockerfile.api 기준).
 def SERVICES = [
     [name: 'recommendation', path: 'recommendation/endtoend', dockerfile: 'recommendation/endtoend/Dockerfile.api', deployReady: true],
     [name: 'nutrition', path: 'nutrition', dockerfile: 'nutrition/Dockerfile', deployReady: true],
-    [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', publishReady: true, deployReady: false],
+    [name: 'repurchase', path: 'repurchase/data_analysis', dockerfile: 'repurchase/data_analysis/Dockerfile', deployReady: true],
 ]
 
 // Build & Scan에서 서비스별 kaniko 파드가 공통으로 쓰는 pod yaml. 서비스마다
