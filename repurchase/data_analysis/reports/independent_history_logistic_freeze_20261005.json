@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "purpose": "synthetic_pipeline_evaluation_only",
+  "candidate": "l2_history_group_interaction_logistic",
+  "landmark_days": [0, 7, 14, 30],
+  "horizon_days": 30,
+  "regularization_c": 1.0,
+  "bootstrap_replicates": 1000,
+  "bootstrap_random_seed": 42,
+  "final_decision_rule": "whole_and_both_low_history_groups_have_no_point_brier_worsening_at_every_landmark",
+  "development_dataset_run_id": "calibration_development-9201-20430717",
+  "final_dataset_run_id": "final_evaluation-9202-20450707",
+  "development_result_sha256": "fc6bcb2882dda6c31a95146cc7693a4672fdc21a28d294272254e606f0489126",
+  "development_comparison_sha256": "42f0a0698c770ffa9e7620356eaf70fa81308b93cf814e4ad28370c3bd445abc",
+  "development_manifest_sha256": "fe402560101ede789956a46f612ca12e7839ce51e438c7a1911c09511369f628",
+  "final_manifest_sha256": "f19ff6bdf6bc4af388721d9bc8a38527b943ac32cead0b77b61fc117dc3cdb15",
+  "evaluation_code_sha256": "394f640686e72b3ced6d7384f53aa07e21e6b1d19e8b66a5e70e8bac60ec6445",
+  "development_experiment_code_sha256": "106715c8b39ca5e40986c4e813f29198781911331538d662406be72f9751126e",
+  "final_evaluation_used_for_selection": false,
+  "operational_probability_publication_approved": false
+}
