@@ -567,15 +567,23 @@ def _authenticated_member_id(request: Request) -> int:
     return int(members[0])
 
 
+def _service_pet_profile(pet: dict[str, Any], req: BaseModel) -> dict[str, Any]:
+    if "allergy_profile_status" not in req.model_fields_set:
+        return pet
+    declared = req.allergy_profile_status or "UNKNOWN"
+    stored = pet.get("allergy_profile_status", "UNKNOWN")
+    if stored in {"KNOWN_NONE", "KNOWN_LIST"} and declared != stored:
+        declared = "UNKNOWN"
+    return {**pet, "allergy_profile_status": declared}
+
+
 @app.post("/api/nutrition/analyze/by-service-id")
 def analyze_by_service_id(req: ServiceIdAnalyzeRequest, request: Request) -> dict[str, Any]:
     """Gateway 인증과 SQL ownership을 모두 통과한 실제 source만 분석한다."""
     member_id = _authenticated_member_id(request)
     try:
         pet = service_repository.get_pet(req.pet_id, member_id)
-        # FE declaration is checked against SELECTed pet_allergy rows by adapt_pet.
-        # Omission never promotes the DB list to a known profile.
-        pet = {**pet, "allergy_profile_status": req.allergy_profile_status or "UNKNOWN"}
+        pet = _service_pet_profile(pet, req)
         product = service_repository.get_product(req.product_id)
         return observe_domain_result(analyze_service_records(pet, product))
     except service_repository.ServiceNotFound as exc:
@@ -627,7 +635,7 @@ def compare(req: ServiceCompareRequest, request: Request) -> dict[str, Any]:
     member_id = _authenticated_member_id(request)
     try:
         pet = service_repository.get_pet(req.pet_id, member_id)
-        pet = {**pet, "allergy_profile_status": req.allergy_profile_status or "UNKNOWN"}
+        pet = _service_pet_profile(pet, req)
         products = [service_repository.get_product(pid) for pid in req.product_ids]
         analyses = [observe_domain_result(analyze_service_records(pet, product)) for product in products]
         return compare_service_analyses(req.pet_id, req.product_ids, analyses)

@@ -111,9 +111,9 @@ def test_authenticated_service_endpoint_adds_feeding_and_forbids_client_coeffici
     with TestClient(api.app) as client:
         response = client.post("/api/nutrition/analyze/by-service-id", json={"pet_id": 10, "product_id": 1}, headers=headers)
         assert response.status_code == 200
-        assert response.json()["feeding"]["daily_serving_g"] is None
-        assert response.json()["feeding"]["status"] == "BLOCKED"
-        assert "FEEDING_SAFETY_EXCLUDED" in response.json()["feeding"]["reason_codes"]
+        assert response.json()["feeding"]["daily_serving_g"] == 138.4
+        assert response.json()["feeding"]["status"] == "READY"
+        assert response.json()["feeding"]["production_evidence"] is False
         assert client.post("/api/nutrition/analyze/by-service-id", json={"pet_id": 10, "product_id": 1, "coefficient": 1.6}, headers=headers).status_code == 422
 
 

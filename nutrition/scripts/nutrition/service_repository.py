@@ -57,7 +57,8 @@ def _cursor(env_key):
 def get_pet(pet_id, member_id):
     with _cursor("MEMBER_DATABASE_URL") as cursor:
         cursor.execute(
-            "SELECT id, species, age, weight, bcs, is_neutered, birth_date, target_breed_size FROM public.pet "
+            "SELECT id, species, age, weight, bcs, is_neutered, birth_date, target_breed_size, "
+            "to_jsonb(pet)->>'allergy_profile_status' FROM public.pet "
             "WHERE id = %s AND member_id = %s AND deleted_at IS NULL", (pet_id, member_id),
         )
         row = cursor.fetchone()
@@ -66,8 +67,11 @@ def get_pet(pet_id, member_id):
             raise ServiceNotFound("PET_NOT_FOUND")
         cursor.execute("SELECT allergy_code FROM public.pet_allergy WHERE pet_id = %s ORDER BY allergy_code", (pet_id,))
         allergies = [item[0] for item in cursor.fetchall()]
+        profile = row[8] if len(row) > 8 else None
+        if profile is None:
+            profile = "KNOWN_LIST" if allergies else "UNKNOWN"
         return dict(zip(("id", "species", "age", "weight", "bcs", "is_neutered", "birth_date", "target_breed_size"), row),
-                    allergies=allergies, allergy_profile_status="KNOWN_LIST" if allergies else "UNKNOWN",
+                    allergies=allergies, allergy_profile_status=profile,
                     life_stage=None)
 
 
