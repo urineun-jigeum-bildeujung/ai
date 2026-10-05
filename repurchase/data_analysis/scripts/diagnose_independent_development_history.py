@@ -41,8 +41,11 @@ def validate_development(result: dict[str, object], directory: Path) -> None:
         name: _file_sha256(directory / f"{name}.csv") for name in SOURCE_NAMES
     }:
         raise ValueError("개발 원천 파일 지문이 결과와 다릅니다.")
+    code_sha256 = result.get("code_sha256")
+    if not isinstance(code_sha256, dict):
+        raise ValueError("개발 평가 결과의 모델 코드 지문이 누락됐거나 올바르지 않습니다.")
     if any(
-        result.get("code_sha256", {}).get(name) != digest
+        code_sha256.get(name) != digest
         for name, digest in model_code_sha256().items()
     ):
         raise ValueError("개발 평가 이후 모델 코드가 변경됐습니다.")
