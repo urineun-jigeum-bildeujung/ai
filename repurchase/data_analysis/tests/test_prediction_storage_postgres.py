@@ -10,6 +10,7 @@ import psycopg
 import pytest
 from psycopg.conninfo import conninfo_to_dict
 
+from scripts.modeling.demo_shadow_reader import read_demo_shadow_predictions
 from scripts.modeling.prediction_publications import PredictionPublicationError
 from scripts.modeling.prediction_storage import publish_prediction_publication
 
@@ -162,6 +163,52 @@ def test_shadow_batch_is_complete_immutable_and_invisible(
             "UPDATE repurchase.repurchase_predictions "
             "SET conditional_repurchase_probability = 0.8"
         )
+
+
+def test_demo_reader_uses_latest_shadow_snapshot_without_old_user_fallback(
+    local_connection: psycopg.Connection[object],
+) -> None:
+    """새 배치에서 빠진 목계정은 과거 예측으로 채우지 않습니다."""
+    old_id = "demo-shadow-20261005T0300KST-ec25eb1bcd8f-30d-v1"
+    old_batch, old_result = _candidate(publication_id=old_id)
+    old_batch.loc[0, "idempotency_key"] = old_id
+    old_batch.loc[0, "publication_status"] = "SHADOW"
+    old_batch.loc[0, "artifact_id"] = "fixed-aft"
+    old_batch.loc[0, "feature_generation_version"] = 2
+    old_result.loc[0, "user_id"] = "mock-42"
+    assert publish_prediction_publication(
+        local_connection, old_batch, old_result
+    ).inserted
+
+    new_id = "demo-shadow-20261006T0300KST-ec25eb1bcd8f-30d-v1"
+    new_batch, new_result = _candidate(publication_id=new_id)
+    new_batch.loc[0, "idempotency_key"] = new_id
+    new_batch.loc[0, "as_of_timestamp"] = "2026-01-02T00:00:00+00:00"
+    new_batch.loc[0, "created_at"] = "2026-01-03T00:00:00+00:00"
+    new_batch.loc[0, "publication_status"] = "SHADOW"
+    new_batch.loc[0, "artifact_id"] = "fixed-aft"
+    new_batch.loc[0, "feature_generation_version"] = 2
+    new_result.loc[0, "user_id"] = "mock-43"
+    assert publish_prediction_publication(
+        local_connection, new_batch, new_result
+    ).inserted
+
+    def read(user_id: str) -> list[object]:
+        return read_demo_shadow_predictions(
+            local_connection,
+            viewer_user_id=user_id,
+            requested_user_id=user_id,
+            allowed_mock_user_ids={"mock-42", "mock-43"},
+            expected_artifact_id="fixed-aft",
+        )
+
+    assert read("mock-42") == []
+    latest = read("mock-43")
+    assert len(latest) == 1
+    assert latest[0].publication_id == new_id
+    assert local_connection.execute(
+        "SELECT count(*) FROM repurchase.latest_predictions"
+    ).fetchone() == (0,)
 
 
 def test_incomplete_shadow_batch_is_rejected_before_writing(
