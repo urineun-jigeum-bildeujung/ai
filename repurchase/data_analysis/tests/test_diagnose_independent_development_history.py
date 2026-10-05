@@ -62,9 +62,7 @@ def test_model_code_changes_are_rejected(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("code_sha256", [None, [], "invalid", 42])
-def test_invalid_model_code_fingerprint_is_rejected(
-    tmp_path, monkeypatch, code_sha256
-):
+def test_invalid_model_code_fingerprint_is_rejected(tmp_path, monkeypatch, code_sha256):
     directory, result = _development(tmp_path, monkeypatch)
     result["code_sha256"] = code_sha256
     with pytest.raises(ValueError, match="코드 지문이 누락됐거나 올바르지"):
