@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -41,11 +42,55 @@ def validate_development(result: dict[str, object], directory: Path) -> None:
         name: _file_sha256(directory / f"{name}.csv") for name in SOURCE_NAMES
     }:
         raise ValueError("개발 원천 파일 지문이 결과와 다릅니다.")
+    code_sha256 = result.get("code_sha256")
+    if not isinstance(code_sha256, dict):
+        raise ValueError(
+            "개발 평가 결과의 모델 코드 지문이 누락됐거나 올바르지 않습니다."
+        )
     if any(
-        result.get("code_sha256", {}).get(name) != digest
-        for name, digest in model_code_sha256().items()
+        code_sha256.get(name) != digest for name, digest in model_code_sha256().items()
     ):
         raise ValueError("개발 평가 이후 모델 코드가 변경됐습니다.")
+
+
+def summarize_low_history_screen(
+    landmarks: list[dict[str, object]], expected_days: list[int]
+) -> dict[str, object]:
+    """Screen both low-history groups at every development landmark only."""
+    if len(landmarks) != len(expected_days) or {
+        row.get("elapsed_days") for row in landmarks
+    } != set(expected_days):
+        raise ValueError("개발 진단의 경과 시점이 완전하지 않습니다.")
+    results = []
+    for landmark in landmarks:
+        groups = landmark["segments"]["outer_validation"]
+        by_history = {row["history_interval_count"]: row for row in groups}
+        if len(by_history) != len(groups):
+            raise ValueError("개발 진단의 구매 이력 구간이 중복됐습니다.")
+        for label in ("0", "1-2"):
+            row = by_history.get(label)
+            if row is None or row["outcome_known_count"] < 1:
+                raise ValueError("개발 진단의 저이력 결과 확인 표본이 없습니다.")
+            raw = row["raw_ipcw_brier"]
+            candidate = row["isotonic_ipcw_brier"]
+            if not all(
+                math.isfinite(score) and 0 <= score <= 1 for score in (raw, candidate)
+            ):
+                raise ValueError("개발 진단의 저이력 Brier가 유효하지 않습니다.")
+            results.append(
+                {
+                    "elapsed_days": landmark["elapsed_days"],
+                    "history_interval_count": label,
+                    "point_brier_improvement": raw - candidate,
+                    "point_nonworsening": candidate <= raw,
+                }
+            )
+    return {
+        "rule": "both_low_history_groups_have_no_point_brier_worsening_at_every_development_landmark",
+        "passed": all(row["point_nonworsening"] for row in results),
+        "groups": results,
+        "interpretation": "development_screen_only_not_significance_or_operational_approval",
+    }
 
 
 def diagnose(
@@ -124,6 +169,9 @@ def diagnose(
         "bootstrap_replicates": bootstrap_replicates,
         "random_seed": random_seed,
         "landmarks": landmarks,
+        "low_history_screen": summarize_low_history_screen(
+            landmarks, result["landmark_days"]
+        ),
         "final_labels_read": False,
         "operational_probability_publication_approved": False,
     }
