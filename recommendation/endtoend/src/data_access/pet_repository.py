@@ -23,13 +23,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "data", "dum
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))  # src.data_access import용
 
 from src.data_access.db import get_connection
-from src.recommend.allergy_filter import resolve_allergy_profile
 
 
 def _row_to_pet(row) -> dict:
     (pet_id, user_id, species, breed, birth_date, sex, neutered,
-     weight, bcs, allergy_codes, concerns, allergy_profile_status) = row
-    codes = list(allergy_codes) if allergy_codes else []
+     weight, bcs, allergy_codes, concerns) = row
     return {
         "pet_id": pet_id,
         "user_id": user_id,
@@ -40,8 +38,7 @@ def _row_to_pet(row) -> dict:
         "neutered": bool(neutered),
         "weight": float(weight) if weight is not None else None,
         "bcs": bcs,
-        "allergy_codes": codes,
-        "allergy_profile_status": resolve_allergy_profile(allergy_profile_status, codes),
+        "allergy_codes": list(allergy_codes) if allergy_codes else [],
         "concerns": list(concerns) if concerns else [],
     }
 
@@ -64,8 +61,7 @@ _PET_QUERY = """
         COALESCE(
             array_agg(DISTINCT cm.concern_code) FILTER (WHERE cm.concern_code IS NOT NULL),
             '{}'
-        ) AS concerns,
-        to_jsonb(p)->>'allergy_profile_status' AS allergy_profile_status
+        ) AS concerns
     FROM pet p
     LEFT JOIN breed_master b ON b.id = p.breed_id
     LEFT JOIN pet_allergy pa ON pa.pet_id = p.id
@@ -109,7 +105,7 @@ def _fetch_pets_from_db(pet_ids: list) -> dict:
 
 def get_pet_by_id(pet_id: str) -> dict:
     """
-    내부 배치/검증용 조회. HTTP 요청은 get_owned_pet_by_id를 사용한다.
+    api/main.py, pipeline.py에서 사용하는 단일 진입점.
     반환 형태는 항상 dummy_data.PET_PROFILES의 원소와 동일한 스키마.
     존재하지 않으면 None.
     """
@@ -120,29 +116,6 @@ def get_pet_by_id(pet_id: str) -> dict:
                 return pet
         return None
     return _fetch_pet_from_db(pet_id)
-
-
-def get_owned_pet_by_id(pet_id: int, member_id: int) -> dict | None:
-    """추천 요청의 대상은 인증된 회원이 소유한 삭제되지 않은 Pet으로 한정한다."""
-    if type(member_id) is not int or not 0 < member_id <= 9223372036854775807:
-        return None
-    if USE_DUMMY_DATA:
-        pet = get_pet_by_id(pet_id)
-        if pet and pet.get("user_id") == member_id and pet.get("deleted_at") is None:
-            return pet
-        return None
-    conn = get_connection(MEMBER_DB_ENV)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                _PET_QUERY + " WHERE p.id = %s AND p.member_id = %s AND p.deleted_at IS NULL"
-                " GROUP BY p.id, b.breed_name",
-                (pet_id, member_id),
-            )
-            row = cur.fetchone()
-            return _row_to_pet(row) if row is not None else None
-    finally:
-        conn.close()
 
 
 def get_pets_by_ids(pet_ids: list) -> dict:
