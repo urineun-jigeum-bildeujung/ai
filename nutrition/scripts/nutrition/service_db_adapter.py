@@ -18,7 +18,7 @@ from allergen_repository import get_refs
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION
 from gtin_validation import is_valid_gtin
 from product_input_adapter import RAW, _canonical_gtin_from_product_id, load_product_input
-from mock_integration_fixture import build_mock_fixture
+from mock_integration_fixture import build_mock_fixture, mock_ingredient_refs
 from service_caution_policy import evaluate_cautions, EVIDENCE_SOURCE, CAUTION_POLICY
 from service_allergen_dictionary import (
     SERVICE_IDENTITIES, SERVICE_TOXIC_CODES, SOURCE_REVISION, VERSION, service_dictionary,
@@ -297,6 +297,7 @@ def adapt_product(source, *, index=None):
     if mock_fixture is not None:
         # Integration fixtures are a separate evidence namespace.  They never
         # enter ``load_product_input`` and never masquerade as GTIN evidence.
+        product["product_allergen_refs"] = mock_ingredient_refs(product["product_allergen_refs"])
         product["nutrition_items"] = mock_fixture["nutrition_items"]
         product["aafco_life_stage"] = mock_fixture["aafco_life_stage"]
         provenance["nutrition_source"] = mock_fixture["nutrition_source"]

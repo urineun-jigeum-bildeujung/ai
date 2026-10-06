@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import logging
 import sys
 from pathlib import Path
 
@@ -50,6 +51,18 @@ def test_strict_gtin_path_remains_unchanged_for_non_mock_sku():
     assert bridge["status"] == "MATCHED"
     assert bridge["canonical_gtin"] == "036000291452"
     assert fixture.build_mock_fixture(product(1, sku="036000291452")) is None
+
+
+def test_registered_identity_load_failure_does_not_break_regular_or_mock_sku(monkeypatch, caplog):
+    def fail_identity_load():
+        raise RuntimeError("MOCK_IDENTITY_ARTIFACT_INVALID")
+
+    monkeypatch.setattr(fixture, "_registered_identities", fail_identity_load)
+
+    with caplog.at_level(logging.WARNING, logger=fixture.__name__):
+        assert fixture.is_mock_source(product(1, sku="036000291452")) is False
+    assert "MOCK_IDENTITY_ARTIFACT_INVALID" in caplog.text
+    assert fixture.is_mock_source(product(1, sku="MOCK-0001")) is True
 
 
 def test_unknown_non_gtin_non_mock_still_fails_closed():

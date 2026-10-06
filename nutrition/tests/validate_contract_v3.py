@@ -168,11 +168,16 @@ def runtime(products):
         check(senior['suitability']['match_score'] is None)
         check(senior['feeding']['coefficient'] == 1.6)
         pet['birth_date'] = '2024-10-03'
+        original_first = deepcopy(records[first['id']])
+        # Generic fish lacks a specific species even in the synthetic namespace.
+        records[first['id']]['ingredient_codes'] = ['fish']
+        records[first['id']]['allergen_flags'] = []
         for specific in ('SALMON', 'TUNA'):
             pet['allergies'] = [specific]
             specific_result = request('/api/nutrition/analyze/by-service-id', {**body, 'allergy_profile_status': 'KNOWN_LIST'})
             check(specific_result['safety_status'] == 'SAFETY_DATA_INSUFFICIENT')
             check(specific_result['feeding']['daily_serving_g'] is None)
+        records[first['id']] = original_first
         pet['allergies'] = ['LAMB']
         snapshot_141 = next(p for p in products if p['id'] == 141)
         records[141] = deepcopy(snapshot_141)
@@ -183,8 +188,8 @@ def runtime(products):
         by_raw = {r['raw_text']: r for r in refs}
         check(by_raw['양고기']['allergen_code'] == 'lamb')
         check(by_raw['귀리']['allergen_code'] == 'oat')
-        check(by_raw['당근']['mapping_method'] == 'UNRESOLVED')
-        check(by_raw['비트']['mapping_method'] == 'UNRESOLVED')
+        check(by_raw['당근']['allergen_code'] == 'carrot' and by_raw['당근']['production_evidence'] is False)
+        check(by_raw['비트']['allergen_code'] == 'beet' and by_raw['비트']['production_evidence'] is False)
         return {'scope': 'REAL_LOOPBACK_HTTP_WITH_SCHEMA_DRIVEN_SYNTHETIC_SERVICE_SOURCE_BOUNDARY',
                 'requests': requests, 'assertions_passed': checks,
                 'smoke': {'health': 200, 'ready': 200, 'metrics': 200, 'readiness_mode': 'local_artifact'},

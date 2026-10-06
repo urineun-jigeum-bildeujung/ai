@@ -89,3 +89,7 @@ AI 결과 저장 및 새 schema는 미확정이다. 필요 시 DDL은 `nutrition
 ## 2026-10-02 생년월일 경계
 
 현재 날짜는 Asia/Seoul 기준으로 계산한다. 12개월은 달력 개월 경계이며 2월 29일의 다음 해 경계는 2월 말일이다. PostgreSQL DATE와 정확한 YYYY-MM-DD 문자열만 허용한다. 생년월일이 없으면 production의 stage 누락 fail-close를 유지한다. 별도 Mock fixture의 기존 Nutrition AGE_RULE 호환 경로는 legacy regression을 위해 유지하며 Feeding으로 승격하지 않는다.
+
+## 2026-10-06 스키마 Mock 범위 보완
+
+전체 서비스 상품은 스키마로 만든 Mock이라는 사용자 확인을 반영한다. 기존 `MOCK-*` 경로와 함께 `mock_service_identity_v1.json`의 정확한 Service ID·SKU 조합을 합성 입력 대상으로 사용한다. 조회하지 못한 상품을 만들어 반환하지 않는다. 302/ONF-004도 이 목록을 통해 기존 영양·급여 프로필을 사용한다. 당근·비트·호박·연어오일의 합성 identity는 `mock_ingredient_identity_v1.json`에서 별도로 관리하며 실제 상품 사전의 안전 근거로 승격하지 않는다. 상세 결과는 [Mock 근거 보완](service_evidence_gap_resolution_20261006.md)을 참고한다.
