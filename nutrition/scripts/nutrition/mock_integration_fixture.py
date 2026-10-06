@@ -1,7 +1,7 @@
 """Deterministic nutrition fixtures for BE Mock integration products.
 
 This module is integration-only.  It never claims that a ``MOCK-*`` Service
-product is the same product as an OPFF/OEM/manufacturer product, and it does not
+or explicitly registered Service product is an OPFF/OEM/manufacturer product, and it does not
 change the strict GTIN production evidence path.
 """
 from __future__ import annotations
@@ -22,6 +22,42 @@ GENERATION_RULE_VERSION = "deterministic_profile_assignment_v1"
 
 def is_mock_sku(value: object) -> bool:
     return isinstance(value, str) and bool(MOCK_SKU_RE.fullmatch(value))
+
+
+@lru_cache(maxsize=1)
+def _registered_identities():
+    payload = json.loads((PROFILE_PATH.parent / "mock_service_identity_v1.json").read_text(encoding="utf-8"))
+    if (payload.get("fixture_version") != "mock_service_identity_v1"
+            or payload.get("data_generation_type") != "SCHEMA_DRIVEN_SYNTHETIC"
+            or payload.get("production_evidence") is not False):
+        raise RuntimeError("MOCK_IDENTITY_ARTIFACT_INVALID")
+    return {(row["service_product_id"], row["service_sku"]) for row in payload["items"]}
+
+
+def is_mock_source(source: dict[str, Any]) -> bool:
+    return is_mock_sku(source.get("sku")) or (str(source.get("id")), source.get("sku")) in _registered_identities()
+
+
+def mock_ingredient_refs(refs):
+    """Apply explicit synthetic identities only after mock source eligibility."""
+    payload = json.loads((PROFILE_PATH.parent / "mock_ingredient_identity_v1.json").read_text(encoding="utf-8"))
+    if (payload.get("fixture_version") != "mock_ingredient_identity_v1"
+            or payload.get("data_generation_type") != "SCHEMA_DRIVEN_SYNTHETIC"
+            or payload.get("production_evidence") is not False):
+        raise RuntimeError("MOCK_INGREDIENT_ARTIFACT_INVALID")
+    result = []
+    for ref in refs:
+        codes = payload["mappings"].get(ref["raw_text"])
+        if ref["mapping_method"] != "UNRESOLVED" or not codes:
+            result.append(ref)
+            continue
+        for code in codes:
+            result.append({**ref, "allergen_code": code, "mapping_method": "STRUCTURED_SOURCE",
+                           "ingredient_resolution_status": "RESOLVED", "matched_text": ref["raw_text"],
+                           "source": SOURCE_TYPE, "source_version": payload["fixture_version"],
+                           "dictionary_version": payload["fixture_version"],
+                           "evidence_scope": "SCHEMA_DRIVEN_SYNTHETIC", "production_evidence": False})
+    return result
 
 
 @lru_cache(maxsize=1)
@@ -81,7 +117,7 @@ def build_mock_fixture(source: dict[str, Any]) -> dict[str, Any] | None:
     therefore not a registry that makes a nonexistent ``MOCK-*`` SKU exist.
     """
     sku = source.get("sku")
-    if not is_mock_sku(sku):
+    if not is_mock_source(source):
         return None
 
     product_id = str(source.get("id") or "")
@@ -115,6 +151,7 @@ def build_mock_fixture(source: dict[str, Any]) -> dict[str, Any] | None:
         "type": SOURCE_TYPE,
         "source_type": SOURCE_TYPE,
         "fixture_version": FIXTURE_VERSION,
+        **({"identity_registration_version": "mock_service_identity_v1"} if not is_mock_sku(sku) else {}),
         "generation_rule_version": GENERATION_RULE_VERSION,
         "service_product_id": product_id,
         "service_sku": sku,

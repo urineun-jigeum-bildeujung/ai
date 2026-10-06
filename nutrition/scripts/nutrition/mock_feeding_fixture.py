@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from mock_integration_fixture import is_mock_sku
+from mock_integration_fixture import is_mock_source
 
 ROOT = Path(__file__).resolve().parents[2] / "data" / "integration"
 
@@ -13,7 +13,7 @@ def mock_energy(source, nutrition_provenance):
 Read the small versioned artifact per call: no shared mutable data, and a
 missing/corrupt artifact fails closed instead of changing Nutrition/Safety.
 """
-    if (not is_mock_sku(source.get("sku"))
+    if (not is_mock_source(source)
             or str(nutrition_provenance.get("service_product_id")) != str(source.get("id"))
             or nutrition_provenance.get("service_sku") != source.get("sku")
             or nutrition_provenance.get("type") != "MOCK_INTEGRATION_FIXTURE"
