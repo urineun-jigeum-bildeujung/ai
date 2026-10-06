@@ -39,10 +39,6 @@ S3에서 자동으로 내려받는다 (scripts/download_model_from_s3.py). 로�
     USE_DUMMY_DATA=false uvicorn src.api.main:app --reload --port 8000
 
 API 문서: 서버 실행 후 http://localhost:8000/docs (Swagger UI, 프론트에 그대로 공유 가능)
-
-추천 요청은 Gateway의 X-Internal-Secret/X-Member-Id 검증과 Pet 소유권 검사를 거친다.
-INTERNAL_GATEWAY_SECRET 미설정은 503, 무효 인증은 401, 타인/삭제 Pet은 404다.
-배포 전 Secret 주입 조건은 docs/gateway_ownership_contract.md를 따른다.
 """
 
 import os
@@ -56,15 +52,14 @@ sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "aspect
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "features"))
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "recommend"))
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from src.recommend.substitute_recommendation import find_substitute_products, build_review_summary_by_product
 from pipeline import build_reviews_with_ratings, recommend_for_pet, score_to_100
 from deepfm_model import load_deepfm
 
-from src.data_access.pet_repository import get_owned_pet_by_id
-from src.api.gateway_auth import authenticated_member_id
+from src.data_access.pet_repository import get_pet_by_id
 from src.data_access.product_repository import list_products, get_product_by_id
 from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
 from src.data_access.order_embedding_repository import get_purchased_product_ids_for_user, get_product_embeddings
@@ -128,7 +123,7 @@ def _item_from_recommendation(rec_item: dict, product: dict) -> dict:
         "rank": rec_item.get("rank"),
         "score": rec_item.get("score_100", score_to_100(rec_item.get("score", 0.0))),
         "reason_text": rec_item.get("reason_text"),
-        "allergy_status": rec_item.get("allergy_status", "PENDING"),
+        "allergy_status": rec_item.get("allergy_status", "SAFE"),
         "matched_allergen": rec_item.get("matched_allergen", []),
         "product_name": product.get("product_name") if product else rec_item.get("product_name"),
         "thumbnail_url": product.get("thumbnail_url") if product else None,
@@ -172,9 +167,8 @@ def health():
 
 
 @app.post("/recommend/home")
-def recommend_home(req: RecommendHomeRequest, request: Request):
-    member_id = authenticated_member_id(request)
-    pet = get_owned_pet_by_id(req.pet_id, member_id)
+def recommend_home(req: RecommendHomeRequest):
+    pet = get_pet_by_id(req.pet_id)
     if pet is None:
         raise HTTPException(status_code=404, detail=f"pet_id={req.pet_id}를 찾을 수 없습니다.")
 
@@ -213,9 +207,8 @@ def recommend_home(req: RecommendHomeRequest, request: Request):
 
 
 @app.post("/recommend/substitute")
-def recommend_substitute(req: RecommendSubstituteRequest, request: Request):
-    member_id = authenticated_member_id(request)
-    pet = get_owned_pet_by_id(req.pet_id, member_id)
+def recommend_substitute(req: RecommendSubstituteRequest):
+    pet = get_pet_by_id(req.pet_id)
     if pet is None:
         raise HTTPException(status_code=404, detail=f"pet_id={req.pet_id}를 찾을 수 없습니다.")
 
