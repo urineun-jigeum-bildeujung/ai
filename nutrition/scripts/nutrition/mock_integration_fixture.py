@@ -7,6 +7,7 @@ change the strict GTIN production evidence path.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -18,6 +19,7 @@ MOCK_SKU_RE = re.compile(r"^MOCK-[A-Za-z0-9_-]+$")
 SOURCE_TYPE = "MOCK_INTEGRATION_FIXTURE"
 FIXTURE_VERSION = "mock_nutrition_fixture_v1"
 GENERATION_RULE_VERSION = "deterministic_profile_assignment_v1"
+LOGGER = logging.getLogger(__name__)
 
 
 def is_mock_sku(value: object) -> bool:
@@ -39,7 +41,8 @@ def is_mock_source(source: dict[str, Any]) -> bool:
         return True
     try:
         identities = _registered_identities()
-    except (OSError, UnicodeError, json.JSONDecodeError, RuntimeError, KeyError, TypeError, AttributeError):
+    except (OSError, UnicodeError, json.JSONDecodeError, RuntimeError, KeyError, TypeError, AttributeError) as exc:
+        LOGGER.warning("Registered mock identity artifact unavailable; skipping registered fixture: %s", exc)
         return False
     return (str(source.get("id")), source.get("sku")) in identities
 
