@@ -35,7 +35,13 @@ def _registered_identities():
 
 
 def is_mock_source(source: dict[str, Any]) -> bool:
-    return is_mock_sku(source.get("sku")) or (str(source.get("id")), source.get("sku")) in _registered_identities()
+    if is_mock_sku(source.get("sku")):
+        return True
+    try:
+        identities = _registered_identities()
+    except (OSError, UnicodeError, json.JSONDecodeError, RuntimeError, KeyError, TypeError, AttributeError):
+        return False
+    return (str(source.get("id")), source.get("sku")) in identities
 
 
 def mock_ingredient_refs(refs):
