@@ -52,6 +52,16 @@ def test_strict_gtin_path_remains_unchanged_for_non_mock_sku():
     assert fixture.build_mock_fixture(product(1, sku="036000291452")) is None
 
 
+def test_registered_identity_load_failure_does_not_break_regular_or_mock_sku(monkeypatch):
+    def fail_identity_load():
+        raise RuntimeError("MOCK_IDENTITY_ARTIFACT_INVALID")
+
+    monkeypatch.setattr(fixture, "_registered_identities", fail_identity_load)
+
+    assert fixture.is_mock_source(product(1, sku="036000291452")) is False
+    assert fixture.is_mock_source(product(1, sku="MOCK-0001")) is True
+
+
 def test_unknown_non_gtin_non_mock_still_fails_closed():
     loaded = adapter.adapt_product(product(1, sku="NOT-A-REAL-ID"), index={})
     assert loaded["provenance"]["identity_bridge"]["status"] == "INVALID_SKU"
