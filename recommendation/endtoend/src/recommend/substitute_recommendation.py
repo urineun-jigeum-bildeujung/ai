@@ -21,7 +21,7 @@ sys.path.append(os.path.dirname(__file__))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "aspect"))
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # src.data_access import용
 from purchase_history_similarity import cosine_similarity
-from allergy_filter import check_allergy_conflict, evaluate_recommendation_allergy, allergy_pending_message
+from allergy_filter import check_allergy_conflict
 from reviewer_profile_similarity import compute_weighted_aspect_scores
 
 TOP_N_CANDIDATES = 50
@@ -192,9 +192,6 @@ def find_substitute_products(
         else:
             reason_text = f"{base_product['product_name']}과(와) 성분·용도가 유사한 상품입니다."
 
-        allergy_result = evaluate_recommendation_allergy(pet or {}, product.get("allergen_flags"))
-        if allergy_result["allergy_status"] == "PENDING":
-            reason_text = allergy_pending_message(allergy_result) + reason_text
         results.append({
             "product_id": product["product_id"],
             "product_name": product["product_name"],
@@ -204,8 +201,6 @@ def find_substitute_products(
             "rank": rank,
             "reason_keywords": reason_keywords,
             "reason_text": reason_text,
-            "allergy_status": allergy_result["allergy_status"],
-            "matched_allergen": allergy_result["matched_allergen"],
         })
 
     return results

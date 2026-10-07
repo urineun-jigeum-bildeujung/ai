@@ -56,16 +56,15 @@ def load_dictionary() -> dict[str, Any]:
 DICTIONARY = load_dictionary()
 
 
-def canonicalize_profile(allergies: list[str], profile_status: str, *, dictionary=None) -> dict[str, Any]:
+def canonicalize_profile(allergies: list[str], profile_status: str) -> dict[str, Any]:
     """Canonicalize only declared aliases; no fuzzy matching is performed."""
     if profile_status == "UNKNOWN":
         return {"status": "UNKNOWN", "codes": [], "unresolved": []}
     if profile_status == "KNOWN_NONE":
         return {"status": "KNOWN_NONE", "codes": [], "unresolved": []}
-    dictionary = DICTIONARY if dictionary is None else dictionary
     codes, unresolved = [], []
     for raw in allergies:
-        code = dictionary["aliases"].get(_norm(raw))
+        code = DICTIONARY["aliases"].get(_norm(raw))
         if code is None:
             unresolved.append(raw)
         elif code not in codes:
@@ -125,14 +124,14 @@ def _product_stage(value: str | None) -> str | None:
     return None
 
 
-def _evaluate_safety(pet: dict[str, Any], product: dict[str, Any], *, dictionary=None) -> dict[str, Any]:
+def _evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
     """Shared fail-closed safety result for API, direct matchers, and batch callers."""
     category = product.get("category", "food")
     # Allergy profiles belong to the pet.  Product-provided values are
     # untrusted product metadata and must not override the user's profile.
     raw_allergies = pet.get("allergies") or []
     profile_status = pet.get("allergy_profile_status") or ("KNOWN_LIST" if raw_allergies else "KNOWN_NONE")
-    profile = canonicalize_profile(raw_allergies, profile_status, dictionary=dictionary)
+    profile = canonicalize_profile(raw_allergies, profile_status)
     if profile["status"] == "UNKNOWN" or profile["unresolved"]:
         return {"safety_status": "SAFETY_DATA_INSUFFICIENT", "allergy_check_status": "INSUFFICIENT_DATA",
                 "excluded": True, "exclude_reasons": ["SAFETY_DATA_INSUFFICIENT"], "product_allergen_refs": [],
@@ -193,9 +192,9 @@ def _evaluate_safety(pet: dict[str, Any], product: dict[str, Any], *, dictionary
             "life_stage_status": "MATCHED" if category == "food" else "NOT_APPLICABLE"}
 
 
-def evaluate_safety(pet: dict[str, Any], product: dict[str, Any], *, dictionary=None) -> dict[str, Any]:
+def evaluate_safety(pet: dict[str, Any], product: dict[str, Any]) -> dict[str, Any]:
     """기존 판정·분기 순서를 유지하고 설명 필드만 추가한다."""
-    result = _evaluate_safety(pet, product, dictionary=dictionary)
+    result = _evaluate_safety(pet, product)
     status = result["safety_status"]
     reason_codes, conflicts = [], []
     messages = {

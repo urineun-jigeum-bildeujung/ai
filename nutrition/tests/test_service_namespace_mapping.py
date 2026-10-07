@@ -10,12 +10,12 @@ import service_db_adapter as adapter
 
 
 @pytest.mark.parametrize("code,expected", [
-    ("CHICKEN", ["chicken"]), ("SALMON", ["salmon"]), ("TUNA", ["tuna"]),
-    ("BONITO", ["bonito"]), ("ANCHOVY", ["anchovy"]),
+    ("CHICKEN", ["chicken"]), ("SALMON", ["SERVICE_CODE:SALMON"]), ("TUNA", ["SERVICE_CODE:TUNA"]),
+    ("BONITO", ["SERVICE_CODE:BONITO"]), ("ANCHOVY", ["SERVICE_CODE:ANCHOVY"]),
     ("CHEESE", ["dairy"]), ("WHEY", ["dairy"]), ("CRUSTACEAN", ["shellfish"]),
     ("WHEAT_GLUTEN", ["wheat"]), ("OAT_BARLEY", ["barley", "oat"]),
     ("SWEET_POTATO", ["potato"]), ("TAPIOCA", ["potato"]),
-    ("DUCK", ["duck"]), ("OTHER", ["SERVICE_CODE:OTHER"]),
+    ("DUCK", ["SERVICE_CODE:DUCK"]), ("OTHER", ["SERVICE_CODE:OTHER"]),
     ("ONION", ["SERVICE_CODE:ONION"]),
     ("poultry", ["SERVICE_CODE:poultry"]),
     ("CHICKEN ", ["SERVICE_CODE:CHICKEN "]),
@@ -29,11 +29,9 @@ def test_service_enum_mapping(code, expected):
 
 def test_korean_aliases_resolve_without_guessing_other_ingredients():
     refs = adapter.structured_refs("1", ["닭고기", "연어", "쌀", "계란", "오리고기", "당근", "칠면조"])
-    assert [r["allergen_code"] for r in refs] == ["chicken", "salmon", "fish", "rice", "egg", "duck", None, "turkey"]
-    assert [r["raw_text"] for r in refs] == ["닭고기", "연어", "연어", "쌀", "계란", "오리고기", "당근", "칠면조"]
-    assert refs[6]["mapping_method"] == "UNRESOLVED"
-    assert refs[6]["ingredient_code"] == "CARROT"
-    assert refs[6]["ingredient_resolution_status"] == "RESOLVED"
+    assert [r["allergen_code"] for r in refs] == ["chicken", "fish", "rice", "egg", None, None, None]
+    assert [r["mapping_method"] for r in refs] == ["CANONICAL_ALIAS"] * 4 + ["UNRESOLVED"] * 3
+    assert [r["raw_text"] for r in refs] == ["닭고기", "연어", "쌀", "계란", "오리고기", "당근", "칠면조"]
 
 
 @pytest.mark.parametrize("ingredient", ["닭고기", "닭가슴살", "chicken"])

@@ -3,7 +3,7 @@ import json
 import unicodedata
 from pathlib import Path
 
-from mock_integration_fixture import is_mock_source
+from mock_integration_fixture import is_mock_sku
 
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / 'data/integration/mock_product_target_v1.json'
 STAGES = {'GROWTH', 'ADULT', 'SENIOR', 'ALL_LIFE_STAGES'}
@@ -27,7 +27,7 @@ def parse_raw_target_label(value):
 
 
 def load_synthetic_target(source):
-    if not is_mock_source(source):
+    if not is_mock_sku(source.get('sku')):
         return None
     try:
         payload = json.loads(FIXTURE_PATH.read_text(encoding='utf-8'))
@@ -70,7 +70,7 @@ def _resolve(service, fixture, allowed, *, sequence=False):
 def resolve_product_target(product, synthetic_fixture=None):
     # Supplying a fixture cannot bypass the Service identity namespace.
     fixture = synthetic_fixture or {}
-    if (not is_mock_source({'id': product.get('id'), 'sku': product.get('service_sku')})
+    if (not is_mock_sku(product.get('service_sku'))
             or str(fixture.get('service_product_id')) != str(product.get('id'))
             or fixture.get('service_sku') != product.get('service_sku')):
         fixture = {}

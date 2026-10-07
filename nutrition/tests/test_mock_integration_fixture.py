@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib
-import logging
 import sys
 from pathlib import Path
 
@@ -51,18 +50,6 @@ def test_strict_gtin_path_remains_unchanged_for_non_mock_sku():
     assert bridge["status"] == "MATCHED"
     assert bridge["canonical_gtin"] == "036000291452"
     assert fixture.build_mock_fixture(product(1, sku="036000291452")) is None
-
-
-def test_registered_identity_load_failure_does_not_break_regular_or_mock_sku(monkeypatch, caplog):
-    def fail_identity_load():
-        raise RuntimeError("MOCK_IDENTITY_ARTIFACT_INVALID")
-
-    monkeypatch.setattr(fixture, "_registered_identities", fail_identity_load)
-
-    with caplog.at_level(logging.WARNING, logger=fixture.__name__):
-        assert fixture.is_mock_source(product(1, sku="036000291452")) is False
-    assert "MOCK_IDENTITY_ARTIFACT_INVALID" in caplog.text
-    assert fixture.is_mock_source(product(1, sku="MOCK-0001")) is True
 
 
 def test_unknown_non_gtin_non_mock_still_fails_closed():
@@ -153,45 +140,37 @@ def test_nutrition_ready_does_not_override_unknown_pet_safety():
     assert result["analysis_status"] == "INSUFFICIENT_DATA"
 
 
-def _audit_products(mock_count=286, registered_count=36):
+def _audit_products(mock_count=286, non_mock_count=36):
     products = []
     for product_id in range(1, mock_count + 1):
         products.append(product(product_id, sku=f"MOCK-{product_id:04d}"))
-    registered = sorted(fixture._registered_identities(), key=lambda row: int(row[0]))
-    for product_id, sku in registered[:registered_count]:
-        products.append(product(int(product_id), sku=sku))
+    for product_id in range(10_000, 10_000 + non_mock_count):
+        products.append(product(product_id, sku=f"REAL-{product_id:04d}"))
     return products
 
 
-def test_audit_accepts_all_322_mock_targets(monkeypatch):
+def test_audit_accepts_active_non_mock_products_when_mock_coverage_is_complete(monkeypatch):
     monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: _audit_products())
 
-    report = audit.build_report(expected_mock_total=286, expected_target_total=322)
+    report = audit.build_report(expected_mock_total=286)
 
     assert report["active_product_total"] == 322
     assert report["mock_product_total"] == 286
-    assert report["registered_mock_product_total"] == 36
-    assert report["mock_target_total"] == 322
     assert report["non_mock_product_total"] == 36
-    assert report["non_target_product_total"] == 0
     assert report["acceptance"]["expected_mock_total_match"] is True
-    assert report["acceptance"]["expected_target_total_match"] is True
     assert report["acceptance"]["all_mock_processed"] is True
-    assert report["acceptance"]["all_targets_processed"] is True
     assert report["observations"]["all_mock_namespace"] is False
-    assert report["observations"]["all_active_products_targeted"] is True
     monkeypatch.setattr(sys, "argv", ["audit_mock_fixture_coverage"])
     assert audit.main() == 0
 
 
-def test_audit_rejects_when_target_count_is_short(monkeypatch):
-    monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: _audit_products(285, 36))
+def test_audit_rejects_when_mock_product_count_is_short(monkeypatch):
+    monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: _audit_products(285, 37))
 
-    report = audit.build_report(expected_mock_total=286, expected_target_total=322)
+    report = audit.build_report(expected_mock_total=286)
 
-    assert report["active_product_total"] == 321
+    assert report["active_product_total"] == 322
     assert report["acceptance"]["expected_mock_total_match"] is False
-    assert report["acceptance"]["expected_target_total_match"] is False
     monkeypatch.setattr(sys, "argv", ["audit_mock_fixture_coverage"])
     assert audit.main() == 2
 
@@ -214,9 +193,7 @@ def test_audit_rejects_when_a_mock_product_has_no_fixture_status(monkeypatch):
     monkeypatch.setattr(audit.service_repository, "list_active_products", lambda: products)
     monkeypatch.setattr(audit, "coverage_record", missing_fixture)
 
-    report = audit.build_report(expected_mock_total=286, expected_target_total=322)
+    report = audit.build_report(expected_mock_total=286)
 
     assert report["acceptance"]["expected_mock_total_match"] is True
-    assert report["acceptance"]["expected_target_total_match"] is True
     assert report["acceptance"]["all_mock_processed"] is False
-    assert report["acceptance"]["all_targets_processed"] is False

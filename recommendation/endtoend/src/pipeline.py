@@ -41,7 +41,7 @@ from dummy_data import PET_PROFILES, PRODUCTS
 from src.data_access.reviews_repository import load_reviews_with_reviewer_pet
 from rating_converter import ASPECT_FIELD_TO_CODE, convert_rating_to_score
 from deepfm_features import build_interaction_features
-from allergy_filter import evaluate_recommendation_allergy, allergy_pending_message
+from allergy_filter import check_allergy_conflict
 from deepfm_model import load_deepfm
 from reviewer_profile_similarity import compute_weighted_aspect_scores
 from purchase_history_similarity import build_purchase_history_feature
@@ -154,7 +154,7 @@ def recommend_for_pet(
 
     [2026-09-29 변경] 알레르기 충돌 상품은 더 이상 후보에서 완전히 제외(EXCLUDE)되지 않는다.
     대신 점수에 페널티를 곱해 순위만 뒤로 미루는 방식으로 변경 (기획팀 확정).
-    - 프로필 미확인/모순 또는 allergen_flags가 None(미분석): allergy_status="PENDING", 30% 감점
+    - allergen_flags가 None(미분석)인 상품: allergy_status="PENDING", 30% 감점
     - allergen_flags와 pet.allergy_codes가 겹치는 상품: allergy_status="PENALIZED", 70% 감점
     - 그 외: allergy_status="SAFE", 감점 없음
     장바구니 팝업 역추천(/recommend/exclusions)은 폐기되었고, 이 로직으로 통합됨.
@@ -167,9 +167,18 @@ def recommend_for_pet(
             continue
 
         # 2) 알레르기 판정: SAFE / PENALIZED / PENDING (완전 제외 없음)
-        allergy_result = evaluate_recommendation_allergy(pet, product.get("allergen_flags"))
-        allergy_status = allergy_result["allergy_status"]
-        matched_allergen = allergy_result["matched_allergen"]
+        allergen_flags = product.get("allergen_flags")
+        if allergen_flags is None:
+            allergy_status = "PENDING"
+            matched_allergen = []
+        else:
+            allergy_result = check_allergy_conflict(pet["allergy_codes"], allergen_flags)
+            if allergy_result["has_conflict"]:
+                allergy_status = "PENALIZED"
+                matched_allergen = allergy_result["matched_allergen"]
+            else:
+                allergy_status = "SAFE"
+                matched_allergen = []
 
         # 3) 리뷰 작성자 프로필 유사도 가중 aspect score 계산
         product_reviews = reviews_by_product.get(product["product_id"], [])
@@ -215,7 +224,7 @@ def recommend_for_pet(
             reason_keywords = [f"알러지 성분 포함: {', '.join(matched_allergen)}"] + reason_keywords
             reason_text = f"{', '.join(matched_allergen)} 성분이 포함되어 있어 등록하신 알러지 정보와 맞지 않을 수 있어요. " + reason_text
         elif allergy_status == "PENDING":
-            reason_text = allergy_pending_message(allergy_result) + reason_text
+            reason_text = "성분 정보 확인 중인 상품이에요. " + reason_text
 
         results.append({
             "product_id": product["product_id"],
