@@ -74,7 +74,7 @@ AAFCO claim은 별도 authoritative label evidence가 필요하다. 현재 Servi
 
 `analysis_status`만 보고 추천 제외를 결정하지 않는다. 기존 요청 기반/local persisted API의 호환 계약은 유지하며 이 문서는 신규 Service 입력 경계를 구분한다.
 
-`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`와 optional `allergy_profile_status`(UNKNOWN / KNOWN_NONE / KNOWN_LIST)를 받는다. 현재 유효 요청은 **503 / SERVICE_SOURCE_NOT_CONFIGURED**다. 신뢰할 수 없는 `X-Member-Id` 또는 local seed/persisted artifact로 운영 source/auth를 대체하지 않는다. 내부 `analyze_service_records` 테스트는 실제 인증·ownership·AWS 검증이 아니다.
+`POST /api/nutrition/analyze/by-service-id`는 양의 정수 `pet_id`, `product_id`와 optional `allergy_profile_status`(UNKNOWN / KNOWN_NONE / KNOWN_LIST)를 받는다. Service source가 구성되지 않은 경우 **503 / SERVICE_SOURCE_NOT_CONFIGURED**를 반환한다. 구성이 있으면 Gateway 인증과 Pet ownership 검증을 거쳐 실제 Service DB를 조회한다. 신뢰할 수 없는 `X-Member-Id` 또는 local seed/persisted artifact로 운영 source/auth를 대체하지 않는다. 내부 `analyze_service_records` 테스트는 실제 인증·ownership·AWS 검증이 아니다.
 
 ## 운영 연결 전 필요한 외부 확정
 

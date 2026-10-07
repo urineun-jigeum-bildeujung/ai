@@ -15,6 +15,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = ROOT / "data" / "integration" / "mock_nutrition_profiles_v1.json"
+INGREDIENT_IDENTITY_PATH = PROFILE_PATH.parent / "mock_ingredient_identity_v1.json"
 MOCK_SKU_RE = re.compile(r"^MOCK-[A-Za-z0-9_-]+$")
 SOURCE_TYPE = "MOCK_INTEGRATION_FIXTURE"
 FIXTURE_VERSION = "mock_nutrition_fixture_v1"
@@ -47,13 +48,31 @@ def is_mock_source(source: dict[str, Any]) -> bool:
     return (str(source.get("id")), source.get("sku")) in identities
 
 
+@lru_cache(maxsize=1)
+def _ingredient_identity_payload():
+    payload = json.loads(INGREDIENT_IDENTITY_PATH.read_text(encoding="utf-8"))
+    if (not isinstance(payload, dict)
+            or payload.get("fixture_version") != "mock_ingredient_identity_v1"
+            or payload.get("data_generation_type") != "SCHEMA_DRIVEN_SYNTHETIC"
+            or payload.get("production_evidence") is not False
+            or not isinstance(payload.get("mappings"), dict)):
+        raise RuntimeError("MOCK_INGREDIENT_ARTIFACT_INVALID")
+    for raw_text, codes in payload["mappings"].items():
+        if (not isinstance(raw_text, str) or not raw_text.strip()
+                or not isinstance(codes, list) or not codes
+                or any(not isinstance(code, str) or not code.strip() for code in codes)):
+            raise RuntimeError("MOCK_INGREDIENT_ARTIFACT_INVALID")
+    return payload
+
+
 def mock_ingredient_refs(refs):
     """Apply explicit synthetic identities only after mock source eligibility."""
-    payload = json.loads((PROFILE_PATH.parent / "mock_ingredient_identity_v1.json").read_text(encoding="utf-8"))
-    if (payload.get("fixture_version") != "mock_ingredient_identity_v1"
-            or payload.get("data_generation_type") != "SCHEMA_DRIVEN_SYNTHETIC"
-            or payload.get("production_evidence") is not False):
-        raise RuntimeError("MOCK_INGREDIENT_ARTIFACT_INVALID")
+    try:
+        payload = _ingredient_identity_payload()
+    except (OSError, UnicodeError, ValueError, RuntimeError, TypeError) as exc:
+        LOGGER.warning("Mock ingredient identity artifact unavailable; skipping enrichment (%s)",
+                       type(exc).__name__)
+        return refs
     result = []
     for ref in refs:
         codes = payload["mappings"].get(ref["raw_text"])
