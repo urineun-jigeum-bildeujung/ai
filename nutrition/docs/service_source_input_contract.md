@@ -1,6 +1,10 @@
 # Nutrition 외부 서비스 최소 입력 계약
 
-> **2026-09-30 v1.0 최신 상태**
+> **2026-10-05 로컬 수정 계약, 서버 반영 미확인**
+>
+> 현재 통합 계약과 실제 Gateway 관찰 결과는 [통합 수정 기록](service_integration_resolution_20261005.md), 38개 Service 코드 목록은 [매핑 CSV](service_allergen_mapping_v2.csv)를 따른다. 아래 2026-09-30 기록의 배포 상태는 현재 상태를 의미하지 않는다.
+>
+> **2026-09-30 v1.0 기록**
 >
 > PR #141에서 Service DB SELECT Repository와 Gateway trust boundary를 구현했다. `member_db` / `product_db`는 SELECT only이며 Pet ownership은 SQL에서 `pet.id + member_id + deleted_at IS NULL`로 강제한다.
 > `POST /api/nutrition/analyze/by-service-id`는 더 이상 항상-503 stub이 아니다. source/auth 미구성 시 fail-close하고, 구성이 있으면 실제 Service DB source를 조회한다.
@@ -25,16 +29,16 @@
 | `birth_date` / `age` | birth_date 우선, KST 현재 날짜의 완료 개월 수 / 12 → age_years. birth_date 없으면 기존 년 단위 age 검증 | 잘못된 날짜/미래 날짜 거절, birth_date 없는 production stage는 UNKNOWN 유지 |
 | `weight` | 현재 합의된 kg → `weight_kg`, 유한한 양수 | 거절 |
 | `allergies` | 서비스 알레르겐 code 배열. 객체 배열이면 호출자가 명시적으로 code 추출 | 목록 없음은 빈 배열일 수 있지만 KNOWN_NONE의 근거가 아님 |
-| `allergy_profile_status` | UNKNOWN / KNOWN_NONE / KNOWN_LIST | 상태 생략, 미지원, 상태-목록 모순 → UNKNOWN |
+| `allergy_profile_status` | UNKNOWN / KNOWN_NONE / KNOWN_LIST | 요청 생략 시 Repository 상태 유지; 명시 null, 미지원, 상태-목록 모순 → UNKNOWN |
 | `life_stage`, 필요 시 `life_stage_detail` | birth_date <12개월 GROWTH_REPRODUCTION, >=12개월 ADULT_MAINTENANCE. 생년월일 사용 시 임신/수유 detail을 만들거나 전달하지 않음 | birth_date 없으면 기존 명시 stage/UNKNOWN 정책 유지 |
 
-by-service-id의 FE 상태는 조회된 `pet_allergy` 목록과 교차 검증한다. 미전달/null은 DB 목록 존재 여부와 무관하게 UNKNOWN이며, DB에는 상태를 저장하지 않는다.
+by-service-id와 compare의 FE 상태는 조회된 `pet_allergy` 목록과 교차 검증한다. 요청에서 생략하면 Repository 상태를 유지하고, 명시 null 또는 저장된 known 상태와 충돌하는 선언은 UNKNOWN으로 처리한다. Backend 로컬 수정의 V3 migration은 `pet.allergy_profile_status`를 저장하며 기존 비어 있지 않은 목록만 KNOWN_LIST로 이관한다. 빈 목록은 UNKNOWN으로 남긴다. 아직 컬럼이 없는 DB에서도 AI 조회는 가능하며 비어 있지 않은 목록만 KNOWN_LIST로 해석한다.
 
 `KNOWN_NONE`은 명시 상태 + 빈 목록, `KNOWN_LIST`는 명시 상태 + 비어 있지 않은 목록일 때만 일관적이다. `pet_allergy` 0행 또는 상태 미등록을 알레르기 없음으로 해석하지 않는다. Pet profile이 SoT이며 Product가 이를 덮어쓸 수 없다.
 
-Service `AllergenCode`는 `sever/dev` revision `230e598833f684c6c9f2ce605776e230a5b6f236`와 AI v3 사전의 명시 alias를 기준으로 변환한다. SALMON/TUNA/BONITO/ANCHOVY 및 MACKEREL/HERRING/SARDINE/WHITEFISH는 동명의 v3 specific canonical entry가 있을 때만 매핑하며, 없으면 UNRESOLVED로 보존한다. fish parent alias로 확대하지 않는다. CHEESE/WHEY → dairy, CRUSTACEAN → shellfish, WHEAT_GLUTEN → wheat, OAT_BARLEY → oat + barley, SWEET_POTATO/TAPIOCA → potato를 사용한다. 지원된 정확한 enum 값만 변환하며 원문 `service_allergy_codes`를 보존한다. v3에 근거 없는 enum은 `SERVICE_CODE:` unresolved로 유지하고 parent group, fuzzy text, 독성 namespace를 알레르겐으로 임의 확장하지 않는다.
+Service `AllergenCode`는 `sever/dev` revision `c23e7a1ab1b1a31ff32a84e19a50eab7c28bf5c9`의 정확한 enum/표시명과 기존 v3 alias를 기준으로 변환한다. Service 전용 identity 사전은 DUCK/TURKEY 및 SALMON/TUNA/BONITO/ANCHOVY 등을 개별 코드로 보존하며 Pet의 특정 어종을 fish로 확대하지 않는다. 기존 임상 사전이나 라벨 근거를 변경하지 않는다. 33개 코드는 지원하며, 4개 독성 코드는 독성 namespace에 보존하고 OTHER는 미해결로 남긴다. 전체 목록과 근거 범위는 매핑 CSV와 통합 수정 기록을 따른다.
 
-최신 Pet domain/entity/DTO/migration에도 명시 allergy_profile_status 또는 life-stage 저장 필드가 없다. 따라서 알레르기 0행은 UNKNOWN이며 KNOWN_NONE persistence gap은 남는다. 기존 Mock Nutrition의 age-rule 호환 경로는 Feeding 정책과 분리한다. Feeding은 실제 Service stage와 승인 계수 없음을 명시하고 `MER_COEFFICIENT_UNRESOLVED`, `daily_serving_g=null`로 반환한다. 기존 bcs/is_neutered/birth_date 컬럼은 read-only 조회한다. birth_date로 계산한 단계를 Nutrition/Safety/Feeding에 동일하게 전달하지만 MER 계수는 계속 미확정이다.
+Backend 로컬 수정에는 명시 allergy profile 저장과 등록/수정/상세 DTO가 포함된다. 실제 migration 및 배포는 별도 검증 대상이다. Pet 생애주기는 AI가 유효한 birth_date로 계산하며, 나이만으로 production stage를 대신 정하지 않는다. 기존 Mock Nutrition의 age-rule 호환 경로는 Feeding 정책과 분리한다. 실제 Service Feeding에서 승인 계수 없음을 명시하고 `MER_COEFFICIENT_UNRESOLVED`, `daily_serving_g=null`로 반환하는 정책은 유지한다.
 
 ## Product 최소 입력
 
@@ -85,3 +89,7 @@ AI 결과 저장 및 새 schema는 미확정이다. 필요 시 DDL은 `nutrition
 ## 2026-10-02 생년월일 경계
 
 현재 날짜는 Asia/Seoul 기준으로 계산한다. 12개월은 달력 개월 경계이며 2월 29일의 다음 해 경계는 2월 말일이다. PostgreSQL DATE와 정확한 YYYY-MM-DD 문자열만 허용한다. 생년월일이 없으면 production의 stage 누락 fail-close를 유지한다. 별도 Mock fixture의 기존 Nutrition AGE_RULE 호환 경로는 legacy regression을 위해 유지하며 Feeding으로 승격하지 않는다.
+
+## 2026-10-06 스키마 Mock 범위 보완
+
+전체 서비스 상품은 스키마로 만든 Mock이라는 사용자 확인을 반영한다. 기존 `MOCK-*` 경로와 함께 `mock_service_identity_v1.json`의 정확한 Service ID·SKU 조합을 합성 입력 대상으로 사용한다. 조회하지 못한 상품을 만들어 반환하지 않는다. 302/ONF-004도 이 목록을 통해 기존 영양·급여 프로필을 사용한다. 당근·비트·호박·연어오일의 합성 identity는 `mock_ingredient_identity_v1.json`에서 별도로 관리하며 실제 상품 사전의 안전 근거로 승격하지 않는다. 상세 결과는 [Mock 근거 보완](service_evidence_gap_resolution_20261006.md)을 참고한다.

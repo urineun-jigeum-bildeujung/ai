@@ -139,9 +139,9 @@ def test_structured_codes_exact_unknown_unresolved():
     assert [r["allergen_code"] for r in refs[:3]] == ["chicken", "chicken", "beef"]
 
 
-def test_service_salmon_stays_unresolved_and_exact_flag_blocks():
+def test_service_salmon_keeps_specific_identity_and_exact_flag_blocks():
     canonical = adapter.adapt_pet(pet(allergies=["SALMON"], allergy_profile_status="KNOWN_LIST"))
-    assert canonical["allergies"] == ["SERVICE_CODE:SALMON"] and canonical["service_allergy_codes"] == ["SALMON"]
+    assert canonical["allergies"] == ["salmon"] and canonical["service_allergy_codes"] == ["SALMON"]
     data = adapter.adapt_product(product(allergen_flags=["FISH"]), index={})["product"]
     assert adapter.evaluate_service_safety(canonical, data)["safety_status"] == "SAFETY_DATA_INSUFFICIENT"
     data["service_allergen_flags"] = ["SALMON"]

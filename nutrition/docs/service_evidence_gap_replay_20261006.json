@@ -1,0 +1,1360 @@
+{
+  "verification_scope": "LOCAL_ARCHIVED_PRODUCT_REPLAY_WITH_SYNTHETIC_PET",
+  "production_evidence": false,
+  "snapshot_sha256": "c73fe78528e98ff47d648d35201c497b83729870a3512d7b6def4ac140c83d3a",
+  "baseline_cases": [
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+      "profile": "KNOWN_NONE",
+      "allergies": [],
+      "safety_status": "NOT_APPLICABLE",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      },
+      "ingredients": [
+        {
+          "raw_text": "고구마",
+          "ingredient_code": "고구마",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "potato",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "귀리",
+          "ingredient_code": "귀리",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "oat",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "당근",
+          "ingredient_code": "CARROT",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "비트",
+          "ingredient_code": "BEET",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "양고기",
+          "ingredient_code": "양고기",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "lamb",
+          "mapping_method": "CANONICAL_ALIAS"
+        }
+      ]
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "CHICKEN"
+      ],
+      "safety_status": "SAFETY_DATA_INSUFFICIENT",
+      "safety_reason_codes": [
+        "UNMAPPED_INGREDIENT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      },
+      "ingredients": [
+        {
+          "raw_text": "고구마",
+          "ingredient_code": "고구마",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "potato",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "귀리",
+          "ingredient_code": "귀리",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "oat",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "당근",
+          "ingredient_code": "CARROT",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "비트",
+          "ingredient_code": "BEET",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "양고기",
+          "ingredient_code": "양고기",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "lamb",
+          "mapping_method": "CANONICAL_ALIAS"
+        }
+      ]
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "LAMB"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT",
+        "UNMAPPED_INGREDIENT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      },
+      "ingredients": [
+        {
+          "raw_text": "고구마",
+          "ingredient_code": "고구마",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "potato",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "귀리",
+          "ingredient_code": "귀리",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "oat",
+          "mapping_method": "CANONICAL_ALIAS"
+        },
+        {
+          "raw_text": "당근",
+          "ingredient_code": "CARROT",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "비트",
+          "ingredient_code": "BEET",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": null,
+          "mapping_method": "UNRESOLVED"
+        },
+        {
+          "raw_text": "양고기",
+          "ingredient_code": "양고기",
+          "ingredient_resolution_status": "RESOLVED",
+          "allergen_code": "lamb",
+          "mapping_method": "CANONICAL_ALIAS"
+        }
+      ]
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "product_name": "온밥 치킨 액티브 밸런스 3kg",
+      "profile": "KNOWN_NONE",
+      "allergies": [],
+      "safety_status": "SAFETY_DATA_INSUFFICIENT",
+      "safety_reason_codes": [
+        "PRODUCT_LIFE_STAGE_UNKNOWN"
+      ],
+      "nutrition_item_count": 0,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "INVALID_SKU",
+          "canonical_gtin": null,
+          "matches": []
+        },
+        "nutrition_source": null,
+        "operating_identity_verified": false,
+        "integration_identity_verified": false,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "UNKNOWN",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        }
+      },
+      "ingredients": []
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "product_name": "온밥 치킨 액티브 밸런스 3kg",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "CHICKEN"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT",
+        "PRODUCT_LIFE_STAGE_UNKNOWN"
+      ],
+      "nutrition_item_count": 0,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "INVALID_SKU",
+          "canonical_gtin": null,
+          "matches": []
+        },
+        "nutrition_source": null,
+        "operating_identity_verified": false,
+        "integration_identity_verified": false,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "UNKNOWN",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        }
+      },
+      "ingredients": []
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "product_name": "온밥 치킨 액티브 밸런스 3kg",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "LAMB"
+      ],
+      "safety_status": "SAFETY_DATA_INSUFFICIENT",
+      "safety_reason_codes": [
+        "PRODUCT_LIFE_STAGE_UNKNOWN"
+      ],
+      "nutrition_item_count": 0,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "INVALID_SKU",
+          "canonical_gtin": null,
+          "matches": []
+        },
+        "nutrition_source": null,
+        "operating_identity_verified": false,
+        "integration_identity_verified": false,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "UNKNOWN",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        }
+      },
+      "ingredients": []
+    }
+  ],
+  "cases": [
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "profile": "KNOWN_NONE",
+      "allergies": [],
+      "safety_status": "NOT_APPLICABLE",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "CHICKEN"
+      ],
+      "safety_status": "NO_CONFLICT_DETECTED",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "LAMB"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "SALMON"
+      ],
+      "safety_status": "NO_CONFLICT_DETECTED",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 141,
+      "sku": "MOCK-FOOD-WET_FOOD-0021",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "FISH"
+      ],
+      "safety_status": "NO_CONFLICT_DETECTED",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "MOCK-FOOD-WET_FOOD-0021",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "141",
+          "service_sku": "MOCK-FOOD-WET_FOOD-0021",
+          "product_name": "온밥 액티브 양고기 어덜트 습식 1.2kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "WET_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_WET",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_WET",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "profile": "KNOWN_NONE",
+      "allergies": [],
+      "safety_status": "NOT_APPLICABLE",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "ONF-004",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "identity_registration_version": "mock_service_identity_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "302",
+          "service_sku": "ONF-004",
+          "product_name": "온밥 치킨 액티브 밸런스 3kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "DRY_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_DRY",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_DRY",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "CHICKEN"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "ONF-004",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "identity_registration_version": "mock_service_identity_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "302",
+          "service_sku": "ONF-004",
+          "product_name": "온밥 치킨 액티브 밸런스 3kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "DRY_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_DRY",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_DRY",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "LAMB"
+      ],
+      "safety_status": "NO_CONFLICT_DETECTED",
+      "safety_reason_codes": [],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "ONF-004",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "identity_registration_version": "mock_service_identity_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "302",
+          "service_sku": "ONF-004",
+          "product_name": "온밥 치킨 액티브 밸런스 3kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "DRY_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_DRY",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_DRY",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "SALMON"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "ONF-004",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "identity_registration_version": "mock_service_identity_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "302",
+          "service_sku": "ONF-004",
+          "product_name": "온밥 치킨 액티브 밸런스 3kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "DRY_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_DRY",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_DRY",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    },
+    {
+      "product_id": 302,
+      "sku": "ONF-004",
+      "profile": "KNOWN_LIST",
+      "allergies": [
+        "FISH"
+      ],
+      "safety_status": "SAFETY_BLOCKED",
+      "safety_reason_codes": [
+        "ALLERGY_CONFLICT"
+      ],
+      "nutrition_item_count": 5,
+      "input_provenance": {
+        "identity_bridge": {
+          "status": "MATCHED",
+          "identifier_type": "MOCK_SKU",
+          "identifier_value": "ONF-004",
+          "namespace": "SERVICE_INTEGRATION_FIXTURE"
+        },
+        "nutrition_source": {
+          "type": "MOCK_INTEGRATION_FIXTURE",
+          "source_type": "MOCK_INTEGRATION_FIXTURE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "identity_registration_version": "mock_service_identity_v1",
+          "generation_rule_version": "deterministic_profile_assignment_v1",
+          "service_product_id": "302",
+          "service_sku": "ONF-004",
+          "product_name": "온밥 치킨 액티브 밸런스 3kg",
+          "service_category_code": "FOOD",
+          "service_subcategory_code": "DRY_FOOD",
+          "service_target_species": [
+            "DOG"
+          ],
+          "service_target_age_group": "ADULT",
+          "fixture_profile": "DOG_ADULT_DRY",
+          "fixture_status": "FIXTURE_READY",
+          "fixture_reason": null,
+          "real_product_identity_claimed": false,
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE"
+        },
+        "operating_identity_verified": false,
+        "integration_identity_verified": true,
+        "service_target_age_group": "ADULT",
+        "aafco_life_stage_evidence_status": "MOCK_INTEGRATION_FIXTURE",
+        "fixture_status": "FIXTURE_READY",
+        "fixture_profile": "DOG_ADULT_DRY",
+        "product_target": {
+          "species": {
+            "targets": [
+              "DOG"
+            ],
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED"
+          },
+          "stage": {
+            "value": "ADULT",
+            "status": "RESOLVED",
+            "source": "SERVICE_STRUCTURED",
+            "raw_label": null
+          },
+          "size": {
+            "values": [],
+            "status": "UNKNOWN",
+            "source": "UNKNOWN"
+          },
+          "mapping_version": "product_target_contract_v2",
+          "conflict": false,
+          "reason_codes": [
+            "PRODUCT_TARGET_SIZE_UNKNOWN"
+          ],
+          "fixture_provenance": {}
+        },
+        "integration_data": {
+          "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+          "production_evidence": false,
+          "schema_contract": "SERVICE_DB_COMPATIBLE",
+          "fixture_version": "mock_nutrition_fixture_v1",
+          "result_type": "DERIVED_RULE_RESULT",
+          "input_evidence_type": "SCHEMA_DRIVEN_SYNTHETIC_DATA"
+        }
+      }
+    }
+  ],
+  "all_products_known_none_audit": {
+    "total": 322,
+    "mock_eligible": 322,
+    "safety_status_counts": {
+      "SAFETY_DATA_INSUFFICIENT": 52,
+      "SAFETY_BLOCKED": 115,
+      "NOT_APPLICABLE": 155
+    },
+    "safety_reason_counts": {
+      "PRODUCT_LIFE_STAGE_UNKNOWN": 52,
+      "LIFE_STAGE_MISMATCH": 31,
+      "SPECIES_MISMATCH": 84
+    }
+  }
+}

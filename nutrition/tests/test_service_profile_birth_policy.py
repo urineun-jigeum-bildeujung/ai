@@ -25,7 +25,7 @@ def product(**changes):
 
 
 @pytest.mark.parametrize("declared,codes,profile", [
-    (None, [], "UNKNOWN"), (None, ["CHICKEN"], "UNKNOWN"),
+    (None, [], "UNKNOWN"), (None, ["CHICKEN"], "KNOWN_LIST"),
     ("UNKNOWN", [], "UNKNOWN"), ("UNKNOWN", ["CHICKEN"], "UNKNOWN"),
     ("KNOWN_NONE", [], "KNOWN_NONE"), ("KNOWN_NONE", ["CHICKEN"], "UNKNOWN"),
     ("KNOWN_LIST", [], "UNKNOWN"), ("KNOWN_LIST", ["CHICKEN"], "KNOWN_LIST"),
@@ -113,6 +113,11 @@ def test_absent_birth_keeps_production_fail_close():
 
 @pytest.mark.parametrize("code", sorted(adapter.SPECIFIC_FISH_CODES))
 def test_specific_fish_does_not_expand_to_parent(monkeypatch, code):
+    if code in adapter.SERVICE_IDENTITIES:
+        specific = adapter.SERVICE_IDENTITIES[code][0]
+        assert adapter.service_allergen_codes(code) == [specific]
+        assert adapter.structured_refs("1", [code])[0]["allergen_code"] == specific
+        return
     assert adapter.service_allergen_codes(code) == ["SERVICE_CODE:" + code]
     ref = adapter.structured_refs("1", [code])[0]
     assert ref["allergen_code"] is None and ref["mapping_method"] == "UNRESOLVED"
