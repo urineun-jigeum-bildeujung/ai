@@ -18,8 +18,12 @@ from allergen_repository import get_refs
 from allergen_catalog_versions import DICTIONARY_VERSION, PIPELINE_VERSION
 from gtin_validation import is_valid_gtin
 from product_input_adapter import RAW, _canonical_gtin_from_product_id, load_product_input
-from mock_integration_fixture import build_mock_fixture
+from mock_integration_fixture import build_mock_fixture, mock_ingredient_refs
 from service_caution_policy import evaluate_cautions, EVIDENCE_SOURCE, CAUTION_POLICY
+from service_allergen_dictionary import (
+    SERVICE_IDENTITIES, SERVICE_TOXIC_CODES, SOURCE_REVISION, VERSION, service_dictionary,
+    INGREDIENT_IDENTITIES, INGREDIENT_IDENTITY_SOURCE, INGREDIENT_IDENTITY_SOURCE_SHA256,
+)
 
 
 class ServiceInputError(ValueError):
@@ -144,8 +148,10 @@ SPECIFIC_FISH_CODES = {
 def service_allergen_codes(code):
     from allergen_service import _norm
 
-    if code in CAUTION_POLICY:
+    if code in CAUTION_POLICY or code in SERVICE_TOXIC_CODES:
         return ["SERVICE_CODE:" + code]
+    if code in SERVICE_IDENTITIES:
+        return [SERVICE_IDENTITIES[code][0]]
     if code in SPECIFIC_FISH_CODES:
         canonical = code.casefold()
         entry = DICTIONARY["entries"].get(canonical)
@@ -205,14 +211,19 @@ def structured_refs(product_id, codes):
     refs = []
     for code in codes:
         matches = index.get(code, set())
-        if code in CAUTION_POLICY:
+        identity = next((canonical for enum, (canonical, name) in SERVICE_IDENTITIES.items()
+                         if _norm(code) in {_norm(enum), _norm(canonical), _norm(name)}), None)
+        if identity is not None:
+            matches = {identity}
+        elif code in CAUTION_POLICY or code in SERVICE_TOXIC_CODES:
             matches = set()
         elif code in SPECIFIC_FISH_CODES:
             specific = service_allergen_codes(code)
             matches = set(specific) if specific[0] in DICTIONARY["entries"] else set()
         normalized = code
         method = "STRUCTURED_SOURCE"
-        if not matches and code not in SPECIFIC_FISH_CODES and code not in CAUTION_POLICY:
+        if (not matches and code not in SPECIFIC_FISH_CODES
+                and code not in CAUTION_POLICY and code not in SERVICE_TOXIC_CODES):
             normalized = _norm(code)
             canonical = DICTIONARY["aliases"].get(normalized)
             entry = DICTIONARY["entries"].get(canonical)
@@ -222,10 +233,25 @@ def structured_refs(product_id, codes):
                 method = "CANONICAL_ALIAS"
         resolved = len(matches) == 1
         refs.append({"product_id": product_id, "allergen_code": next(iter(matches)) if resolved else None,
+                     "ingredient_code": INGREDIENT_IDENTITIES.get(code, code),
+                     "ingredient_resolution_status": "RESOLVED" if resolved or code in INGREDIENT_IDENTITIES else "UNRESOLVED",
+                     **({"ingredient_identity_source": INGREDIENT_IDENTITY_SOURCE,
+                         "ingredient_identity_source_sha256": INGREDIENT_IDENTITY_SOURCE_SHA256}
+                        if code in INGREDIENT_IDENTITIES else {}),
                      "raw_text": code, "normalized_text": normalized, "matched_text": normalized if resolved else None,
                      "mapping_method": method if resolved else "UNRESOLVED",
                      "source": "SERVICE_INGREDIENT_CODE", "source_version": "SERVICE_INPUT",
-                     "dictionary_version": DICTIONARY["version"]})
+                     "dictionary_version": VERSION if identity is not None else DICTIONARY["version"],
+                     **({"source_version": SOURCE_REVISION, "evidence_scope": "SERVICE_ENUM_IDENTITY"}
+                        if identity is not None else {})})
+        # Preserve existing label evidence for a parent group on the product,
+        # without broadening a pet's specific allergen to that parent.
+        parent = DICTIONARY["aliases"].get(_norm(code))
+        if identity is not None and parent is not None and parent != identity:
+            refs.append({**refs[-1], "allergen_code": parent,
+                         "mapping_method": "CANONICAL_ALIAS",
+                         "dictionary_version": DICTIONARY["version"],
+                         "source_version": "SERVICE_INPUT", "evidence_scope": "V3_DECLARED_ALIAS"})
     return refs
 
 
@@ -271,6 +297,7 @@ def adapt_product(source, *, index=None):
     if mock_fixture is not None:
         # Integration fixtures are a separate evidence namespace.  They never
         # enter ``load_product_input`` and never masquerade as GTIN evidence.
+        product["product_allergen_refs"] = mock_ingredient_refs(product["product_allergen_refs"])
         product["nutrition_items"] = mock_fixture["nutrition_items"]
         product["aafco_life_stage"] = mock_fixture["aafco_life_stage"]
         provenance["nutrition_source"] = mock_fixture["nutrition_source"]
@@ -310,8 +337,19 @@ def adapt_product(source, *, index=None):
 
 def _evaluate_service_allergen_safety(pet, product):
     """기존 gate 실행 후 같은 service namespace의 명시적 충돌만 추가 차단한다."""
-    result = evaluate_safety(pet, product)
-    allergy_flags = set(product["service_allergen_flags"]) - set(CAUTION_POLICY)
+    dictionary = service_dictionary()
+    specific_fish = {SERVICE_IDENTITIES[code][0] for code in SPECIFIC_FISH_CODES if code in SERVICE_IDENTITIES}
+    refs = product.get("product_allergen_refs")
+    if set(pet["allergies"]) & specific_fish and refs is not None:
+        # Generic fish evidence cannot rule out a declared specific fish.
+        generic = {ref["raw_text"] for ref in refs if ref["allergen_code"] == "fish"}
+        specific = {ref["raw_text"] for ref in refs if ref["allergen_code"] in specific_fish}
+        product = {**product, "product_allergen_refs": [
+            {**ref, "mapping_method": "UNRESOLVED"}
+            if ref["raw_text"] in generic - specific else ref for ref in refs
+        ]}
+    result = evaluate_safety(pet, product, dictionary=dictionary)
+    allergy_flags = set(product["service_allergen_flags"]) - set(CAUTION_POLICY) - SERVICE_TOXIC_CODES
     conflicts = sorted(set(pet["service_allergy_codes"]) & allergy_flags)
     if not conflicts:
         return result  # 교집합 부재는 안전 근거가 아니다.

@@ -1,0 +1,27 @@
+{
+  "scope": "REAL_LOOPBACK_HTTP_WITH_SCHEMA_DRIVEN_SYNTHETIC_SERVICE_SOURCE_BOUNDARY",
+  "requests": 13,
+  "assertions_passed": 58,
+  "smoke": {
+    "health": 200,
+    "ready": 200,
+    "metrics": 200,
+    "readiness_mode": "local_artifact"
+  },
+  "target": "MATCHED",
+  "size": "MATCHED",
+  "score": 100,
+  "feeding": "READY",
+  "safety_excluded_feeding": "BLOCKED",
+  "compare": "READY",
+  "baseline_cases": [
+    "KNOWN_NONE",
+    "KNOWN_LIST",
+    "growth/adult reference",
+    "senior/reference separation",
+    "Product 141 exact aliases",
+    "specific SALMON/TUNA fail-close"
+  ],
+  "live_service_db": false,
+  "gateway_e2e": false
+}

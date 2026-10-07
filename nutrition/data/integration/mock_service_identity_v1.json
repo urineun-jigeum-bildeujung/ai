@@ -1,0 +1,152 @@
+{
+  "fixture_version": "mock_service_identity_v1",
+  "data_generation_type": "SCHEMA_DRIVEN_SYNTHETIC",
+  "production_evidence": false,
+  "scope_basis": "User confirmed all service products are schema-generated mock data on 2026-10-06",
+  "items": [
+    {
+      "service_product_id": "287",
+      "service_sku": "HKF-001"
+    },
+    {
+      "service_product_id": "288",
+      "service_sku": "HKF-002"
+    },
+    {
+      "service_product_id": "289",
+      "service_sku": "HKF-003"
+    },
+    {
+      "service_product_id": "290",
+      "service_sku": "HKF-004"
+    },
+    {
+      "service_product_id": "291",
+      "service_sku": "HNT-001"
+    },
+    {
+      "service_product_id": "292",
+      "service_sku": "HNT-002"
+    },
+    {
+      "service_product_id": "293",
+      "service_sku": "HNT-003"
+    },
+    {
+      "service_product_id": "294",
+      "service_sku": "HNT-004"
+    },
+    {
+      "service_product_id": "295",
+      "service_sku": "HPS-001"
+    },
+    {
+      "service_product_id": "296",
+      "service_sku": "HPS-002"
+    },
+    {
+      "service_product_id": "297",
+      "service_sku": "HPS-003"
+    },
+    {
+      "service_product_id": "298",
+      "service_sku": "HPS-004"
+    },
+    {
+      "service_product_id": "299",
+      "service_sku": "ONF-001"
+    },
+    {
+      "service_product_id": "300",
+      "service_sku": "ONF-002"
+    },
+    {
+      "service_product_id": "301",
+      "service_sku": "ONF-003"
+    },
+    {
+      "service_product_id": "302",
+      "service_sku": "ONF-004"
+    },
+    {
+      "service_product_id": "303",
+      "service_sku": "OST-001"
+    },
+    {
+      "service_product_id": "304",
+      "service_sku": "OST-002"
+    },
+    {
+      "service_product_id": "305",
+      "service_sku": "OST-003"
+    },
+    {
+      "service_product_id": "306",
+      "service_sku": "OST-004"
+    },
+    {
+      "service_product_id": "307",
+      "service_sku": "OCS-001"
+    },
+    {
+      "service_product_id": "308",
+      "service_sku": "OCS-002"
+    },
+    {
+      "service_product_id": "309",
+      "service_sku": "OCS-003"
+    },
+    {
+      "service_product_id": "310",
+      "service_sku": "OCS-004"
+    },
+    {
+      "service_product_id": "311",
+      "service_sku": "DMF-001"
+    },
+    {
+      "service_product_id": "312",
+      "service_sku": "DMF-002"
+    },
+    {
+      "service_product_id": "313",
+      "service_sku": "DMF-003"
+    },
+    {
+      "service_product_id": "314",
+      "service_sku": "DMF-004"
+    },
+    {
+      "service_product_id": "315",
+      "service_sku": "NST-001"
+    },
+    {
+      "service_product_id": "316",
+      "service_sku": "NST-002"
+    },
+    {
+      "service_product_id": "317",
+      "service_sku": "NST-003"
+    },
+    {
+      "service_product_id": "318",
+      "service_sku": "NST-004"
+    },
+    {
+      "service_product_id": "319",
+      "service_sku": "DNS-001"
+    },
+    {
+      "service_product_id": "320",
+      "service_sku": "DNS-002"
+    },
+    {
+      "service_product_id": "321",
+      "service_sku": "DNS-003"
+    },
+    {
+      "service_product_id": "322",
+      "service_sku": "DNS-004"
+    }
+  ]
+}
