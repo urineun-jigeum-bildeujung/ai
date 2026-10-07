@@ -25,6 +25,6 @@
 
 전체 322개가 Mock 대상이다. 동일한 DOG/ADULT/KNOWN_NONE 프로필로 전체를 재현하면 NOT_APPLICABLE 155개, 종 불일치 84개, 생애주기 불일치 31개, 상품 생애주기 근거 부족 52개다. 이는 전 상품이 해당 성견에게 적합하다는 뜻이 아니며, 모든 보류를 없애기 위한 수정도 아니다. 다른 원재료 미해결 사례는 별도이며 이 변경의 명시적 네 원료 범위를 넘어서 추정하지 않는다.
 
-검증: Nutrition pytest 632개 통과, 로컬 HTTP 13요청·58개 assertion 통과, `git diff --check` 통과. 기존 테스트의 특정 생선 보류 검증은 임의 상품의 누락 데이터에 의존하지 않고 명시적 generic fish 입력으로 고정했다. [HTTP 검증 결과](service_mock_http_validation_20261006.json)는 실제 DB·Gateway 검증이 아니다.
+검증: 2026-10-06 로컬 Nutrition pytest 632개 통과. 2026-10-07 PR #313 통합 검증에서 완전한 psycopg2 의존성으로 재실행한 전체 결과는 **633개 통과**다. 로컬 HTTP 13요청·58개 assertion 통과, `git diff --check` 통과. 기존 테스트의 특정 생선 보류 검증은 임의 상품의 누락 데이터에 의존하지 않고 명시적 generic fish 입력으로 고정했다. [HTTP 검증 결과](service_mock_http_validation_20261006.json)는 실제 DB·Gateway 검증이 아니다.
 
 운영 DB 변경·Git 게시·배포는 하지 않았다. 인프라 종료 상태에서 로컬 수정과 검증까지 진행했다.
